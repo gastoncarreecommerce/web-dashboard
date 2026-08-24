@@ -1,0 +1,279 @@
+{
+  "generatedAt": "2026-08-24T19:59:39.837Z",
+  "departments": [
+    {
+      "id": 1,
+      "name": "Test Category",
+      "hasChildren": 0,
+      "childrenNames": []
+    },
+    {
+      "id": 3,
+      "name": "Electro y tecnología",
+      "hasChildren": 13,
+      "childrenNames": [
+        "TV y soportes",
+        "Celulares",
+        "Heladeras y freezers",
+        "Lavado",
+        "Termotanques y calefones",
+        "Cocinas y hornos",
+        "Pequeños electrodomésticos",
+        "Cuidado personal y salud",
+        "Informática y gaming",
+        "Audio",
+        "Climatización",
+        "Electro limpieza",
+        "Instalaciones"
+      ]
+    },
+    {
+      "id": 71,
+      "name": "Hogar",
+      "hasChildren": 7,
+      "childrenNames": [
+        "Muebles",
+        "Ferretería y construcción",
+        "Cocina y comedor",
+        "Deco y organización",
+        "Dormitorio",
+        "Baño",
+        "Navidad"
+      ]
+    },
+    {
+      "id": 161,
+      "name": "Almacén",
+      "hasChildren": 10,
+      "childrenNames": [
+        "Aceites y vinagres",
+        "Pastas secas",
+        "Arroz y legumbres",
+        "Harinas",
+        "Enlatados y Conservas",
+        "Sal, aderezos y saborizadores",
+        "Caldos, sopas y puré",
+        "Repostería y postres",
+        "Snacks",
+        "Comidas instantáneas"
+      ]
+    },
+    {
+      "id": 222,
+      "name": "Desayuno y merienda",
+      "hasChildren": 10,
+      "childrenNames": [
+        "Golosinas y chocolates",
+        "Galletitas bizcochitos y tostadas",
+        "Budines y magdalenas",
+        "Yerba",
+        "Café",
+        "Infusiones",
+        "Azúcar y endulzantes",
+        "Mermeladas y otros dulces",
+        "Cereales y barritas",
+        "Pascuas"
+      ]
+    },
+    {
+      "id": 255,
+      "name": "Bebidas",
+      "hasChildren": 11,
+      "childrenNames": [
+        "Cervezas",
+        "Vinos",
+        "Fernet y aperitivos",
+        "Bebidas blancas",
+        "Espumantes y sidras",
+        "Gaseosas",
+        "Aguas",
+        "Jugos",
+        "Bebidas energizantes",
+        "Bebidas isotónicas",
+        "Envases"
+      ]
+    },
+    {
+      "id": 292,
+      "name": "Lácteos y productos frescos",
+      "hasChildren": 11,
+      "childrenNames": [
+        "Leches",
+        "Yogures",
+        "Mantecas, margarinas y levaduras",
+        "Cremas de leche",
+        "Postres",
+        "Huevos",
+        "Tapas y pastas frescas",
+        "Dulce de membrillo y otros dulces",
+        "Salchichas",
+        "Quesos",
+        "Fiambres"
+      ]
+    },
+    {
+      "id": 321,
+      "name": "Carnes y pescados",
+      "hasChildren": 7,
+      "childrenNames": [
+        "Carne vacuna",
+        "Pollo y granja",
+        "Carne de cerdo",
+        "Achuras y embutidos",
+        "Pescados y mariscos",
+        "Rebozados",
+        "Carbón y encendido"
+      ]
+    },
+    {
+      "id": 330,
+      "name": "Frutas y verduras",
+      "hasChildren": 4,
+      "childrenNames": [
+        "Frutas",
+        "Verduras",
+        "Verduras cortadas y ensaladas preparadas",
+        "Frutos secos"
+      ]
+    },
+    {
+      "id": 336,
+      "name": "Panadería",
+      "hasChildren": 5,
+      "childrenNames": [
+        "Bizcochuelos y piononos",
+        "Elaboración Carrefour",
+        "Panificados",
+        "Pizzas y prepizzas",
+        "Sandwiches, Empanadas y Tartas"
+      ]
+    },
+    {
+      "id": 347,
+      "name": "Congelados",
+      "hasChildren": 8,
+      "childrenNames": [
+        "Hamburguesas y medallones",
+        "Nuggets y rebozados",
+        "Papas",
+        "Frutas y vegetales congelados",
+        "Comidas y panificados",
+        "Pescados y mariscos",
+        "Helados y postres",
+        "Pollo"
+      ]
+    },
+    {
+      "id": 359,
+      "name": "Limpieza",
+      "hasChildren": 10,
+      "childrenNames": [
+        "Limpieza de la ropa",
+        "Limpieza de pisos y muebles",
+        "Insecticidas",
+        "Limpieza de cocina",
+        "Lavandinas",
+        "Rollos de cocina y servilletas",
+        "Papeles higiénicos",
+        "Limpieza de baño",
+        "Desodorantes de ambiente",
+        "Artículos de limpieza"
+      ]
+    },
+    {
+      "id": 402,
+      "name": "Perfumería y farmacia",
+      "hasChildren": 11,
+      "childrenNames": [
+        "Cuidado del cabello",
+        "Cuidado dental",
+        "Jabones",
+        "Protección femenina",
+        "Cuidado de la piel",
+        "Antitranspirantes y desodorantes",
+        "Cuidado corporal",
+        "Repelentes",
+        "Algodones e hisopos",
+        "Farmacia y ortopedia",
+        "Perfumes y maquillaje"
+      ]
+    },
+    {
+      "id": 451,
+      "name": "Mundo Bebé",
+      "hasChildren": 9,
+      "childrenNames": [
+        "Pañales",
+        "Toallitas húmedas",
+        "Higiene para bebés",
+        "Alimento para bebé",
+        "Cuidado maternal",
+        "Chupetes, mamaderas y accesorios",
+        "Pelelas y bañeras",
+        "Cochecitos y butacas",
+        "Cunas y muebles"
+      ]
+    },
+    {
+      "id": 471,
+      "name": "Mascotas",
+      "hasChildren": 4,
+      "childrenNames": [
+        "Alimentos para perros",
+        "Accesorios para mascotas",
+        "Alimentos para gatos",
+        "Higiene para mascotas"
+      ]
+    },
+    {
+      "id": 563,
+      "name": "Indumentaria",
+      "hasChildren": 3,
+      "childrenNames": [
+        "Adultos",
+        "Niños y niñas",
+        "Bebés"
+      ]
+    },
+    {
+      "id": 564,
+      "name": "Gift Cards",
+      "hasChildren": 0,
+      "childrenNames": []
+    },
+    {
+      "id": 605,
+      "name": "Juguetería y Librería",
+      "hasChildren": 3,
+      "childrenNames": [
+        "Juguetería",
+        "Librería",
+        "Libros"
+      ]
+    },
+    {
+      "id": 635,
+      "name": "Automotor",
+      "hasChildren": 3,
+      "childrenNames": [
+        "Herramientas vehiculares",
+        "Todo para la moto",
+        "Todo para el auto"
+      ]
+    },
+    {
+      "id": 665,
+      "name": "Aire Libre y Ocio",
+      "hasChildren": 6,
+      "childrenNames": [
+        "Aire Libre",
+        "Parrillas y accesorios",
+        "Piletas y accesorios",
+        "Viajes",
+        "Deportes y tiempo libre",
+        "Vacaciones"
+      ]
+    }
+  ],
+  "howToUse": "Revisar la lista de departamentos y clasificar cada `id` como food o non-food en config/category-map.json (foodDepartmentIds / nonFoodDepartmentIds). Los ids no listados caen en unmappedDepartmentPolicy."
+}

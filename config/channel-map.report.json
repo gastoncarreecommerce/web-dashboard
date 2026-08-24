@@ -1,0 +1,117 @@
+{
+  "generatedAt": "2026-08-24T19:59:39.374Z",
+  "windowDays": 14,
+  "sampledOrders": 200,
+  "salesChannelCounts": {
+    "1": 187,
+    "3": 13
+  },
+  "originCounts": {
+    "Marketplace": 200
+  },
+  "utmSourceCounts": {
+    "unknown": 63,
+    "ecom_salesforce": 31,
+    "groovinads": 8,
+    "meta": 14,
+    "app_ecomm": 43,
+    "ecom_mindshare": 5,
+    "mkt_newsletter": 1,
+    "soicos": 9,
+    "ecom_google": 4,
+    "": 5,
+    "homebanners": 1,
+    "referral-club-la-nacion": 3,
+    "Google-Display": 1,
+    "banner": 1,
+    "salesforce": 2,
+    "google-ads": 5,
+    "home-banners": 1,
+    "app": 1,
+    "ig": 1,
+    "ecom_maxi_pedido": 1
+  },
+  "examples": [
+    {
+      "orderId": "1656609218513-01",
+      "salesChannel": "1",
+      "origin": "Marketplace",
+      "utmSource": "unknown",
+      "hostname": "carrefourar",
+      "sequence": "9218513"
+    },
+    {
+      "orderId": "1656609218512-01",
+      "salesChannel": "1",
+      "origin": "Marketplace",
+      "utmSource": "unknown",
+      "hostname": "carrefourar",
+      "sequence": "9218512"
+    },
+    {
+      "orderId": "1656609218508-01",
+      "salesChannel": "1",
+      "origin": "Marketplace",
+      "utmSource": "unknown",
+      "hostname": "carrefourar",
+      "sequence": "9218508"
+    },
+    {
+      "orderId": "1656609218507-01",
+      "salesChannel": "1",
+      "origin": "Marketplace",
+      "utmSource": "unknown",
+      "hostname": "carrefourar",
+      "sequence": "9218507"
+    },
+    {
+      "orderId": "1656609218506-01",
+      "salesChannel": "1",
+      "origin": "Marketplace",
+      "utmSource": "ecom_salesforce",
+      "hostname": "carrefourar",
+      "sequence": "9218506"
+    },
+    {
+      "orderId": "1656609218505-01",
+      "salesChannel": "1",
+      "origin": "Marketplace",
+      "utmSource": "unknown",
+      "hostname": "carrefourar",
+      "sequence": "9218505"
+    },
+    {
+      "orderId": "1656609218499-01",
+      "salesChannel": "1",
+      "origin": "Marketplace",
+      "utmSource": "ecom_salesforce",
+      "hostname": "carrefourar",
+      "sequence": "9218499"
+    },
+    {
+      "orderId": "1656609218498-01",
+      "salesChannel": "1",
+      "origin": "Marketplace",
+      "utmSource": "groovinads",
+      "hostname": "carrefourar",
+      "sequence": "9218498"
+    },
+    {
+      "orderId": "1656609218496-01",
+      "salesChannel": "1",
+      "origin": "Marketplace",
+      "utmSource": "meta",
+      "hostname": "carrefourar",
+      "sequence": "9218496"
+    },
+    {
+      "orderId": "1656609218495-01",
+      "salesChannel": "1",
+      "origin": "Marketplace",
+      "utmSource": "unknown",
+      "hostname": "carrefourar",
+      "sequence": "9218495"
+    }
+  ],
+  "howToUse": "Comparar salesChannelCounts contra el trade policy / sales channel configurado en el admin de VTEX (Configuración > Canales de venta) para saber qué ID corresponde a Web y cuál a App. Completar luego config/channel-map.json con esos IDs."
+}
