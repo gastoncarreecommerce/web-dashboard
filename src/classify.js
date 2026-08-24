@@ -1,6 +1,6 @@
 'use strict';
 
-const PLACEHOLDER_RE = /^REPLACE_WITH_/;
+const PLACEHOLDER_RE = /^(REPLACE_WITH_|TBD_PENDING_INVESTIGATION)/;
 
 function assertConfigured(list, configName) {
   if (!Array.isArray(list) || list.length === 0 || list.some((v) => PLACEHOLDER_RE.test(v))) {

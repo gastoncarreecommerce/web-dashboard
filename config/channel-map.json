@@ -1,28 +1,34 @@
 {
-  "_comment": "PLACEHOLDER — hay que confirmar contra la VTEX Order API real de esta cuenta antes de poner el pipeline en producción. Correr `npm run inspect:channels` con credenciales reales pega a /api/oms/pvt/orders y vuelca en config/channel-map.report.json los valores reales de order.salesChannel y order.origin/marketingData.utmSource observados en los últimos N pedidos, para poder completar esto con certeza en vez de adivinar.",
+  "_comment": "EN INVESTIGACIÓN — el usuario confirmó que en esta cuenta `salesChannel` separa LÍNEA DE NEGOCIO (1=Main, 3=Quick Commerce), no dispositivo/canal de compra: un pedido de salesChannel=1 puede venir de la web o de la app por igual, y salesChannel=3 (Quick Commerce) solo vende food. Por lo tanto `salesChannelIds` de más abajo NO sirve para distinguir web vs app y no debe completarse con esos valores. Corrí `npm run inspect:channels` (ya actualizado para volcar pedidos completos sin datos personales en config/channel-map.report.json) y buscá en `rawExamples` algún campo que marque explícitamente 'app' vs 'web' antes de tocar este archivo.",
+  "salesChannelBusinessLines": {
+    "description": "Referencia informativa, no usado para el filtro web/app. Confirmado por el usuario.",
+    "1": "Main (puede ser food o non-food)",
+    "3": "Quick Commerce (solo food)"
+  },
   "channels": {
     "web": {
       "description": "Pedidos originados en el sitio web (storefront) de Carrefour Argentina.",
-      "matchBy": "salesChannel",
+      "matchBy": "TBD_PENDING_INVESTIGATION",
       "salesChannelIds": ["REPLACE_WITH_WEB_SALES_CHANNEL_ID"],
       "fallbackMatch": {
-        "field": "origin",
-        "values": ["Marketplace", "Ecommerce"]
+        "field": "TBD_PENDING_INVESTIGATION",
+        "values": ["TBD_PENDING_INVESTIGATION"]
       }
     },
     "app": {
       "description": "Pedidos originados en la app mobile (referencia, para no romper AppDash).",
-      "matchBy": "salesChannel",
+      "matchBy": "TBD_PENDING_INVESTIGATION",
       "salesChannelIds": ["REPLACE_WITH_APP_SALES_CHANNEL_ID"],
       "fallbackMatch": {
-        "field": "origin",
-        "values": ["App"]
+        "field": "TBD_PENDING_INVESTIGATION",
+        "values": ["TBD_PENDING_INVESTIGATION"]
       }
     }
   },
   "notes": [
-    "VTEX no tiene un único campo estándar 'canal app vs web' en todas las cuentas: algunas lo resuelven por salesChannel (trade policy) distinto por canal, otras por origin, otras por un campo custom en marketingData/openTextField.",
-    "Esta config permite matchear por salesChannel primero y, si no está seteado, caer a un campo alternativo (fallbackMatch). Ambos son editables sin tocar código.",
-    "El pipeline falla explícitamente (ver src/vtex-client.js) si detecta que los IDs siguen en 'REPLACE_WITH_...', para no calcular métricas sobre un filtro de canal incorrecto silenciosamente."
+    "VTEX no tiene un único campo estándar 'canal app vs web' en todas las cuentas: algunas lo resuelven por salesChannel, otras por origin, otras por un campo custom en marketingData/customData/openTextField. En esta cuenta ya descartamos salesChannel y origin (siempre 'Marketplace').",
+    "Esta config permite matchear por un campo principal (matchBy/salesChannelIds) primero y, si no está seteado, caer a un campo alternativo (fallbackMatch). Ambos son editables sin tocar código, una vez que se identifique el campo correcto.",
+    "El pipeline falla explícitamente (ver src/classify.js) si detecta que los valores siguen en placeholder ('REPLACE_WITH_' o 'TBD_PENDING_INVESTIGATION'), para no calcular métricas sobre un filtro de canal incorrecto silenciosamente.",
+    "Si ningún campo de la Order API distingue el dispositivo de compra, la alternativa es resolverlo cruzando con GA4/BigQuery por transactionId/orderId, tal como ya hace (o podría hacer) AppDash para atribución de canal — a confirmar con el dueño de ese pipeline."
   ]
 }
