@@ -85,15 +85,32 @@ function main() {
     }
   }
 
+  // Serie diaria liviana (sin customerCounts: son potencialmente miles de hashes
+  // por día, no tiene sentido mandarlos al browser) para que el dashboard pueda
+  // filtrar por rango de fechas (Ayer/7d/30d/Mes/custom) calculando GMV, pedidos,
+  // ticket y mix de marketing en el cliente, sin pedirle nada más a VTEX.
+  const dailySeries = [];
+
   for (const date of days) {
     const day = JSON.parse(fs.readFileSync(path.join(DAILY_DIR, `${date}.json`), 'utf8'));
     scannedTotal += day.scanned || 0;
     for (const s of day.unknownStatuses || []) unknownStatuses.add(s);
     const isCurrentMonth = date.slice(0, 7) === currentMonthPrefix;
+
+    const daySegments = {};
     for (const seg of SEGMENTS) {
-      mergeDayIntoAgg(aggs[seg], day.segments[seg] || { gmv: 0, orders: 0, customerCounts: {}, segmentParticipation: {} }, isCurrentMonth);
+      const daySeg = day.segments[seg] || { gmv: 0, orders: 0, units: 0, customerCounts: {}, segmentParticipation: {} };
+      mergeDayIntoAgg(aggs[seg], daySeg, isCurrentMonth);
+      daySegments[seg] = { gmv: daySeg.gmv, orders: daySeg.orders, units: daySeg.units || 0, marketing: daySeg.segmentParticipation || {} };
     }
+    dailySeries.push({ date, segments: daySegments });
   }
+
+  writeJson('docs/data/web/daily-summary.json', {
+    generatedAt: now.toISOString(),
+    detailWindowStartDate: startDate,
+    days: dailySeries,
+  });
 
   for (const seg of SEGMENTS) {
     const metrics = computeAllMetricsFromAggregate(aggs[seg], { referenceDate: now });
