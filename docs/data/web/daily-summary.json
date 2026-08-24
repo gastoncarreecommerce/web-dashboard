@@ -1,6 +1,1 @@
-{
-  "generatedAt": "1970-01-01T00:00:00.000Z",
-  "detailWindowStartDate": "2026-01-01",
-  "days": [],
-  "_placeholder": "Datos vacíos de arranque (seed). Se completan corriendo el backfill (ver README) y después el pipeline diario."
-}
+{"generatedAt":"2026-08-24T21:34:27.756Z","detailWindowStartDate":"2026-01-01","days":[]}

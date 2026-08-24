@@ -2,3 +2,6 @@ node_modules/
 config/channel-map.report.json
 config/category-map.report.json
 .env
+
+# Salida con PII del export de audiencias — NUNCA commitear
+private-out/

@@ -1,11 +1,20 @@
 'use strict';
 
 /**
- * Lee todos los archivos docs/data/web/daily/YYYY-MM-DD.json disponibles desde
- * START_DATE (config/pipeline-config.json) hasta hoy, los suma, y escribe
- * docs/data/web/<segmento>/metrics.json — un archivo por pestaña, listo para
- * que el dashboard lo consuma. Se corre después de fetch-day.js en cada corrida
- * diaria (ver .github/workflows/webdash-pipeline.yml).
+ * Lee todos los docs/data/web/daily/YYYY-MM-DD.json desde
+ * config/pipeline-config.json > detailWindowStartDate y produce los datasets
+ * públicos que consume el dashboard:
+ *
+ *   docs/data/web/daily-summary.json  serie diaria por segmento + horario + descuentos
+ *   docs/data/web/catalog.json        productos, categorías, cupones, medios de pago
+ *   docs/data/web/cohorts.json        retención por cohorte mensual + nuevos vs recurrentes
+ *   docs/data/web/audience-index.json perfiles de cliente HASHEADOS (constructor de audiencias)
+ *   docs/data/web/<segmento>/metrics.json  métricas históricas por pestaña
+ *   docs/data/web/_meta/run-info.json      salud del pipeline
+ *
+ * PII: ningún archivo de acá lleva emails. audience-index.json usa el hash
+ * truncado de src/customer-key.js. El cruce hash -> email vive fuera del sitio
+ * público (ver src/export-audience.js).
  */
 const fs = require('fs');
 const path = require('path');
@@ -16,6 +25,10 @@ const pipelineConfig = require('../config/pipeline-config.json');
 
 const SEGMENTS = segmentMap.tabs.list;
 const DAILY_DIR = path.join(__dirname, '..', 'docs', 'data', 'web', 'daily');
+const OUT_BASE = path.join(__dirname, '..', 'docs', 'data', 'web');
+
+const TOP_PRODUCTS = Number(process.env.CATALOG_TOP_PRODUCTS || 400);
+const TOP_CATEGORIES = Number(process.env.CATALOG_TOP_CATEGORIES || 60);
 
 function emptyAgg() {
   return {
@@ -37,7 +50,7 @@ function mergeDayIntoAgg(agg, daySegment, isCurrentMonth) {
   for (const [hash, count] of Object.entries(daySegment.customerCounts || {})) {
     agg.customerCounts.set(hash, (agg.customerCounts.get(hash) || 0) + count);
   }
-  for (const [seg, v] of Object.entries(daySegment.segmentParticipation || {})) {
+  for (const [seg, v] of Object.entries(daySegment.marketing || daySegment.segmentParticipation || {})) {
     agg.segmentParticipation[seg] = agg.segmentParticipation[seg] || { orders: 0, gmv: 0 };
     agg.segmentParticipation[seg].orders += v.orders;
     agg.segmentParticipation[seg].gmv += v.gmv;
@@ -57,22 +70,39 @@ function listAvailableDays(startDate) {
 function writeJson(relPath, data) {
   const outPath = path.join(__dirname, '..', relPath);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
-  fs.writeFileSync(outPath, JSON.stringify(data, null, 2));
+  fs.writeFileSync(outPath, JSON.stringify(data));
+  return fs.statSync(outPath).size;
+}
+
+function addInto(target, key, v) {
+  const e = (target[key] = target[key] || { orders: 0, gmv: 0, units: 0 });
+  e.orders += v.orders || 0;
+  e.gmv += v.gmv || 0;
+  e.units += v.units || 0;
+}
+
+function topEntries(obj, n, mapFn) {
+  return Object.entries(obj)
+    .sort((a, b) => b[1].gmv - a[1].gmv)
+    .slice(0, n)
+    .map(mapFn);
+}
+
+function monthOf(dateStr) {
+  return dateStr.slice(0, 7);
 }
 
 function main() {
   const startDate = pipelineConfig.detailWindowStartDate;
   const days = listAvailableDays(startDate);
   const now = new Date();
-  const currentMonthPrefix = now.toISOString().slice(0, 7); // YYYY-MM
+  const currentMonthPrefix = now.toISOString().slice(0, 7);
 
   const aggs = Object.fromEntries(SEGMENTS.map((s) => [s, emptyAgg()]));
   const missingDays = [];
   let scannedTotal = 0;
   const unknownStatuses = new Set();
 
-  // Detectar huecos entre startDate y el último día disponible (no hasta "hoy":
-  // el día de hoy todavía no cerró, así que no se espera que exista).
   const lastAvailable = days[days.length - 1];
   if (lastAvailable) {
     let d = new Date(`${startDate}T00:00:00Z`);
@@ -85,10 +115,20 @@ function main() {
     }
   }
 
-  // Serie diaria liviana (sin customerCounts: son potencialmente miles de hashes
-  // por día, no tiene sentido mandarlos al browser) para que el dashboard pueda
-  // filtrar por rango de fechas (Ayer/7d/30d/Mes/custom) calculando GMV, pedidos,
-  // ticket y mix de marketing en el cliente, sin pedirle nada más a VTEX.
+  // ── Acumuladores de catálogo / cohortes / audiencias ────────────────────
+  const catalogProducts = {};
+  const catalogCategories = {};
+  const catalogCoupons = {};
+  const catalogPayments = {};
+  const hourlyTotal = new Array(24).fill(0);
+  const dowTotals = new Array(7).fill(null).map(() => ({ orders: 0, gmv: 0, days: 0 }));
+
+  /** hash -> perfil acumulado (solo en memoria del pipeline) */
+  const profiles = new Map();
+  /** cohorte (mes de primera compra) -> Set de meses activos por cliente */
+  const cohortFirstMonth = new Map();
+  const cohortActivity = new Map(); // `${cohortMonth}|${activeMonth}` -> Set(hash)
+
   const dailySeries = [];
 
   for (const date of days) {
@@ -99,19 +139,163 @@ function main() {
 
     const daySegments = {};
     for (const seg of SEGMENTS) {
-      const daySeg = day.segments[seg] || { gmv: 0, orders: 0, units: 0, customerCounts: {}, segmentParticipation: {} };
+      const daySeg = day.segments[seg] || { gmv: 0, orders: 0, units: 0, customerCounts: {}, marketing: {} };
       mergeDayIntoAgg(aggs[seg], daySeg, isCurrentMonth);
-      daySegments[seg] = { gmv: daySeg.gmv, orders: daySeg.orders, units: daySeg.units || 0, marketing: daySeg.segmentParticipation || {} };
+      daySegments[seg] = {
+        gmv: daySeg.gmv,
+        orders: daySeg.orders,
+        units: daySeg.units || 0,
+        marketing: daySeg.marketing || daySeg.segmentParticipation || {},
+      };
     }
-    dailySeries.push({ date, segments: daySegments });
+
+    for (const p of day.products || []) {
+      const e = (catalogProducts[p.sku] = catalogProducts[p.sku] || {
+        sku: p.sku,
+        name: p.name,
+        dept: p.dept,
+        qty: 0,
+        gmv: 0,
+        orders: 0,
+      });
+      e.qty += p.qty;
+      e.gmv += p.gmv;
+      e.orders += p.orders;
+    }
+    for (const [k, v] of Object.entries(day.categories || {})) addInto(catalogCategories, k, v);
+    for (const [k, v] of Object.entries(day.coupons || {})) addInto(catalogCoupons, k, v);
+    for (const [k, v] of Object.entries(day.payments || {})) addInto(catalogPayments, k, v);
+    (day.hourly || []).forEach((n, h) => (hourlyTotal[h] += n));
+
+    const dow = new Date(`${date}T12:00:00Z`).getUTCDay();
+    const dayOrders = SEGMENTS.reduce((s, seg) => s + (daySegments[seg]?.orders || 0), 0);
+    const dayGmv = SEGMENTS.reduce((s, seg) => s + (daySegments[seg]?.gmv || 0), 0);
+    dowTotals[dow].orders += dayOrders;
+    dowTotals[dow].gmv += dayGmv;
+    dowTotals[dow].days += 1;
+
+    // ── Perfiles + cohortes ───────────────────────────────────────────────
+    const month = monthOf(date);
+    let newCustomers = 0;
+    for (const [hash, c] of Object.entries(day.customers || {})) {
+      let p = profiles.get(hash);
+      if (!p) {
+        p = { o: 0, g: 0, first: date, last: date, segs: {}, cats: {} };
+        profiles.set(hash, p);
+        cohortFirstMonth.set(hash, month);
+        newCustomers += 1;
+      }
+      p.o += c.o;
+      p.g += c.g;
+      p.last = date;
+      for (const [s, n] of Object.entries(c.s || {})) p.segs[s] = (p.segs[s] || 0) + n;
+      for (const [cat, n] of Object.entries(c.c || {})) p.cats[cat] = (p.cats[cat] || 0) + n;
+
+      const cm = cohortFirstMonth.get(hash);
+      const key = `${cm}|${month}`;
+      if (!cohortActivity.has(key)) cohortActivity.set(key, new Set());
+      cohortActivity.get(key).add(hash);
+    }
+
+    dailySeries.push({
+      date,
+      segments: daySegments,
+      hourly: day.hourly || null,
+      discount: day.discountTotal || 0,
+      newCustomers,
+      activeCustomers: Object.keys(day.customers || {}).length,
+    });
   }
 
-  writeJson('docs/data/web/daily-summary.json', {
+  // ── daily-summary.json ──────────────────────────────────────────────────
+  const sizeDaily = writeJson('docs/data/web/daily-summary.json', {
     generatedAt: now.toISOString(),
     detailWindowStartDate: startDate,
     days: dailySeries,
   });
 
+  // ── catalog.json ────────────────────────────────────────────────────────
+  const productList = Object.values(catalogProducts)
+    .sort((a, b) => b.gmv - a.gmv)
+    .slice(0, TOP_PRODUCTS)
+    .map((p) => ({ sku: p.sku, name: p.name, dept: p.dept, qty: Math.round(p.qty), gmv: Math.round(p.gmv), orders: p.orders }));
+
+  const sizeCatalog = writeJson('docs/data/web/catalog.json', {
+    generatedAt: now.toISOString(),
+    from: days[0] || null,
+    to: lastAvailable || null,
+    products: productList,
+    categories: topEntries(catalogCategories, TOP_CATEGORIES, ([name, v]) => ({
+      name,
+      orders: v.orders,
+      gmv: Math.round(v.gmv),
+      units: Math.round(v.units),
+    })),
+    coupons: topEntries(catalogCoupons, 200, ([code, v]) => ({ code, orders: v.orders, gmv: Math.round(v.gmv) })),
+    payments: topEntries(catalogPayments, 50, ([group, v]) => ({ group, orders: v.orders, gmv: Math.round(v.gmv) })),
+    hourly: hourlyTotal,
+    dayOfWeek: dowTotals.map((d) => ({
+      orders: d.orders,
+      gmv: Math.round(d.gmv),
+      days: d.days,
+      avgOrders: d.days ? Math.round(d.orders / d.days) : 0,
+    })),
+  });
+
+  // ── cohorts.json ────────────────────────────────────────────────────────
+  const cohortMonths = [...new Set([...cohortFirstMonth.values()])].sort();
+  const activeMonths = [...new Set(days.map(monthOf))].sort();
+  const cohortSizes = {};
+  for (const m of cohortFirstMonth.values()) cohortSizes[m] = (cohortSizes[m] || 0) + 1;
+  const cohortMatrix = cohortMonths.map((cm) =>
+    activeMonths.map((am) => (am < cm ? null : (cohortActivity.get(`${cm}|${am}`)?.size || 0)))
+  );
+
+  const sizeCohorts = writeJson('docs/data/web/cohorts.json', {
+    generatedAt: now.toISOString(),
+    cohortMonths,
+    activeMonths,
+    cohortSizes: cohortMonths.map((m) => cohortSizes[m] || 0),
+    matrix: cohortMatrix,
+  });
+
+  // ── audience-index.json (hasheado, columnar para que pese menos) ────────
+  const catIndex = new Map();
+  const catNames = [];
+  const catOf = (name) => {
+    if (!catIndex.has(name)) {
+      catIndex.set(name, catNames.length);
+      catNames.push(name);
+    }
+    return catIndex.get(name);
+  };
+
+  const dayIndex = new Map(days.map((d, i) => [d, i]));
+  const A = { h: [], o: [], g: [], f: [], l: [], sd: [], cd: [], cs: [] };
+  for (const [hash, p] of profiles) {
+    const segEntries = Object.entries(p.segs).sort((a, b) => b[1] - a[1]);
+    const catEntries = Object.entries(p.cats).sort((a, b) => b[1] - a[1]);
+    A.h.push(hash);
+    A.o.push(p.o);
+    A.g.push(Math.round(p.g));
+    A.f.push(dayIndex.get(p.first) ?? 0);
+    A.l.push(dayIndex.get(p.last) ?? 0);
+    A.sd.push(segEntries.length ? SEGMENTS.indexOf(segEntries[0][0]) : -1);
+    A.cd.push(catEntries.length ? catOf(catEntries[0][0]) : -1);
+    A.cs.push(catEntries.slice(0, 5).map(([name]) => catOf(name)));
+  }
+
+  const sizeAudience = writeJson('docs/data/web/audience-index.json', {
+    generatedAt: now.toISOString(),
+    note: 'Perfiles HASHEADOS. No contiene emails ni datos personales. Ver src/export-audience.js para el cruce privado hash->email.',
+    days,
+    segments: SEGMENTS,
+    categories: catNames,
+    count: A.h.length,
+    ...A,
+  });
+
+  // ── metrics.json por segmento ───────────────────────────────────────────
   for (const seg of SEGMENTS) {
     const metrics = computeAllMetricsFromAggregate(aggs[seg], { referenceDate: now });
     writeJson(`docs/data/web/${seg}/metrics.json`, {
@@ -133,7 +317,14 @@ function main() {
     lastAvailableDay: lastAvailable || null,
     missingDays,
     scannedOrdersTotal: scannedTotal,
+    uniqueCustomers: profiles.size,
     unknownStatuses: [...unknownStatuses],
+    fileSizes: {
+      'daily-summary.json': sizeDaily,
+      'catalog.json': sizeCatalog,
+      'cohorts.json': sizeCohorts,
+      'audience-index.json': sizeAudience,
+    },
     warning:
       missingDays.length > 0
         ? `Faltan ${missingDays.length} días entre ${startDate} y ${lastAvailable} — correr el backfill para completarlos.`
@@ -142,7 +333,12 @@ function main() {
           : null,
   });
 
-  console.log(`Agregado OK. Días sumados: ${days.length}. Días faltantes: ${missingDays.length}.`);
+  const mb = (n) => `${(n / 1048576).toFixed(1)}MB`;
+  console.log(`Agregado OK. Días: ${days.length}. Faltantes: ${missingDays.length}. Clientes únicos: ${profiles.size}.`);
+  console.log(`  daily-summary ${mb(sizeDaily)} · catalog ${mb(sizeCatalog)} · cohorts ${mb(sizeCohorts)} · audience ${mb(sizeAudience)}`);
+  if (sizeAudience > 25 * 1048576) {
+    console.warn('  ⚠ audience-index.json supera 25MB: el navegador va a tardar en cargarlo. Considerar acotar la ventana.');
+  }
 }
 
 main();

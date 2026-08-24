@@ -1,111 +1,107 @@
 # WebDash — Analytics de pedidos canal WEB (Carrefour Argentina)
 
 Contraparte de **AppDash** (repo `gastoncarreecommerce/vtex-utm-audit`, rama `main`), mismo stack:
-GitHub Actions (pipeline de datos) + VTEX Order API como fuente + GitHub Pages como hosting
-estático. Filtra por el canal **web** (todo lo que NO sea `from=app`) y separa las métricas en
-4 pestañas, replicando la segmentación real de AppDash: **Food**, **Non Food**, **Marketplace**
-y **Quick Commerce**.
+GitHub Actions (pipeline de datos) + VTEX Order API como fuente + hosting estático (Vercel /
+GitHub Pages). Filtra el canal **web** (todo lo que NO sea `from=app`) y segmenta en **Food**,
+**Non Food**, **Marketplace** y **Quick Commerce**, replicando la clasificación real de AppDash.
 
-## Arquitectura: 1 archivo por día + agregación (no ventana rolling)
+## Las tres vistas
 
-El volumen real de pedidos web (~3.170/día, medido sobre datos reales de agosto 2026) hace que
-recalcular todo desde VTEX en cada corrida no sea viable ni siquiera para una ventana de unos
-pocos meses. Por eso, igual que AppDash, WebDash guarda **un archivo por día**:
+| Vista | Qué resuelve |
+|---|---|
+| **Dashboard** | Resumen ejecutivo: KPIs con sparkline y variación vs. período anterior, pedidos por día con media móvil y línea de tendencia, proyección de cierre de mes, mix de GMV por segmento, heatmap día×hora, fuentes de marketing, y un panel de **insights automáticos** que traduce los números a "qué mejorar". |
+| **Analítica** | Detalle: comparativa de los 4 segmentos, ranking de productos (con buscador), categorías, cupones, medios de pago, **retención por cohorte mensual**, distribución horaria y por día de semana. |
+| **Audiencias** | **Constructor de segmentaciones**: combinás condiciones (categoría dominante, segmento, cantidad de pedidos, gasto, ticket, recencia, antigüedad) y obtenés el grupo de clientes en vivo, con su composición y matriz RFM. Exportás la audiencia y, cruzando el archivo privado, la **lista de mails**. |
 
-1. `src/fetch-day.js` procesa un día calendario argentino completo: trae los pedidos de VTEX,
-   filtra por canal (web) y status, clasifica cada pedido en uno de los 4 segmentos
-   (`config/segment-map.json`), y escribe `docs/data/web/daily/YYYY-MM-DD.json` con los
-   agregados de ese día (GMV, pedidos, unidades, clientes únicos por segmento). **No vuelve a
-   pedir un día que ya tiene archivo**, así que backfill y pipeline diario son resumibles.
-2. `src/aggregate.js` lee todos los días disponibles desde `config/pipeline-config.json` >
-   `detailWindowStartDate` (**2026-01-01**, decidido con el usuario) hasta hoy, los suma, y
-   escribe `docs/data/web/<segmento>/metrics.json` — un archivo final por pestaña que el
-   dashboard consume directo.
-3. `.github/workflows/webdash-pipeline.yml` corre 1 vez por día (06:00 UTC / 03:00 AR, igual que
-   AppDash): `fetch-day.js` para el día de ayer + `aggregate.js`.
-4. `.github/workflows/webdash-backfill.yml` es manual (`workflow_dispatch` con `from`/`to`):
-   sirve para completar historial hacia atrás en tandas, igual que `backfill-web-recompra.yml`
-   de AppDash. Ver "Cómo completar el historial" abajo.
-5. GitHub Pages sirve `docs/` como sitio estático; `docs/app.js` lee los `metrics.json` y pinta
-   las 4 pestañas. No hay backend corriendo 24/7.
+Todos los paneles tienen exportación a **CSV** (con BOM, para que Excel respete los acentos).
 
-### Por qué no vamos más atrás de 2026-01-01 con detalle completo
+## ⚠️ Cómo se manejan los emails (leer antes de tocar la parte de audiencias)
 
-Canal, segmento, recompra y frecuencia necesitan el **detalle completo** de cada pedido
-(`customData`, `items[].seller`, email del cliente) — no alcanza con el listado. Con ~3.170
-pedidos web/día, cubrir desde 2022 son 4-5 millones de pedidos a los que pedirles detalle uno
-por uno: inviable (el propio backfill de recompra web de AppDash tardó hasta 3 horas para
-**20 días** — escalar eso a años se va a decenas/cientos de horas). Se decidió arrancar el 1 de
-enero de 2026 como ventana de detalle. Se puede ampliar hacia atrás corriendo más tandas de
-`webdash-backfill.yml` si hace falta — no es una decisión permanente, solo el punto de partida.
+El dashboard es un sitio **público**. Si el constructor de audiencias leyera emails desde un JSON
+publicado, la base de clientes quedaría expuesta a cualquiera con la URL. Por eso:
 
-## Decisiones tomadas a partir del código real de AppDash
+1. **Nada de lo que se publica tiene PII.** `audience-index.json` identifica a cada cliente con un
+   hash SHA-256 truncado (`src/customer-key.js`), nunca con su email. Todos los paneles, conteos y
+   métricas del constructor funcionan sobre esos hashes.
+2. **Los emails viven fuera del sitio.** El workflow manual
+   `WebDash export audiencia (PRIVADO · contiene PII)` corre `src/export-audience.js` y sube el
+   mapeo `hash → email` como **artifact de GitHub Actions** — solo lo descarga quien tiene acceso
+   al repo, y se borra solo a los N días.
+3. **El cruce pasa en tu navegador.** En el tab Audiencias arrastrás ese CSV: se parsea local, se
+   cruza contra la audiencia y se descarga la lista de mails. El archivo **no se sube a ningún
+   lado** ni queda en el repo (`private-out/` está en `.gitignore`).
 
-Tenía acceso a la sesión donde se armó AppDash y encontré 3 cosas que corrigieron supuestos míos
-anteriores (ver commits previos de este repo para el detalle de cada corrección):
+> Nota de costo: el email solo viene en el detalle de cada pedido, y el pipeline público a
+> propósito no lo guarda. Por eso el export privado vuelve a pedirle el rango a VTEX y cuesta como
+> una pasada de backfill — conviene correrlo por tramos y solo cuando vas a activar una campaña.
 
-- **Canal web/app**: `customData.customApps` con id `from-help-info`, campo `from`. La regla
-  real es "todo lo que NO sea `from=app` es web" (`lib/order-attribution.js` /
-  `fetch-orders.js#getCustomAppFrom`), **no** una lista explícita de valores — esto incluye
-  pedidos que no tienen el campo en absoluto (de antes de que existiera la app), que se cuentan
-  como web correctamente sin necesidad de una fecha de corte especial.
-- **Food/Non-Food/Marketplace/Quick Commerce se deciden por `seller` de VTEX**
-  (`fetch-orders.js#categorizeOrder`), no por categoría de producto: `carrefourar0899` = seller
-  interno non-food, una lista fija de sellers 3rd-party = marketplace, `salesChannel=3` = Quick
-  Commerce, resto = food. Clasificación a nivel de PEDIDO completo (prioridad QC > Marketplace >
-  Non Food > Food), sin prorrateo.
-- **Cadencia real: 1 vez por día**, 06:00 UTC.
+## Arquitectura de datos: 1 archivo por día + agregación
 
-## Privacidad: hash en vez de email plano
+Con ~3.170 pedidos web/día, recalcular todo desde VTEX en cada corrida no escala. Igual que
+AppDash, se guarda **un archivo por día** y se agrega encima:
 
-AppDash persiste el email del cliente en texto plano en sus archivos diarios públicos
-(`docs/data/daily/*-rows.json`). WebDash decidió **no** replicar eso: `src/customer-key.js` guarda
-un hash SHA-256 truncado (64 bits) del email en vez del email real en los archivos diarios
-públicos de GitHub Pages. Alcanza para contar clientes únicos y repurchase sin poder revertir el
-hash a un email — mismo resultado analítico, menor exposición de PII.
+1. `src/fetch-day.js` procesa un día calendario argentino: trae los pedidos, filtra canal y status,
+   clasifica el segmento, y escribe `docs/data/web/daily/YYYY-MM-DD.json` con los agregados de ese
+   día (GMV, pedidos, unidades, productos top, categorías, cupones, medios de pago, distribución
+   horaria y perfiles de cliente hasheados). **No reprocesa un día que ya existe** → backfill y
+   pipeline diario son resumibles.
+2. `src/aggregate.js` suma todos los días desde `config/pipeline-config.json >
+   detailWindowStartDate` (**2026-01-01**) y produce los datasets que consume el front:
+   `daily-summary.json`, `catalog.json`, `cohorts.json`, `audience-index.json`,
+   `<segmento>/metrics.json` y `_meta/run-info.json`.
+3. `.github/workflows/webdash-pipeline.yml` corre 1×día a las 06:00 UTC (03:00 AR, igual que
+   AppDash): `fetch-day` de ayer + `aggregate`.
+4. `.github/workflows/webdash-backfill.yml` es manual (`from`/`to`) para completar historial en
+   tandas.
 
-## Lo que falta completar
+### Por qué la ventana empieza en 2026-01-01
 
-### 1. Credenciales de VTEX (GitHub Secrets)
-`VTEX_ACCOUNT_NAME`, `VTEX_APP_KEY`, `VTEX_APP_TOKEN`, `VTEX_ENVIRONMENT` (opcional).
+Canal, segmento, recencia y recompra necesitan el **detalle completo** de cada pedido
+(`customData`, `items[].seller`, cliente) — el listado de VTEX no alcanza. Con ~3.170 pedidos
+web/día, cubrir desde 2022 son 4-5 millones de pedidos a los que pedirles detalle uno por uno:
+inviable (el backfill de recompra web de AppDash tardó hasta 3 horas para **20 días**). Se acordó
+arrancar el 1/1/2026. Ampliar hacia atrás es correr más tandas de backfill, no rehacer nada.
 
-### 2. `config/status-filter.json` — convención de estados VTEX
-Puse una convención default razonable (excluye `canceled`, `payment-pending`, etc.), pero no la
-encontré explícita en el código de AppDash revisado — confirmarla para que las métricas de
-WebDash sean comparables con AppDash.
+### Un límite honesto de la vista Analítica
 
-### 3. Correr el backfill inicial
-Ver sección siguiente.
+`catalog.json` (productos, categorías, cupones, medios de pago) se agrega sobre **toda la ventana**,
+no día por día — guardar el catálogo diario completo haría crecer el repo sin control. Esos paneles
+llevan un chip `ventana completa` y **no responden al filtro de fechas**; el resto de la vista sí.
 
-## Cómo completar el historial (backfill)
+## Decisiones heredadas de AppDash
 
-Actions → **"WebDash backfill (rango manual)"** → Run workflow, con `from`/`to`. Recomendado
-empezar con rangos de ~1 mes (ver estimaciones de volumen arriba) y repetir hasta cubrir desde
-`2026-01-01`. Cada corrida es segura de repetir o cortar a la mitad: los días ya procesados no
-se vuelven a pedir.
+- **Canal web/app**: `customData.customApps` con id `from-help-info`, campo `from`. La regla real es
+  "todo lo que NO sea `from=app` es web" — incluye pedidos sin el campo (anteriores a la app), que
+  se cuentan como web correctamente.
+- **Segmentación por `seller` de VTEX**, no por categoría de producto: `carrefourar0899` = non-food,
+  lista fija de sellers 3rd-party = marketplace, `salesChannel=3` = Quick Commerce, resto = food.
+  Clasificación a nivel de pedido completo, sin prorrateo.
+- **Cadencia**: 1×día, 06:00 UTC.
 
-## Diferencia de arquitectura restante vs. AppDash
+## Lo que falta confirmar
 
-En AppDash, repurchase rate y frecuencia de compra se calculan sobre TODOS los clientes del canal
-(global), y solo el conteo de pedidos/GMV se separa por segmento. WebDash calcula repurchase/
-frecuencia **por pestaña** (food, non-food, etc. por separado), tal como se pidió originalmente.
-Esto significa que el repurchase de la pestaña Food de WebDash no es directamente comparable al
-repurchase global de AppDash — son métricas distintas a propósito. Avisame si preferís que
-también sea global.
+**`config/status-filter.json`** — puse una convención default razonable (excluye `canceled`,
+`payment-pending`, etc.), pero no la encontré explícita en el código de AppDash. Confirmarla para
+que los números sean comparables entre ambos dashboards.
 
-## Módulo compartido / reusabilidad
+## Puesta en marcha
 
-`src/metrics.js` y `src/classify.js` no conocen nada de "canal" ni "segmento" hardcodeado: reciben
-agregados ya armados y calculan repurchase rate, frecuencia, basket size, participación por
-segmento y proyección mensual. Están pensados para poder moverse a un paquete/repo compartido y
-ser consumidos también por AppDash sin duplicar lógica — avisame si querés que arme ese paquete.
-
-## Correr localmente
+1. Cargar los secrets del repo: `VTEX_ACCOUNT_NAME`, `VTEX_APP_KEY`, `VTEX_APP_TOKEN`
+   (`VTEX_ENVIRONMENT` opcional).
+2. Actions → **WebDash backfill (rango manual)** → correr en tandas de ~1 mes desde `2026-01-01`.
+   Es seguro repetirlo o cortarlo: los días ya procesados no se vuelven a pedir.
+3. A partir de ahí el cron diario mantiene todo al día solo.
 
 ```bash
+# local
 npm install    # sin dependencias externas, usa fetch nativo de Node 20+
 VTEX_ACCOUNT_NAME=... VTEX_APP_KEY=... VTEX_APP_TOKEN=... node src/fetch-day.js 2026-08-24
-VTEX_ACCOUNT_NAME=... VTEX_APP_KEY=... VTEX_APP_TOKEN=... node src/backfill.js 2026-01-01 2026-01-31
 node src/aggregate.js
-npx serve docs   # ver el dashboard
+npx serve docs
 ```
+
+## Reusabilidad
+
+`src/metrics.js` y `src/classify.js` no tienen nada de "canal" ni "segmento" hardcodeado: reciben
+agregados y calculan. Están listos para moverse a un paquete compartido con AppDash — avisá si
+querés que lo arme.
