@@ -12,9 +12,14 @@
     <div id="run-info" class="run-info">Cargando...</div>
   </header>
 
+  <!-- Los 4 segmentos (y sus etiquetas) tienen que coincidir con config/segment-map.json > tabs.
+       Duplicado a mano porque este HTML es estático; si se agrega/renombra un segmento en el
+       config, actualizar también acá. -->
   <nav class="tabs" role="tablist">
     <button class="tab active" data-bucket="food" role="tab" aria-selected="true">Food</button>
     <button class="tab" data-bucket="non-food" role="tab" aria-selected="false">Non Food</button>
+    <button class="tab" data-bucket="marketplace" role="tab" aria-selected="false">Marketplace</button>
+    <button class="tab" data-bucket="quickcommerce" role="tab" aria-selected="false">Quick Commerce</button>
   </nav>
 
   <main id="content" class="content">

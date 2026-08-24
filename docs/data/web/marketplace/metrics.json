@@ -1,8 +1,8 @@
 {
   "generatedAt": "1970-01-01T00:00:00.000Z",
   "channel": "web",
-  "bucket": "non-food",
-  "label": "Non Food",
+  "bucket": "marketplace",
+  "label": "Marketplace",
   "lookbackDays": 400,
   "gmv": 0,
   "orders": 0,

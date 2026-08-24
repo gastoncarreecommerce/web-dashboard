@@ -1,25 +1,39 @@
 # WebDash — Analytics de pedidos canal WEB (Carrefour Argentina)
 
-Contraparte de **AppDash**, mismo stack: GitHub Actions (pipeline de datos) + VTEX Order API
-como fuente + GitHub Pages como hosting estático. Este dashboard filtra por el canal **web**
-(storefront) en vez del canal app, y separa las métricas en dos pestañas: **Food** y **Non Food**.
+Contraparte de **AppDash** (repo `gastoncarreecommerce/vtex-utm-audit`, rama `main`), mismo stack:
+GitHub Actions (pipeline de datos) + VTEX Order API como fuente + GitHub Pages como hosting
+estático. Filtra por el canal **web** (storefront) en vez de app, y separa las métricas en 4
+pestañas, replicando la segmentación real de AppDash: **Food**, **Non Food**, **Marketplace**
+y **Quick Commerce**.
 
 ## Cómo funciona
 
-1. `.github/workflows/webdash-pipeline.yml` corre el pipeline cada 6 horas (default, ver más abajo)
-   y en cada push manual (`workflow_dispatch`).
+1. `.github/workflows/webdash-pipeline.yml` corre 1 vez por día a las 06:00 UTC (03:00 AR) —
+   misma cadencia que `fetch-daily.yml` de AppDash — y también con `workflow_dispatch` manual.
 2. `src/pipeline.js` trae pedidos de la VTEX Order API, los filtra por canal (`config/channel-map.json`)
-   y por status (`config/status-filter.json`), clasifica cada línea de pedido como food/non-food
-   (`config/category-map.json`) y calcula las métricas (`src/metrics.js`).
-3. Escribe el resultado en `docs/data/web/food/metrics.json` y `docs/data/web/non-food/metrics.json`.
-4. GitHub Pages sirve `docs/` como sitio estático; `docs/app.js` lee esos JSON y pinta las 2 pestañas.
+   y por status (`config/status-filter.json`), clasifica cada PEDIDO COMPLETO en uno de los 4
+   segmentos (`config/segment-map.json`) y calcula las métricas (`src/metrics.js`).
+3. Escribe el resultado en `docs/data/web/<segmento>/metrics.json` (uno por pestaña).
+4. GitHub Pages sirve `docs/` como sitio estático; `docs/app.js` lee esos JSON y pinta las 4 pestañas.
    No hay backend corriendo 24/7.
 
-## ⚠️ Lo que falta completar antes de que los números sean reales
+## Decisiones tomadas a partir del código real de AppDash
 
-Armé todo el esqueleto y lo dejé funcionando con datos vacíos de arranque (seed) para que el
-dashboard no se rompa, pero **3 cosas están como placeholder a propósito** porque dependen de
-esta cuenta específica de VTEX y no las quise adivinar:
+Tenía acceso a la sesión donde se armó AppDash (`gastoncarreecommerce/vtex-utm-audit`, rama `main`)
+y encontré 3 cosas que corrigieron supuestos míos anteriores:
+
+- **Food/Non-Food NO se decide por categoría de producto**, se decide por **seller de VTEX**
+  (`fetch-orders.js#categorizeOrder`): `carrefourar0899` es el seller interno para non-food, una
+  lista fija de sellers 3rd-party es "marketplace", `salesChannel=3` es Quick Commerce, y todo lo
+  demás es food. Copiado 1:1 a `config/segment-map.json`.
+- **Clasificación a nivel de pedido completo**, no por línea de ítem — un pedido cae en un solo
+  segmento (prioridad: Quick Commerce > Marketplace > Non Food > Food), sin prorrateo.
+- **Cadencia real: 1 vez por día**, no cada 6 horas como había puesto por default.
+
+El campo de canal web/app (`customData.customApps` con id `from-help-info`, campo `from`) también
+está confirmado contra ese mismo patrón, usado igual en `lib/order-attribution.js` de AppDash.
+
+## ⚠️ Lo que falta completar antes de que los números sean reales
 
 ### 1. Credenciales de VTEX (GitHub Secrets)
 Configurar en `Settings > Secrets and variables > Actions` del repo:
@@ -28,45 +42,42 @@ Configurar en `Settings > Secrets and variables > Actions` del repo:
 - `VTEX_APP_TOKEN`
 - `VTEX_ENVIRONMENT` (opcional, default `vtexcommercestable`)
 
-### 2. `config/channel-map.json` — IDs de salesChannel para web vs app
-Correr localmente (o en un workflow manual) con las credenciales reales:
-```
-VTEX_ACCOUNT_NAME=... VTEX_APP_KEY=... VTEX_APP_TOKEN=... npm run inspect:channels
-```
-Esto escribe `config/channel-map.report.json` con los valores reales de `salesChannel`/`origin`
-observados en los últimos 14 días de pedidos. Con eso se completan los `REPLACE_WITH_...` del
-archivo. El pipeline **falla explícitamente** si detecta placeholders sin completar, para no
-calcular métricas sobre un filtro de canal incorrecto en silencio.
+### 2. `config/channel-map.json` — ya completado y verificado
+Usa `customData.customApps` (id `from-help-info`, campo `from` = `web`/`app`). Verificado contra
+200 pedidos reales: 145 web, 54 app, 1 sin clasificar.
 
-### 3. `config/category-map.json` — departamentos food / non-food
-```
-VTEX_ACCOUNT_NAME=... VTEX_APP_KEY=... VTEX_APP_TOKEN=... npm run inspect:categories
-```
-Esto trae el árbol de categorías de la Catalog API y lo vuelca en
-`config/category-map.report.json` para elegir a mano qué `departmentId` es food y cuál non-food.
-
-También queda configurable, sin tocar código, `mixedOrderStrategy`:
-- `"line-item"` (default): un pedido con ítems de ambas categorías se cuenta completo en las dos
-  pestañas, cada una solo con sus ítems/GMV correspondientes.
-- `"prorate"`: el pedido se reparte fraccionalmente entre ambas pestañas según el % de GMV de cada categoría.
+### 3. `config/segment-map.json` — ya completado (copiado de AppDash)
+Si en VTEX se dan de alta o de baja sellers de marketplace, hay que actualizar
+`marketplaceSellerIds` a mano acá, igual que se actualiza en AppDash (no hay un endpoint que lo
+derive automáticamente).
 
 ### 4. `config/status-filter.json` — convención de estados VTEX
 Puse una convención default razonable (excluye `canceled`, `payment-pending`, etc.), pero **hay
-que confirmarla contra la convención ya usada en AppDash** para que Food/Non-Food de WebDash sean
-comparables con AppDash. Si me pasás el archivo equivalente de AppDash, lo alineo.
+que confirmarla contra la convención real de AppDash** (no la encontré explícita en el código
+revisado) para que las métricas de WebDash sean comparables con AppDash.
 
-### 5. Cadencia del pipeline
-Dejé `cron: '0 */6 * * *'` (cada 6 horas) como default razonable. Decime la cadencia real de
-AppDash y la ajusto en `.github/workflows/webdash-pipeline.yml`.
+## Diferencia de arquitectura a tener en cuenta
+
+AppDash guarda un JSON **por día** (`docs/data/daily/YYYY-MM-DD.json`) y agrega meses leyendo esos
+archivos (`scripts/comercial-lib.mjs`). WebDash, en cambio, recalcula todo sobre una ventana
+rolling de `PIPELINE_LOOKBACK_DAYS` (400 por default) en cada corrida, sin guardar historial diario.
+Es más simple para las 4 pestañas actuales, pero si más adelante se quiere un gráfico de evolución
+día a día (como tiene AppDash), hay que migrar a guardar un JSON por día. Avisame si lo querés ya.
+
+También vale aclarar: en AppDash, repurchase rate y frecuencia de compra se calculan sobre TODOS
+los clientes del canal (global), no por segmento — solo el conteo de pedidos/GMV se separa por
+segmento. WebDash calcula repurchase/frecuencia **por pestaña** (food, non-food, etc. por
+separado), tal como se pidió originalmente. Esto significa que el número de repurchase de la
+pestaña Food de WebDash no es directamente comparable al repurchase global de AppDash — son
+métricas distintas a propósito. Avisame si preferís que también sea global.
 
 ## Módulo compartido / reusabilidad
 
-`src/metrics.js` y `src/classify.js` no conocen nada de "canal" ni "food/non-food": reciben
+`src/metrics.js` y `src/classify.js` no conocen nada de "canal" ni "segmento" hardcodeado: reciben
 "vistas de pedido" ya filtradas y calculan repurchase rate, frecuencia, basket size, participación
-por segmento y proyección mensual sobre lo que les pasen. Estos módulos están pensados para poder
-moverse a un paquete/repo compartido y ser consumidos también por AppDash sin duplicar lógica —
-quedó todo en este repo por ahora porque no tuve acceso al repo de AppDash; si me pasás su
-owner/repo puedo extraer esto a un paquete separado y dejar ambos dashboards consumiéndolo.
+por segmento y proyección mensual sobre lo que les pasen. Están pensados para poder moverse a un
+paquete/repo compartido y ser consumidos también por AppDash sin duplicar lógica — quedaron en
+este repo por ahora; avisame si querés que arme ese paquete separado.
 
 ## Correr el pipeline localmente
 

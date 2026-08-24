@@ -4,42 +4,51 @@ const fs = require('fs');
 const path = require('path');
 
 const { iterateAllOrders, getOrder } = require('./vtex-client');
-const { orderChannel, isIncludedStatus, splitOrderByCategory } = require('./classify');
+const { orderChannel, isIncludedStatus, classifyOrder } = require('./classify');
 const { computeAllMetrics } = require('./metrics');
 
 const channelMap = require('../config/channel-map.json');
 const statusFilter = require('../config/status-filter.json');
-const categoryMap = require('../config/category-map.json');
+const segmentMap = require('../config/segment-map.json');
 
 const TARGET_CHANNEL = process.env.PIPELINE_CHANNEL || 'web';
 const LOOKBACK_DAYS = Number(process.env.PIPELINE_LOOKBACK_DAYS || 400); // ventana amplia para repurchase/frecuencia
+const SEGMENTS = segmentMap.tabs.list;
 
 async function fetchAndClassifyOrders() {
   const to = new Date();
   const from = new Date(to.getTime() - LOOKBACK_DAYS * 24 * 60 * 60 * 1000);
 
-  const buckets = { food: [], 'non-food': [] };
+  const buckets = Object.fromEntries(SEGMENTS.map((s) => [s, []]));
   const unknownStatuses = new Set();
   let scanned = 0;
   let matchedChannel = 0;
+  let unknownChannel = 0;
 
   for await (const summary of iterateAllOrders({ fromISO: from.toISOString(), toISO: to.toISOString() })) {
     scanned += 1;
-    const channel = orderChannel(summary, channelMap);
-    if (channel !== TARGET_CHANNEL) continue;
-    matchedChannel += 1;
 
+    // El status SÍ viene en el resumen de /orders (list), así que filtramos acá antes de
+    // pagar el costo de traer el detalle completo.
     if (!statusFilter.includeStatuses.includes(summary.status) && !statusFilter.excludeStatuses.includes(summary.status)) {
       unknownStatuses.add(summary.status);
     }
     if (!isIncludedStatus(summary, statusFilter)) continue;
 
+    // customData.customApps (de donde sale el canal web/app) NO viene en el resumen de list,
+    // solo en el detalle de /orders/{id} — por eso el filtro de canal va DESPUÉS de traerlo
+    // (igual que en AppDash: filtra por customData del detail, nunca del summary).
     const full = await getOrder(summary.orderId);
-    const views = splitOrderByCategory(full, categoryMap);
-    for (const v of views) buckets[v.bucket].push(v);
+    const channel = orderChannel(full, channelMap);
+    if (channel === 'unknown') unknownChannel += 1;
+    if (channel !== TARGET_CHANNEL) continue;
+    matchedChannel += 1;
+
+    const view = classifyOrder(full, segmentMap);
+    buckets[view.bucket].push(view);
   }
 
-  return { buckets, scanned, matchedChannel, unknownStatuses: [...unknownStatuses] };
+  return { buckets, scanned, matchedChannel, unknownChannel, unknownStatuses: [...unknownStatuses] };
 }
 
 function writeJson(relPath, data) {
@@ -49,16 +58,16 @@ function writeJson(relPath, data) {
 }
 
 async function main() {
-  const { buckets, scanned, matchedChannel, unknownStatuses } = await fetchAndClassifyOrders();
+  const { buckets, scanned, matchedChannel, unknownChannel, unknownStatuses } = await fetchAndClassifyOrders();
 
-  for (const bucket of ['food', 'non-food']) {
+  for (const bucket of SEGMENTS) {
     const metrics = computeAllMetrics(buckets[bucket]);
     writeJson(`docs/data/${TARGET_CHANNEL}/${bucket}/metrics.json`, {
       generatedAt: new Date().toISOString(),
       channel: TARGET_CHANNEL,
       bucket,
+      label: segmentMap.tabs.labels[bucket],
       lookbackDays: LOOKBACK_DAYS,
-      mixedOrderStrategy: categoryMap.mixedOrderStrategy,
       ...metrics,
     });
   }
@@ -68,6 +77,7 @@ async function main() {
     channel: TARGET_CHANNEL,
     scannedOrders: scanned,
     matchedChannelOrders: matchedChannel,
+    unknownChannelOrders: unknownChannel,
     unknownStatuses,
     warning:
       unknownStatuses.length > 0

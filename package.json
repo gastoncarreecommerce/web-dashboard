@@ -9,7 +9,6 @@
   "scripts": {
     "pipeline": "node src/pipeline.js",
     "inspect:channels": "node src/inspect-channels.js",
-    "inspect:categories": "node src/inspect-categories.js",
     "test": "node --test test/"
   },
   "license": "UNLICENSED"

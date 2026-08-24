@@ -6,7 +6,7 @@ function assertConfigured(list, configName) {
   if (!Array.isArray(list) || list.length === 0 || list.some((v) => PLACEHOLDER_RE.test(v))) {
     throw new Error(
       `${configName} todavía tiene valores placeholder sin completar. ` +
-        'Corré los scripts de inspección (npm run inspect:channels / inspect:categories) ' +
+        'Corré npm run inspect:channels y completá el config correspondiente ' +
         'y completá config/*.json con los IDs reales antes de correr el pipeline.'
     );
   }
@@ -57,61 +57,39 @@ function isIncludedStatus(order, statusFilter) {
 }
 
 /**
- * Clasifica cada item de un pedido como food/non-food usando el árbol de categorías.
- * item.productCategoryIds suele venir como "/1000/1100/" (ids separados por '/').
+ * Clasifica el PEDIDO COMPLETO (no por línea de ítem) en uno de los 4 segmentos
+ * de negocio, replicando 1:1 la lógica real de AppDash (fetch-orders.js#categorizeOrder):
+ * primero Quick Commerce (por salesChannel), después Marketplace (si algún item lo
+ * vende un seller 3rd-party), después Non Food (seller interno carrefourar0899),
+ * y si no matchea nada, Food. Mutuamente excluyentes: cada pedido cae en un solo segmento.
  */
-function itemCategoryBucket(item, categoryMap) {
-  assertConfigured(categoryMap.foodDepartmentIds, 'category-map.json > foodDepartmentIds');
-  const raw = item.productCategoryIds || item.categoryId || '';
-  const ids = String(raw).split('/').filter(Boolean);
-  const departmentId = ids[0];
+function classifySegment(order, segmentMap) {
+  assertConfiguredScalar(segmentMap.qcSalesChannelId, 'segment-map.json > qcSalesChannelId');
+  assertConfiguredScalar(segmentMap.nonFoodSellerId, 'segment-map.json > nonFoodSellerId');
+  assertConfigured(segmentMap.marketplaceSellerIds, 'segment-map.json > marketplaceSellerIds');
 
-  if (categoryMap.foodDepartmentIds.includes(departmentId)) return 'food';
-  if (categoryMap.nonFoodDepartmentIds.includes(departmentId)) return 'non-food';
-  return categoryMap.unmappedDepartmentPolicy === 'food' ? 'food' : 'non-food';
+  const sc = String(order.salesChannel ?? '');
+  if (sc === segmentMap.qcSalesChannelId) return 'quickcommerce';
+
+  const sellers = new Set((order.items || []).map((i) => i.seller).filter(Boolean));
+  for (const s of sellers) {
+    if (segmentMap.marketplaceSellerIds.includes(s)) return 'marketplace';
+  }
+  if (sellers.has(segmentMap.nonFoodSellerId)) return 'non-food';
+  return 'food';
 }
 
 /**
- * Divide un pedido en "vistas" por categoría según mixedOrderStrategy.
- * Devuelve un array de { bucket, order, items, gmv, weight } — weight=1 salvo prorate.
+ * Devuelve la "vista" del pedido para el pipeline: { bucket, segment, order, items, gmv, weight }.
+ * weight siempre 1 (a diferencia del enfoque anterior por categoryId, acá no hay prorrateo:
+ * el pedido entero pertenece a un solo segmento, igual que en AppDash).
+ * gmv = order.value / 100 (mismo criterio que AppDash, no la suma de sellingPrice*quantity de items,
+ * para que el GMV incluya descuentos/envío tal como los prorratea VTEX en `value`).
  */
-function splitOrderByCategory(order, categoryMap) {
-  const items = order.items || [];
-  const buckets = { food: [], 'non-food': [] };
-  for (const item of items) {
-    const bucket = itemCategoryBucket(item, categoryMap);
-    buckets[bucket].push(item);
-  }
-
-  const gmvOf = (items) => items.reduce((sum, i) => sum + (i.sellingPrice * i.quantity) / 100, 0);
-  const foodGmv = gmvOf(buckets.food);
-  const nonFoodGmv = gmvOf(buckets['non-food']);
-  const totalGmv = foodGmv + nonFoodGmv || 1;
-
-  if (categoryMap.mixedOrderStrategy === 'prorate') {
-    const views = [];
-    if (buckets.food.length) {
-      views.push({ bucket: 'food', order, items: buckets.food, gmv: foodGmv, weight: foodGmv / totalGmv });
-    }
-    if (buckets['non-food'].length) {
-      views.push({
-        bucket: 'non-food',
-        order,
-        items: buckets['non-food'],
-        gmv: nonFoodGmv,
-        weight: nonFoodGmv / totalGmv,
-      });
-    }
-    return views;
-  }
-
-  // line-item (default): el pedido aparece completo en cada pestaña que tenga items de esa categoría
-  const views = [];
-  if (buckets.food.length) views.push({ bucket: 'food', order, items: buckets.food, gmv: foodGmv, weight: 1 });
-  if (buckets['non-food'].length) {
-    views.push({ bucket: 'non-food', order, items: buckets['non-food'], gmv: nonFoodGmv, weight: 1 });
-  }
-  return views;
+function classifyOrder(order, segmentMap) {
+  const segment = classifySegment(order, segmentMap);
+  const gmv = typeof order.value === 'number' ? order.value / 100 : 0;
+  return { bucket: segment, segment, order, items: order.items || [], gmv, weight: 1 };
 }
 
-module.exports = { orderChannel, isIncludedStatus, itemCategoryBucket, splitOrderByCategory };
+module.exports = { orderChannel, isIncludedStatus, classifySegment, classifyOrder };

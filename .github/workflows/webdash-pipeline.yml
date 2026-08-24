@@ -5,9 +5,9 @@ name: WebDash data pipeline
 
 on:
   schedule:
-    # DEFAULT: cada 6 horas. Ajustar para que coincida con la cadencia real de AppDash
-    # (el usuario indicó que hay que confirmarla contra el pipeline original).
-    - cron: '0 */6 * * *'
+    # Misma cadencia que AppDash (fetch-daily.yml en gastoncarreecommerce/vtex-utm-audit):
+    # 1 vez por día a las 06:00 UTC = 03:00 AR.
+    - cron: '0 6 * * *'
   workflow_dispatch: {}
 
 permissions:
