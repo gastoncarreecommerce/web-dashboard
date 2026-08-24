@@ -1,34 +1,29 @@
 {
-  "_comment": "EN INVESTIGACIÓN — el usuario confirmó que en esta cuenta `salesChannel` separa LÍNEA DE NEGOCIO (1=Main, 3=Quick Commerce), no dispositivo/canal de compra: un pedido de salesChannel=1 puede venir de la web o de la app por igual, y salesChannel=3 (Quick Commerce) solo vende food. Por lo tanto `salesChannelIds` de más abajo NO sirve para distinguir web vs app y no debe completarse con esos valores. Corrí `npm run inspect:channels` (ya actualizado para volcar pedidos completos sin datos personales en config/channel-map.report.json) y buscá en `rawExamples` algún campo que marque explícitamente 'app' vs 'web' antes de tocar este archivo.",
+  "_comment": "Confirmado por el usuario (2026-08-24): el pedido trae en customData.customApps un item cuyo `fields` incluye la clave 'from-help-info', con valor en formato 'from=web' o 'from=app'. Ese es el campo real que distingue dispositivo/canal de compra en esta cuenta — salesChannel NO sirve (ver salesChannelBusinessLines más abajo, es otra dimensión de negocio).",
   "salesChannelBusinessLines": {
-    "description": "Referencia informativa, no usado para el filtro web/app. Confirmado por el usuario.",
+    "description": "Referencia informativa únicamente. NO se usa para el filtro web/app.",
     "1": "Main (puede ser food o non-food)",
     "3": "Quick Commerce (solo food)"
+  },
+  "matchBy": "customApps-field",
+  "customAppsField": {
+    "fieldName": "from-help-info",
+    "valueFormat": "key=value",
+    "howValueFormatWorks": "El valor crudo del campo es un string tipo 'from=web'. Se parsea tomando lo que sigue al '=' y se compara contra `channels.<name>.matchValue`."
   },
   "channels": {
     "web": {
       "description": "Pedidos originados en el sitio web (storefront) de Carrefour Argentina.",
-      "matchBy": "TBD_PENDING_INVESTIGATION",
-      "salesChannelIds": ["REPLACE_WITH_WEB_SALES_CHANNEL_ID"],
-      "fallbackMatch": {
-        "field": "TBD_PENDING_INVESTIGATION",
-        "values": ["TBD_PENDING_INVESTIGATION"]
-      }
+      "matchValue": "web"
     },
     "app": {
       "description": "Pedidos originados en la app mobile (referencia, para no romper AppDash).",
-      "matchBy": "TBD_PENDING_INVESTIGATION",
-      "salesChannelIds": ["REPLACE_WITH_APP_SALES_CHANNEL_ID"],
-      "fallbackMatch": {
-        "field": "TBD_PENDING_INVESTIGATION",
-        "values": ["TBD_PENDING_INVESTIGATION"]
-      }
+      "matchValue": "app"
     }
   },
+  "unmatchedPolicy": "unknown",
   "notes": [
-    "VTEX no tiene un único campo estándar 'canal app vs web' en todas las cuentas: algunas lo resuelven por salesChannel, otras por origin, otras por un campo custom en marketingData/customData/openTextField. En esta cuenta ya descartamos salesChannel y origin (siempre 'Marketplace').",
-    "Esta config permite matchear por un campo principal (matchBy/salesChannelIds) primero y, si no está seteado, caer a un campo alternativo (fallbackMatch). Ambos son editables sin tocar código, una vez que se identifique el campo correcto.",
-    "El pipeline falla explícitamente (ver src/classify.js) si detecta que los valores siguen en placeholder ('REPLACE_WITH_' o 'TBD_PENDING_INVESTIGATION'), para no calcular métricas sobre un filtro de canal incorrecto silenciosamente.",
-    "Si ningún campo de la Order API distingue el dispositivo de compra, la alternativa es resolverlo cruzando con GA4/BigQuery por transactionId/orderId, tal como ya hace (o podría hacer) AppDash para atribución de canal — a confirmar con el dueño de ese pipeline."
+    "Si `customData.customApps` no trae ningún item con el campo 'from-help-info' para un pedido (por ejemplo pedidos viejos previos a que se empezara a trackear esto), el pedido se clasifica como canal 'unknown' y queda excluido tanto de food como de non-food, registrado en docs/data/web/_meta/run-info.json para poder dimensionar cuántos pedidos quedan sin clasificar.",
+    "El pipeline falla explícitamente (ver src/classify.js) si `fieldName` o los `matchValue` quedan en un placeholder sin completar."
   ]
 }

@@ -17,6 +17,8 @@
 const fs = require('fs');
 const path = require('path');
 const { iterateAllOrders, getOrder, listSalesChannels } = require('./vtex-client');
+const { orderChannel } = require('./classify');
+const channelMap = require('../config/channel-map.json');
 
 const SAMPLE_SIZE = Number(process.env.INSPECT_SAMPLE_SIZE || 200);
 const RAW_EXAMPLES = Number(process.env.INSPECT_RAW_EXAMPLES || 8);
@@ -48,6 +50,7 @@ async function main() {
   const utmSourceCounts = {};
   const utmMediumCounts = {};
   const customAppIdCounts = {};
+  const resolvedChannelCounts = {};
   let sampled = 0;
   const rawExamples = [];
 
@@ -78,6 +81,9 @@ async function main() {
       customAppIdCounts[app.id] = (customAppIdCounts[app.id] || 0) + 1;
     }
 
+    const resolved = orderChannel(full, channelMap);
+    resolvedChannelCounts[resolved] = (resolvedChannelCounts[resolved] || 0) + 1;
+
     if (rawExamples.length < RAW_EXAMPLES) {
       rawExamples.push(stripPii(full));
     }
@@ -96,19 +102,24 @@ async function main() {
     utmSourceCounts,
     utmMediumCounts,
     customAppIdCounts,
+    resolvedChannelCounts,
     rawExamples,
     howToUse:
-      'Revisar rawExamples (pedidos completos sin datos personales) buscando algún campo que marque ' +
-      'explícitamente "app" vs "web" — candidatos: marketingData.utmSource/utmMedium, customData.customApps, ' +
-      'openTextField, checkinName. Si ninguno sirve, puede que este ambiente de VTEX no distinga el dispositivo ' +
-      'de compra a nivel de pedido y haya que resolverlo cruzando con GA4/BigQuery (sessionId o transactionId) ' +
-      'en vez de con la Order API sola.',
+      'resolvedChannelCounts ya usa config/channel-map.json (campo customData.customApps[].fields["from-help-info"], ' +
+      'formato "from=web"/"from=app") para clasificar cada pedido de la muestra. Si "unknown" es alto, revisar ' +
+      'rawExamples para ver por qué esos pedidos no traen el campo (versión vieja de checkout, canal no cubierto, etc).',
   };
 
   const outPath = path.join(__dirname, '..', 'config', 'channel-map.report.json');
   fs.writeFileSync(outPath, JSON.stringify(report, null, 2));
   console.log(`Reporte escrito en ${outPath}`);
-  console.log(JSON.stringify({ salesChannelCounts, originCounts, utmSourceCounts, utmMediumCounts, customAppIdCounts }, null, 2));
+  console.log(
+    JSON.stringify(
+      { salesChannelCounts, originCounts, utmSourceCounts, utmMediumCounts, customAppIdCounts, resolvedChannelCounts },
+      null,
+      2
+    )
+  );
 }
 
 main().catch((err) => {

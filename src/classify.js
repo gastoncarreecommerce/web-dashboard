@@ -12,18 +12,45 @@ function assertConfigured(list, configName) {
   }
 }
 
-function orderChannel(order, channelMap) {
-  for (const [name, cfg] of Object.entries(channelMap.channels)) {
-    assertConfigured(cfg.salesChannelIds, `channel-map.json > channels.${name}.salesChannelIds`);
-    const sc = String(order.salesChannel ?? '');
-    if (cfg.salesChannelIds.includes(sc)) return name;
+function assertConfiguredScalar(value, configName) {
+  if (!value || PLACEHOLDER_RE.test(value)) {
+    throw new Error(
+      `${configName} todavía tiene un valor placeholder sin completar. ` +
+        'Completá config/channel-map.json antes de correr el pipeline.'
+    );
   }
+}
+
+/**
+ * Busca en order.customData.customApps[].fields la clave configurada
+ * (ej. 'from-help-info') y devuelve el valor ya parseado (ej. 'from=web' -> 'web').
+ * Devuelve null si el pedido no trae ese campo (pedidos previos a que se empezara a trackear esto).
+ */
+function extractCustomAppFieldValue(order, fieldName, valueFormat) {
+  const customApps = order.customData?.customApps || [];
+  for (const app of customApps) {
+    const raw = app.fields?.[fieldName];
+    if (raw == null) continue;
+    if (valueFormat === 'key=value') {
+      const parts = String(raw).split('=');
+      return parts.length > 1 ? parts[1].trim() : parts[0].trim();
+    }
+    return String(raw).trim();
+  }
+  return null;
+}
+
+function orderChannel(order, channelMap) {
+  const fieldName = channelMap.customAppsField?.fieldName;
+  const valueFormat = channelMap.customAppsField?.valueFormat;
+  assertConfiguredScalar(fieldName, 'channel-map.json > customAppsField.fieldName');
+
+  const value = extractCustomAppFieldValue(order, fieldName, valueFormat);
+  if (value == null) return 'unknown';
+
   for (const [name, cfg] of Object.entries(channelMap.channels)) {
-    const field = cfg.fallbackMatch?.field;
-    const values = cfg.fallbackMatch?.values || [];
-    if (!field) continue;
-    const value = order[field] ?? order.marketingData?.[field];
-    if (values.includes(value)) return name;
+    assertConfiguredScalar(cfg.matchValue, `channel-map.json > channels.${name}.matchValue`);
+    if (cfg.matchValue === value) return name;
   }
   return 'unknown';
 }
