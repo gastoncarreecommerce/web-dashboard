@@ -61,6 +61,10 @@ async function getCategoryTree(levels = 3) {
   return vtexFetch(`/api/catalog_system/pub/category/tree/${levels}`);
 }
 
+async function listSalesChannels() {
+  return vtexFetch('/api/catalog_system/pub/saleschannel/list');
+}
+
 async function* iterateAllOrders({ fromISO, toISO, perPage = 100 }) {
   let page = 1;
   for (;;) {
@@ -79,5 +83,6 @@ module.exports = {
   listOrders,
   getOrder,
   getCategoryTree,
+  listSalesChannels,
   iterateAllOrders,
 };

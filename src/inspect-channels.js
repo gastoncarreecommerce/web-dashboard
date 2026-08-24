@@ -10,11 +10,15 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { iterateAllOrders, getOrder } = require('./vtex-client');
+const { iterateAllOrders, getOrder, listSalesChannels } = require('./vtex-client');
 
 const SAMPLE_SIZE = Number(process.env.INSPECT_SAMPLE_SIZE || 200);
 
 async function main() {
+  const salesChannels = await listSalesChannels().catch((e) => ({
+    error: `No se pudo leer /api/catalog_system/pub/saleschannel/list: ${e.message}`,
+  }));
+
   const to = new Date();
   const from = new Date(to.getTime() - 14 * 24 * 60 * 60 * 1000);
 
@@ -59,6 +63,7 @@ async function main() {
 
   const report = {
     generatedAt: new Date().toISOString(),
+    salesChannels,
     windowDays: 14,
     sampledOrders: sampled,
     salesChannelCounts,
@@ -66,9 +71,9 @@ async function main() {
     utmSourceCounts,
     examples,
     howToUse:
-      'Comparar salesChannelCounts contra el trade policy / sales channel configurado en el admin de VTEX ' +
-      '(Configuración > Canales de venta) para saber qué ID corresponde a Web y cuál a App. ' +
-      'Completar luego config/channel-map.json con esos IDs.',
+      'Cruzar `salesChannels` (nombres reales configurados en el admin de VTEX para cada Id) contra ' +
+      '`salesChannelCounts` (volumen real de pedidos por Id en los últimos 14 días) para saber con certeza ' +
+      'qué Id corresponde a Web y cuál a App. Completar luego config/channel-map.json con esos IDs.',
   };
 
   const outPath = path.join(__dirname, '..', 'config', 'channel-map.report.json');
