@@ -23,9 +23,45 @@
 
   let idx = null;          // audience-index.json
   let rules = W.store.get('audienceRules', [{ field: 'pedidos', op: '≥', value: 2 }]);
-  let emailMap = null;     // Map hash -> email (solo en memoria, cargado por el usuario)
-  let emailFileName = '';
-  let lastMatch = null;    // Uint32Array de índices que matchean
+  let emailMap = null;     // Map hash -> email (solo en memoria de esta pestaña)
+  let emailSource = '';    // de dónde salieron: repo privado o archivo cargado a mano
+  let privateRepoTried = false;
+  let lastMatch = null;
+
+  /** Parsea el CSV `hash,email,...`. Devuelve un Map o null si no hay pares válidos. */
+  function parseHashEmailCsv(text) {
+    const lines = String(text).split(/\r?\n/);
+    const map = new Map();
+    const start = (lines[0] || '').toLowerCase().includes('hash') ? 1 : 0;
+    for (let i = start; i < lines.length; i++) {
+      if (!lines[i].trim()) continue;
+      const parts = lines[i].split(',');
+      const hash = (parts[0] || '').trim().replace(/^"|"$/g, '');
+      const email = (parts[1] || '').trim().replace(/^"|"$/g, '');
+      if (hash && email) map.set(hash, email);
+    }
+    return map.size ? map : null;
+  }
+
+  /**
+   * Intenta traer los emails del repo privado vía /api/audience-emails.
+   * Un 404 significa "todavía no configurado" y no es un error: se cae al modo manual.
+   */
+  async function tryPrivateRepo() {
+    if (privateRepoTried) return;
+    privateRepoTried = true;
+    try {
+      const res = await fetch('/api/audience-emails', { cache: 'no-store' });
+      if (!res.ok) return;
+      const map = parseHashEmailCsv(await res.text());
+      if (map) {
+        emailMap = map;
+        emailSource = 'repo privado';
+      }
+    } catch {
+      // Sin backend (por ejemplo servido de forma estática en local): modo manual.
+    }
+  }
 
   function quantile(sorted, q) {
     if (!sorted.length) return 0;
@@ -173,6 +209,8 @@
       return;
     }
 
+    await tryPrivateRepo();
+
     const matches = evaluate();
     lastMatch = matches;
     const sum = summarize(matches);
@@ -254,13 +292,16 @@
 
             <div class="pii-box">
               <h4>Lista de mails</h4>
-              <p>El sitio es público, así que los emails no viven acá. Bajá el artifact privado del workflow
-                <code>WebDash export audiencia</code>, cargalo abajo y el cruce ocurre <strong>en tu navegador</strong> — el archivo no se sube a ningún lado.</p>
+              ${emailMap
+                ? `<p class="pii-ok">✓ Conectado · <strong>${W.fmtNum(emailMap.size)}</strong> mails disponibles
+                     <span class="pii-src">origen: ${W.esc(emailSource)}</span></p>`
+                : `<p>Los emails no se guardan en este repo. Se leen de un repositorio <strong>privado</strong> aparte
+                     vía <code>/api/audience-emails</code>, con el token guardado del lado del servidor.
+                     Si todavía no está conectado, podés cargar a mano el CSV del artifact — el cruce ocurre
+                     <strong>en tu navegador</strong> y el archivo no se sube a ningún lado.</p>`}
               <label class="file-drop" id="file-drop">
                 <input type="file" id="email-file" accept=".csv,text/csv" hidden />
-                ${emailMap
-                  ? `<span class="fd-ok">✓ ${W.esc(emailFileName)}<br/><small>${W.fmtNum(emailMap.size)} mails disponibles</small></span>`
-                  : '<span class="fd-idle">Arrastrá el CSV acá<br/><small>o hacé clic para elegirlo</small></span>'}
+                <span class="fd-idle">${emailMap ? 'Reemplazar por un CSV propio' : 'Arrastrá el CSV acá'}<br/><small>o hacé clic para elegirlo</small></span>
               </label>
               <button class="btn-primary block" id="export-emails" ${emailMap && sum.customers ? '' : 'disabled'}>⭳ Exportar lista de mails</button>
               ${emailMap ? `<p class="muted small" id="match-preview"></p>` : ''}
@@ -323,22 +364,10 @@
       const reader = new FileReader();
       reader.onload = () => {
         try {
-          const text = String(reader.result);
-          const lines = text.split(/\r?\n/);
-          const map = new Map();
-          const header = (lines[0] || '').toLowerCase();
-          const start = header.includes('hash') ? 1 : 0;
-          for (let i = start; i < lines.length; i++) {
-            const line = lines[i];
-            if (!line.trim()) continue;
-            const parts = line.split(',');
-            const hash = (parts[0] || '').trim().replace(/^"|"$/g, '');
-            const email = (parts[1] || '').trim().replace(/^"|"$/g, '');
-            if (hash && email) map.set(hash, email);
-          }
-          if (!map.size) { W.toast('No se encontraron pares hash,email en el archivo.', 'bad'); return; }
+          const map = parseHashEmailCsv(reader.result);
+          if (!map) { W.toast('No se encontraron pares hash,email en el archivo.', 'bad'); return; }
           emailMap = map;
-          emailFileName = file.name;
+          emailSource = `archivo ${file.name}`;
           W.toast(`Cargados ${W.fmtNum(map.size)} mails (solo en memoria de este navegador).`, 'good');
           W.render();
         } catch (err) {

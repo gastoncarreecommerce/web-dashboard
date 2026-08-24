@@ -1,10 +1,11 @@
-# PRIVADO — genera el mapeo hash -> email para poder convertir una audiencia
-# armada en el dashboard en una lista de mails real.
+# PRIVADO — genera el mapeo hash -> email que usa el constructor de audiencias.
 #
-# La salida NO se commitea ni se publica: se sube como artifact de GitHub
-# Actions, que solo puede descargar quien tiene acceso al repo. Se baja, se
-# arrastra al tab "Audiencias" del dashboard (el cruce pasa en el navegador,
-# el archivo no se sube a ningún lado) y de ahí sale el CSV para mailing.
+# La salida NUNCA se commitea en ESTE repo (que puede ser público). Va a un
+# repositorio privado aparte, y el dashboard la lee a través de
+# /api/audience-emails, que guarda el token del lado del servidor.
+#
+# Si el repo privado no está configurado, el archivo queda solo como artifact
+# de Actions para cargarlo a mano en el dashboard.
 name: WebDash export audiencia (PRIVADO · contiene PII)
 
 on:
@@ -16,6 +17,10 @@ on:
       to:
         description: 'Fecha fin (YYYY-MM-DD)'
         required: true
+      publish_to_private_repo:
+        description: '¿Publicar al repo privado? (necesita los secrets PRIVATE_DATA_REPO y PRIVATE_DATA_TOKEN)'
+        type: boolean
+        default: true
       retention_days:
         description: 'Días que vive el artifact antes de borrarse solo'
         required: false
@@ -49,7 +54,53 @@ jobs:
           VTEX_ENVIRONMENT: ${{ secrets.VTEX_ENVIRONMENT }}
         run: node src/export-audience.js "${{ github.event.inputs.from }}" "${{ github.event.inputs.to }}"
 
-      - name: Subir como artifact privado
+      # Guarda de seguridad: si por lo que sea el archivo terminó dentro del
+      # árbol del repo público, se aborta antes de cualquier push.
+      - name: Verificar que no haya PII en el repo público
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::error::El working tree quedó sucio tras el export. Abortando para no arriesgar un commit con PII."
+            git status --porcelain
+            exit 1
+          fi
+          echo "Working tree limpio ✓ (la salida está en private-out/, ignorado por git)"
+
+      - name: Publicar al repo privado
+        if: ${{ github.event.inputs.publish_to_private_repo == 'true' }}
+        env:
+          PRIVATE_DATA_REPO: ${{ secrets.PRIVATE_DATA_REPO }}
+          PRIVATE_DATA_TOKEN: ${{ secrets.PRIVATE_DATA_TOKEN }}
+        run: |
+          if [ -z "$PRIVATE_DATA_REPO" ] || [ -z "$PRIVATE_DATA_TOKEN" ]; then
+            echo "::warning::Faltan los secrets PRIVATE_DATA_REPO / PRIVATE_DATA_TOKEN. Se omite la publicación; el archivo queda como artifact."
+            exit 0
+          fi
+
+          # Rechazar si el repo destino no es privado: es exactamente el error
+          # que este diseño existe para evitar.
+          VISIBILITY=$(curl -sS -H "Authorization: Bearer $PRIVATE_DATA_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$PRIVATE_DATA_REPO" | python3 -c "import sys,json; print(json.load(sys.stdin).get('private'))")
+          if [ "$VISIBILITY" != "True" ]; then
+            echo "::error::$PRIVATE_DATA_REPO no figura como privado (private=$VISIBILITY). No se publican emails a un repo público."
+            exit 1
+          fi
+
+          git clone --depth 1 "https://x-access-token:$PRIVATE_DATA_TOKEN@github.com/$PRIVATE_DATA_REPO.git" /tmp/privrepo
+          cp private-out/*.csv /tmp/privrepo/hash-email.csv
+          cd /tmp/privrepo
+          git config user.name "webdash-bot"
+          git config user.email "webdash-bot@users.noreply.github.com"
+          git add hash-email.csv
+          if git diff --staged --quiet; then
+            echo "Sin cambios en el mapeo."
+          else
+            git commit -m "audiencia: hash->email ${{ github.event.inputs.from }}..${{ github.event.inputs.to }}"
+            git push
+            echo "Publicado en $PRIVATE_DATA_REPO ✓"
+          fi
+
+      - name: Subir como artifact privado (respaldo / carga manual)
         uses: actions/upload-artifact@v4
         with:
           name: hash-email-${{ github.event.inputs.from }}_${{ github.event.inputs.to }}

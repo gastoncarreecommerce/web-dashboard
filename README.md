@@ -15,21 +15,49 @@ GitHub Pages). Filtra el canal **web** (todo lo que NO sea `from=app`) y segment
 
 Todos los paneles tienen exportación a **CSV** (con BOM, para que Excel respete los acentos).
 
-## ⚠️ Cómo se manejan los emails (leer antes de tocar la parte de audiencias)
+## 🔐 Acceso y manejo de emails (leer antes de tocar la parte de audiencias)
 
-El dashboard es un sitio **público**. Si el constructor de audiencias leyera emails desde un JSON
-publicado, la base de clientes quedaría expuesta a cualquiera con la URL. Por eso:
+### El dashboard está detrás de usuario y contraseña
+
+`middleware.js` es un **Vercel Edge Middleware**: corre en el borde **antes** de servir cualquier
+archivo, así que protege también los JSON de `docs/data/**`. Esto importa: un login hecho solo en
+JavaScript escondería la pantalla pero dejaría los datos descargables escribiendo la URL directa.
+
+- `api/login.js` valida usuario + contraseña y devuelve una cookie `HttpOnly` firmada con HMAC-SHA256
+  (12hs de validez). La contraseña nunca vuelve al navegador.
+- Env vars necesarias en Vercel: **`DASHBOARD_PASSWORD`**, **`SESSION_SECRET`** (string largo y
+  aleatorio) y, opcionalmente, **`DASHBOARD_USERS`** (usuarios habilitados, separados por coma).
+- Si falta alguna de las dos primeras, el sitio devuelve 503 entero en vez de quedar abierto.
+- A diferencia de AppDash, la lista de usuarios **no va hardcodeada en el código**: una lista de
+  nombres de empleados también es dato personal y este repo puede ser público.
+
+### Los emails viven en un repo privado aparte, nunca en este
+
+Este repo puede ser público, y lo que se commitea acá queda accesible desde
+`raw.githubusercontent.com` sin importar qué contraseña tenga Vercel. Por eso:
 
 1. **Nada de lo que se publica tiene PII.** `audience-index.json` identifica a cada cliente con un
-   hash SHA-256 truncado (`src/customer-key.js`), nunca con su email. Todos los paneles, conteos y
-   métricas del constructor funcionan sobre esos hashes.
-2. **Los emails viven fuera del sitio.** El workflow manual
-   `WebDash export audiencia (PRIVADO · contiene PII)` corre `src/export-audience.js` y sube el
-   mapeo `hash → email` como **artifact de GitHub Actions** — solo lo descarga quien tiene acceso
-   al repo, y se borra solo a los N días.
-3. **El cruce pasa en tu navegador.** En el tab Audiencias arrastrás ese CSV: se parsea local, se
-   cruza contra la audiencia y se descarga la lista de mails. El archivo **no se sube a ningún
-   lado** ni queda en el repo (`private-out/` está en `.gitignore`).
+   hash SHA-256 truncado (`src/customer-key.js`). Todos los paneles, conteos y métricas del
+   constructor de audiencias funcionan sobre esos hashes.
+2. **El mapeo `hash → email` vive en un repositorio privado separado.** El workflow
+   `WebDash export audiencia` lo genera y lo pushea ahí — y **aborta si el repo destino no figura
+   como privado**, que es justamente el error que este diseño existe para evitar.
+3. **El dashboard lo lee por `/api/audience-emails`**, una función serverless que guarda el token de
+   GitHub del lado del servidor (nunca llega al navegador), verifica la sesión y responde
+   `Cache-Control: no-store` para que la PII no quede cacheada en el CDN.
+4. **Modo manual como alternativa**: si el repo privado todavía no está conectado, el workflow deja
+   el CSV como artifact de Actions; lo arrastrás al tab Audiencias y el cruce ocurre entero en tu
+   navegador. En ningún caso el archivo se sube al sitio.
+
+Para conectar el repo privado, cargar estos secrets/env vars:
+
+| Dónde | Nombre | Para qué |
+|---|---|---|
+| Secrets del repo (Actions) | `PRIVATE_DATA_REPO` | `owner/repo` del repositorio privado |
+| Secrets del repo (Actions) | `PRIVATE_DATA_TOKEN` | PAT con **escritura** de contenidos solo en ese repo |
+| Env vars de Vercel | `PRIVATE_DATA_REPO` | el mismo `owner/repo` |
+| Env vars de Vercel | `PRIVATE_DATA_TOKEN` | PAT con **lectura** de contenidos solo en ese repo |
+| Env vars de Vercel (opcional) | `PRIVATE_DATA_PATH` | ruta del archivo, default `hash-email.csv` |
 
 > Nota de costo: el email solo viene en el detalle de cada pedido, y el pipeline público a
 > propósito no lo guarda. Por eso el export privado vuelve a pedirle el rango a VTEX y cuesta como
@@ -86,11 +114,15 @@ que los números sean comparables entre ambos dashboards.
 
 ## Puesta en marcha
 
-1. Cargar los secrets del repo: `VTEX_ACCOUNT_NAME`, `VTEX_APP_KEY`, `VTEX_APP_TOKEN`
-   (`VTEX_ENVIRONMENT` opcional).
-2. Actions → **WebDash backfill (rango manual)** → correr en tandas de ~1 mes desde `2026-01-01`.
+1. **Secrets del repo** (Settings → Secrets → Actions): `VTEX_ACCOUNT_NAME`, `VTEX_APP_KEY`,
+   `VTEX_APP_TOKEN` (`VTEX_ENVIRONMENT` opcional).
+2. **Env vars de Vercel**: `DASHBOARD_PASSWORD` y `SESSION_SECRET`. Sin esto el sitio responde 503
+   a propósito, para no quedar abierto por un olvido de configuración.
+3. Actions → **WebDash backfill (rango manual)** → correr en tandas de ~1 mes desde `2026-01-01`.
    Es seguro repetirlo o cortarlo: los días ya procesados no se vuelven a pedir.
-3. A partir de ahí el cron diario mantiene todo al día solo.
+4. A partir de ahí el cron diario mantiene todo al día solo.
+5. Para las listas de mails: crear el repo privado y cargar los secrets/env vars de la tabla de
+   arriba, después correr **WebDash export audiencia**.
 
 ```bash
 # local

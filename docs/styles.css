@@ -97,6 +97,12 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0
 .sidebar-foot { margin-top: auto; padding: 0.75rem 0.5rem 0; border-top: 1px solid rgba(255,255,255,0.07); }
 .sf-title { font-size: 0.78rem; color: #c2c9d8; font-weight: 600; }
 .sf-sub { font-size: 0.7rem; color: #5c6478; margin-top: 0.15rem; }
+.logout {
+  margin-top: 0.7rem; width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10);
+  color: #9aa4bb; font-family: inherit; font-size: 0.75rem; font-weight: 500;
+  padding: 0.4rem; border-radius: 8px; cursor: pointer;
+}
+.logout:hover { background: rgba(255,255,255,0.12); color: #fff; }
 
 /* ── Main / topbar ────────────────────────────────────────────────────── */
 .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
@@ -369,6 +375,8 @@ details.more[open] summary { margin-bottom: 0.5rem; }
 .file-drop:hover, .file-drop.over { border-color: var(--accent); background: var(--accent-weak); color: var(--accent); }
 .file-drop small { color: var(--text-muted); font-size: 0.7rem; }
 .fd-ok { color: var(--good); font-weight: 600; }
+.pii-ok { font-size: 0.78rem; color: var(--good); background: var(--good-weak); border-radius: 8px; padding: 0.45rem 0.6rem; }
+.pii-src { display: block; color: var(--text-muted); font-size: 0.7rem; margin-top: 0.15rem; }
 
 .saved { margin-top: 1rem; padding-top: 0.9rem; border-top: 1px solid var(--border); }
 .saved h4 { font-size: 0.83rem; font-weight: 650; margin-bottom: 0.45rem; }

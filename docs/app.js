@@ -141,6 +141,11 @@
         W.render();
       })
     );
+    document.getElementById('logout')?.addEventListener('click', async () => {
+      try { await fetch('/api/logout', { method: 'POST' }); } catch { /* sin backend en local */ }
+      location.href = '/login.html';
+    });
+
     const ct = document.getElementById('compare-toggle');
     ct.checked = state.compare;
     ct.addEventListener('change', () => {

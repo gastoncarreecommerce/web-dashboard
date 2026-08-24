@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WebDash — Ingresar</title>
+<link rel="stylesheet" href="login.css" />
+</head>
+<body>
+  <main class="login-card">
+    <div class="login-brand"><span class="brand-mark">W</span><div><strong>WebDash</strong><em>Analytics del canal web</em></div></div>
+
+    <form id="login-form" autocomplete="on">
+      <label>Usuario
+        <input type="text" id="username" name="username" autocomplete="username" required autofocus />
+      </label>
+      <label>Contraseña
+        <input type="password" id="password" name="password" autocomplete="current-password" required />
+      </label>
+      <button type="submit" id="submit">Ingresar</button>
+      <p class="error" id="error" role="alert"></p>
+    </form>
+
+    <p class="foot">Datos de pedidos de Carrefour Argentina. El acceso queda registrado en tu sesión por 12 horas.</p>
+  </main>
+
+  <script>
+    const form = document.getElementById('login-form');
+    const errorEl = document.getElementById('error');
+    const btn = document.getElementById('submit');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorEl.textContent = '';
+      btn.disabled = true;
+      btn.textContent = 'Verificando…';
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value,
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'No se pudo ingresar.');
+        const next = new URLSearchParams(location.search).get('next');
+        // Solo se acepta un destino interno: evita que ?next= mande a otro sitio.
+        location.href = next && next.startsWith('/') && !next.startsWith('//') ? next : '/';
+      } catch (err) {
+        errorEl.textContent = err.message;
+        btn.disabled = false;
+        btn.textContent = 'Ingresar';
+      }
+    });
+  </script>
+</body>
+</html>
