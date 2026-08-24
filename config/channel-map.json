@@ -1,5 +1,5 @@
 {
-  "_comment": "Confirmado por el usuario (2026-08-24): el pedido trae en customData.customApps un item cuyo `fields` incluye la clave 'from-help-info', con valor en formato 'from=web' o 'from=app'. Ese es el campo real que distingue dispositivo/canal de compra en esta cuenta — salesChannel NO sirve (ver salesChannelBusinessLines más abajo, es otra dimensión de negocio).",
+  "_comment": "Confirmado con datos reales (inspect-channels, 2026-08-24): customData.customApps trae un item con id='from-help-info' cuyo objeto `fields` tiene la clave 'from' con valor directo 'web' o 'app' (no un string 'from=web' a parsear, ese formato era una descripción verbal, no el dato crudo). Verificado sobre 8 pedidos de muestra: 6 web, 2 app. Ese es el campo real que distingue dispositivo/canal de compra en esta cuenta — salesChannel NO sirve (ver salesChannelBusinessLines más abajo, es otra dimensión de negocio).",
   "salesChannelBusinessLines": {
     "description": "Referencia informativa únicamente. NO se usa para el filtro web/app.",
     "1": "Main (puede ser food o non-food)",
@@ -7,9 +7,10 @@
   },
   "matchBy": "customApps-field",
   "customAppsField": {
-    "fieldName": "from-help-info",
-    "valueFormat": "key=value",
-    "howValueFormatWorks": "El valor crudo del campo es un string tipo 'from=web'. Se parsea tomando lo que sigue al '=' y se compara contra `channels.<name>.matchValue`."
+    "appId": "from-help-info",
+    "fieldName": "from",
+    "valueFormat": "raw",
+    "howValueFormatWorks": "Se busca en customData.customApps el item con id === appId, y se lee fields[fieldName] tal cual (ya es 'web' o 'app', sin parseo adicional)."
   },
   "channels": {
     "web": {

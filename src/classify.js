@@ -22,30 +22,24 @@ function assertConfiguredScalar(value, configName) {
 }
 
 /**
- * Busca en order.customData.customApps[].fields la clave configurada
- * (ej. 'from-help-info') y devuelve el valor ya parseado (ej. 'from=web' -> 'web').
- * Devuelve null si el pedido no trae ese campo (pedidos previos a que se empezara a trackear esto).
+ * Busca en order.customData.customApps el item con id === appId y devuelve
+ * el valor crudo de fields[fieldName] (ej. customApps[{id:'from-help-info', fields:{from:'web'}}] -> 'web').
+ * Devuelve null si el pedido no trae ese customApp (pedidos previos a que se empezara a trackear esto).
  */
-function extractCustomAppFieldValue(order, fieldName, valueFormat) {
+function extractCustomAppFieldValue(order, appId, fieldName) {
   const customApps = order.customData?.customApps || [];
-  for (const app of customApps) {
-    const raw = app.fields?.[fieldName];
-    if (raw == null) continue;
-    if (valueFormat === 'key=value') {
-      const parts = String(raw).split('=');
-      return parts.length > 1 ? parts[1].trim() : parts[0].trim();
-    }
-    return String(raw).trim();
-  }
-  return null;
+  const app = customApps.find((a) => a.id === appId);
+  const raw = app?.fields?.[fieldName];
+  return raw == null ? null : String(raw).trim();
 }
 
 function orderChannel(order, channelMap) {
+  const appId = channelMap.customAppsField?.appId;
   const fieldName = channelMap.customAppsField?.fieldName;
-  const valueFormat = channelMap.customAppsField?.valueFormat;
+  assertConfiguredScalar(appId, 'channel-map.json > customAppsField.appId');
   assertConfiguredScalar(fieldName, 'channel-map.json > customAppsField.fieldName');
 
-  const value = extractCustomAppFieldValue(order, fieldName, valueFormat);
+  const value = extractCustomAppFieldValue(order, appId, fieldName);
   if (value == null) return 'unknown';
 
   for (const [name, cfg] of Object.entries(channelMap.channels)) {
