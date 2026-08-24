@@ -1,0 +1,40 @@
+name: WebDash data pipeline
+
+on:
+  schedule:
+    # DEFAULT: cada 6 horas. Ajustar para que coincida con la cadencia real de AppDash
+    # (el usuario indicó que hay que confirmarla contra el pipeline original).
+    - cron: '0 */6 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run WEB channel pipeline
+        env:
+          VTEX_ACCOUNT_NAME: ${{ secrets.VTEX_ACCOUNT_NAME }}
+          VTEX_APP_KEY: ${{ secrets.VTEX_APP_KEY }}
+          VTEX_APP_TOKEN: ${{ secrets.VTEX_APP_TOKEN }}
+          VTEX_ENVIRONMENT: ${{ secrets.VTEX_ENVIRONMENT }}
+          PIPELINE_CHANNEL: web
+        run: npm run pipeline
+
+      - name: Commit updated data
+        run: |
+          git config user.name "webdash-bot"
+          git config user.email "webdash-bot@users.noreply.github.com"
+          git add docs/data/
+          git diff --cached --quiet || git commit -m "chore(data): update web channel metrics [skip ci]"
+          git push

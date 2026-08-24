@@ -1,0 +1,16 @@
+{
+  "_comment": "PLACEHOLDER — mapeo de categorías VTEX (Catalog API, árbol de departamentos) a food / non-food. Completar corriendo `npm run inspect:categories`, que pega a GET /api/catalog_system/pub/category/tree/3 y vuelca el árbol completo en config/category-map.report.json para elegir los departamentos raíz correctos.",
+  "classifyBy": "departmentId",
+  "foodDepartmentIds": ["REPLACE_WITH_FOOD_DEPARTMENT_IDS"],
+  "nonFoodDepartmentIds": ["REPLACE_WITH_NON_FOOD_DEPARTMENT_IDS"],
+  "unmappedDepartmentPolicy": "non-food",
+  "mixedOrderStrategy": "line-item",
+  "mixedOrderStrategyOptions": {
+    "line-item": "Cada línea de pedido (item) se clasifica individualmente por su categoría y aporta su GMV/cantidad solo a la pestaña correspondiente (food o non-food). Un mismo pedido puede aparecer en ambas pestañas si tiene items de las dos categorías. Es el método recomendado: no distorsiona basket size ni GMV por categoría.",
+    "prorate": "El GMV total del pedido se reparte proporcionalmente al peso ($ o cantidad) de items de cada categoría, y el pedido completo (a nivel 'orden') se cuenta fraccionado en ambas pestañas para métricas de frecuencia/repurchase. Útil si se quiere que la suma de food+nonfood orders cierre con el total general, pero introduce pedidos 'fraccionarios' en el conteo."
+  ],
+  "notes": [
+    "Este archivo es la ÚNICA fuente de verdad para decidir food vs non-food; no hay lógica de categorización hardcodeada en src/.",
+    "Cambiar mixedOrderStrategy de 'line-item' a 'prorate' no requiere tocar código, solo re-correr el pipeline."
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "generatedAt": "1970-01-01T00:00:00.000Z",
+  "channel": "web",
+  "bucket": "food",
+  "lookbackDays": 400,
+  "mixedOrderStrategy": "line-item",
+  "gmv": 0,
+  "orders": 0,
+  "repurchaseRate": 0,
+  "purchaseFrequency": 0,
+  "averageBasketSize": 0,
+  "segmentParticipation": {},
+  "monthlyProjection": { "daysElapsed": 0, "daysInMonth": 0, "actualGmv": 0, "actualOrders": 0, "projectedGmv": 0, "projectedOrders": 0 },
+  "_placeholder": "Estos son datos vacíos de arranque (seed). Se sobrescriben en cuanto corra el pipeline con credenciales reales de VTEX."
+}

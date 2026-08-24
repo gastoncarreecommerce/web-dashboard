@@ -1,0 +1,4 @@
+node_modules/
+config/channel-map.report.json
+config/category-map.report.json
+.env

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WebDash — Carrefour Argentina</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>WebDash <span class="subtitle">Analytics de pedidos — Canal Web</span></h1>
+    <div id="run-info" class="run-info">Cargando...</div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-bucket="food" role="tab" aria-selected="true">Food</button>
+    <button class="tab" data-bucket="non-food" role="tab" aria-selected="false">Non Food</button>
+  </nav>
+
+  <main id="content" class="content">
+    <div class="loading">Cargando métricas...</div>
+  </main>
+
+  <footer class="footer">
+    Datos generados automáticamente por el pipeline de GitHub Actions. Ver <code>data/web/&lt;bucket&gt;/metrics.json</code>.
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

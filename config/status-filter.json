@@ -1,0 +1,21 @@
+{
+  "_comment": "Convención de estados de VTEX Order API a incluir/excluir para el cálculo de métricas de negocio (GMV, repurchase, etc). Estos son los valores DEFAULT recomendados por VTEX/uso común en e-commerce, pero DEBEN validarse contra la convención ya definida en el proyecto AppDash original antes de confiar en los números. Si tenés acceso al repo de AppDash, buscá su lista de status (probablemente en un archivo similar) y pegala acá tal cual para que Web y App sean comparables.",
+  "includeStatuses": [
+    "invoiced",
+    "handling",
+    "ready-for-handling",
+    "shipped",
+    "order-accepted",
+    "payment-approved"
+  ],
+  "excludeStatuses": [
+    "canceled",
+    "cancelled",
+    "order-created",
+    "payment-pending",
+    "on-order-completed",
+    "waiting-for-seller-decision"
+  ],
+  "policy": "Un pedido se cuenta para métricas si su `status` está en includeStatuses. Cualquier status no listado en ninguna de las dos listas se trata como 'desconocido' y se excluye por defecto, pero se registra en data/web/_meta/unknown-statuses.json para revisión manual.",
+  "source": "NEEDS_CONFIRMATION_AGAINST_APPDASH"
+}

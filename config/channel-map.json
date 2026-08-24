@@ -1,0 +1,28 @@
+{
+  "_comment": "PLACEHOLDER — hay que confirmar contra la VTEX Order API real de esta cuenta antes de poner el pipeline en producción. Correr `npm run inspect:channels` con credenciales reales pega a /api/oms/pvt/orders y vuelca en config/channel-map.report.json los valores reales de order.salesChannel y order.origin/marketingData.utmSource observados en los últimos N pedidos, para poder completar esto con certeza en vez de adivinar.",
+  "channels": {
+    "web": {
+      "description": "Pedidos originados en el sitio web (storefront) de Carrefour Argentina.",
+      "matchBy": "salesChannel",
+      "salesChannelIds": ["REPLACE_WITH_WEB_SALES_CHANNEL_ID"],
+      "fallbackMatch": {
+        "field": "origin",
+        "values": ["Marketplace", "Ecommerce"]
+      }
+    },
+    "app": {
+      "description": "Pedidos originados en la app mobile (referencia, para no romper AppDash).",
+      "matchBy": "salesChannel",
+      "salesChannelIds": ["REPLACE_WITH_APP_SALES_CHANNEL_ID"],
+      "fallbackMatch": {
+        "field": "origin",
+        "values": ["App"]
+      }
+    }
+  },
+  "notes": [
+    "VTEX no tiene un único campo estándar 'canal app vs web' en todas las cuentas: algunas lo resuelven por salesChannel (trade policy) distinto por canal, otras por origin, otras por un campo custom en marketingData/openTextField.",
+    "Esta config permite matchear por salesChannel primero y, si no está seteado, caer a un campo alternativo (fallbackMatch). Ambos son editables sin tocar código.",
+    "El pipeline falla explícitamente (ver src/vtex-client.js) si detecta que los IDs siguen en 'REPLACE_WITH_...', para no calcular métricas sobre un filtro de canal incorrecto silenciosamente."
+  ]
+}
