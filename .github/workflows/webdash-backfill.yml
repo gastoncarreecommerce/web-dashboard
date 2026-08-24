@@ -1,0 +1,58 @@
+# Backfill manual del historial de pedidos web, en tandas (igual patrón que
+# backfill-web-recompra.yml de AppDash): el volumen de pedidos (~3000/día) hace
+# que rangos largos no entren en el límite de 6hs de un job. Correr varias
+# veces con rangos chicos (ej. un mes) hasta cubrir desde
+# config/pipeline-config.json > detailWindowStartDate.
+name: WebDash backfill (rango manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      from:
+        description: 'Fecha inicio (YYYY-MM-DD)'
+        required: true
+      to:
+        description: 'Fecha fin (YYYY-MM-DD)'
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: webdash-backfill
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Backfill range
+        env:
+          VTEX_ACCOUNT_NAME: ${{ secrets.VTEX_ACCOUNT_NAME }}
+          VTEX_APP_KEY: ${{ secrets.VTEX_APP_KEY }}
+          VTEX_APP_TOKEN: ${{ secrets.VTEX_APP_TOKEN }}
+          VTEX_ENVIRONMENT: ${{ secrets.VTEX_ENVIRONMENT }}
+        run: node src/backfill.js "${{ github.event.inputs.from }}" "${{ github.event.inputs.to }}"
+
+      - name: Aggregate all available days into per-segment metrics
+        run: node src/aggregate.js
+
+      - name: Commit backfilled data
+        run: |
+          git config user.name "webdash-bot"
+          git config user.email "webdash-bot@users.noreply.github.com"
+          git add docs/data/
+          git diff --cached --quiet || git commit -m "chore(data): backfill ${{ github.event.inputs.from }}..${{ github.event.inputs.to }} [skip ci]"
+          for i in 1 2 3 4; do
+            git push && break
+            echo "push falló, reintento..."; sleep $((i*5)); git pull --rebase --autostash || true
+          done

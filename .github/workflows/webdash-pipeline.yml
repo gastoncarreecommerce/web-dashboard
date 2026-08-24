@@ -1,14 +1,19 @@
-# Re-pusheado en commit separado (no en el commit inicial del repo) para que
-# GitHub registre el workflow: el push que crea un repo vacío no siempre
-# dispara el escaneo de Actions sobre los archivos de ese mismo commit.
+# Comentario técnico agregado en un commit posterior para que GitHub registre
+# el workflow: el push que crea un repo vacío no siempre dispara el escaneo de
+# Actions sobre los archivos de ese mismo commit.
 name: WebDash data pipeline
 
 on:
   schedule:
     # Misma cadencia que AppDash (fetch-daily.yml en gastoncarreecommerce/vtex-utm-audit):
-    # 1 vez por día a las 06:00 UTC = 03:00 AR.
+    # 1 vez por día a las 06:00 UTC = 03:00 AR, procesando el día anterior ya cerrado.
     - cron: '0 6 * * *'
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Fecha a procesar (YYYY-MM-DD). Vacío = ayer (AR)'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -16,6 +21,7 @@ permissions:
 jobs:
   build-data:
     runs-on: ubuntu-latest
+    timeout-minutes: 360
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,19 +31,26 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Run WEB channel pipeline
+      - name: Fetch yesterday's orders (or given date)
         env:
           VTEX_ACCOUNT_NAME: ${{ secrets.VTEX_ACCOUNT_NAME }}
           VTEX_APP_KEY: ${{ secrets.VTEX_APP_KEY }}
           VTEX_APP_TOKEN: ${{ secrets.VTEX_APP_TOKEN }}
           VTEX_ENVIRONMENT: ${{ secrets.VTEX_ENVIRONMENT }}
-          PIPELINE_CHANNEL: web
-        run: npm run pipeline
+        run: |
+          DATE="${{ github.event.inputs.date }}"
+          if [ -z "$DATE" ]; then
+            DATE=$(TZ=America/Argentina/Buenos_Aires date -d yesterday +%Y-%m-%d)
+          fi
+          node src/fetch-day.js "$DATE"
+
+      - name: Aggregate all available days into per-segment metrics
+        run: node src/aggregate.js
 
       - name: Commit updated data
         run: |
           git config user.name "webdash-bot"
           git config user.email "webdash-bot@users.noreply.github.com"
           git add docs/data/
-          git diff --cached --quiet || git commit -m "chore(data): update web channel metrics [skip ci]"
+          git diff --cached --quiet || git commit -m "chore(data): update web daily + aggregated metrics [skip ci]"
           git push

@@ -34,12 +34,11 @@
         <div class="kpi-card">
           <div class="kpi-label">GMV</div>
           <div class="kpi-value">${fmtMoney(m.gmv)}</div>
-          <div class="kpi-sub">últimos ${m.lookbackDays} días</div>
+          <div class="kpi-sub">desde ${m.detailWindowStartDate} (${m.daysAggregated} días)</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Pedidos</div>
-          <div class="kpi-value">${fmtNum(m.orders, 1)}</div>
-          <div class="kpi-sub">estrategia: ${m.mixedOrderStrategy}</div>
+          <div class="kpi-value">${fmtNum(m.orders, 0)}</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Basket size promedio</div>

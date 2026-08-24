@@ -1,30 +1,12 @@
 {
-  "_comment": "Confirmado con datos reales (inspect-channels, 2026-08-24): customData.customApps trae un item con id='from-help-info' cuyo objeto `fields` tiene la clave 'from' con valor directo 'web' o 'app' (no un string 'from=web' a parsear, ese formato era una descripción verbal, no el dato crudo). Verificado sobre 8 pedidos de muestra: 6 web, 2 app. Ese es el campo real que distingue dispositivo/canal de compra en esta cuenta — salesChannel NO sirve (ver salesChannelBusinessLines más abajo, es otra dimensión de negocio).",
-  "salesChannelBusinessLines": {
-    "description": "Referencia informativa únicamente. NO se usa para el filtro web/app.",
-    "1": "Main (puede ser food o non-food)",
-    "3": "Quick Commerce (solo food)"
-  },
-  "matchBy": "customApps-field",
+  "_comment": "Regla real usada por AppDash (fetch-orders.js / lib/order-attribution.js: `if (getCustomAppFrom(detail) !== 'app') continue` para descartar todo lo que no sea app). O sea: NO hay un valor explícito para 'web' — web es todo lo que no sea 'app', incluyendo pedidos que no tienen el campo (de antes de que existiera la app, o de antes de que se empezara a trackear este campo). Confirmado con el usuario (2026-08-24): antes de que existiera la app no había otro canal, así que 'sin campo' = web es correcto también para pedidos viejos (antes de 2026).",
   "customAppsField": {
     "appId": "from-help-info",
-    "fieldName": "from",
-    "valueFormat": "raw",
-    "howValueFormatWorks": "Se busca en customData.customApps el item con id === appId, y se lee fields[fieldName] tal cual (ya es 'web' o 'app', sin parseo adicional)."
+    "fieldName": "from"
   },
-  "channels": {
-    "web": {
-      "description": "Pedidos originados en el sitio web (storefront) de Carrefour Argentina.",
-      "matchValue": "web"
-    },
-    "app": {
-      "description": "Pedidos originados en la app mobile (referencia, para no romper AppDash).",
-      "matchValue": "app"
-    }
-  },
-  "unmatchedPolicy": "unknown",
+  "appValue": "app",
   "notes": [
-    "Si `customData.customApps` no trae ningún item con el campo 'from-help-info' para un pedido (por ejemplo pedidos viejos previos a que se empezara a trackear esto), el pedido se clasifica como canal 'unknown' y queda excluido tanto de food como de non-food, registrado en docs/data/web/_meta/run-info.json para poder dimensionar cuántos pedidos quedan sin clasificar.",
-    "El pipeline falla explícitamente (ver src/classify.js) si `fieldName` o los `matchValue` quedan en un placeholder sin completar."
+    "orderChannel(order) = 'app' si customData.customApps tiene el appId configurado con fields[fieldName] === appValue; en cualquier otro caso (valor distinto, o el campo no existe) es 'web'. No hay bucket 'unknown'.",
+    "Esto es intencional y esperado para pedidos anteriores a que existiera la app (no van a tener customData.customApps con ese id, y deben contarse como web)."
   ]
 }

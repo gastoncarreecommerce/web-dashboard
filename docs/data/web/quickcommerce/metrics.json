@@ -3,7 +3,8 @@
   "channel": "web",
   "bucket": "quickcommerce",
   "label": "Quick Commerce",
-  "lookbackDays": 400,
+  "detailWindowStartDate": "2026-01-01",
+  "daysAggregated": 0,
   "gmv": 0,
   "orders": 0,
   "repurchaseRate": 0,
@@ -11,5 +12,5 @@
   "averageBasketSize": 0,
   "segmentParticipation": {},
   "monthlyProjection": { "daysElapsed": 0, "daysInMonth": 0, "actualGmv": 0, "actualOrders": 0, "projectedGmv": 0, "projectedOrders": 0 },
-  "_placeholder": "Estos son datos vacíos de arranque (seed). Se sobrescriben en cuanto corra el pipeline con credenciales reales de VTEX."
+  "_placeholder": "Datos vacíos de arranque (seed). Se completan corriendo el backfill (ver README) y después el pipeline diario."
 }

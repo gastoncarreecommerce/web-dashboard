@@ -1,0 +1,4 @@
+{
+  "_comment": "Fecha de inicio de la ventana de detalle (segmento/recompra/frecuencia), decidida con el usuario el 2026-08-24. Antes de esta fecha no se calculan estas métricas (habría que pedir detalle de millones de pedidos históricos, inviable — ver README). Se puede correr src/backfill.js hacia atrás si más adelante se decide ampliar la ventana.",
+  "detailWindowStartDate": "2026-01-01"
+}

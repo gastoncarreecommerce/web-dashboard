@@ -33,20 +33,20 @@ function extractCustomAppFieldValue(order, appId, fieldName) {
   return raw == null ? null : String(raw).trim();
 }
 
+/**
+ * 'app' solo si el campo dice explícitamente eso; cualquier otro caso (otro valor,
+ * o el campo no existe — pedidos de antes de que existiera la app) es 'web'.
+ * Misma regla que AppDash: `if (getCustomAppFrom(detail) !== 'app') continue`.
+ */
 function orderChannel(order, channelMap) {
   const appId = channelMap.customAppsField?.appId;
   const fieldName = channelMap.customAppsField?.fieldName;
   assertConfiguredScalar(appId, 'channel-map.json > customAppsField.appId');
   assertConfiguredScalar(fieldName, 'channel-map.json > customAppsField.fieldName');
+  assertConfiguredScalar(channelMap.appValue, 'channel-map.json > appValue');
 
   const value = extractCustomAppFieldValue(order, appId, fieldName);
-  if (value == null) return 'unknown';
-
-  for (const [name, cfg] of Object.entries(channelMap.channels)) {
-    assertConfiguredScalar(cfg.matchValue, `channel-map.json > channels.${name}.matchValue`);
-    if (cfg.matchValue === value) return name;
-  }
-  return 'unknown';
+  return value === channelMap.appValue ? 'app' : 'web';
 }
 
 function isIncludedStatus(order, statusFilter) {
