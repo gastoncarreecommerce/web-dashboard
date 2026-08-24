@@ -1,3 +1,6 @@
+# Re-pusheado en commit separado (no en el commit inicial del repo) para que
+# GitHub registre el workflow: el push que crea un repo vacío no siempre
+# dispara el escaneo de Actions sobre los archivos de ese mismo commit.
 name: WebDash data pipeline
 
 on:
