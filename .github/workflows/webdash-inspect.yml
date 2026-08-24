@@ -1,0 +1,43 @@
+name: WebDash inspect VTEX (channels + categories)
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Inspect channels (salesChannel / origin reales)
+        env:
+          VTEX_ACCOUNT_NAME: ${{ secrets.VTEX_ACCOUNT_NAME }}
+          VTEX_APP_KEY: ${{ secrets.VTEX_APP_KEY }}
+          VTEX_APP_TOKEN: ${{ secrets.VTEX_APP_TOKEN }}
+          VTEX_ENVIRONMENT: ${{ secrets.VTEX_ENVIRONMENT }}
+        run: npm run inspect:channels
+
+      - name: Inspect category tree (departamentos food/non-food)
+        env:
+          VTEX_ACCOUNT_NAME: ${{ secrets.VTEX_ACCOUNT_NAME }}
+          VTEX_APP_KEY: ${{ secrets.VTEX_APP_KEY }}
+          VTEX_APP_TOKEN: ${{ secrets.VTEX_APP_TOKEN }}
+          VTEX_ENVIRONMENT: ${{ secrets.VTEX_ENVIRONMENT }}
+        run: npm run inspect:categories
+
+      - name: Commit reports
+        run: |
+          git config user.name "webdash-bot"
+          git config user.email "webdash-bot@users.noreply.github.com"
+          git add -f config/channel-map.report.json config/category-map.report.json
+          git diff --cached --quiet || git commit -m "chore(inspect): update VTEX channel/category reports [skip ci]"
+          git push
