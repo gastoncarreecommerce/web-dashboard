@@ -34,9 +34,11 @@ const OUT_DIR = path.join(__dirname, '..', 'docs', 'data', 'web', 'daily');
 const TOP_PRODUCTS_PER_DAY = Number(process.env.TOP_PRODUCTS_PER_DAY || 600);
 
 // El detalle de cada pedido es una llamada aparte a VTEX y hay ~2000 por día:
-// pedirlos de a uno tarda ~25 min por día. Con este pool baja a ~1-2 min.
-// Mismo orden de magnitud que usa AppDash (CONCURRENCY = 20).
-const DETAIL_CONCURRENCY = Number(process.env.DETAIL_CONCURRENCY || 20);
+// pedirlos de a uno tardaba ~25 min por día. Con este pool baja a ~1 min.
+// AppDash usa 20 por rango con 3 rangos en paralelo (≈60); 30 acá está en el
+// mismo orden. Si VTEX empieza a tirar 429 hay backoff en vtex-client.js, pero
+// conviene bajar este número antes que vivir reintentando.
+const DETAIL_CONCURRENCY = Number(process.env.DETAIL_CONCURRENCY || 30);
 
 function arDayRange(dateStr) {
   // Medianoche AR (UTC-3) del día `dateStr` hasta medianoche AR del día siguiente.

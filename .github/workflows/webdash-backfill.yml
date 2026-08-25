@@ -1,8 +1,12 @@
-# Backfill manual del historial de pedidos web, en tandas (igual patrón que
-# backfill-web-recompra.yml de AppDash): el volumen de pedidos (~3000/día) hace
-# que rangos largos no entren en el límite de 6hs de un job. Correr varias
-# veces con rangos chicos (ej. un mes) hasta cubrir desde
-# config/pipeline-config.json > detailWindowStartDate.
+# Backfill del historial, PARALELIZADO.
+#
+# El costo real es el detalle de cada pedido (una llamada a VTEX por pedido,
+# ~2000 por día). Además del pool de concurrencia dentro de cada día, acá se
+# parte el rango en tramos mensuales y cada tramo corre en su PROPIO job, todos
+# a la vez. Un año que secuencialmente son ~6 horas baja a ~40 minutos.
+#
+# Cada job sube solo los días de su tramo como artifact; un job final los junta,
+# agrega y hace UN solo commit — así no hay pushes concurrentes peleándose.
 name: WebDash backfill (rango manual)
 
 on:
@@ -14,6 +18,14 @@ on:
       to:
         description: 'Fecha fin (YYYY-MM-DD)'
         required: true
+      concurrency_per_day:
+        description: 'Pedidos en paralelo por job (subir si va lento, bajar si VTEX tira 429)'
+        required: false
+        default: '30'
+      max_parallel:
+        description: 'Cuántos meses procesar a la vez'
+        required: false
+        default: '8'
 
 permissions:
   contents: write
@@ -23,36 +35,94 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  backfill:
+  plan:
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    outputs:
+      chunks: ${{ steps.plan.outputs.chunks }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - id: plan
+        run: |
+          CHUNKS=$(node src/plan-chunks.js "${{ github.event.inputs.from }}" "${{ github.event.inputs.to }}")
+          echo "chunks=$CHUNKS" >> "$GITHUB_OUTPUT"
+          echo "Tramos a procesar: $CHUNKS"
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+  fetch:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      max-parallel: ${{ fromJson(github.event.inputs.max_parallel || '8') }}
+      matrix:
+        chunk: ${{ fromJson(needs.plan.outputs.chunks) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Backfill range
+      - name: Backfill ${{ matrix.chunk.id }}
         env:
           VTEX_ACCOUNT_NAME: ${{ secrets.VTEX_ACCOUNT_NAME }}
           VTEX_APP_KEY: ${{ secrets.VTEX_APP_KEY }}
           VTEX_APP_TOKEN: ${{ secrets.VTEX_APP_TOKEN }}
           VTEX_ENVIRONMENT: ${{ secrets.VTEX_ENVIRONMENT }}
-        run: node src/backfill.js "${{ github.event.inputs.from }}" "${{ github.event.inputs.to }}"
+          DETAIL_CONCURRENCY: ${{ github.event.inputs.concurrency_per_day || '30' }}
+        run: node src/backfill.js "${{ matrix.chunk.from }}" "${{ matrix.chunk.to }}"
 
-      - name: Aggregate all available days into per-segment metrics
-        run: node src/aggregate.js
+      # Solo los días de ESTE tramo: el checkout ya trae los días viejos y no
+      # tiene sentido volver a subirlos desde cada job.
+      - name: Subir los días del tramo
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-${{ matrix.chunk.id }}
+          path: docs/data/web/daily/${{ matrix.chunk.id }}-*.json
+          retention-days: 2
+          if-no-files-found: warn
 
-      - name: Commit backfilled data
+  collect:
+    needs: fetch
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Bajar todos los tramos
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/chunks
+          pattern: daily-*
+          merge-multiple: true
+
+      - name: Juntar y agregar
+        run: |
+          mkdir -p docs/data/web/daily
+          if ls /tmp/chunks/*.json >/dev/null 2>&1; then
+            cp /tmp/chunks/*.json docs/data/web/daily/
+            echo "Días incorporados: $(ls /tmp/chunks/*.json | wc -l)"
+          else
+            echo "::warning::Ningún tramo produjo días. Revisá los logs de los jobs de fetch."
+          fi
+          node src/aggregate.js
+
+      - name: Commitear
         run: |
           git config user.name "webdash-bot"
           git config user.email "webdash-bot@users.noreply.github.com"
           git add docs/data/
-          git diff --cached --quiet || git commit -m "chore(data): backfill ${{ github.event.inputs.from }}..${{ github.event.inputs.to }} [skip ci]"
-          for i in 1 2 3 4; do
-            git push && break
-            echo "push falló, reintento..."; sleep $((i*5)); git pull --rebase --autostash || true
-          done
+          if git diff --staged --quiet; then
+            echo "Sin cambios."
+          else
+            git commit -m "chore(data): backfill ${{ github.event.inputs.from }}..${{ github.event.inputs.to }} [skip ci]"
+            for i in 1 2 3 4; do
+              git push && break
+              echo "push falló, reintento..."; sleep $((i*5)); git pull --rebase --autostash || true
+            done
+          fi
