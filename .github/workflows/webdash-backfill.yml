@@ -26,6 +26,10 @@ on:
         description: 'Cuántos meses procesar a la vez'
         required: false
         default: '8'
+      force:
+        description: 'Rehacer días que ya existen (solo si cambió la lógica de cálculo)'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -72,7 +76,7 @@ jobs:
           VTEX_APP_TOKEN: ${{ secrets.VTEX_APP_TOKEN }}
           VTEX_ENVIRONMENT: ${{ secrets.VTEX_ENVIRONMENT }}
           DETAIL_CONCURRENCY: ${{ github.event.inputs.concurrency_per_day || '30' }}
-        run: node src/backfill.js "${{ matrix.chunk.from }}" "${{ matrix.chunk.to }}"
+        run: node src/backfill.js "${{ matrix.chunk.from }}" "${{ matrix.chunk.to }}" ${{ github.event.inputs.force == 'true' && '--force' || '' }}
 
       # Los pedidos que hayan fallado quedaron anotados en cada archivo diario;
       # se reintentan solo esos, sin rehacer los días completos.

@@ -66,6 +66,7 @@ async function repairDay(date) {
     detailsRequested: day.detailsRequested,
     failedOrderIds: stillFailed,
     unknownStatuses: day.unknownStatuses || [],
+    statusCounts: day.statusCounts || {},
   });
   fs.writeFileSync(file, JSON.stringify(out));
 
