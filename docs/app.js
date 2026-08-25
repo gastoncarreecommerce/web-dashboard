@@ -43,12 +43,30 @@
     );
   }
 
+  const FALLBACK_PRESET = 'month';
+
+  /**
+   * Nunca devuelve null mientras haya días cargados. El caso que rompía: el
+   * navegador recuerda preset='custom' de una sesión anterior, pero al recargar
+   * los inputs de fecha arrancan vacíos — presetRange('custom') devolvía null y
+   * la vista explotaba al leer range.from. Ahora eso cae al preset por defecto.
+   */
   function resolveRange() {
-    if (state.preset === 'custom' && $('date-from')?.value && $('date-to')?.value) {
-      const from = $('date-from').value, to = $('date-to').value;
-      return from <= to ? { from, to } : { from: to, to: from };
+    if (state.preset === 'custom') {
+      const from = $('date-from')?.value, to = $('date-to')?.value;
+      if (from && to) return from <= to ? { from, to } : { from: to, to: from };
+      state.preset = FALLBACK_PRESET; // custom sin fechas: no es un estado válido
+      W.store.set('preset', state.preset);
     }
-    return W.presetRange(state.preset, days, startDate);
+
+    const r = W.presetRange(state.preset, days, startDate);
+    if (r) return r;
+
+    // Preset desconocido (por ejemplo guardado por una versión anterior).
+    state.preset = FALLBACK_PRESET;
+    W.store.set('preset', state.preset);
+    return W.presetRange(FALLBACK_PRESET, days, startDate)
+      || (days.length ? { from: days[0], to: days[days.length - 1] } : null);
   }
 
   function sync() {
@@ -77,6 +95,15 @@
   W.render = async function () {
     state.range = resolveRange();
     sync();
+
+    // Sin rango no hay nada que calcular: se muestra el estado vacío en vez de
+    // dejar que cada vista falle leyendo range.from.
+    if (!state.range && state.view !== 'audiences') {
+      $('content').innerHTML = `<div class="empty"><h2>Todavía no hay datos</h2>
+        <p>Corré el backfill inicial para poblar el historial (ver README).</p></div>`;
+      return;
+    }
+
     exportsBag = {};
     const ctx = { range: state.range, bucket: state.bucket, compare: state.compare, el: $('content'), exports: exportsBag };
     try {
