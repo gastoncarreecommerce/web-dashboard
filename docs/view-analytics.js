@@ -91,6 +91,23 @@
       });
     }
 
+    // ── Estados de pedido (del listado de VTEX: incluye los que no cuentan) ──
+    const canc = W.cancellations(cur.statusStats);
+    const INCLUDED = ['invoiced', 'invoice', 'handling', 'ready-for-handling', 'shipped', 'order-accepted', 'payment-approved'];
+    const statusRows = Object.entries(cur.statusStats || {})
+      .map(([status, v]) => ({
+        status, orders: v.orders, gmv: v.gmv,
+        counts: INCLUDED.includes(status),
+        cancelled: W.CANCELLED_STATUSES.includes(status),
+      }))
+      .sort((a, b) => b.orders - a.orders);
+
+    ctx.exports.statuses = {
+      filename: `webdash-estados-${range.from}_${range.to}.csv`,
+      headers: ['estado', 'cuenta_para_metricas', 'es_cancelacion', 'pedidos', 'monto'],
+      rows: statusRows.map((r) => [r.status, r.counts ? 'si' : 'no', r.cancelled ? 'si' : 'no', r.orders, Math.round(r.gmv)]),
+    };
+
     const hourly = catalog?.hourly || [];
     const maxHour = Math.max(1, ...hourly);
     const dow = catalog?.dayOfWeek || [];
@@ -167,6 +184,31 @@
             centerValue: W.fmtNumC((catalog?.payments || []).reduce((s, p) => s + p.orders, 0)), centerLabel: 'pedidos',
           })}
         </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div><h3>Estados de pedido</h3>
+          <p>${W.fmtDayLong(range.from)} → ${W.fmtDayLong(range.to)} · todos los pedidos del canal, incluidos los que no cuentan para las métricas</p></div>
+          <button class="btn-ghost" data-export="statuses">⭳ CSV</button>
+        </div>
+        <div class="stat-strip">
+          <div><span>${W.fmtPct(canc.rate)}</span><em>tasa de cancelación</em></div>
+          <div><span>${W.fmtNumC(canc.cancelledOrders)}</span><em>pedidos cancelados</em></div>
+          <div><span>${W.fmtMoneyC(canc.cancelledGmv)}</span><em>monto no facturado</em></div>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>Estado</th><th>Cuenta para métricas</th><th class="num">Pedidos</th><th class="num">Monto</th><th style="width:20%">% pedidos</th></tr></thead>
+          <tbody>${statusRows.length ? statusRows.map((r) => `<tr>
+              <td><code>${W.esc(r.status)}</code></td>
+              <td>${r.counts
+                ? '<span class="pill ok">Sí</span>'
+                : r.cancelled ? '<span class="pill bad">No · cancelado</span>' : '<span class="pill muted">No</span>'}</td>
+              <td class="num">${W.fmtNum(r.orders)}</td>
+              <td class="num">${W.fmtMoney(r.gmv)}</td>
+              <td><div class="bar-cell"><span class="bar-track"><span class="bar-fill" style="width:${(r.orders / (canc.totalOrders || 1)) * 100}%;background:${r.counts ? 'var(--good)' : r.cancelled ? 'var(--bad)' : 'var(--text-muted)'}"></span></span><b>${W.fmtPct(r.orders / (canc.totalOrders || 1))}</b></div></td>
+            </tr>`).join('') : '<tr><td colspan="5" class="muted">Sin datos en este rango</td></tr>'}</tbody>
+        </table>
       </div>
 
       <div class="panel">

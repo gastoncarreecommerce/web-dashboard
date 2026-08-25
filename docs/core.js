@@ -75,7 +75,7 @@
   W.sumRange = function (daily, bucket, range) {
     const acc = {
       gmv: 0, orders: 0, units: 0, discount: 0, newCustomers: 0, activeCustomers: 0,
-      marketing: {}, series: [], bySegment: {}, hourly: new Array(24).fill(0),
+      marketing: {}, series: [], bySegment: {}, hourly: new Array(24).fill(0), statusStats: {},
     };
     for (const s of W.SEGMENTS) acc.bySegment[s] = { gmv: 0, orders: 0, units: 0 };
 
@@ -105,10 +105,38 @@
         acc.newCustomers += day.newCustomers || 0;
         acc.activeCustomers += day.activeCustomers || 0;
         (day.hourly || []).forEach((n, h) => (acc.hourly[h] += n));
+        // Los estados vienen del listado de VTEX (todos los pedidos del día,
+        // no solo los que cuentan), así que solo aplican a la vista del canal completo.
+        for (const [st, v] of Object.entries(day.statusStats || {})) {
+          const e = (acc.statusStats[st] = acc.statusStats[st] || { orders: 0, gmv: 0 });
+          e.orders += v.orders || 0;
+          e.gmv += v.gmv || 0;
+        }
       }
       acc.series.push({ date: day.date, gmv: dayGmv, orders: dayOrders, units: dayUnits, newCustomers: day.newCustomers || 0 });
     }
     return acc;
+  };
+
+  // Estados que cuentan como cancelación. Tiene que coincidir con
+  // config/status-filter.json > cancelledStatuses.
+  W.CANCELLED_STATUSES = ['canceled', 'cancelled', 'cancel', 'request-cancel'];
+
+  /** Resume los estados de un rango: cuánto se canceló y sobre qué total. */
+  W.cancellations = function (statusStats) {
+    let cancelledOrders = 0, cancelledGmv = 0, totalOrders = 0, totalGmv = 0;
+    for (const [st, v] of Object.entries(statusStats || {})) {
+      totalOrders += v.orders;
+      totalGmv += v.gmv;
+      if (W.CANCELLED_STATUSES.includes(st)) {
+        cancelledOrders += v.orders;
+        cancelledGmv += v.gmv;
+      }
+    }
+    return {
+      cancelledOrders, cancelledGmv, totalOrders, totalGmv,
+      rate: totalOrders ? cancelledOrders / totalOrders : 0,
+    };
   };
 
   W.ticket = (gmv, orders) => (orders ? gmv / orders : 0);

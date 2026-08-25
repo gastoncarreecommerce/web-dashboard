@@ -415,3 +415,8 @@ details.more[open] summary { margin-bottom: 0.5rem; }
   .nav-item { justify-content: center; }
   .nav-item span:not(.ni) { display: none; }
 }
+
+.pill { font-size: 0.7rem; font-weight: 600; padding: 0.12rem 0.45rem; border-radius: 20px; white-space: nowrap; }
+.pill.ok { color: var(--good); background: var(--good-weak); }
+.pill.bad { color: var(--bad); background: var(--bad-weak); }
+.pill.muted { color: var(--text-muted); background: var(--surface-3); }

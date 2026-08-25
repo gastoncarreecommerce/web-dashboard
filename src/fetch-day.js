@@ -223,7 +223,7 @@ function finalizeDay(acc, meta) {
     // vuelva a buscar EXACTAMENTE los que fallaron en vez de rehacer todo el día.
     failedOrderIds: meta.failedOrderIds,
     unknownStatuses: meta.unknownStatuses,
-    statusCounts: meta.statusCounts || {},
+    statusStats: meta.statusStats || {},
     segments: acc.segments,
     hourly: acc.hourly,
     coupons: acc.coupons,
@@ -246,15 +246,18 @@ async function fetchDay(dateStr) {
   // Paso 1: el listado (barato, ~20 llamadas para 2000 pedidos). Se filtra por
   // status acá, que sí viene en el resumen, para no pedir detalles de más.
   const idsToFetch = [];
-  const statusCounts = {};
+  const statusStats = {};
   for await (const summary of iterateAllOrders({ fromISO, toISO })) {
     scanned += 1;
-    // Se cuenta cada status visto (no solo su nombre) para poder dimensionar
-    // cuántos pedidos deja afuera un status sin clasificar antes de decidir
-    // si va a includeStatuses o a excludeStatuses.
-    statusCounts[summary.status] = (statusCounts[summary.status] || 0) + 1;
-    if (!statusFilter.includeStatuses.includes(summary.status) && !statusFilter.excludeStatuses.includes(summary.status)) {
-      unknownStatuses.add(summary.status);
+    // Cantidad Y monto por estado, tomados del LISTADO: el listado ya trae
+    // status y totalValue, así que medir cancelaciones no cuesta ninguna
+    // llamada extra (el detalle es lo caro y a estos no se les pide).
+    const st = summary.status || 'sin_estado';
+    const stat = (statusStats[st] = statusStats[st] || { orders: 0, gmv: 0 });
+    stat.orders += 1;
+    stat.gmv += (Number(summary.totalValue) || 0) / 100;
+    if (!statusFilter.includeStatuses.includes(st) && !statusFilter.excludeStatuses.includes(st)) {
+      unknownStatuses.add(st);
     }
     if (!isIncludedStatus(summary, statusFilter)) continue;
     idsToFetch.push(summary.orderId);
@@ -284,7 +287,7 @@ async function fetchDay(dateStr) {
     detailsRequested: idsToFetch.length,
     failedOrderIds,
     unknownStatuses: [...unknownStatuses],
-    statusCounts,
+    statusStats,
   });
 }
 

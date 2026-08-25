@@ -1,7 +1,8 @@
 {
-  "_comment": "Convención de estados de VTEX Order API a incluir/excluir para el cálculo de métricas de negocio (GMV, repurchase, etc). Estos son los valores DEFAULT recomendados por VTEX/uso común en e-commerce, pero DEBEN validarse contra la convención ya definida en el proyecto AppDash original antes de confiar en los números. Si tenés acceso al repo de AppDash, buscá su lista de status (probablemente en un archivo similar) y pegala acá tal cual para que Web y App sean comparables.",
+  "_comment": "Qué estados de la VTEX Order API cuentan para las métricas de negocio (GMV, pedidos, recompra). Los estados observados realmente en esta cuenta durante el backfill de 2026-01 a 2026-08 están todos clasificados abajo; si aparece uno nuevo, el pipeline lo deja afuera y lo reporta en _meta/run-info.json > unknownStatuses para que se decida.",
   "includeStatuses": [
     "invoiced",
+    "invoice",
     "handling",
     "ready-for-handling",
     "shipped",
@@ -11,11 +12,22 @@
   "excludeStatuses": [
     "canceled",
     "cancelled",
+    "cancel",
+    "request-cancel",
     "order-created",
     "payment-pending",
     "on-order-completed",
     "waiting-for-seller-decision"
   ],
-  "policy": "Un pedido se cuenta para métricas si su `status` está en includeStatuses. Cualquier status no listado en ninguna de las dos listas se trata como 'desconocido' y se excluye por defecto, pero se registra en data/web/_meta/unknown-statuses.json para revisión manual.",
-  "source": "NEEDS_CONFIRMATION_AGAINST_APPDASH"
+  "cancelledStatuses": [
+    "canceled",
+    "cancelled",
+    "cancel",
+    "request-cancel"
+  ],
+  "policy": "Un pedido cuenta para las métricas si su `status` está en includeStatuses. Los de cancelledStatuses NO entran en las métricas, pero se miden aparte (cantidad y monto) para poder ver la tasa de cancelación — ese dato sale del listado de pedidos, sin pedir el detalle, así que no cuesta llamadas extra. Cualquier estado que no figure en ninguna lista se excluye y se reporta como desconocido.",
+  "notes": [
+    "'invoice' se incluye por decisión del usuario (2026-08-25): es la variante de facturado que devuelve esta cuenta.",
+    "'cancel' y 'request-cancel' aparecieron en el backfill real; se excluyen de las métricas pero se muestran en el panel de estados."
+  ]
 }

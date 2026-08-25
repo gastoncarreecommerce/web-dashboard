@@ -160,6 +160,20 @@
         kpi({ icon: '🏷️', label: 'Descuentos', value: W.fmtMoneyC(cur.discount), delta: d(cur.discount, prev.discount),
           color: '#e34948', sub: cur.gmv ? `${W.fmtPct(cur.discount / (cur.gmv + cur.discount))} del valor bruto` : '' })
       );
+
+      // Las cancelaciones NO entran en las métricas de negocio, pero se miden
+      // igual: salen del listado de VTEX, sin costo extra de llamadas.
+      const canc = W.cancellations(cur.statusStats);
+      const cancPrev = cmp ? W.cancellations(prev.statusStats) : null;
+      if (canc.totalOrders) {
+        tiles.push(kpi({
+          icon: '🚫', label: 'Cancelaciones', value: W.fmtPct(canc.rate),
+          delta: cmp ? W.delta(canc.rate, cancPrev.rate) : undefined,
+          color: '#e34948',
+          sub: `${W.fmtNumC(canc.cancelledOrders)} pedidos · ${W.fmtMoneyC(canc.cancelledGmv)} no facturados`,
+          tip: `<strong>Cancelaciones</strong><span class="tip-row">${W.fmtNum(canc.cancelledOrders)} de ${W.fmtNum(canc.totalOrders)} pedidos del período</span><span class="tip-row">No se cuentan en GMV ni pedidos</span>`,
+        }));
+      }
     }
 
     // ── Serie principal: pedidos + media móvil + proyección ─────────────────

@@ -102,7 +102,7 @@ function main() {
   const missingDays = [];
   let scannedTotal = 0;
   const unknownStatuses = new Set();
-  const statusCounts = {};
+  const statusTotals = {};
 
   const lastAvailable = days[days.length - 1];
   if (lastAvailable) {
@@ -136,7 +136,11 @@ function main() {
     const day = JSON.parse(fs.readFileSync(path.join(DAILY_DIR, `${date}.json`), 'utf8'));
     scannedTotal += day.scanned || 0;
     for (const s of day.unknownStatuses || []) unknownStatuses.add(s);
-    for (const [st, n] of Object.entries(day.statusCounts || {})) statusCounts[st] = (statusCounts[st] || 0) + n;
+    for (const [st, v] of Object.entries(day.statusStats || {})) {
+      const e = (statusTotals[st] = statusTotals[st] || { orders: 0, gmv: 0 });
+      e.orders += v.orders || 0;
+      e.gmv += v.gmv || 0;
+    }
     const isCurrentMonth = date.slice(0, 7) === currentMonthPrefix;
 
     const daySegments = {};
@@ -206,6 +210,7 @@ function main() {
       discount: day.discountTotal || 0,
       newCustomers,
       activeCustomers: Object.keys(day.customers || {}).length,
+      statusStats: day.statusStats || {},
     });
   }
 
@@ -321,7 +326,7 @@ function main() {
     scannedOrdersTotal: scannedTotal,
     uniqueCustomers: profiles.size,
     unknownStatuses: [...unknownStatuses],
-    statusCounts: Object.fromEntries(Object.entries(statusCounts).sort((a, b) => b[1] - a[1])),
+    statusTotals: Object.fromEntries(Object.entries(statusTotals).sort((a, b) => b[1].orders - a[1].orders)),
     fileSizes: {
       'daily-summary.json': sizeDaily,
       'catalog.json': sizeCatalog,
