@@ -5,3 +5,4 @@ config/category-map.report.json
 
 # Salida con PII del export de audiencias — NUNCA commitear
 private-out/
+__pycache__/
