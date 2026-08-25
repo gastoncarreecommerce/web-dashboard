@@ -95,6 +95,22 @@ function monthOf(dateStr) {
 function main() {
   const startDate = pipelineConfig.detailWindowStartDate;
   const days = listAvailableDays(startDate);
+
+  // Salvaguarda: si los archivos diarios desaparecieron (un rm de más, un
+  // checkout incompleto, un artifact que no bajó) NO se pisan las métricas
+  // buenas con ceros. Ya pasó una vez y dejó producción en blanco.
+  const prevPath = path.join(__dirname, '..', 'docs', 'data', 'web', '_meta', 'run-info.json');
+  if (!days.length && fs.existsSync(prevPath)) {
+    try {
+      const prev = JSON.parse(fs.readFileSync(prevPath, 'utf8'));
+      if (prev.daysAggregated > 0 && !process.env.ALLOW_EMPTY_AGGREGATE) {
+        console.error(`✗ No hay archivos diarios, pero las métricas actuales tienen ${prev.daysAggregated} días.`);
+        console.error('  Se aborta para no dejar el dashboard en cero. Revisá docs/data/web/daily/.');
+        console.error('  Si el vaciado es intencional, correr con ALLOW_EMPTY_AGGREGATE=1.');
+        process.exit(1);
+      }
+    } catch { /* run-info ilegible: se sigue */ }
+  }
   const now = new Date();
   const currentMonthPrefix = now.toISOString().slice(0, 7);
 
