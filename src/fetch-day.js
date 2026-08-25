@@ -17,7 +17,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const { iterateAllOrders, getOrder } = require('./vtex-client');
+const { iterateAllOrders, getOrder, forEachLimit } = require('./vtex-client');
 const { orderChannel, isIncludedStatus, classifyOrder } = require('./classify');
 const { customerHash } = require('./customer-key');
 
@@ -32,6 +32,11 @@ const OUT_DIR = path.join(__dirname, '..', 'docs', 'data', 'web', 'daily');
 // haría que el repo crezca sin control. Se guarda el top por GMV, que es lo que
 // alimenta el pareto de productos, más los totales para no perder el denominador.
 const TOP_PRODUCTS_PER_DAY = Number(process.env.TOP_PRODUCTS_PER_DAY || 600);
+
+// El detalle de cada pedido es una llamada aparte a VTEX y hay ~2000 por día:
+// pedirlos de a uno tarda ~25 min por día. Con este pool baja a ~1-2 min.
+// Mismo orden de magnitud que usa AppDash (CONCURRENCY = 20).
+const DETAIL_CONCURRENCY = Number(process.env.DETAIL_CONCURRENCY || 20);
 
 function arDayRange(dateStr) {
   // Medianoche AR (UTC-3) del día `dateStr` hasta medianoche AR del día siguiente.
@@ -103,16 +108,30 @@ async function fetchDay(dateStr) {
   let discountTotal = 0;
   let productRowsSeen = 0;
 
+  // Paso 1: el listado (barato, ~20 llamadas para 2000 pedidos). Se filtra por
+  // status acá, que sí viene en el resumen, para no pedir detalles de más.
+  const idsToFetch = [];
   for await (const summary of iterateAllOrders({ fromISO, toISO })) {
     scanned += 1;
-
     if (!statusFilter.includeStatuses.includes(summary.status) && !statusFilter.excludeStatuses.includes(summary.status)) {
       unknownStatuses.add(summary.status);
     }
     if (!isIncludedStatus(summary, statusFilter)) continue;
+    idsToFetch.push(summary.orderId);
+  }
 
-    const full = await getOrder(summary.orderId);
-    if (orderChannel(full, channelMap) !== 'web') continue;
+  // Paso 2: los detalles, en paralelo. Es la parte cara (una llamada por pedido)
+  // y la única forma de saber el canal, el seller y el cliente.
+  let failed = 0;
+  await forEachLimit(idsToFetch, DETAIL_CONCURRENCY, async (orderId) => {
+    let full;
+    try {
+      full = await getOrder(orderId);
+    } catch (e) {
+      failed += 1;
+      return;
+    }
+    if (orderChannel(full, channelMap) !== 'web') return;
 
     const view = classifyOrder(full, segmentMap);
     const gmv = view.gmv;
@@ -182,7 +201,9 @@ async function fetchDay(dateStr) {
       c.s[view.bucket] = (c.s[view.bucket] || 0) + 1;
       for (const dept of orderCats) c.c[dept] = (c.c[dept] || 0) + 1;
     }
-  }
+  });
+
+  if (failed) console.warn(`  ⚠ ${failed} pedidos no se pudieron traer tras los reintentos.`);
 
   const allProducts = Object.values(productsById).sort((a, b) => b.gmv - a.gmv);
   const products = allProducts.slice(0, TOP_PRODUCTS_PER_DAY).map((p) => ({
@@ -201,6 +222,8 @@ async function fetchDay(dateStr) {
     webOrders,
     webGmv: Math.round(webGmv),
     discountTotal: Math.round(discountTotal),
+    detailsRequested: idsToFetch.length,
+    detailsFailed: failed,
     unknownStatuses: [...unknownStatuses],
     segments,
     hourly,

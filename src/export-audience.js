@@ -21,7 +21,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const { iterateAllOrders, getOrder } = require('./vtex-client');
+const { iterateAllOrders, getOrder, forEachLimit } = require('./vtex-client');
 const { orderChannel, isIncludedStatus } = require('./classify');
 const { customerHash } = require('./customer-key');
 const { arDayRange } = require('./fetch-day');
@@ -54,23 +54,36 @@ async function main() {
     process.exit(1);
   }
 
+  const CONCURRENCY = Number(process.env.DETAIL_CONCURRENCY || 20);
   const map = new Map(); // hash -> { email, orders }
+
   for (const date of eachDate(from, to)) {
     const { fromISO, toISO } = arDayRange(date);
-    let dayCount = 0;
+
+    const ids = [];
     for await (const summary of iterateAllOrders({ fromISO, toISO })) {
-      if (!isIncludedStatus(summary, statusFilter)) continue;
-      const full = await getOrder(summary.orderId);
-      if (orderChannel(full, channelMap) !== 'web') continue;
+      if (isIncludedStatus(summary, statusFilter)) ids.push(summary.orderId);
+    }
+
+    let dayCount = 0;
+    await forEachLimit(ids, CONCURRENCY, async (orderId) => {
+      let full;
+      try {
+        full = await getOrder(orderId);
+      } catch {
+        return;
+      }
+      if (orderChannel(full, channelMap) !== 'web') return;
 
       const hash = customerHash(full);
       const email = full.clientProfileData?.email;
-      if (!hash || !email) continue;
+      if (!hash || !email) return;
       const existing = map.get(hash);
       if (existing) existing.orders += 1;
       else map.set(hash, { email, orders: 1 });
       dayCount += 1;
-    }
+    });
+
     console.log(`  ✓ ${date} (${dayCount} pedidos web · ${map.size} clientes acumulados)`);
   }
 

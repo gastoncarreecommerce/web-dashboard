@@ -33,14 +33,51 @@ function authHeaders() {
   };
 }
 
-async function vtexFetch(path) {
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Reintenta con backoff exponencial. Necesario porque el pipeline pide los
+ * detalles con alta concurrencia y VTEX responde 429 cuando se pasa de rosca;
+ * un 429 no es un error definitivo, hay que esperar y reintentar.
+ * Los errores de credenciales o de pedido inexistente no se reintentan.
+ */
+async function vtexFetch(path, { retries = 6, baseDelay = 800 } = {}) {
   const url = `${baseUrl()}${path}`;
-  const res = await fetch(url, { headers: authHeaders() });
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(`VTEX API ${res.status} en ${path}: ${body.slice(0, 500)}`);
+  let lastErr;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url, { headers: authHeaders() });
+      if (res.ok) return res.json();
+
+      const body = await res.text().catch(() => '');
+      const err = new Error(`VTEX API ${res.status} en ${path}: ${body.slice(0, 300)}`);
+      err.status = res.status;
+      if (res.status === 401 || res.status === 403 || res.status === 404) throw err;
+      lastErr = err;
+    } catch (e) {
+      if (e.status === 401 || e.status === 403 || e.status === 404) throw e;
+      lastErr = e;
+    }
+    if (attempt < retries) await sleep(baseDelay * Math.pow(2, attempt) + Math.random() * 250);
   }
-  return res.json();
+  throw lastErr;
+}
+
+/**
+ * Ejecuta `fn` sobre cada item con como máximo `limit` en vuelo a la vez.
+ * Los resultados se entregan al callback apenas llegan, así no se acumulan
+ * miles de pedidos completos en memoria.
+ */
+async function forEachLimit(items, limit, fn) {
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (cursor < items.length) {
+      const i = cursor++;
+      await fn(items[i], i);
+    }
+  });
+  await Promise.all(workers);
 }
 
 /**
@@ -117,4 +154,5 @@ module.exports = {
   getCategoryTree,
   listSalesChannels,
   iterateAllOrders,
+  forEachLimit,
 };
