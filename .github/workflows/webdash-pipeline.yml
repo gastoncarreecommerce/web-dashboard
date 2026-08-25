@@ -44,6 +44,16 @@ jobs:
           fi
           node src/fetch-day.js "$DATE"
 
+      # Reintenta los pedidos que hayan fallado en cualquier día ya procesado,
+      # no solo en el de hoy: así ningún hueco queda pendiente para siempre.
+      - name: Reintentar pedidos caídos
+        env:
+          VTEX_ACCOUNT_NAME: ${{ secrets.VTEX_ACCOUNT_NAME }}
+          VTEX_APP_KEY: ${{ secrets.VTEX_APP_KEY }}
+          VTEX_APP_TOKEN: ${{ secrets.VTEX_APP_TOKEN }}
+          VTEX_ENVIRONMENT: ${{ secrets.VTEX_ENVIRONMENT }}
+        run: node src/repair.js
+
       - name: Aggregate all available days into per-segment metrics
         run: node src/aggregate.js
 

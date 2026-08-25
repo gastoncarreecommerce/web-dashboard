@@ -94,21 +94,153 @@ function bump(map, key, orders, gmv, units) {
   e.units += units || 0;
 }
 
+/** Acumulador vacío de un día. Mismo shape que el archivo guardado, para que
+ *  se pueda reconstruir desde el disco y seguir sumándole pedidos (ver repair.js). */
+function newDayAcc() {
+  return {
+    segments: Object.fromEntries(SEGMENTS.map((s) => [s, emptySegmentAgg()])),
+    hourly: new Array(24).fill(0),
+    coupons: {},
+    payments: {},
+    categories: {},
+    productsById: {},
+    customers: {},
+    webOrders: 0,
+    webGmv: 0,
+    discountTotal: 0,
+    productRowsSeen: 0,
+  };
+}
+
+/** Suma UN pedido completo al acumulador. Es todo lo que hay que hacer por pedido,
+ *  así que sirve igual para el fetch inicial y para reparar los que fallaron. */
+function applyOrderToAcc(acc, full) {
+  if (orderChannel(full, channelMap) !== 'web') return false;
+
+  const view = classifyOrder(full, segmentMap);
+  const gmv = view.gmv;
+  acc.webOrders += 1;
+  acc.webGmv += gmv;
+
+  const agg = acc.segments[view.bucket];
+  agg.orders += 1;
+  agg.gmv += gmv;
+
+  let orderUnits = 0;
+  for (const item of view.items) orderUnits += Number(item.quantity) || 0;
+  agg.units += orderUnits;
+
+  const src = marketingSource(full);
+  const m = (agg.marketing[src] = agg.marketing[src] || { orders: 0, gmv: 0 });
+  m.orders += 1;
+  m.gmv += gmv;
+
+  const hour = orderHourAR(full);
+  if (hour != null) acc.hourly[hour] += 1;
+
+  const coupon = full.marketingData?.coupon;
+  if (coupon) {
+    const c = (acc.coupons[coupon] = acc.coupons[coupon] || { orders: 0, gmv: 0, units: 0 });
+    c.orders += 1;
+    c.gmv += gmv;
+  }
+
+  // `discounts` en VTEX viene negativo (centavos); se guarda en positivo y en pesos.
+  const disc = (full.totals || []).find((t) => t.id === 'Discounts');
+  if (disc && typeof disc.value === 'number') acc.discountTotal += Math.abs(disc.value) / 100;
+
+  for (const g of paymentGroups(full)) bump(acc.payments, g, 1, gmv, 0);
+
+  // ── Productos y categorías (a nivel línea de ítem) ────────────────────────
+  const orderCats = new Set();
+  for (const item of view.items) {
+    const qty = Number(item.quantity) || 0;
+    const lineGmv = ((Number(item.sellingPrice) || 0) * qty) / 100;
+    const dept = itemDepartment(item);
+    orderCats.add(dept);
+    bump(acc.categories, dept, 1, lineGmv, qty);
+
+    const id = String(item.refId || item.id || item.name || 'sin_sku');
+    const p = (acc.productsById[id] = acc.productsById[id] || {
+      sku: id, name: item.name || id, dept, qty: 0, gmv: 0, orders: 0,
+    });
+    p.qty += qty;
+    p.gmv += lineGmv;
+    p.orders += 1;
+    acc.productRowsSeen += 1;
+  }
+
+  // ── Perfil de cliente del día (hash, nunca email) ─────────────────────────
+  const hash = customerHash(full);
+  if (hash) {
+    agg.customerCounts[hash] = (agg.customerCounts[hash] || 0) + 1;
+    const c = (acc.customers[hash] = acc.customers[hash] || { o: 0, g: 0, s: {}, c: {} });
+    c.o += 1;
+    c.g += gmv;
+    c.s[view.bucket] = (c.s[view.bucket] || 0) + 1;
+    for (const dept of orderCats) c.c[dept] = (c.c[dept] || 0) + 1;
+  }
+  return true;
+}
+
+/** Reconstruye el acumulador desde un archivo diario ya guardado. */
+function accFromDayFile(day) {
+  const acc = newDayAcc();
+  for (const s of SEGMENTS) {
+    const src = day.segments?.[s];
+    if (src) acc.segments[s] = { ...emptySegmentAgg(), ...src };
+  }
+  acc.hourly = (day.hourly || new Array(24).fill(0)).slice();
+  acc.coupons = { ...(day.coupons || {}) };
+  acc.payments = { ...(day.payments || {}) };
+  acc.categories = { ...(day.categories || {}) };
+  acc.customers = { ...(day.customers || {}) };
+  acc.webOrders = day.webOrders || 0;
+  acc.webGmv = day.webGmv || 0;
+  acc.discountTotal = day.discountTotal || 0;
+  acc.productRowsSeen = day.productRowsSeen || 0;
+  for (const p of day.products || []) acc.productsById[p.sku] = { ...p };
+  return acc;
+}
+
+function finalizeDay(acc, meta) {
+  const allProducts = Object.values(acc.productsById).sort((a, b) => b.gmv - a.gmv);
+  const products = allProducts.slice(0, TOP_PRODUCTS_PER_DAY).map((p) => ({
+    sku: p.sku, name: p.name, dept: p.dept,
+    qty: Math.round(p.qty), gmv: Math.round(p.gmv), orders: p.orders,
+  }));
+
+  return {
+    date: meta.date,
+    generatedAt: new Date().toISOString(),
+    scanned: meta.scanned,
+    webOrders: acc.webOrders,
+    webGmv: Math.round(acc.webGmv),
+    discountTotal: Math.round(acc.discountTotal),
+    detailsRequested: meta.detailsRequested,
+    detailsFailed: meta.failedOrderIds.length,
+    // Se guardan los IDs, no solo el conteo: es lo que permite que src/repair.js
+    // vuelva a buscar EXACTAMENTE los que fallaron en vez de rehacer todo el día.
+    failedOrderIds: meta.failedOrderIds,
+    unknownStatuses: meta.unknownStatuses,
+    segments: acc.segments,
+    hourly: acc.hourly,
+    coupons: acc.coupons,
+    payments: acc.payments,
+    categories: acc.categories,
+    products,
+    productsTruncated: allProducts.length > products.length,
+    distinctSkus: allProducts.length,
+    productRowsSeen: acc.productRowsSeen,
+    customers: acc.customers,
+  };
+}
+
 async function fetchDay(dateStr) {
   const { fromISO, toISO } = arDayRange(dateStr);
-  const segments = Object.fromEntries(SEGMENTS.map((s) => [s, emptySegmentAgg()]));
+  const acc = newDayAcc();
   const unknownStatuses = new Set();
-  const hourly = new Array(24).fill(0);
-  const coupons = {};
-  const payments = {};
-  const categories = {};
-  const productsById = {};
-  const customers = {};
   let scanned = 0;
-  let webOrders = 0;
-  let webGmv = 0;
-  let discountTotal = 0;
-  let productRowsSeen = 0;
 
   // Paso 1: el listado (barato, ~20 llamadas para 2000 pedidos). Se filtra por
   // status acá, que sí viene en el resumen, para no pedir detalles de más.
@@ -124,120 +256,29 @@ async function fetchDay(dateStr) {
 
   // Paso 2: los detalles, en paralelo. Es la parte cara (una llamada por pedido)
   // y la única forma de saber el canal, el seller y el cliente.
-  let failed = 0;
+  const failedOrderIds = [];
   await forEachLimit(idsToFetch, DETAIL_CONCURRENCY, async (orderId) => {
     let full;
     try {
       full = await getOrder(orderId);
-    } catch (e) {
-      failed += 1;
+    } catch {
+      failedOrderIds.push(orderId);
       return;
     }
-    if (orderChannel(full, channelMap) !== 'web') return;
-
-    const view = classifyOrder(full, segmentMap);
-    const gmv = view.gmv;
-    webOrders += 1;
-    webGmv += gmv;
-
-    const agg = segments[view.bucket];
-    agg.orders += 1;
-    agg.gmv += gmv;
-
-    let orderUnits = 0;
-    for (const item of view.items) orderUnits += Number(item.quantity) || 0;
-    agg.units += orderUnits;
-
-    const src = marketingSource(full);
-    const m = (agg.marketing[src] = agg.marketing[src] || { orders: 0, gmv: 0 });
-    m.orders += 1;
-    m.gmv += gmv;
-
-    const hour = orderHourAR(full);
-    if (hour != null) hourly[hour] += 1;
-
-    const coupon = full.marketingData?.coupon;
-    if (coupon) {
-      const c = (coupons[coupon] = coupons[coupon] || { orders: 0, gmv: 0 });
-      c.orders += 1;
-      c.gmv += gmv;
-    }
-
-    // `discounts` en VTEX viene negativo (centavos); se guarda en positivo y en pesos.
-    const disc = (full.totals || []).find((t) => t.id === 'Discounts');
-    if (disc && typeof disc.value === 'number') discountTotal += Math.abs(disc.value) / 100;
-
-    for (const g of paymentGroups(full)) bump(payments, g, 1, gmv, 0);
-
-    // ── Productos y categorías (a nivel línea de ítem) ──────────────────────
-    const orderCats = new Set();
-    for (const item of view.items) {
-      const qty = Number(item.quantity) || 0;
-      const lineGmv = ((Number(item.sellingPrice) || 0) * qty) / 100;
-      const dept = itemDepartment(item);
-      orderCats.add(dept);
-      bump(categories, dept, 1, lineGmv, qty);
-
-      const id = String(item.refId || item.id || item.name || 'sin_sku');
-      const p = (productsById[id] = productsById[id] || {
-        sku: id,
-        name: item.name || id,
-        dept,
-        qty: 0,
-        gmv: 0,
-        orders: 0,
-      });
-      p.qty += qty;
-      p.gmv += lineGmv;
-      p.orders += 1;
-      productRowsSeen += 1;
-    }
-
-    // ── Perfil de cliente del día (hash, nunca email) ───────────────────────
-    const hash = customerHash(full);
-    if (hash) {
-      agg.customerCounts[hash] = (agg.customerCounts[hash] || 0) + 1;
-      const c = (customers[hash] = customers[hash] || { o: 0, g: 0, s: {}, c: {} });
-      c.o += 1;
-      c.g += gmv;
-      c.s[view.bucket] = (c.s[view.bucket] || 0) + 1;
-      for (const dept of orderCats) c.c[dept] = (c.c[dept] || 0) + 1;
-    }
+    applyOrderToAcc(acc, full);
   });
 
-  if (failed) console.warn(`  ⚠ ${failed} pedidos no se pudieron traer tras los reintentos.`);
+  if (failedOrderIds.length) {
+    console.warn(`  ⚠ ${failedOrderIds.length} pedidos no se pudieron traer; quedan anotados para reintentar.`);
+  }
 
-  const allProducts = Object.values(productsById).sort((a, b) => b.gmv - a.gmv);
-  const products = allProducts.slice(0, TOP_PRODUCTS_PER_DAY).map((p) => ({
-    sku: p.sku,
-    name: p.name,
-    dept: p.dept,
-    qty: Math.round(p.qty),
-    gmv: Math.round(p.gmv),
-    orders: p.orders,
-  }));
-
-  return {
+  return finalizeDay(acc, {
     date: dateStr,
-    generatedAt: new Date().toISOString(),
     scanned,
-    webOrders,
-    webGmv: Math.round(webGmv),
-    discountTotal: Math.round(discountTotal),
     detailsRequested: idsToFetch.length,
-    detailsFailed: failed,
+    failedOrderIds,
     unknownStatuses: [...unknownStatuses],
-    segments,
-    hourly,
-    coupons,
-    payments,
-    categories,
-    products,
-    productsTruncated: allProducts.length > products.length,
-    distinctSkus: allProducts.length,
-    productRowsSeen,
-    customers,
-  };
+  });
 }
 
 async function main() {
@@ -269,4 +310,14 @@ if (require.main === module) {
   });
 }
 
-module.exports = { fetchDay, arDayRange, itemDepartment };
+module.exports = {
+  fetchDay,
+  arDayRange,
+  itemDepartment,
+  newDayAcc,
+  applyOrderToAcc,
+  accFromDayFile,
+  finalizeDay,
+  OUT_DIR,
+  DETAIL_CONCURRENCY,
+};
