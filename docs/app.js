@@ -1,5 +1,5 @@
 /* global window, document */
-/** Shell + router de WebDash: estado global (vista, rango, segmento) y render. */
+/** Shell + router: estado global (vista, rango, segmento) y render. */
 (function () {
   const W = (window.W = window.W || {});
 
@@ -11,75 +11,85 @@
     compare: W.store.get('compare', true),
   };
 
-  const el = {
-    content: () => document.getElementById('content'),
-    rangeLabel: () => document.getElementById('range-label'),
-    compareLabel: () => document.getElementById('compare-label'),
-    from: () => document.getElementById('date-from'),
-    to: () => document.getElementById('date-to'),
-    metaBar: () => document.getElementById('meta-bar'),
-  };
-
+  const $ = (id) => document.getElementById(id);
   let days = [];
   let startDate = null;
   let exportsBag = {};
 
+  const NAV_ICON = { dashboard: 'dashboard', analytics: 'analytics', audiences: 'audience' };
+  const TITLES = { dashboard: 'Dashboard', analytics: 'Analítica', audiences: 'Audiencias' };
+
+  function paintChrome() {
+    document.querySelectorAll('.nav-item').forEach((n) => {
+      n.querySelector('.ni').innerHTML = W.icon(NAV_ICON[n.dataset.view], 18);
+      const on = n.dataset.view === state.view;
+      n.classList.toggle('active', on);
+      n.setAttribute('aria-current', on ? 'page' : 'false');
+    });
+    $('logout').innerHTML = `${W.icon('logout', 15)}<span>Cerrar sesión</span>`;
+
+    $('segbar').innerHTML = [
+      { k: 'all', label: 'Todos', icon: 'globe' },
+      ...W.SEGMENTS.map((s) => ({ k: s, label: W.SEGMENT_LABEL[s], icon: W.SEGMENT_ICON_NAME[s] })),
+    ]
+      .map((s) => `<button class="chip${s.k === state.bucket ? ' on' : ''}" data-bucket="${s.k}">${W.icon(s.icon, 14)}${W.esc(s.label)}</button>`)
+      .join('');
+    document.querySelectorAll('[data-bucket]').forEach((b) =>
+      b.addEventListener('click', () => {
+        state.bucket = b.dataset.bucket;
+        W.store.set('bucket', state.bucket);
+        W.render();
+      })
+    );
+  }
+
   function resolveRange() {
-    if (state.preset === 'custom' && el.from()?.value && el.to()?.value) {
-      const from = el.from().value, to = el.to().value;
+    if (state.preset === 'custom' && $('date-from')?.value && $('date-to')?.value) {
+      const from = $('date-from').value, to = $('date-to').value;
       return from <= to ? { from, to } : { from: to, to: from };
     }
     return W.presetRange(state.preset, days, startDate);
   }
 
-  function syncChrome() {
-    document.querySelectorAll('.nav-item').forEach((n) => {
-      const active = n.dataset.view === state.view;
-      n.classList.toggle('active', active);
-      n.setAttribute('aria-current', active ? 'page' : 'false');
-    });
-    document.querySelectorAll('.preset').forEach((b) => b.classList.toggle('active', b.dataset.preset === state.preset));
-    document.querySelectorAll('.seg-pill').forEach((b) => b.classList.toggle('active', b.dataset.bucket === state.bucket));
+  function sync() {
+    paintChrome();
+    document.querySelectorAll('#presets button').forEach((b) => b.classList.toggle('on', b.dataset.preset === state.preset));
+    $('view-title').textContent = TITLES[state.view];
 
-    // El selector de segmento y la comparación solo aplican al Dashboard; sin
-    // ellos la subbarra queda vacía, así que se oculta entera.
-    const isDash = state.view === 'dashboard';
-    document.querySelector('.subbar').style.display = isDash ? '' : 'none';
-    // Audiencias mira toda la base histórica, no un rango: se ocultan los filtros de fecha.
-    document.getElementById('date-controls').style.display = state.view === 'audiences' ? 'none' : '';
-
-    const titles = { dashboard: 'Dashboard', analytics: 'Analítica', audiences: 'Audiencias' };
-    document.getElementById('view-title').textContent = titles[state.view];
+    // El filtro de segmento y la comparación solo aplican al Dashboard; sin
+    // ellos la fila queda vacía, así que se oculta entera.
+    $('row2').style.display = state.view === 'dashboard' ? '' : 'none';
+    // Audiencias mira toda la base histórica, no un rango.
+    $('date-controls').style.display = state.view === 'audiences' ? 'none' : '';
+    $('range-label').style.display = state.view === 'audiences' ? 'none' : '';
 
     if (state.range) {
-      el.rangeLabel().textContent = state.range.from === state.range.to
+      $('range-label').textContent = state.range.from === state.range.to
         ? W.fmtDayLong(state.range.from)
         : `${W.fmtDayLong(state.range.from)} → ${W.fmtDayLong(state.range.to)}`;
-      if (el.from()) el.from().value = state.range.from;
-      if (el.to()) el.to().value = state.range.to;
+      $('date-from').value = state.range.from;
+      $('date-to').value = state.range.to;
       const pr = W.previousRange(state.range);
-      el.compareLabel().textContent = state.compare ? `vs. ${W.fmtDay(pr.from)} → ${W.fmtDay(pr.to)}` : '';
+      $('cmp-label').textContent = state.compare ? `vs. ${W.fmtDay(pr.from)} – ${W.fmtDay(pr.to)}` : '';
     }
-    el.rangeLabel().style.display = state.view === 'audiences' ? 'none' : '';
   }
 
   W.render = async function () {
     state.range = resolveRange();
-    syncChrome();
+    sync();
     exportsBag = {};
-    const ctx = { range: state.range, bucket: state.bucket, compare: state.compare, el: el.content(), exports: exportsBag };
-
+    const ctx = { range: state.range, bucket: state.bucket, compare: state.compare, el: $('content'), exports: exportsBag };
     try {
       if (state.view === 'dashboard') await W.viewDashboard(ctx);
       else if (state.view === 'analytics') await W.viewAnalytics(ctx);
       else await W.viewAudiences(ctx);
     } catch (e) {
-      el.content().innerHTML = `<div class="empty-state error"><h2>Algo falló al renderizar</h2><p>${W.esc(e.message)}</p></div>`;
+      $('content').innerHTML = `<div class="empty err"><h2>Algo falló al renderizar</h2><p>${W.esc(e.message)}</p></div>`;
       console.error(e);
     }
   };
 
-  // Botones de exportación: delegado, porque las vistas se re-renderizan enteras.
+  // Exportaciones: delegado, porque las vistas se re-renderizan enteras.
   document.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-export]');
     if (!btn) return;
@@ -97,18 +107,19 @@
       startDate = daily.detailWindowStartDate;
       meta = await W.load('_meta/run-info').catch(() => null);
     } catch (e) {
-      el.content().innerHTML = `<div class="empty-state error"><h2>No se pudieron cargar los datos</h2>
+      $('content').innerHTML = `<div class="empty err"><h2>No se pudieron cargar los datos</h2>
         <p>${W.esc(e.message)}</p><p class="muted">¿Ya corrió el pipeline? Ver README.</p></div>`;
+      paintChrome();
       return;
     }
 
     if (meta) {
       const bits = [`Actualizado ${new Date(meta.generatedAt).toLocaleString('es-AR')}`];
-      if (meta.uniqueCustomers) bits.push(`${W.fmtNumC(meta.uniqueCustomers)} clientes únicos`);
+      if (meta.uniqueCustomers) bits.push(`${W.fmtNumC(meta.uniqueCustomers)} clientes`);
       if (meta.daysAggregated) bits.push(`${meta.daysAggregated} días`);
-      el.metaBar().innerHTML = bits.map((b) => `<span>${W.esc(b)}</span>`).join('');
+      $('meta').innerHTML = bits.map((b) => `<span>${W.esc(b)}</span>`).join('');
       if (meta.warning) {
-        el.metaBar().innerHTML += `<span class="meta-warn" ${W.chart.tip(W.esc(meta.warning))}>⚠ ${W.esc(meta.warning.slice(0, 70))}${meta.warning.length > 70 ? '…' : ''}</span>`;
+        $('meta').innerHTML += `<span class="w" ${W.chart.tip(W.esc(meta.warning))}>${W.icon('warn', 13)}${W.esc(meta.warning.slice(0, 64))}${meta.warning.length > 64 ? '…' : ''}</span>`;
       }
     }
 
@@ -120,38 +131,30 @@
         W.render();
       })
     );
-    document.querySelectorAll('.preset').forEach((b) =>
+    document.querySelectorAll('#presets button').forEach((b) =>
       b.addEventListener('click', () => {
         state.preset = b.dataset.preset;
         W.store.set('preset', state.preset);
         W.render();
       })
     );
-    document.querySelectorAll('.seg-pill').forEach((b) =>
-      b.addEventListener('click', () => {
-        state.bucket = b.dataset.bucket;
-        W.store.set('bucket', state.bucket);
-        W.render();
-      })
-    );
-    [el.from(), el.to()].forEach((i) =>
+    [$('date-from'), $('date-to')].forEach((i) =>
       i.addEventListener('change', () => {
         state.preset = 'custom';
         W.store.set('preset', 'custom');
         W.render();
       })
     );
-    document.getElementById('logout')?.addEventListener('click', async () => {
-      try { await fetch('/api/logout', { method: 'POST' }); } catch { /* sin backend en local */ }
-      location.href = '/login.html';
-    });
-
-    const ct = document.getElementById('compare-toggle');
-    ct.checked = state.compare;
-    ct.addEventListener('change', () => {
-      state.compare = ct.checked;
+    const cmp = $('cmp');
+    cmp.checked = state.compare;
+    cmp.addEventListener('change', () => {
+      state.compare = cmp.checked;
       W.store.set('compare', state.compare);
       W.render();
+    });
+    $('logout').addEventListener('click', async () => {
+      try { await fetch('/api/logout', { method: 'POST' }); } catch { /* sin backend en local */ }
+      location.href = '/login.html';
     });
 
     W.render();

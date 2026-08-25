@@ -10,8 +10,8 @@
   const W = (window.W = window.W || {});
   const C = (W.chart = {});
 
-  const AXIS = 'var(--text-muted)';
-  const GRID = 'var(--gridline)';
+  const AXIS = 'var(--ink-3)';
+  const GRID = 'var(--grid)';
 
   // ── Tooltip global delegado ───────────────────────────────────────────────
   let tipEl = null;
@@ -123,7 +123,7 @@
       .join('');
 
     const legend = series.length > 1
-      ? `<div class="chart-legend">${series
+      ? `<div class="legend">${series
           .map((s) => `<span class="lg"><i style="background:${s.color}${s.dashed ? ';opacity:.55' : ''}"></i>${W.esc(s.name)}</span>`)
           .join('')}</div>`
       : '';
@@ -179,12 +179,12 @@
         ? `<text x="${x(i)}" y="${h - 9}" text-anchor="middle" fill="${AXIS}" font-size="10">${W.fmtDay(l)}</text>` : ''))
       .join('');
 
-    const legend = `<div class="chart-legend">${series.map((s) => `<span class="lg"><i style="background:${s.color}"></i>${W.esc(s.name)}</span>`).join('')}</div>`;
+    const legend = `<div class="legend">${series.map((s) => `<span class="lg"><i style="background:${s.color}"></i>${W.esc(s.name)}</span>`).join('')}</div>`;
     return `${legend}<svg class="chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img">${grid}${bars}${xLabels}</svg>`;
   };
 
   /** Barras horizontales (pareto de productos, categorías, cupones…). */
-  C.barsH = function ({ items, valueFmt = W.fmtMoneyC, color = 'var(--accent)', maxRows = 20, showRank = true }) {
+  C.barsH = function ({ items, valueFmt = W.fmtMoneyC, color = 'var(--s1)', maxRows = 20, showRank = true }) {
     const rows = items.slice(0, maxRows);
     if (!rows.length) return '<div class="chart-empty">Sin datos en este rango.</div>';
     const max = Math.max(...rows.map((r) => r.value), 1);
@@ -223,7 +223,7 @@
             const bg = C.rampColor(t);
             const dark = t > 0.55;
             const tip = tipFmt ? tipFmt(rLabel, cLabel, v, t) : `<strong>${W.esc(rLabel)} → ${W.esc(cLabel)}</strong><span class="tip-row">${fmt(v)}</span>`;
-            return `<td class="hm-cell" style="background:${bg};color:${dark ? '#fff' : 'var(--text-primary)'}" ${C.tip(tip)}>${cellPct ? W.fmtPct(t, 0) : fmt(v)}</td>`;
+            return `<td class="hm-cell" style="background:${bg};color:${dark ? '#fff' : 'var(--ink)'}" ${C.tip(tip)}>${cellPct ? W.fmtPct(t, 0) : fmt(v)}</td>`;
           })
           .join('');
         return `<tr><th class="hm-row">${W.esc(rLabel)}${rowSub ? `<span>${W.esc(rowSub[ri] || '')}</span>` : ''}</th>${cells}</tr>`;
@@ -260,8 +260,8 @@
     return `<div class="donut-wrap">
       <svg class="donut" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" role="img">
         ${arcs}
-        ${centerValue ? `<text x="${r}" y="${r - 2}" text-anchor="middle" font-size="19" font-weight="700" fill="var(--text-primary)">${W.esc(centerValue)}</text>` : ''}
-        ${centerLabel ? `<text x="${r}" y="${r + 16}" text-anchor="middle" font-size="10.5" fill="var(--text-muted)">${W.esc(centerLabel)}</text>` : ''}
+        ${centerValue ? `<text x="${r}" y="${r - 2}" text-anchor="middle" font-size="19" font-weight="700" fill="var(--ink)">${W.esc(centerValue)}</text>` : ''}
+        ${centerLabel ? `<text x="${r}" y="${r + 16}" text-anchor="middle" font-size="10.5" fill="var(--ink-3)">${W.esc(centerLabel)}</text>` : ''}
       </svg>
       <div class="donut-legend">${items
         .map((i) => `<div class="dl"><i style="background:${i.color}"></i><span>${W.esc(i.label)}</span><b>${W.fmtPct(i.value / total)}</b></div>`)
@@ -270,7 +270,7 @@
   };
 
   /** Sparkline para las tiles de KPI. */
-  C.sparkline = function (values, color = 'var(--accent)', w = 110, h = 30) {
+  C.sparkline = function (values, color = 'var(--s1)', w = 110, h = 30) {
     if (!values || values.length < 2) return '';
     const max = Math.max(...values), min = Math.min(...values);
     const span = max - min || 1;

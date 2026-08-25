@@ -4,76 +4,80 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>WebDash — Carrefour Argentina</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;750&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="shell">
-    <aside class="sidebar">
-      <div class="brand"><span class="brand-mark">W</span><span>WebDash<em>canal web</em></span></div>
+    <aside class="nav">
+      <div class="nav-brand">
+        <div class="nav-logo"><span>C</span></div>
+        <div class="nav-brand-txt"><strong>WebDash</strong><em>Canal Web · VTEX</em></div>
+      </div>
 
-      <div class="nav-section">Principal</div>
-      <nav class="nav">
-        <a class="nav-item active" href="#" data-view="dashboard"><span class="ni">📊</span>Dashboard</a>
-        <a class="nav-item" href="#" data-view="analytics"><span class="ni">🔬</span>Analítica</a>
-        <a class="nav-item" href="#" data-view="audiences"><span class="ni">🎯</span>Audiencias</a>
-      </nav>
+      <div class="nav-scroll">
+        <div class="nav-sec">Análisis</div>
+        <a class="nav-item active" data-view="dashboard"><span class="ni"></span><span>Dashboard</span></a>
+        <a class="nav-item" data-view="analytics"><span class="ni"></span><span>Analítica</span></a>
+        <div class="nav-sec">Activación</div>
+        <a class="nav-item" data-view="audiences"><span class="ni"></span><span>Audiencias</span></a>
+      </div>
 
-      <div class="sidebar-foot">
-        <div class="sf-title">Carrefour Argentina</div>
-        <div class="sf-sub">Pedidos del canal web · VTEX</div>
-        <button class="logout" id="logout">Cerrar sesión</button>
+      <div class="nav-foot">
+        <div class="nav-foot-org">Carrefour Argentina</div>
+        <div class="nav-foot-sub">eCommerce Analytics</div>
+        <button class="nav-logout" id="logout"></button>
       </div>
     </aside>
 
     <div class="main">
-      <header class="topbar">
-        <div class="tb-left">
-          <h1 id="view-title">Dashboard</h1>
-          <span id="range-label" class="range-label">—</span>
+      <header class="top">
+        <div class="top-row">
+          <div class="top-title">
+            <h1 id="view-title">Dashboard</h1>
+            <span id="range-label" class="top-sub">—</span>
+          </div>
+          <div class="top-tools" id="date-controls">
+            <div class="seg-ctl" id="presets">
+              <button data-preset="yesterday">Ayer</button>
+              <button data-preset="7d">7d</button>
+              <button data-preset="30d">30d</button>
+              <button data-preset="90d">90d</button>
+              <button data-preset="month" class="on">Mes</button>
+              <button data-preset="all">Todo</button>
+            </div>
+            <div class="date-ctl">
+              <input type="date" id="date-from" aria-label="Desde" />
+              <span>–</span>
+              <input type="date" id="date-to" aria-label="Hasta" />
+            </div>
+          </div>
         </div>
-        <div class="tb-right" id="date-controls">
-          <div class="preset-group">
-            <button class="preset" data-preset="yesterday">Ayer</button>
-            <button class="preset" data-preset="7d">7d</button>
-            <button class="preset" data-preset="30d">30d</button>
-            <button class="preset" data-preset="90d">90d</button>
-            <button class="preset active" data-preset="month">Mes</button>
-            <button class="preset" data-preset="all">Todo</button>
-          </div>
-          <div class="custom-range">
-            <input type="date" id="date-from" aria-label="Desde" />
-            <span>–</span>
-            <input type="date" id="date-to" aria-label="Hasta" />
-          </div>
+
+        <div class="top-row2" id="row2">
+          <div class="chips" id="segbar"></div>
+          <label class="cmp" id="cmp-wrap">
+            <input type="checkbox" id="cmp" checked />
+            <span>Comparar</span>
+            <em id="cmp-label"></em>
+          </label>
         </div>
       </header>
 
-      <div class="subbar">
-        <div class="segment-bar" id="segment-bar">
-          <button class="seg-pill active" data-bucket="all">🌐 Todos</button>
-          <button class="seg-pill" data-bucket="food">🥦 Food</button>
-          <button class="seg-pill" data-bucket="non-food">🏠 Non Food</button>
-          <button class="seg-pill" data-bucket="marketplace">🛒 Marketplace</button>
-          <button class="seg-pill" data-bucket="quickcommerce">⚡ Quick Commerce</button>
-        </div>
-        <label class="compare-wrap" id="compare-wrap">
-          <input type="checkbox" id="compare-toggle" checked />
-          <span>Comparar</span>
-          <em id="compare-label"></em>
-        </label>
-      </div>
-
-      <main id="content" class="content">
+      <main id="content" class="body">
         <div class="loading">Cargando…</div>
       </main>
 
-      <footer class="footer">
-        <div id="meta-bar" class="meta-bar"></div>
-        <p>Generado por el pipeline de GitHub Actions desde la VTEX Order API. Los datos publicados son agregados y anonimizados.</p>
+      <footer class="foot">
+        <div id="meta" class="meta"></div>
+        <p>Generado automáticamente desde la VTEX Order API. Los datos publicados son agregados y anonimizados.</p>
       </footer>
     </div>
   </div>
 
+  <script src="icons.js"></script>
   <script src="core.js"></script>
   <script src="charts.js"></script>
   <script src="view-dashboard.js"></script>

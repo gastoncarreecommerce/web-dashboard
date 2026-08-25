@@ -186,7 +186,7 @@ function main() {
     for (const [hash, c] of Object.entries(day.customers || {})) {
       let p = profiles.get(hash);
       if (!p) {
-        p = { o: 0, g: 0, first: date, last: date, segs: {}, cats: {} };
+        p = { o: 0, g: 0, first: date, last: date, segs: {}, cats: {}, cp: 0, pms: {}, days: [] };
         profiles.set(hash, p);
         cohortFirstMonth.set(hash, month);
         newCustomers += 1;
@@ -194,8 +194,10 @@ function main() {
       p.o += c.o;
       p.g += c.g;
       p.last = date;
+      p.cp += c.cp || 0;
       for (const [s, n] of Object.entries(c.s || {})) p.segs[s] = (p.segs[s] || 0) + n;
       for (const [cat, n] of Object.entries(c.c || {})) p.cats[cat] = (p.cats[cat] || 0) + n;
+      for (const [pm, n] of Object.entries(c.pm || {})) p.pms[pm] = (p.pms[pm] || 0) + n;
 
       const cm = cohortFirstMonth.get(hash);
       const key = `${cm}|${month}`;
@@ -277,19 +279,39 @@ function main() {
     return catIndex.get(name);
   };
 
+  const pmIndex = new Map();
+  const pmNames = [];
+  const pmOf = (name) => {
+    if (!pmIndex.has(name)) {
+      pmIndex.set(name, pmNames.length);
+      pmNames.push(name);
+    }
+    return pmIndex.get(name);
+  };
+
   const dayIndex = new Map(days.map((d, i) => [d, i]));
-  const A = { h: [], o: [], g: [], f: [], l: [], sd: [], cd: [], cs: [] };
+  // cp = pedidos con cupón · ip = días promedio entre compras (0 si compró una
+  // sola vez) · pd = medio de pago dominante. `ip` es lo que hace posible
+  // definir churn en serio: no es "hace X días que no compra" a secas, sino
+  // "hace mucho más de lo que suele tardar ESTE cliente en volver".
+  const A = { h: [], o: [], g: [], f: [], l: [], sd: [], cd: [], cs: [], cp: [], ip: [], pd: [] };
   for (const [hash, p] of profiles) {
     const segEntries = Object.entries(p.segs).sort((a, b) => b[1] - a[1]);
     const catEntries = Object.entries(p.cats).sort((a, b) => b[1] - a[1]);
+    const pmEntries = Object.entries(p.pms).sort((a, b) => b[1] - a[1]);
+    const fi = dayIndex.get(p.first) ?? 0;
+    const li = dayIndex.get(p.last) ?? 0;
     A.h.push(hash);
     A.o.push(p.o);
     A.g.push(Math.round(p.g));
-    A.f.push(dayIndex.get(p.first) ?? 0);
-    A.l.push(dayIndex.get(p.last) ?? 0);
+    A.f.push(fi);
+    A.l.push(li);
     A.sd.push(segEntries.length ? SEGMENTS.indexOf(segEntries[0][0]) : -1);
     A.cd.push(catEntries.length ? catOf(catEntries[0][0]) : -1);
     A.cs.push(catEntries.slice(0, 5).map(([name]) => catOf(name)));
+    A.cp.push(p.cp);
+    A.ip.push(p.o > 1 ? Math.round((li - fi) / (p.o - 1)) : 0);
+    A.pd.push(pmEntries.length ? pmOf(pmEntries[0][0]) : -1);
   }
 
   const sizeAudience = writeJson('docs/data/web/audience-index.json', {
@@ -298,6 +320,7 @@ function main() {
     days,
     segments: SEGMENTS,
     categories: catNames,
+    payments: pmNames,
     count: A.h.length,
     ...A,
   });

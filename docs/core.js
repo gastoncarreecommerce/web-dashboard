@@ -13,6 +13,7 @@
   W.SEGMENT_ICON = { food: '🥦', 'non-food': '🏠', marketplace: '🛒', quickcommerce: '⚡' };
   // Slots de la paleta validada (ver skill dataviz): aqua, azul, violeta, amarillo.
   W.SEGMENT_COLOR = { food: '#1baf7a', 'non-food': '#2a78d6', marketplace: '#4a3aa7', quickcommerce: '#eda100' };
+  W.SEGMENT_ICON_NAME = { food: 'basket', 'non-food': 'home', marketplace: 'store', quickcommerce: 'bolt' };
   W.SERIES = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#4a3aa7', '#e34948'];
 
   // ── Formato ───────────────────────────────────────────────────────────────
@@ -138,6 +139,46 @@
       rate: totalOrders ? cancelledOrders / totalOrders : 0,
     };
   };
+
+  // ── Ciclo de vida del cliente ─────────────────────────────────────────────
+  /**
+   * Estados de ciclo de vida. La clave es no definir churn como "hace X días
+   * que no compra" a secas: un cliente que compra cada 60 días no está perdido
+   * a los 45, y uno que compraba cada 7 sí lo está. Se compara la recencia
+   * contra el intervalo TÍPICO DE ESE CLIENTE (churnRatio).
+   */
+  W.LIFECYCLE = {
+    nuevo:      { label: 'Nuevo',      color: '#2a78d6', icon: 'sparkles', desc: 'primera compra reciente, todavía sin recompra' },
+    activo:     { label: 'Activo',     color: '#1baf7a', icon: 'check',    desc: 'compra dentro de su ritmo habitual' },
+    campeon:    { label: 'Campeón',    color: '#008300', icon: 'star',     desc: 'compra seguido, hace poco y gasta por encima del promedio' },
+    riesgo:     { label: 'En riesgo',  color: '#eda100', icon: 'alert',    desc: 'se está estirando más de lo normal entre compras' },
+    churn:      { label: 'Churn',      color: '#e34948', icon: 'trendDown',desc: 'lleva más del triple de su intervalo sin comprar' },
+    perdido:    { label: 'Perdido',    color: '#8b93a5', icon: 'sleep',    desc: 'sin comprar hace más de 180 días' },
+  };
+  W.LIFECYCLE_ORDER = ['campeon', 'activo', 'nuevo', 'riesgo', 'churn', 'perdido'];
+
+  /** Umbrales, expuestos para poder explicarlos en la UI y ajustarlos en un solo lugar. */
+  W.CHURN = { riskRatio: 1.5, churnRatio: 3, lostDays: 180, newDays: 45, fallbackInterval: 45 };
+
+  /**
+   * @param orders  pedidos del cliente
+   * @param recency días desde la última compra
+   * @param interval días promedio entre compras (0 si compró una sola vez)
+   * @param gmv gasto total · avgGmv gasto promedio de la base (para 'campeón')
+   */
+  W.lifecycleOf = function (orders, recency, interval, gmv, avgGmv) {
+    if (recency > W.CHURN.lostDays) return 'perdido';
+    // Sin intervalo propio (una sola compra) se usa un valor de referencia.
+    const base = interval > 0 ? interval : W.CHURN.fallbackInterval;
+    const ratio = recency / base;
+    if (orders === 1 && recency <= W.CHURN.newDays) return 'nuevo';
+    if (ratio >= W.CHURN.churnRatio) return 'churn';
+    if (ratio >= W.CHURN.riskRatio) return 'riesgo';
+    if (orders >= 4 && gmv >= avgGmv * 1.5) return 'campeon';
+    return 'activo';
+  };
+
+  W.churnRatio = (recency, interval) => recency / (interval > 0 ? interval : W.CHURN.fallbackInterval);
 
   W.ticket = (gmv, orders) => (orders ? gmv / orders : 0);
   W.unitsPerOrder = (units, orders) => (orders ? units / orders : 0);
