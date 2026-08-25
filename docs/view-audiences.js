@@ -13,7 +13,7 @@
 
   let idx = null;      // audience-index.json
   let D = null;        // columnas derivadas (recencia, churn, ciclo de vida)
-  let emailMap = null; // hash -> email, solo en memoria de esta pestaña
+  let emailMap = null; // hash -> { email, dni }, solo en memoria de esta pestaña
   let emailSource = '';
   let emailTried = false;
   let rules = W.store.get('audienceRules', [{ field: 'ciclo', op: 'es', value: 'churn' }]);
@@ -151,17 +151,18 @@
   }
 
   // ── Emails desde el repo privado ──────────────────────────────────────────
+  /** Parsea hash,email,dni (dni opcional: los archivos viejos no lo traen). */
   function parseHashEmailCsv(text) {
     const lines = String(text).split(/\r?\n/);
     const map = new Map();
     const start = (lines[0] || '').toLowerCase().includes('hash') ? 1 : 0;
     for (let i = start; i < lines.length; i++) {
       if (!lines[i].trim()) continue;
-      const c = lines[i].indexOf(',');
-      if (c < 0) continue;
-      const h = lines[i].slice(0, c).trim();
-      const e = lines[i].slice(c + 1).trim().replace(/^"|"$/g, '');
-      if (h && e) map.set(h, e);
+      const c = lines[i].split(',');
+      const h = (c[0] || '').trim();
+      const email = (c[1] || '').trim().replace(/^"|"$/g, '');
+      const dni = (c[2] || '').trim().replace(/^"|"$/g, '');
+      if (h && (email || dni)) map.set(h, { email, dni });
     }
     return map.size ? map : null;
   }
@@ -267,14 +268,58 @@
 
     const topCats = Object.entries(sum.byCat).sort((a, b) => b[1] - a[1]).slice(0, 10);
     const saved = W.store.get('savedAudiences', []);
-    let withMail = 0;
-    if (emailMap) for (const i of matches) if (emailMap.has(idx.h[i])) withMail++;
+    let withMail = 0, withDni = 0;
+    if (emailMap) {
+      for (const i of matches) {
+        const v = emailMap.get(idx.h[i]);
+        if (!v) continue;
+        if (v.email) withMail++;
+        if (v.dni) withDni++;
+      }
+    }
 
+    const C = W.CHURN;
     el.innerHTML = `
       <div class="card">
         <div class="card-h">
+          <div><h3>Cómo se define el churn</h3>
+          <p>no hay una definición única: ajustá el criterio según la campaña y todo el tablero se recalcula</p></div>
+          <button class="btn" id="churn-reset">${W.icon('refresh', 14)}Volver al default</button>
+        </div>
+        <div class="churn-cfg">
+          <div class="churn-mode">
+            <label class="${C.mode === 'ratio' ? 'on' : ''}"><input type="radio" name="cmode" value="ratio" ${C.mode === 'ratio' ? 'checked' : ''}/>
+              <b>Según el ritmo de cada cliente</b><em>churn cuando tarda N veces más de lo que suele tardar. Se adapta a quien compra semanal y a quien compra cada dos meses.</em></label>
+            <label class="${C.mode === 'dias' ? 'on' : ''}"><input type="radio" name="cmode" value="dias" ${C.mode === 'dias' ? 'checked' : ''}/>
+              <b>Días fijos sin comprar</b><em>churn a los N días para todos por igual. Es el criterio clásico: churners de 30, 60, 180 días.</em></label>
+          </div>
+
+          ${C.mode === 'dias' ? `
+            <div class="churn-presets">
+              <span>Atajos:</span>
+              ${[30, 60, 90, 180].map((d) => `<button class="chip-sm${C.churnDays === d ? ' on' : ''}" data-cd="${d}">${d} días</button>`).join('')}
+            </div>
+            <div class="churn-fields">
+              <label>En riesgo desde<input class="inp" type="number" min="1" data-c="riskDays" value="${C.riskDays}"/><span>días</span></label>
+              <label>Churn desde<input class="inp" type="number" min="1" data-c="churnDays" value="${C.churnDays}"/><span>días</span></label>
+            </div>`
+          : `<div class="churn-fields">
+              <label>En riesgo desde<input class="inp" type="number" min="1" step="0.1" data-c="riskRatio" value="${C.riskRatio}"/><span>× su intervalo</span></label>
+              <label>Churn desde<input class="inp" type="number" min="1" step="0.1" data-c="churnRatio" value="${C.churnRatio}"/><span>× su intervalo</span></label>
+              <label>Sin historial, asumir<input class="inp" type="number" min="1" data-c="fallbackInterval" value="${C.fallbackInterval}"/><span>días de intervalo</span></label>
+            </div>`}
+
+          <div class="churn-fields">
+            <label>Perdido desde<input class="inp" type="number" min="1" data-c="lostDays" value="${C.lostDays}"/><span>días</span></label>
+            <label>"Nuevo" hasta<input class="inp" type="number" min="1" data-c="newDays" value="${C.newDays}"/><span>días de su 1ª compra</span></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">
           <div><h3>Ciclo de vida de la base</h3>
-          <p>${W.fmtNumC(idx.count)} clientes · clasificados comparando cuánto hace que no compran contra su propio ritmo habitual — hacé clic para filtrar</p></div>
+          <p>${W.fmtNumC(idx.count)} clientes · ${W.esc(W.churnCriterion())} — hacé clic para filtrar</p></div>
         </div>
         <div class="lifes">${W.LIFECYCLE_ORDER.map((k) => {
           const L = W.LIFECYCLE[k], n = lifeAll[k] || 0;
@@ -282,7 +327,7 @@
             <div class="life-t" style="color:${L.color}">${W.icon(L.icon, 14)}${W.esc(L.label)}</div>
             <div class="life-n">${W.fmtNumC(n)}</div>
             <div class="life-p">${W.fmtPct(idx.count ? n / idx.count : 0)} de la base</div>
-            <div class="life-d">${W.esc(L.desc)}</div>
+            <div class="life-d">${W.esc(W.lifecycleDesc(k))}</div>
           </button>`;
         }).join('')}</div>
       </div>
@@ -343,16 +388,16 @@
             </div>
 
             <div class="mail-box">
-              <h4>${W.icon('mail', 15)}Lista de mails</h4>
+              <h4>${W.icon('mail', 15)}Base de contactos</h4>
               ${emailMap
-                ? `<div class="mail-ok">${W.icon('check', 15)}<div><strong>${W.fmtNum(withMail)}</strong> de ${W.fmtNum(sum.customers)} con mail
-                     <span class="mail-src">origen: ${W.esc(emailSource)}</span></div></div>`
+                ? `<div class="mail-ok">${W.icon('check', 15)}<div><strong>${W.fmtNum(withMail)}</strong> con mail · <strong>${W.fmtNum(withDni)}</strong> con DNI
+                     <span class="mail-src">de ${W.fmtNum(sum.customers)} · origen: ${W.esc(emailSource)}</span></div></div>`
                 : `<p class="mail-no">Los mails no se guardan en este repo: los publica el pipeline en un repositorio
                      <strong>privado</strong> y se leen por <code>/api/audience-emails</code>. Si todavía no corrió,
                      podés cargar el CSV a mano — el cruce ocurre en tu navegador.</p>`}
 
-              <button class="btn-p blk" id="exp-mails" ${emailMap && withMail ? '' : 'disabled'}>
-                ${W.icon('download', 15)}Exportar ${emailMap && withMail ? W.fmtNum(withMail) + ' mails' : 'lista de mails'}
+              <button class="btn-p blk" id="exp-mails" ${emailMap && (withMail || withDni) ? '' : 'disabled'}>
+                ${W.icon('download', 15)}Exportar base (DNI + MAIL)
               </button>
               <button class="btn blk" data-export="audienceData" ${sum.customers ? '' : 'disabled'}>
                 ${W.icon('layers', 15)}Exportar datos (sin mails)
@@ -384,15 +429,34 @@
 
   function persist() { W.store.set('audienceRules', rules); W.render(); }
 
+  /** Los umbrales cambian el ciclo de vida de cada cliente: hay que recalcular. */
+  function applyChurn(patch) {
+    W.setChurn(patch);
+    D = derive();
+    W.render();
+  }
+
   function wire(matches, sum, withMail) {
     const $ = (s) => document.querySelector(s);
     const $$ = (s) => [...document.querySelectorAll(s)];
+
+    $$('input[name="cmode"]').forEach((r) => r.addEventListener('change', (e) => applyChurn({ mode: e.target.value })));
+    $$('[data-c]').forEach((inp) => inp.addEventListener('change', (e) => {
+      const v = Number(e.target.value);
+      if (Number.isFinite(v) && v > 0) applyChurn({ [e.target.dataset.c]: v });
+    }));
+    $$('[data-cd]').forEach((b) => b.addEventListener('click', () => {
+      const d = Number(b.dataset.cd);
+      // El "en riesgo" acompaña al umbral elegido: la mitad del camino al churn.
+      applyChurn({ mode: 'dias', churnDays: d, riskDays: Math.max(1, Math.round(d / 2)) });
+    }));
+    $('#churn-reset')?.addEventListener('click', () => { W.resetChurn(); D = derive(); W.render(); });
 
     $$('.life').forEach((b) => b.addEventListener('click', () => {
       rules = [{ field: 'ciclo', op: 'es', value: b.dataset.life }];
       persist();
     }));
-    $$('.pre').forEach((b) => b.addEventListener('click', () => {
+    $$('.pre[data-g]').forEach((b) => b.addEventListener('click', () => {
       rules = JSON.parse(JSON.stringify(PRESETS[+b.dataset.g].items[+b.dataset.p].rules));
       persist();
     }));
@@ -434,21 +498,20 @@
       drop.addEventListener('drop', (e) => handle(e.dataTransfer.files[0]));
     }
 
+    // La base de mailing sale con DOS columnas y nada más: DNI y MAIL. Es lo
+    // que pide la plataforma de envío; el resto de los atributos está en el
+    // export de datos, que va por separado.
     $('#exp-mails')?.addEventListener('click', () => {
       if (!emailMap) return;
       const rows = [];
       for (const i of matches) {
-        const email = emailMap.get(idx.h[i]);
-        if (!email) continue;
-        rows.push([email, W.LIFECYCLE[D.life[i]].label, idx.o[i], idx.g[i],
-          Math.round(idx.o[i] ? idx.g[i] / idx.o[i] : 0), idx.days[idx.l[i]], D.recency[i],
-          idx.cp ? idx.cp[i] : 0, W.SEGMENT_LABEL[idx.segments[idx.sd[i]]] || '', idx.categories[idx.cd[i]] || '']);
+        const v = emailMap.get(idx.h[i]);
+        if (!v || (!v.email && !v.dni)) continue;
+        rows.push([v.dni || '', v.email || '']);
       }
-      if (!rows.length) { W.toast('Ningún cliente de la audiencia tiene mail disponible.', 'bad'); return; }
-      W.downloadCSV(`webdash-mailing-${new Date().toISOString().slice(0, 10)}.csv`,
-        ['email', 'ciclo_de_vida', 'pedidos', 'gasto_total', 'ticket_promedio', 'ultima_compra',
-         'dias_sin_comprar', 'pedidos_con_cupon', 'segmento', 'categoria'], rows);
-      W.toast(`Exportados ${W.fmtNum(rows.length)} mails.`, 'good');
+      if (!rows.length) { W.toast('Ningún cliente de la audiencia tiene datos de contacto.', 'bad'); return; }
+      W.downloadCSV(`webdash-base-${new Date().toISOString().slice(0, 10)}.csv`, ['DNI', 'MAIL'], rows);
+      W.toast(`Exportados ${W.fmtNum(rows.length)} contactos.`, 'good');
     });
 
     $('#save-aud')?.addEventListener('click', () => {

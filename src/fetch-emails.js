@@ -55,7 +55,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function scrollPage(token, retries = 5) {
   const url = token
     ? `${baseUrl()}/api/dataentities/CL/scroll?_token=${encodeURIComponent(token)}`
-    : `${baseUrl()}/api/dataentities/CL/scroll?_fields=email&_size=${SIZE}`;
+    : `${baseUrl()}/api/dataentities/CL/scroll?_fields=email,document&_size=${SIZE}`;
 
   for (let a = 0; a <= retries; a++) {
     try {
@@ -82,8 +82,8 @@ function loadExisting() {
   if (fs.existsSync(OUT_FILE)) {
     const lines = fs.readFileSync(OUT_FILE, 'utf8').split(/\r?\n/);
     for (let i = 1; i < lines.length; i++) {
-      const c = lines[i].indexOf(',');
-      if (c > 0) map.set(lines[i].slice(0, c), lines[i].slice(c + 1));
+      const cols = lines[i].split(',');
+      if (cols[0]) map.set(cols[0], { email: cols[1] || '', dni: cols[2] || '' });
     }
   }
   let token = null;
@@ -95,8 +95,9 @@ function loadExisting() {
 
 function save(map, token) {
   fs.mkdirSync(OUT_DIR, { recursive: true });
-  const out = ['hash,email'];
-  for (const [h, e] of map) out.push(`${h},${e}`);
+  const q = (v) => (/[",\n]/.test(v) ? '"' + String(v).replace(/"/g, '""') + '"' : v);
+  const out = ['hash,email,dni'];
+  for (const [h, v] of map) out.push(`${h},${q(v.email || '')},${q(v.dni || '')}`);
   fs.writeFileSync(OUT_FILE, out.join('\n') + '\n');
   fs.writeFileSync(STATE_FILE, JSON.stringify({ token, savedAt: new Date().toISOString(), count: map.size }));
 }
@@ -118,9 +119,9 @@ async function main() {
     rowsSeen += rows.length;
     for (const r of rows) {
       const email = r?.email;
-      if (!email) continue;
+      if (!email) continue; // el hash se deriva del email: sin email no hay clave
       const h = customerHash({ clientProfileData: { email } });
-      if (h) map.set(h, String(email).toLowerCase().trim());
+      if (h) map.set(h, { email: String(email).toLowerCase().trim(), dni: String(r?.document || '').trim() });
     }
 
     token = next;
@@ -134,7 +135,8 @@ async function main() {
   }
 
   save(map, null);
-  console.log(`\n✅ ${map.size.toLocaleString('es-AR')} mails en ${OUT_FILE}`);
+  const withDni = [...map.values()].filter((v) => v.dni).length;
+  console.log(`\n✅ ${map.size.toLocaleString('es-AR')} mails (${withDni.toLocaleString('es-AR')} con DNI) en ${OUT_FILE}`);
   console.log(`   ${rowsSeen.toLocaleString('es-AR')} registros recorridos en ${((Date.now() - t0) / 60000).toFixed(1)} min.`);
   console.log('   CONTIENE PII — no commitear al repo público.');
 }

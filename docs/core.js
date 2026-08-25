@@ -7,6 +7,19 @@
 (function () {
   const W = (window.W = window.W || {});
 
+  // ── Persistencia local (preferencias, audiencias guardadas) ───────────────
+  W.store = {
+    get(key, fallback) {
+      try {
+        const raw = localStorage.getItem(`webdash:${key}`);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch { return fallback; }
+    },
+    set(key, value) {
+      try { localStorage.setItem(`webdash:${key}`, JSON.stringify(value)); } catch { /* modo privado */ }
+    },
+  };
+
   W.CHANNEL = 'web';
   W.SEGMENTS = ['food', 'non-food', 'marketplace', 'quickcommerce'];
   W.SEGMENT_LABEL = { food: 'Food', 'non-food': 'Non Food', marketplace: 'Marketplace', quickcommerce: 'Quick Commerce' };
@@ -77,6 +90,8 @@
     const acc = {
       gmv: 0, orders: 0, units: 0, discount: 0, newCustomers: 0, activeCustomers: 0,
       marketing: {}, series: [], bySegment: {}, hourly: new Array(24).fill(0), statusStats: {},
+      // Catálogo del rango, ya recortado al segmento elegido (schema 2).
+      categories: {}, coupons: {}, payments: {}, hasCatalog: false,
     };
     for (const s of W.SEGMENTS) acc.bySegment[s] = { gmv: 0, orders: 0, units: 0 };
 
@@ -96,6 +111,16 @@
           const e = (acc.marketing[name] = acc.marketing[name] || { gmv: 0, orders: 0 });
           e.gmv += v.gmv; e.orders += v.orders;
         }
+        for (const key of ['categories', 'coupons', 'payments']) {
+          for (const [name, v] of Object.entries(seg[key] || {})) {
+            acc.hasCatalog = true;
+            const e = (acc[key][name] = acc[key][name] || { orders: 0, gmv: 0, units: 0 });
+            e.orders += v.orders || 0; e.gmv += v.gmv || 0; e.units += v.units || 0;
+          }
+        }
+        // El horario por segmento solo existe en schema 2; si no está, el
+        // acumulado del día (más abajo) cubre únicamente la vista consolidada.
+        if (seg.hourly) seg.hourly.forEach((n, h) => (acc.hourly[h] += n));
       }
 
       acc.gmv += dayGmv; acc.orders += dayOrders; acc.units += dayUnits;
@@ -105,7 +130,8 @@
         acc.discount += day.discount || 0;
         acc.newCustomers += day.newCustomers || 0;
         acc.activeCustomers += day.activeCustomers || 0;
-        (day.hourly || []).forEach((n, h) => (acc.hourly[h] += n));
+        const segHasHourly = W.SEGMENTS.some((s2) => day.segments[s2]?.hourly);
+        if (!segHasHourly) (day.hourly || []).forEach((n, h) => (acc.hourly[h] += n));
         // Los estados vienen del listado de VTEX (todos los pedidos del día,
         // no solo los que cuentan), así que solo aplican a la vista del canal completo.
         for (const [st, v] of Object.entries(day.statusStats || {})) {
@@ -151,14 +177,63 @@
     nuevo:      { label: 'Nuevo',      color: '#2a78d6', icon: 'sparkles', desc: 'primera compra reciente, todavía sin recompra' },
     activo:     { label: 'Activo',     color: '#1baf7a', icon: 'check',    desc: 'compra dentro de su ritmo habitual' },
     campeon:    { label: 'Campeón',    color: '#008300', icon: 'star',     desc: 'compra seguido, hace poco y gasta por encima del promedio' },
-    riesgo:     { label: 'En riesgo',  color: '#eda100', icon: 'alert',    desc: 'se está estirando más de lo normal entre compras' },
-    churn:      { label: 'Churn',      color: '#e34948', icon: 'trendDown',desc: 'lleva más del triple de su intervalo sin comprar' },
-    perdido:    { label: 'Perdido',    color: '#8b93a5', icon: 'sleep',    desc: 'sin comprar hace más de 180 días' },
+    riesgo:     { label: 'En riesgo',  color: '#eda100', icon: 'alert',    desc: 'se está estirando entre compras' },
+    churn:      { label: 'Churn',      color: '#e34948', icon: 'trendDown',desc: 'dejó de comprar' },
+    perdido:    { label: 'Perdido',    color: '#8b93a5', icon: 'sleep',    desc: 'sin comprar hace mucho' },
+  };
+
+  /**
+   * Descripción de cada estado con los umbrales que están activos ahora mismo.
+   * Los textos fijos mentirían apenas el usuario mueve un parámetro.
+   */
+  W.lifecycleDesc = function (key) {
+    const C = W.CHURN;
+    const d = (n) => `${n} día${n === 1 ? '' : 's'}`;
+    const x = (n) => `${String(n).replace('.', ',')}×`;
+    switch (key) {
+      case 'nuevo':   return `primera compra hace menos de ${d(C.newDays)}, todavía sin recompra`;
+      case 'activo':  return C.mode === 'dias' ? `compró hace menos de ${d(C.riskDays)}` : 'compra dentro de su ritmo habitual';
+      case 'campeon': return 'compra seguido, hace poco y gasta por encima del promedio';
+      case 'riesgo':  return C.mode === 'dias'
+        ? `sin comprar hace ${d(C.riskDays)} o más`
+        : `lleva ${x(C.riskRatio)} su intervalo habitual sin comprar`;
+      case 'churn':   return C.mode === 'dias'
+        ? `sin comprar hace ${d(C.churnDays)} o más`
+        : `lleva ${x(C.churnRatio)} su intervalo habitual sin comprar`;
+      case 'perdido': return `sin comprar hace más de ${d(C.lostDays)}`;
+      default: return '';
+    }
+  };
+
+  /** Resumen del criterio activo, para los subtítulos. */
+  W.churnCriterion = function () {
+    const C = W.CHURN;
+    return C.mode === 'dias'
+      ? `churn a los ${C.churnDays} días sin comprar`
+      : `churn cuando pasa ${String(C.churnRatio).replace('.', ',')}× su propio intervalo entre compras`;
   };
   W.LIFECYCLE_ORDER = ['campeon', 'activo', 'nuevo', 'riesgo', 'churn', 'perdido'];
 
-  /** Umbrales, expuestos para poder explicarlos en la UI y ajustarlos en un solo lugar. */
-  W.CHURN = { riskRatio: 1.5, churnRatio: 3, lostDays: 180, newDays: 45, fallbackInterval: 45 };
+  /**
+   * Umbrales del ciclo de vida. Son AJUSTABLES desde la vista de Audiencias y
+   * quedan guardados en el navegador: no hay una definición universal de
+   * churner, depende del negocio y de la campaña que se quiera armar.
+   *
+   * mode 'ratio'  -> churn cuando la recencia supera N veces el intervalo
+   *                  propio del cliente (se adapta a cada uno).
+   * mode 'dias'   -> churn cuando pasaron N días sin comprar, fijo para todos
+   *                  (es lo que se suele pedir: "churners de 30/60/180 días").
+   */
+  W.CHURN_DEFAULTS = { mode: 'ratio', riskRatio: 1.5, churnRatio: 3, riskDays: 45, churnDays: 90, lostDays: 180, newDays: 45, fallbackInterval: 45 };
+  W.CHURN = { ...W.CHURN_DEFAULTS, ...W.store.get('churnParams', {}) };
+  W.setChurn = function (patch) {
+    W.CHURN = { ...W.CHURN, ...patch };
+    W.store.set('churnParams', W.CHURN);
+  };
+  W.resetChurn = function () {
+    W.CHURN = { ...W.CHURN_DEFAULTS };
+    W.store.set('churnParams', {});
+  };
 
   /**
    * @param orders  pedidos del cliente
@@ -167,13 +242,20 @@
    * @param gmv gasto total · avgGmv gasto promedio de la base (para 'campeón')
    */
   W.lifecycleOf = function (orders, recency, interval, gmv, avgGmv) {
-    if (recency > W.CHURN.lostDays) return 'perdido';
-    // Sin intervalo propio (una sola compra) se usa un valor de referencia.
-    const base = interval > 0 ? interval : W.CHURN.fallbackInterval;
-    const ratio = recency / base;
-    if (orders === 1 && recency <= W.CHURN.newDays) return 'nuevo';
-    if (ratio >= W.CHURN.churnRatio) return 'churn';
-    if (ratio >= W.CHURN.riskRatio) return 'riesgo';
+    const C = W.CHURN;
+    if (recency > C.lostDays) return 'perdido';
+    if (orders === 1 && recency <= C.newDays) return 'nuevo';
+
+    if (C.mode === 'dias') {
+      if (recency >= C.churnDays) return 'churn';
+      if (recency >= C.riskDays) return 'riesgo';
+    } else {
+      // Sin intervalo propio (una sola compra) se usa un valor de referencia.
+      const base = interval > 0 ? interval : C.fallbackInterval;
+      const ratio = recency / base;
+      if (ratio >= C.churnRatio) return 'churn';
+      if (ratio >= C.riskRatio) return 'riesgo';
+    }
     if (orders >= 4 && gmv >= avgGmv * 1.5) return 'campeon';
     return 'activo';
   };
@@ -257,16 +339,4 @@
     el._t = setTimeout(() => (el.className = 'toast'), 3200);
   };
 
-  // ── Persistencia local (preferencias, audiencias guardadas) ───────────────
-  W.store = {
-    get(key, fallback) {
-      try {
-        const raw = localStorage.getItem(`webdash:${key}`);
-        return raw ? JSON.parse(raw) : fallback;
-      } catch { return fallback; }
-    },
-    set(key, value) {
-      try { localStorage.setItem(`webdash:${key}`, JSON.stringify(value)); } catch { /* modo privado */ }
-    },
-  };
 })();

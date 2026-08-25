@@ -20,20 +20,24 @@ const path = require('path');
 const { iterateAllOrders, getOrder, forEachLimit } = require('./vtex-client');
 const { orderChannel, isIncludedStatus, classifyOrder } = require('./classify');
 const { customerHash, realEmail } = require('./customer-key');
+const { provinceCode, orderStore } = require('./geo');
 
 const channelMap = require('../config/channel-map.json');
 const statusFilter = require('../config/status-filter.json');
 const segmentMap = require('../config/segment-map.json');
 
 const SEGMENTS = segmentMap.tabs.list;
-const OUT_DIR = path.join(__dirname, '..', 'docs', 'data', 'web', 'daily');
+// Los archivos diarios son insumo del pipeline, no los lee el dashboard. Viven
+// fuera de docs/ para que Vercel no despliegue ~300MB de datos crudos en cada
+// build (y para que los hashes de cliente no queden servidos públicamente).
+const OUT_DIR = path.join(__dirname, '..', 'data', 'daily');
 // Salida con PII: gitignorada, se publica solo al repositorio PRIVADO.
 const PRIVATE_DIR = path.join(__dirname, '..', 'private-out', 'emails');
 
 // Un supermercado mueve decenas de miles de SKUs distintos por día; guardar todos
 // haría que el repo crezca sin control. Se guarda el top por GMV, que es lo que
 // alimenta el pareto de productos, más los totales para no perder el denominador.
-const TOP_PRODUCTS_PER_DAY = Number(process.env.TOP_PRODUCTS_PER_DAY || 600);
+const TOP_PRODUCTS_PER_SEGMENT = Number(process.env.TOP_PRODUCTS_PER_SEGMENT || 250);
 
 // El detalle de cada pedido es una llamada aparte a VTEX y hay ~2000 por día:
 // pedirlos de a uno tardaba ~25 min por día. Con este pool baja a ~1 min.
@@ -49,8 +53,18 @@ function arDayRange(dateStr) {
   return { fromISO: from.toISOString(), toISO: to.toISOString() };
 }
 
+/**
+ * Cada segmento lleva su propio catálogo (categorías, cupones, medios de pago,
+ * productos, horario). Antes esos datos estaban solo a nivel día, así que la
+ * Analítica no se podía filtrar por Food / Non Food / Marketplace / Quick.
+ */
 function emptySegmentAgg() {
-  return { orders: 0, gmv: 0, units: 0, customerCounts: {}, marketing: {} };
+  return {
+    orders: 0, gmv: 0, units: 0,
+    customerCounts: {}, marketing: {},
+    categories: {}, coupons: {}, payments: {}, productsById: {},
+    hourly: new Array(24).fill(0),
+  };
 }
 
 function marketingSource(order) {
@@ -101,11 +115,10 @@ function bump(map, key, orders, gmv, units) {
 function newDayAcc() {
   return {
     segments: Object.fromEntries(SEGMENTS.map((s) => [s, emptySegmentAgg()])),
-    hourly: new Array(24).fill(0),
-    coupons: {},
-    payments: {},
-    categories: {},
-    productsById: {},
+    // Provincia y tienda se guardan a nivel día con el desglose por segmento
+    // adentro: así el nombre de la tienda no se repite cuatro veces.
+    provinces: {},
+    stores: {},
     customers: {},
     // hash -> email real. Se escribe a private-out/ (gitignored) y de ahí al
     // repositorio PRIVADO; nunca al archivo diario público.
@@ -141,11 +154,11 @@ function applyOrderToAcc(acc, full) {
   m.gmv += gmv;
 
   const hour = orderHourAR(full);
-  if (hour != null) acc.hourly[hour] += 1;
+  if (hour != null) agg.hourly[hour] += 1;
 
   const coupon = full.marketingData?.coupon;
   if (coupon) {
-    const c = (acc.coupons[coupon] = acc.coupons[coupon] || { orders: 0, gmv: 0, units: 0 });
+    const c = (agg.coupons[coupon] = agg.coupons[coupon] || { orders: 0, gmv: 0, units: 0 });
     c.orders += 1;
     c.gmv += gmv;
   }
@@ -154,7 +167,26 @@ function applyOrderToAcc(acc, full) {
   const disc = (full.totals || []).find((t) => t.id === 'Discounts');
   if (disc && typeof disc.value === 'number') acc.discountTotal += Math.abs(disc.value) / 100;
 
-  for (const g of paymentGroups(full)) bump(acc.payments, g, 1, gmv, 0);
+  for (const g of paymentGroups(full)) bump(agg.payments, g, 1, gmv, 0);
+
+  // ── Provincia y tienda ────────────────────────────────────────────────────
+  const prov = provinceCode(full);
+  if (prov) {
+    const pe = (acc.provinces[prov] = acc.provinces[prov] || { seg: {} });
+    const ps = (pe.seg[view.bucket] = pe.seg[view.bucket] || { orders: 0, gmv: 0 });
+    ps.orders += 1;
+    ps.gmv += gmv;
+  }
+  const store = orderStore(full);
+  if (store) {
+    const se = (acc.stores[store.code] = acc.stores[store.code] || { name: store.name, prov: prov || null, seg: {} });
+    // Un mismo código puede aparecer con provincia nula en algún pedido; se
+    // conserva la primera que sí vino para no perder la ubicación.
+    if (!se.prov && prov) se.prov = prov;
+    const ss = (se.seg[view.bucket] = se.seg[view.bucket] || { orders: 0, gmv: 0 });
+    ss.orders += 1;
+    ss.gmv += gmv;
+  }
 
   // ── Productos y categorías (a nivel línea de ítem) ────────────────────────
   const orderCats = new Set();
@@ -163,10 +195,10 @@ function applyOrderToAcc(acc, full) {
     const lineGmv = ((Number(item.sellingPrice) || 0) * qty) / 100;
     const dept = itemDepartment(item);
     orderCats.add(dept);
-    bump(acc.categories, dept, 1, lineGmv, qty);
+    bump(agg.categories, dept, 1, lineGmv, qty);
 
     const id = String(item.refId || item.id || item.name || 'sin_sku');
-    const p = (acc.productsById[id] = acc.productsById[id] || {
+    const p = (agg.productsById[id] = agg.productsById[id] || {
       sku: id, name: item.name || id, dept, qty: 0, gmv: 0, orders: 0,
     });
     p.qty += qty;
@@ -191,8 +223,11 @@ function applyOrderToAcc(acc, full) {
     if (coupon) c.cp += 1;
     for (const g of paymentGroups(full)) c.pm[g] = (c.pm[g] || 0) + 1;
 
+    // El DNI se guarda junto al email, en la salida privada: la base de
+    // mailing que pide el usuario es exactamente DNI + MAIL.
     const email = realEmail(full.clientProfileData?.email);
-    if (email) acc.emails[hash] = email;
+    const doc = String(full.clientProfileData?.document || '').trim();
+    if (email || doc) acc.emails[hash] = { email: email || '', doc };
   }
   return true;
 }
@@ -202,29 +237,56 @@ function accFromDayFile(day) {
   const acc = newDayAcc();
   for (const s of SEGMENTS) {
     const src = day.segments?.[s];
-    if (src) acc.segments[s] = { ...emptySegmentAgg(), ...src };
+    if (!src) continue;
+    const seg = acc.segments[s];
+    Object.assign(seg, {
+      orders: src.orders || 0, gmv: src.gmv || 0, units: src.units || 0,
+      customerCounts: { ...(src.customerCounts || {}) },
+      marketing: { ...(src.marketing || {}) },
+      categories: { ...(src.categories || {}) },
+      coupons: { ...(src.coupons || {}) },
+      payments: { ...(src.payments || {}) },
+      hourly: (src.hourly || new Array(24).fill(0)).slice(),
+    });
+    for (const p of src.products || []) seg.productsById[p.sku] = { ...p };
   }
-  acc.hourly = (day.hourly || new Array(24).fill(0)).slice();
-  acc.coupons = { ...(day.coupons || {}) };
-  acc.payments = { ...(day.payments || {}) };
-  acc.categories = { ...(day.categories || {}) };
+  acc.provinces = JSON.parse(JSON.stringify(day.provinces || {}));
+  acc.stores = JSON.parse(JSON.stringify(day.stores || {}));
   acc.customers = { ...(day.customers || {}) };
   // acc.emails queda vacío a propósito: el archivo público no los tiene. Al
-  // reparar un día solo se recuperan los emails de los pedidos reprocesados.
+  // reparar un día solo se recuperan los de los pedidos reprocesados.
   acc.webOrders = day.webOrders || 0;
   acc.webGmv = day.webGmv || 0;
   acc.discountTotal = day.discountTotal || 0;
   acc.productRowsSeen = day.productRowsSeen || 0;
-  for (const p of day.products || []) acc.productsById[p.sku] = { ...p };
   return acc;
 }
 
 function finalizeDay(acc, meta) {
-  const allProducts = Object.values(acc.productsById).sort((a, b) => b.gmv - a.gmv);
-  const products = allProducts.slice(0, TOP_PRODUCTS_PER_DAY).map((p) => ({
-    sku: p.sku, name: p.name, dept: p.dept,
-    qty: Math.round(p.qty), gmv: Math.round(p.gmv), orders: p.orders,
-  }));
+  // El top de productos se recorta POR SEGMENTO: si se recortara sobre el total,
+  // Food (que es el 93% del volumen) se comería toda la lista y Marketplace
+  // quedaría sin productos para mostrar.
+  let distinctSkus = 0;
+  const segments = {};
+  for (const s of SEGMENTS) {
+    const a = acc.segments[s];
+    const all = Object.values(a.productsById).sort((x, y) => y.gmv - x.gmv);
+    distinctSkus += all.length;
+    segments[s] = {
+      orders: a.orders, gmv: a.gmv, units: a.units,
+      customerCounts: a.customerCounts,
+      marketing: a.marketing,
+      categories: a.categories,
+      coupons: a.coupons,
+      payments: a.payments,
+      hourly: a.hourly,
+      products: all.slice(0, TOP_PRODUCTS_PER_SEGMENT).map((p) => ({
+        sku: p.sku, name: p.name, dept: p.dept,
+        qty: Math.round(p.qty), gmv: Math.round(p.gmv), orders: p.orders,
+      })),
+      productsTruncated: all.length > TOP_PRODUCTS_PER_SEGMENT,
+    };
+  }
 
   const publicDay = {
     date: meta.date,
@@ -240,14 +302,11 @@ function finalizeDay(acc, meta) {
     failedOrderIds: meta.failedOrderIds,
     unknownStatuses: meta.unknownStatuses,
     statusStats: meta.statusStats || {},
-    segments: acc.segments,
-    hourly: acc.hourly,
-    coupons: acc.coupons,
-    payments: acc.payments,
-    categories: acc.categories,
-    products,
-    productsTruncated: allProducts.length > products.length,
-    distinctSkus: allProducts.length,
+    schema: 2, // v2 = catálogo por segmento + provincia + tienda
+    segments,
+    provinces: acc.provinces,
+    stores: acc.stores,
+    distinctSkus,
     productRowsSeen: acc.productRowsSeen,
     customers: acc.customers,
   };
@@ -257,14 +316,17 @@ function finalizeDay(acc, meta) {
   return publicDay;
 }
 
-/** Escribe hash,email del día en private-out/ (gitignored). */
+/** Escribe hash,email,dni del día en private-out/ (gitignored). */
 function writeDayEmails(dateStr, emails) {
   const n = Object.keys(emails || {}).length;
   if (!n) return 0;
   fs.mkdirSync(PRIVATE_DIR, { recursive: true });
-  const lines = ['hash,email'];
-  for (const [h, e] of Object.entries(emails)) {
-    lines.push(`${h},${/[",\n]/.test(e) ? '"' + e.replace(/"/g, '""') + '"' : e}`);
+  const q = (v) => (/[",\n]/.test(v) ? '"' + String(v).replace(/"/g, '""') + '"' : v);
+  const lines = ['hash,email,dni'];
+  for (const [h, v] of Object.entries(emails)) {
+    const email = typeof v === 'string' ? v : v.email || '';
+    const doc = typeof v === 'string' ? '' : v.doc || '';
+    lines.push(`${h},${q(email)},${q(doc)}`);
   }
   fs.writeFileSync(path.join(PRIVATE_DIR, `${dateStr}.csv`), lines.join('\n') + '\n');
   return n;

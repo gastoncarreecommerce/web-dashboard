@@ -21,14 +21,16 @@ const path = require('path');
 
 const { computeAllMetricsFromAggregate } = require('./metrics');
 const segmentMap = require('../config/segment-map.json');
+const { PROVINCES } = require('./geo');
 const pipelineConfig = require('../config/pipeline-config.json');
 
 const SEGMENTS = segmentMap.tabs.list;
-const DAILY_DIR = path.join(__dirname, '..', 'docs', 'data', 'web', 'daily');
+const DAILY_DIR = path.join(__dirname, '..', 'data', 'daily');
 const OUT_BASE = path.join(__dirname, '..', 'docs', 'data', 'web');
 
 const TOP_PRODUCTS = Number(process.env.CATALOG_TOP_PRODUCTS || 400);
 const TOP_CATEGORIES = Number(process.env.CATALOG_TOP_CATEGORIES || 60);
+const TOP_PRODUCTS_PER_SEG_MONTH = Number(process.env.TOP_PRODUCTS_PER_SEG_MONTH || 150);
 
 function emptyAgg() {
   return {
@@ -147,6 +149,14 @@ function main() {
   const cohortActivity = new Map(); // `${cohortMonth}|${activeMonth}` -> Set(hash)
 
   const dailySeries = [];
+  // Geografía: serie diaria compacta ([pedidos, gmv] por segmento) más un
+  // diccionario aparte con nombre y provincia de cada tienda, para no repetir
+  // esos textos 236 veces.
+  const geoDays = [];
+  const storeMeta = {};
+  // Productos: por segmento y por mes. Por día sería enorme (250 skus × 4
+  // segmentos × 236 días) y a nivel mes alcanza para analizar surtido.
+  const productsBySegMonth = {};
 
   for (const date of days) {
     const day = JSON.parse(fs.readFileSync(path.join(DAILY_DIR, `${date}.json`), 'utf8'));
@@ -159,6 +169,7 @@ function main() {
     }
     const isCurrentMonth = date.slice(0, 7) === currentMonthPrefix;
 
+    const month = monthOf(date);
     const daySegments = {};
     for (const seg of SEGMENTS) {
       const daySeg = day.segments[seg] || { gmv: 0, orders: 0, units: 0, customerCounts: {}, marketing: {} };
@@ -168,26 +179,56 @@ function main() {
         orders: daySeg.orders,
         units: daySeg.units || 0,
         marketing: daySeg.marketing || daySeg.segmentParticipation || {},
+        // Catálogo por segmento (schema 2). En los días viejos no está y queda
+        // vacío: la UI lo detecta y avisa en vez de mostrar cero.
+        categories: daySeg.categories || {},
+        coupons: daySeg.coupons || {},
+        payments: daySeg.payments || {},
+        hourly: daySeg.hourly || null,
       };
+
+      const bucket = (productsBySegMonth[seg] = productsBySegMonth[seg] || {});
+      const mk = (bucket[month] = bucket[month] || {});
+      for (const p of daySeg.products || []) {
+        const e = (mk[p.sku] = mk[p.sku] || { sku: p.sku, name: p.name, dept: p.dept, qty: 0, gmv: 0, orders: 0 });
+        e.qty += p.qty; e.gmv += p.gmv; e.orders += p.orders;
+      }
     }
 
-    for (const p of day.products || []) {
-      const e = (catalogProducts[p.sku] = catalogProducts[p.sku] || {
-        sku: p.sku,
-        name: p.name,
-        dept: p.dept,
-        qty: 0,
-        gmv: 0,
-        orders: 0,
-      });
-      e.qty += p.qty;
-      e.gmv += p.gmv;
-      e.orders += p.orders;
+    // Geografía del día, en formato compacto [pedidos, gmv].
+    const gp = {}, gs = {};
+    for (const [code, v] of Object.entries(day.provinces || {})) {
+      const row = {};
+      for (const [seg, x] of Object.entries(v.seg || {})) row[seg] = [x.orders, Math.round(x.gmv)];
+      if (Object.keys(row).length) gp[code] = row;
     }
-    for (const [k, v] of Object.entries(day.categories || {})) addInto(catalogCategories, k, v);
-    for (const [k, v] of Object.entries(day.coupons || {})) addInto(catalogCoupons, k, v);
-    for (const [k, v] of Object.entries(day.payments || {})) addInto(catalogPayments, k, v);
-    (day.hourly || []).forEach((n, h) => (hourlyTotal[h] += n));
+    for (const [code, v] of Object.entries(day.stores || {})) {
+      if (!storeMeta[code]) storeMeta[code] = { name: v.name || code, prov: v.prov || null };
+      else if (!storeMeta[code].prov && v.prov) storeMeta[code].prov = v.prov;
+      const row = {};
+      for (const [seg, x] of Object.entries(v.seg || {})) row[seg] = [x.orders, Math.round(x.gmv)];
+      if (Object.keys(row).length) gs[code] = row;
+    }
+    if (Object.keys(gp).length || Object.keys(gs).length) geoDays.push({ date, prov: gp, stores: gs });
+
+    // Totales de catálogo: en schema 2 vienen dentro de cada segmento; en los
+    // días viejos venían a nivel día. Se soportan los dos para poder convivir
+    // durante la transición.
+    const catSources = day.schema >= 2
+      ? SEGMENTS.map((seg) => day.segments[seg]).filter(Boolean)
+      : [day];
+    for (const src of catSources) {
+      for (const p of src.products || []) {
+        const e = (catalogProducts[p.sku] = catalogProducts[p.sku] || {
+          sku: p.sku, name: p.name, dept: p.dept, qty: 0, gmv: 0, orders: 0,
+        });
+        e.qty += p.qty; e.gmv += p.gmv; e.orders += p.orders;
+      }
+      for (const [k, v] of Object.entries(src.categories || {})) addInto(catalogCategories, k, v);
+      for (const [k, v] of Object.entries(src.coupons || {})) addInto(catalogCoupons, k, v);
+      for (const [k, v] of Object.entries(src.payments || {})) addInto(catalogPayments, k, v);
+      (src.hourly || []).forEach((n, h) => (hourlyTotal[h] += n));
+    }
 
     const dow = new Date(`${date}T12:00:00Z`).getUTCDay();
     const dayOrders = SEGMENTS.reduce((s, seg) => s + (daySegments[seg]?.orders || 0), 0);
@@ -197,7 +238,6 @@ function main() {
     dowTotals[dow].days += 1;
 
     // ── Perfiles + cohortes ───────────────────────────────────────────────
-    const month = monthOf(date);
     let newCustomers = 0;
     for (const [hash, c] of Object.entries(day.customers || {})) {
       let p = profiles.get(hash);
@@ -237,6 +277,34 @@ function main() {
     generatedAt: now.toISOString(),
     detailWindowStartDate: startDate,
     days: dailySeries,
+  });
+
+  // ── geo.json (mapa por provincia + tiendas) ─────────────────────────────
+  const sizeGeo = writeJson('docs/data/web/geo.json', {
+    generatedAt: now.toISOString(),
+    provinces: PROVINCES,
+    segments: SEGMENTS,
+    stores: storeMeta,
+    // days[i] = { date, prov: { AR-B: { food: [pedidos, gmv] } }, stores: {...} }
+    days: geoDays,
+  });
+
+  // ── products.json (por segmento y por mes) ──────────────────────────────
+  const productsOut = {};
+  for (const seg of SEGMENTS) {
+    productsOut[seg] = {};
+    for (const [m, skus] of Object.entries(productsBySegMonth[seg] || {})) {
+      productsOut[seg][m] = Object.values(skus)
+        .sort((a, b) => b.gmv - a.gmv)
+        .slice(0, TOP_PRODUCTS_PER_SEG_MONTH)
+        .map((p) => ({ sku: p.sku, name: p.name, dept: p.dept, qty: Math.round(p.qty), gmv: Math.round(p.gmv), orders: p.orders }));
+    }
+  }
+  const sizeProducts = writeJson('docs/data/web/products.json', {
+    generatedAt: now.toISOString(),
+    note: 'Top productos por segmento y por mes. El corte mensual mantiene el archivo manejable; para el día exacto está el detalle en data/daily.',
+    months: [...new Set(days.map(monthOf))].sort(),
+    segments: productsOut,
   });
 
   // ── catalog.json ────────────────────────────────────────────────────────
@@ -375,7 +443,11 @@ function main() {
     uniqueCustomers: profiles.size,
     unknownStatuses: [...unknownStatuses],
     statusTotals: Object.fromEntries(Object.entries(statusTotals).sort((a, b) => b[1].orders - a[1].orders)),
+    hasSegmentCatalog: dailySeries.some((d) => SEGMENTS.some((s) => Object.keys(d.segments[s]?.categories || {}).length)),
+    hasGeo: geoDays.length > 0,
     fileSizes: {
+      'geo.json': sizeGeo,
+      'products.json': sizeProducts,
       'daily-summary.json': sizeDaily,
       'catalog.json': sizeCatalog,
       'cohorts.json': sizeCohorts,
@@ -392,6 +464,7 @@ function main() {
   const mb = (n) => `${(n / 1048576).toFixed(1)}MB`;
   console.log(`Agregado OK. Días: ${days.length}. Faltantes: ${missingDays.length}. Clientes únicos: ${profiles.size}.`);
   console.log(`  daily-summary ${mb(sizeDaily)} · catalog ${mb(sizeCatalog)} · cohorts ${mb(sizeCohorts)} · audience ${mb(sizeAudience)}`);
+  console.log(`  geo ${mb(sizeGeo)} (${geoDays.length} días, ${Object.keys(storeMeta).length} tiendas) · products ${mb(sizeProducts)}`);
   if (sizeAudience > 25 * 1048576) {
     console.warn('  ⚠ audience-index.json supera 25MB: el navegador va a tardar en cargarlo. Considerar acotar la ventana.');
   }

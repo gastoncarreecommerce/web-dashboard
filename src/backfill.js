@@ -14,7 +14,7 @@ const { fetchDay, writeDayEmails } = require('./fetch-day');
 const fs = require('fs');
 const path = require('path');
 
-const OUT_DIR = path.join(__dirname, '..', 'docs', 'data', 'web', 'daily');
+const OUT_DIR = path.join(__dirname, '..', 'data', 'daily');
 
 function eachDate(from, to) {
   const out = [];

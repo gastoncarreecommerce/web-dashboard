@@ -22,17 +22,38 @@ const path = require('path');
 const EMAILS_DIR = path.join(__dirname, '..', 'private-out', 'emails');
 const OUT_FILE = path.join(__dirname, '..', 'private-out', 'hash-email.csv');
 
+/** Parsea hash,email,dni (dni opcional para archivos viejos). */
 function parseCsv(text, map) {
   const lines = String(text).split(/\r?\n/);
   const start = (lines[0] || '').toLowerCase().includes('hash') ? 1 : 0;
   for (let i = start; i < lines.length; i++) {
     if (!lines[i].trim()) continue;
-    const idx = lines[i].indexOf(',');
-    if (idx < 0) continue;
-    const hash = lines[i].slice(0, idx).trim();
-    const email = lines[i].slice(idx + 1).trim().replace(/^"|"$/g, '').replace(/""/g, '"');
-    if (hash && email) map.set(hash, email);
+    const cols = splitCsvLine(lines[i]);
+    const hash = (cols[0] || '').trim();
+    const email = (cols[1] || '').trim();
+    const dni = (cols[2] || '').trim();
+    if (!hash || (!email && !dni)) continue;
+    const prev = map.get(hash) || { email: '', dni: '' };
+    // No se pisa un valor bueno con uno vacío al mergear días distintos.
+    map.set(hash, { email: email || prev.email, dni: dni || prev.dni });
   }
+}
+
+function splitCsvLine(line) {
+  const out = [];
+  let cur = '', q = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (q) {
+      if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+      else if (ch === '"') q = false;
+      else cur += ch;
+    } else if (ch === '"') q = true;
+    else if (ch === ',') { out.push(cur); cur = ''; }
+    else cur += ch;
+  }
+  out.push(cur);
+  return out;
 }
 
 function main() {
@@ -57,8 +78,9 @@ function main() {
   }
 
   fs.mkdirSync(path.dirname(OUT_FILE), { recursive: true });
-  const out = ['hash,email'];
-  for (const [h, e] of map) out.push(`${h},${/[",\n]/.test(e) ? '"' + e.replace(/"/g, '""') + '"' : e}`);
+  const q = (v) => (/[",\n]/.test(v) ? '"' + String(v).replace(/"/g, '""') + '"' : v);
+  const out = ['hash,email,dni'];
+  for (const [h, v] of map) out.push(`${h},${q(v.email || '')},${q(v.dni || '')}`);
   fs.writeFileSync(OUT_FILE, out.join('\n') + '\n');
 
   console.log(`✅ ${OUT_FILE}: ${map.size} mails (${map.size - before} nuevos). CONTIENE PII.`);

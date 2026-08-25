@@ -74,9 +74,11 @@
     document.querySelectorAll('#presets button').forEach((b) => b.classList.toggle('on', b.dataset.preset === state.preset));
     $('view-title').textContent = TITLES[state.view];
 
-    // El filtro de segmento y la comparación solo aplican al Dashboard; sin
-    // ellos la fila queda vacía, así que se oculta entera.
-    $('row2').style.display = state.view === 'dashboard' ? '' : 'none';
+    // Dashboard y Analítica se filtran por segmento; Audiencias mira la base
+    // completa, así que ahí la fila no aplica.
+    const hasSeg = state.view === 'dashboard' || state.view === 'analytics';
+    $('row2').style.display = hasSeg ? '' : 'none';
+    $('cmp-wrap').style.display = state.view === 'dashboard' ? '' : 'none';
     // Audiencias mira toda la base histórica, no un rango.
     $('date-controls').style.display = state.view === 'audiences' ? 'none' : '';
     $('range-label').style.display = state.view === 'audiences' ? 'none' : '';
