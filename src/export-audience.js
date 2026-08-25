@@ -23,7 +23,7 @@ const path = require('path');
 
 const { iterateAllOrders, getOrder, forEachLimit } = require('./vtex-client');
 const { orderChannel, isIncludedStatus } = require('./classify');
-const { customerHash } = require('./customer-key');
+const { customerHash, realEmail } = require('./customer-key');
 const { arDayRange } = require('./fetch-day');
 
 const channelMap = require('../config/channel-map.json');
@@ -76,7 +76,9 @@ async function main() {
       if (orderChannel(full, channelMap) !== 'web') return;
 
       const hash = customerHash(full);
-      const email = full.clientProfileData?.email;
+      // El email crudo de VTEX lleva un sufijo por-orden que lo hace inválido
+      // para mailing: hay que exportar el real, no el anonimizado.
+      const email = realEmail(full.clientProfileData?.email);
       if (!hash || !email) return;
       const existing = map.get(hash);
       if (existing) existing.orders += 1;

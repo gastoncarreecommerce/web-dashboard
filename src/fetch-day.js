@@ -223,6 +223,7 @@ function finalizeDay(acc, meta) {
     // vuelva a buscar EXACTAMENTE los que fallaron en vez de rehacer todo el día.
     failedOrderIds: meta.failedOrderIds,
     unknownStatuses: meta.unknownStatuses,
+    statusCounts: meta.statusCounts || {},
     segments: acc.segments,
     hourly: acc.hourly,
     coupons: acc.coupons,
@@ -245,8 +246,13 @@ async function fetchDay(dateStr) {
   // Paso 1: el listado (barato, ~20 llamadas para 2000 pedidos). Se filtra por
   // status acá, que sí viene en el resumen, para no pedir detalles de más.
   const idsToFetch = [];
+  const statusCounts = {};
   for await (const summary of iterateAllOrders({ fromISO, toISO })) {
     scanned += 1;
+    // Se cuenta cada status visto (no solo su nombre) para poder dimensionar
+    // cuántos pedidos deja afuera un status sin clasificar antes de decidir
+    // si va a includeStatuses o a excludeStatuses.
+    statusCounts[summary.status] = (statusCounts[summary.status] || 0) + 1;
     if (!statusFilter.includeStatuses.includes(summary.status) && !statusFilter.excludeStatuses.includes(summary.status)) {
       unknownStatuses.add(summary.status);
     }
@@ -278,6 +284,7 @@ async function fetchDay(dateStr) {
     detailsRequested: idsToFetch.length,
     failedOrderIds,
     unknownStatuses: [...unknownStatuses],
+    statusCounts,
   });
 }
 

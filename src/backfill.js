@@ -28,24 +28,26 @@ function eachDate(from, to) {
 }
 
 async function main() {
-  const [from, to] = process.argv.slice(2);
+  const args = process.argv.slice(2);
+  const force = args.includes('--force');
+  const [from, to] = args.filter((a) => !a.startsWith('--'));
   if (!/^\d{4}-\d{2}-\d{2}$/.test(from || '') || !/^\d{4}-\d{2}-\d{2}$/.test(to || '')) {
-    console.error('Uso: node src/backfill.js YYYY-MM-DD YYYY-MM-DD');
+    console.error('Uso: node src/backfill.js YYYY-MM-DD YYYY-MM-DD [--force]');
     process.exit(1);
   }
 
   const dates = eachDate(from, to);
-  console.log(`Backfill ${from} -> ${to} (${dates.length} días)`);
+  console.log(`Backfill ${from} -> ${to} (${dates.length} días)${force ? ' [--force: rehace los ya existentes]' : ''}`);
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
   for (const date of dates) {
     const outPath = path.join(OUT_DIR, `${date}.json`);
-    if (fs.existsSync(outPath)) {
+    if (fs.existsSync(outPath) && !force) {
       console.log(`  = ${date} (ya existe, salteado)`);
       continue;
     }
     const day = await fetchDay(date);
-    fs.writeFileSync(outPath, JSON.stringify(day, null, 2));
+    fs.writeFileSync(outPath, JSON.stringify(day));
     console.log(`  ✓ ${date}: escaneados=${day.scanned} web=${day.webOrders}`);
   }
 
