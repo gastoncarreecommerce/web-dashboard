@@ -30,7 +30,7 @@ jobs:
           echo '{"generatedAt":"'"$(date -u +%FT%TZ)"'","shards":["0"],"rows":1,"withEmail":1,"withDni":1}' > private-out/audiencias/manifest.json
           echo '{"lastSync":"'"$(date -u +%FT%TZ)"'","field":"test","nota":"corrida de PRUEBA, no reemplaza al sync real"}' > private-out/.sync-state.json
 
-      - name: Publicar al repo privado (prueba)
+      - name: Chequear repo y permisos del token
         env:
           PRIVATE_DATA_REPO: ${{ secrets.PRIVATE_DATA_REPO }}
           PRIVATE_DATA_TOKEN: ${{ secrets.PRIVATE_DATA_TOKEN }}
@@ -40,20 +40,15 @@ jobs:
             exit 1
           fi
           echo "Repo destino: $PRIVATE_DATA_REPO"
-          VIS=$(curl -sS -H "Authorization: Bearer $PRIVATE_DATA_TOKEN" -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/$PRIVATE_DATA_REPO")
-          echo "$VIS" | python3 -c "
-import sys, json
-d = json.load(sys.stdin)
-if 'private' not in d:
-    print('::error::La API no devolvió un repo válido:', d.get('message', d))
-    sys.exit(1)
-print('  private:', d['private'], '| default_branch:', d['default_branch'], '| permissions:', d.get('permissions'))
-if not d['private']:
-    print('::error::El repo no figura como privado.'); sys.exit(1)
-if not d.get('permissions', {}).get('push'):
-    print('::error::El token no tiene permiso de push sobre este repo.'); sys.exit(1)
-"
+          curl -sS -H "Authorization: Bearer $PRIVATE_DATA_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$PRIVATE_DATA_REPO" > /tmp/repo-info.json
+          python3 .github/workflows/scripts/check-private-repo.py /tmp/repo-info.json
+
+      - name: Publicar al repo privado (prueba)
+        env:
+          PRIVATE_DATA_REPO: ${{ secrets.PRIVATE_DATA_REPO }}
+          PRIVATE_DATA_TOKEN: ${{ secrets.PRIVATE_DATA_TOKEN }}
+        run: |
           git clone --depth 1 "https://x-access-token:$PRIVATE_DATA_TOKEN@github.com/$PRIVATE_DATA_REPO.git" /tmp/privrepo
           rm -rf /tmp/privrepo/_test-publish
           mkdir -p /tmp/privrepo/_test-publish
