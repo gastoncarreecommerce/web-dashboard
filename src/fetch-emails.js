@@ -36,6 +36,7 @@ const RESUME_EVERY = 25;
 const OUT_DIR = path.join(__dirname, '..', 'private-out');
 const OUT_FILE = path.join(OUT_DIR, 'hash-email.csv');
 const STATE_FILE = path.join(OUT_DIR, '.scroll-state.json');
+const BASE_DIR = path.join(OUT_DIR, 'base');
 // Persistido en el repo PRIVADO junto al CSV: sobrevive de una corrida a otra.
 const SYNC_FILE = path.join(OUT_DIR, '.sync-state.json');
 
@@ -116,7 +117,8 @@ function watermark() {
   }
   const manual = (process.env.MD_SINCE || '').trim();
   if (manual) return manual;
-  if (!fs.existsSync(SYNC_FILE) || !fs.existsSync(OUT_FILE)) return null;
+  if (!fs.existsSync(SYNC_FILE)) return null;
+  if (!fs.existsSync(OUT_FILE) && !fs.existsSync(BASE_DIR)) return null;
   try {
     const w = JSON.parse(fs.readFileSync(SYNC_FILE, 'utf8')).lastSync;
     if (!w) return null;
@@ -126,8 +128,37 @@ function watermark() {
   } catch { return null; }
 }
 
+/**
+ * La base previa llega repartida en base/NN.csv con columnas email,dni — sin
+ * el hash, que se recalcula acá. Guardar 5,1M de hashes costaba 65 bytes por
+ * fila (~330MB) para algo que se deriva del mail en unos segundos.
+ */
+function loadBaseShards(map) {
+  if (!fs.existsSync(BASE_DIR)) return 0;
+  let n = 0;
+  for (const f of fs.readdirSync(BASE_DIR).filter((x) => x.endsWith('.csv'))) {
+    const lines = fs.readFileSync(path.join(BASE_DIR, f), 'utf8').split(/\r?\n/);
+    for (let i = 1; i < lines.length; i++) {
+      if (!lines[i].trim()) continue;
+      const c = lines[i].split(',');
+      const email = (c[0] || '').trim().replace(/^"|"$/g, '');
+      if (!email) continue;
+      const h = customerHash({ clientProfileData: { email } });
+      if (!h) continue;
+      map.set(h, { email, dni: (c[1] || '').trim().replace(/^"|"$/g, '') });
+      n += 1;
+    }
+  }
+  return n;
+}
+
 function loadExisting() {
   const map = new Map();
+  const desdePedazos = loadBaseShards(map);
+  if (desdePedazos) console.log(`Base previa: ${desdePedazos.toLocaleString('es-AR')} clientes desde base/.`);
+
+  // Un hash-email.csv suelto es lo que deja una corrida interrumpida de este
+  // mismo script; pisa a la base porque es más reciente.
   if (fs.existsSync(OUT_FILE)) {
     const lines = fs.readFileSync(OUT_FILE, 'utf8').split(/\r?\n/);
     for (let i = 1; i < lines.length; i++) {

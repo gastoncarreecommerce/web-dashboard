@@ -2,22 +2,31 @@
 
 /**
  * PRIVADO — junta los hash,email que fue dejando el pipeline en
- * private-out/emails/*.csv y los consolida en private-out/hash-email.csv.
+ * private-out/emails/*.csv con la base previa, y consolida todo en
+ * private-out/hash-email.csv.
  *
  * Por qué existe: el email solo viene en el detalle de cada pedido, y el
  * pipeline ya pide ese detalle para todo. Antes había que volver a barrer VTEX
  * con un workflow aparte (tan caro como un backfill) solo para conseguir los
  * mails; ahora salen de la misma pasada, sin ninguna llamada extra.
  *
+ * La salida sigue siendo un único CSV (no repartido): este script corre
+ * ANTES de src/shard-emails.js, que es quien lo parte en pedazos publicables.
+ * Con los 5,1M de clientes reales ese archivo intermedio pesa ~500MB, así que
+ * NUNCA se commitea tal cual — vive solo en el runner, de paso hacia el shard.
+ *
  * ⚠ La salida CONTIENE DATOS PERSONALES. private-out/ está en .gitignore y solo
  * se publica al repositorio PRIVADO configurado en PRIVATE_DATA_REPO.
  *
- * Uso: node src/merge-emails.js [archivo-base.csv]
- *   El archivo base (opcional) es el hash-email.csv que ya está en el repo
- *   privado: se arranca desde ahí para no perder los días viejos.
+ * Uso: node src/merge-emails.js [base.csv | carpeta-base/]
+ *   La base (opcional) es lo que ya está en el repo privado: un hash-email.csv
+ *   suelto (formato viejo) o una carpeta base/ con pedazos email,dni (formato
+ *   actual — ver src/shard-emails.js). Sin el hash en los pedazos, se
+ *   recalcula acá con customerHash.
  */
 const fs = require('fs');
 const path = require('path');
+const { customerHash } = require('./customer-key');
 
 const EMAILS_DIR = path.join(__dirname, '..', 'private-out', 'emails');
 const OUT_FILE = path.join(__dirname, '..', 'private-out', 'hash-email.csv');
@@ -56,13 +65,33 @@ function splitCsvLine(line) {
   return out;
 }
 
+/** Pedazos email,dni sin hash (formato actual del repo privado). */
+function parseBaseShards(dir, map) {
+  for (const f of fs.readdirSync(dir).filter((x) => x.endsWith('.csv'))) {
+    const lines = fs.readFileSync(path.join(dir, f), 'utf8').split(/\r?\n/);
+    for (let i = 1; i < lines.length; i++) {
+      if (!lines[i].trim()) continue;
+      const [email, dni] = splitCsvLine(lines[i]);
+      const clean = (email || '').trim().replace(/^"|"$/g, '');
+      if (!clean) continue;
+      const h = customerHash({ clientProfileData: { email: clean } });
+      if (h) map.set(h, { email: clean, dni: (dni || '').trim().replace(/^"|"$/g, '') });
+    }
+  }
+}
+
 function main() {
   const base = process.argv[2];
   const map = new Map();
 
   if (base && fs.existsSync(base)) {
-    parseCsv(fs.readFileSync(base, 'utf8'), map);
-    console.log(`Base existente: ${map.size} mails`);
+    if (fs.statSync(base).isDirectory()) {
+      parseBaseShards(base, map);
+      console.log(`Base existente (pedazos): ${map.size.toLocaleString('es-AR')} mails`);
+    } else {
+      parseCsv(fs.readFileSync(base, 'utf8'), map);
+      console.log(`Base existente: ${map.size.toLocaleString('es-AR')} mails`);
+    }
   }
   const before = map.size;
 
