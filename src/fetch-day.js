@@ -19,7 +19,7 @@ const path = require('path');
 
 const { iterateAllOrders, getOrder, forEachLimit } = require('./vtex-client');
 const { orderChannel, isIncludedStatus, classifyOrder } = require('./classify');
-const { customerHash } = require('./customer-key');
+const { customerHash, realEmail } = require('./customer-key');
 
 const channelMap = require('../config/channel-map.json');
 const statusFilter = require('../config/status-filter.json');
@@ -27,6 +27,8 @@ const segmentMap = require('../config/segment-map.json');
 
 const SEGMENTS = segmentMap.tabs.list;
 const OUT_DIR = path.join(__dirname, '..', 'docs', 'data', 'web', 'daily');
+// Salida con PII: gitignorada, se publica solo al repositorio PRIVADO.
+const PRIVATE_DIR = path.join(__dirname, '..', 'private-out', 'emails');
 
 // Un supermercado mueve decenas de miles de SKUs distintos por día; guardar todos
 // haría que el repo crezca sin control. Se guarda el top por GMV, que es lo que
@@ -105,6 +107,9 @@ function newDayAcc() {
     categories: {},
     productsById: {},
     customers: {},
+    // hash -> email real. Se escribe a private-out/ (gitignored) y de ahí al
+    // repositorio PRIVADO; nunca al archivo diario público.
+    emails: {},
     webOrders: 0,
     webGmv: 0,
     discountTotal: 0,
@@ -170,15 +175,24 @@ function applyOrderToAcc(acc, full) {
     acc.productRowsSeen += 1;
   }
 
-  // ── Perfil de cliente del día (hash, nunca email) ─────────────────────────
+  // ── Perfil de cliente del día ─────────────────────────────────────────────
+  // El hash va al archivo público; el email va aparte (acc.emails) y termina
+  // solo en el repositorio privado.
   const hash = customerHash(full);
   if (hash) {
     agg.customerCounts[hash] = (agg.customerCounts[hash] || 0) + 1;
-    const c = (acc.customers[hash] = acc.customers[hash] || { o: 0, g: 0, s: {}, c: {} });
+    const c = (acc.customers[hash] = acc.customers[hash] || { o: 0, g: 0, s: {}, c: {}, cp: 0, pm: {} });
     c.o += 1;
     c.g += gmv;
     c.s[view.bucket] = (c.s[view.bucket] || 0) + 1;
     for (const dept of orderCats) c.c[dept] = (c.c[dept] || 0) + 1;
+    // cp = pedidos con cupón. Es lo que permite separar "compra siempre con
+    // descuento" de "compra a precio lleno" en el constructor de audiencias.
+    if (coupon) c.cp += 1;
+    for (const g of paymentGroups(full)) c.pm[g] = (c.pm[g] || 0) + 1;
+
+    const email = realEmail(full.clientProfileData?.email);
+    if (email) acc.emails[hash] = email;
   }
   return true;
 }
@@ -195,6 +209,8 @@ function accFromDayFile(day) {
   acc.payments = { ...(day.payments || {}) };
   acc.categories = { ...(day.categories || {}) };
   acc.customers = { ...(day.customers || {}) };
+  // acc.emails queda vacío a propósito: el archivo público no los tiene. Al
+  // reparar un día solo se recuperan los emails de los pedidos reprocesados.
   acc.webOrders = day.webOrders || 0;
   acc.webGmv = day.webGmv || 0;
   acc.discountTotal = day.discountTotal || 0;
@@ -210,7 +226,7 @@ function finalizeDay(acc, meta) {
     qty: Math.round(p.qty), gmv: Math.round(p.gmv), orders: p.orders,
   }));
 
-  return {
+  const publicDay = {
     date: meta.date,
     generatedAt: new Date().toISOString(),
     scanned: meta.scanned,
@@ -235,6 +251,23 @@ function finalizeDay(acc, meta) {
     productRowsSeen: acc.productRowsSeen,
     customers: acc.customers,
   };
+  // Los emails viajan por fuera del objeto público (no enumerable para que un
+  // JSON.stringify accidental del día nunca los arrastre).
+  Object.defineProperty(publicDay, '_emails', { value: acc.emails || {}, enumerable: false });
+  return publicDay;
+}
+
+/** Escribe hash,email del día en private-out/ (gitignored). */
+function writeDayEmails(dateStr, emails) {
+  const n = Object.keys(emails || {}).length;
+  if (!n) return 0;
+  fs.mkdirSync(PRIVATE_DIR, { recursive: true });
+  const lines = ['hash,email'];
+  for (const [h, e] of Object.entries(emails)) {
+    lines.push(`${h},${/[",\n]/.test(e) ? '"' + e.replace(/"/g, '""') + '"' : e}`);
+  }
+  fs.writeFileSync(path.join(PRIVATE_DIR, `${dateStr}.csv`), lines.join('\n') + '\n');
+  return n;
 }
 
 async function fetchDay(dateStr) {
@@ -309,7 +342,8 @@ async function main() {
   const day = await fetchDay(dateArg);
   fs.mkdirSync(OUT_DIR, { recursive: true });
   fs.writeFileSync(outPath, JSON.stringify(day));
-  console.log(`OK ${dateArg}: escaneados=${day.scanned} web=${day.webOrders} skus=${day.distinctSkus}`);
+  const nEmails = writeDayEmails(dateArg, day._emails);
+  console.log(`OK ${dateArg}: escaneados=${day.scanned} web=${day.webOrders} skus=${day.distinctSkus} emails=${nEmails}`);
   if (day.unknownStatuses.length) console.warn('Statuses desconocidos:', day.unknownStatuses);
 }
 
@@ -329,5 +363,7 @@ module.exports = {
   accFromDayFile,
   finalizeDay,
   OUT_DIR,
+  PRIVATE_DIR,
   DETAIL_CONCURRENCY,
+  writeDayEmails,
 };

@@ -10,7 +10,7 @@
  *
  * Uso: node src/backfill.js 2026-01-01 2026-01-31
  */
-const { fetchDay } = require('./fetch-day');
+const { fetchDay, writeDayEmails } = require('./fetch-day');
 const fs = require('fs');
 const path = require('path');
 
@@ -48,7 +48,8 @@ async function main() {
     }
     const day = await fetchDay(date);
     fs.writeFileSync(outPath, JSON.stringify(day));
-    console.log(`  ✓ ${date}: escaneados=${day.scanned} web=${day.webOrders}`);
+    const nEmails = writeDayEmails(date, day._emails);
+    console.log(`  ✓ ${date}: escaneados=${day.scanned} web=${day.webOrders} emails=${nEmails}`);
   }
 
   console.log('Backfill terminado.');

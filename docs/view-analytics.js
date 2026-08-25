@@ -12,7 +12,7 @@
     const cohorts = await W.load('cohorts').catch(() => null);
 
     if (!daily.days.length) {
-      el.innerHTML = `<div class="empty-state"><h2>Todavía no hay datos</h2><p>Corré el backfill inicial (ver README).</p></div>`;
+      el.innerHTML = `<div class="empty"><h2>Todavía no hay datos</h2><p>Corré el backfill inicial (ver README).</p></div>`;
       return;
     }
 
@@ -70,7 +70,7 @@
     };
 
     const catalogNote = catalog
-      ? `<span class="scope-note" ${W.chart.tip('Estos paneles se calculan sobre toda la ventana de datos, no sobre el rango de fechas de arriba: el pipeline guarda el catálogo agregado, no día por día.')}>ventana completa ${W.fmtDay(catalog.from)} → ${W.fmtDay(catalog.to)}</span>`
+      ? `<span class="scope" ${W.chart.tip('Estos paneles se calculan sobre toda la ventana de datos, no sobre el rango de fechas de arriba: el pipeline guarda el catálogo agregado, no día por día.')}>ventana completa ${W.fmtDay(catalog.from)} → ${W.fmtDay(catalog.to)}</span>`
       : '';
 
     const couponTotalOrders = (catalog?.coupons || []).reduce((s, c) => s + c.orders, 0);
@@ -114,13 +114,13 @@
     const maxDow = Math.max(1, ...dow.map((d) => d.avgOrders));
 
     el.innerHTML = `
-      <div class="panel">
-        <div class="panel-head">
+      <div class="card">
+        <div class="card-h">
           <div><h3>Comparativa de segmentos</h3><p>${W.fmtDayLong(range.from)} → ${W.fmtDayLong(range.to)} · variaciones vs. período anterior</p></div>
-          <button class="btn-ghost" data-export="segments">⭳ CSV</button>
+          <button class="btn" data-export="segments">${W.icon("download",14)}CSV</button>
         </div>
         <div class="split">
-          <table class="data-table">
+          <table class="tbl">
             <thead><tr><th>Segmento</th><th class="num">Pedidos</th><th class="num">GMV</th><th class="num">Ticket</th><th class="num">U./pedido</th><th class="num">Share</th></tr></thead>
             <tbody>${segRows.map((r) => `<tr>
                 <td><span class="dot" style="background:${r.color}"></span>${W.esc(r.label)}</td>
@@ -140,12 +140,12 @@
         </div>
       </div>
 
-      <div class="panel">
-        <div class="panel-head">
+      <div class="card">
+        <div class="card-h">
           <div><h3>Productos más vendidos</h3><p>ranking por GMV ${catalogNote}</p></div>
-          <div class="head-actions">
-            <input class="search" id="prod-search" type="search" placeholder="Buscar producto…" value="${W.esc(productQuery)}" />
-            <button class="btn-ghost" data-export="products">⭳ CSV</button>
+          <div class="card-a">
+            <input class="inp inp-search" id="prod-search" type="search" placeholder="Buscar producto…" value="${W.esc(productQuery)}" />
+            <button class="btn" data-export="products">${W.icon("download",14)}CSV</button>
           </div>
         </div>
         ${W.chart.barsH({
@@ -153,21 +153,21 @@
           valueFmt: W.fmtMoneyC, color: '#2a78d6',
         })}
         <details class="more"><summary>Ver tabla completa (${W.fmtNum(filtered.length)} productos)</summary>
-          <table class="data-table compact">
+          <table class="tbl dense">
             <thead><tr><th>#</th><th>Producto</th><th>Departamento</th><th class="num">Unidades</th><th class="num">GMV</th></tr></thead>
             <tbody>${filtered.slice(0, 200).map((p, i) => `<tr>
                 <td class="muted">${i + 1}</td><td>${W.esc(p.name)}</td><td class="muted">${W.esc(p.dept)}</td>
                 <td class="num">${W.fmtNum(p.qty)}</td><td class="num">${W.fmtMoney(p.gmv)}</td></tr>`).join('')}</tbody>
           </table>
-          ${filtered.length > 200 ? '<p class="muted pad">Mostrando los primeros 200 — exportá el CSV para la lista completa.</p>' : ''}
+          ${filtered.length > 200 ? '<p class="muted">Mostrando los primeros 200 — exportá el CSV para la lista completa.</p>' : ''}
         </details>
       </div>
 
-      <div class="grid-2">
-        <div class="panel">
-          <div class="panel-head">
+      <div class="g2">
+        <div class="card">
+          <div class="card-h">
             <div><h3>Categorías</h3><p>GMV por departamento ${catalogNote}</p></div>
-            <button class="btn-ghost" data-export="categories">⭳ CSV</button>
+            <button class="btn" data-export="categories">${W.icon("download",14)}CSV</button>
           </div>
           ${W.chart.barsH({
             items: (catalog?.categories || []).slice(0, 12).map((c, i) => ({
@@ -177,8 +177,8 @@
           })}
         </div>
 
-        <div class="panel">
-          <div class="panel-head"><div><h3>Medios de pago</h3><p>participación por GMV ${catalogNote}</p></div></div>
+        <div class="card">
+          <div class="card-h"><div><h3>Medios de pago</h3><p>participación por GMV ${catalogNote}</p></div></div>
           ${W.chart.donut({
             items: (catalog?.payments || []).slice(0, 6).map((p, i) => ({ label: p.group, value: p.gmv, color: W.SERIES[i % W.SERIES.length] })),
             centerValue: W.fmtNumC((catalog?.payments || []).reduce((s, p) => s + p.orders, 0)), centerLabel: 'pedidos',
@@ -186,76 +186,76 @@
         </div>
       </div>
 
-      <div class="panel">
-        <div class="panel-head">
+      <div class="card">
+        <div class="card-h">
           <div><h3>Estados de pedido</h3>
           <p>${W.fmtDayLong(range.from)} → ${W.fmtDayLong(range.to)} · todos los pedidos del canal, incluidos los que no cuentan para las métricas</p></div>
-          <button class="btn-ghost" data-export="statuses">⭳ CSV</button>
+          <button class="btn" data-export="statuses">${W.icon("download",14)}CSV</button>
         </div>
-        <div class="stat-strip">
+        <div class="strip">
           <div><span>${W.fmtPct(canc.rate)}</span><em>tasa de cancelación</em></div>
           <div><span>${W.fmtNumC(canc.cancelledOrders)}</span><em>pedidos cancelados</em></div>
           <div><span>${W.fmtMoneyC(canc.cancelledGmv)}</span><em>monto no facturado</em></div>
         </div>
-        <table class="data-table">
+        <table class="tbl">
           <thead><tr><th>Estado</th><th>Cuenta para métricas</th><th class="num">Pedidos</th><th class="num">Monto</th><th style="width:20%">% pedidos</th></tr></thead>
           <tbody>${statusRows.length ? statusRows.map((r) => `<tr>
               <td><code>${W.esc(r.status)}</code></td>
               <td>${r.counts
                 ? '<span class="pill ok">Sí</span>'
-                : r.cancelled ? '<span class="pill bad">No · cancelado</span>' : '<span class="pill muted">No</span>'}</td>
+                : r.cancelled ? '<span class="pill no">No · cancelado</span>' : '<span class="pill n">No</span>'}</td>
               <td class="num">${W.fmtNum(r.orders)}</td>
               <td class="num">${W.fmtMoney(r.gmv)}</td>
-              <td><div class="bar-cell"><span class="bar-track"><span class="bar-fill" style="width:${(r.orders / (canc.totalOrders || 1)) * 100}%;background:${r.counts ? 'var(--good)' : r.cancelled ? 'var(--bad)' : 'var(--text-muted)'}"></span></span><b>${W.fmtPct(r.orders / (canc.totalOrders || 1))}</b></div></td>
+              <td><div class="barcell"><span class="bartrack"><span class="barfill" style="width:${(r.orders / (canc.totalOrders || 1)) * 100}%;background:${r.counts ? 'var(--pos)' : r.cancelled ? 'var(--neg)' : 'var(--ink-3)'}"></span></span><b>${W.fmtPct(r.orders / (canc.totalOrders || 1))}</b></div></td>
             </tr>`).join('') : '<tr><td colspan="5" class="muted">Sin datos en este rango</td></tr>'}</tbody>
         </table>
       </div>
 
-      <div class="panel">
-        <div class="panel-head">
+      <div class="card">
+        <div class="card-h">
           <div><h3>Cupones</h3><p>uso y volumen asociado ${catalogNote}</p></div>
-          <button class="btn-ghost" data-export="coupons">⭳ CSV</button>
+          <button class="btn" data-export="coupons">${W.icon("download",14)}CSV</button>
         </div>
-        <div class="stat-strip">
+        <div class="strip">
           <div><span>${W.fmtPct(couponPenetration)}</span><em>de los pedidos usó cupón</em></div>
           <div><span>${W.fmtNum((catalog?.coupons || []).length)}</span><em>cupones distintos activos</em></div>
           <div><span>${W.fmtMoneyC(cur.discount)}</span><em>descuento en el rango seleccionado</em></div>
         </div>
-        <table class="data-table">
+        <table class="tbl">
           <thead><tr><th>Cupón</th><th class="num">Pedidos</th><th class="num">GMV asociado</th><th class="num">Ticket</th><th style="width:22%">Volumen</th></tr></thead>
           <tbody>${(catalog?.coupons || []).length
             ? catalog.coupons.slice(0, 25).map((c) => {
                 const max = catalog.coupons[0].gmv || 1;
                 return `<tr><td><code>${W.esc(c.code)}</code></td><td class="num">${W.fmtNum(c.orders)}</td>
                   <td class="num">${W.fmtMoney(c.gmv)}</td><td class="num">${W.fmtMoney(W.ticket(c.gmv, c.orders))}</td>
-                  <td><div class="bar-cell"><span class="bar-track"><span class="bar-fill" style="width:${(c.gmv / max) * 100}%"></span></span></div></td></tr>`;
+                  <td><div class="barcell"><span class="bartrack"><span class="barfill" style="width:${(c.gmv / max) * 100}%"></span></span></div></td></tr>`;
               }).join('')
             : '<tr><td colspan="5" class="muted">No se registraron cupones en la ventana de datos.</td></tr>'}</tbody>
         </table>
       </div>
 
-      <div class="panel">
-        <div class="panel-head">
+      <div class="card">
+        <div class="card-h">
           <div><h3>Retención por cohorte</h3>
           <p>de cada grupo de clientes según su mes de primera compra, qué % volvió a comprar en los meses siguientes</p></div>
         </div>
         ${cohortHtml}
-        <p class="muted pad">La diagonal siempre es 100% (el mes en que la cohorte nació). Lo que importa es cuánto se sostiene hacia la derecha:
+        <p class="muted">La diagonal siempre es 100% (el mes en que la cohorte nació). Lo que importa es cuánto se sostiene hacia la derecha:
         si cae fuerte en el mes+1, el problema es la segunda compra, no la adquisición.</p>
       </div>
 
-      <div class="grid-2">
-        <div class="panel">
-          <div class="panel-head"><div><h3>Distribución horaria</h3><p>pedidos por hora del día (AR) ${catalogNote}</p></div></div>
-          <div class="hbars">${hourly.map((n, h) => `<div class="hbar" ${W.chart.tip(`<strong>${String(h).padStart(2, '0')}:00</strong><span class="tip-row"><b>${W.fmtNum(n)}</b> pedidos</span>`)}>
-              <span class="hbar-fill" style="height:${(n / maxHour) * 100}%"></span>
+      <div class="g2">
+        <div class="card">
+          <div class="card-h"><div><h3>Distribución horaria</h3><p>pedidos por hora del día (AR) ${catalogNote}</p></div></div>
+          <div class="vbars">${hourly.map((n, h) => `<div class="vbar" ${W.chart.tip(`<strong>${String(h).padStart(2, '0')}:00</strong><span class="tip-row"><b>${W.fmtNum(n)}</b> pedidos</span>`)}>
+              <span class="vbar-f" style="height:${(n / maxHour) * 100}%"></span>
               <em>${h % 3 === 0 ? String(h).padStart(2, '0') : ''}</em></div>`).join('')}</div>
         </div>
 
-        <div class="panel">
-          <div class="panel-head"><div><h3>Día de la semana</h3><p>promedio de pedidos por día ${catalogNote}</p></div></div>
-          <div class="hbars tall">${dow.map((d, i) => `<div class="hbar" ${W.chart.tip(`<strong>${W.DOW_LABELS[i]}</strong><span class="tip-row"><b>${W.fmtNum(d.avgOrders)}</b> pedidos promedio · ${d.days} días</span>`)}>
-              <span class="hbar-fill" style="height:${(d.avgOrders / maxDow) * 100}%;background:${i === 0 || i === 6 ? '#eda100' : '#2a78d6'}"></span>
+        <div class="card">
+          <div class="card-h"><div><h3>Día de la semana</h3><p>promedio de pedidos por día ${catalogNote}</p></div></div>
+          <div class="vbars wide">${dow.map((d, i) => `<div class="vbar" ${W.chart.tip(`<strong>${W.DOW_LABELS[i]}</strong><span class="tip-row"><b>${W.fmtNum(d.avgOrders)}</b> pedidos promedio · ${d.days} días</span>`)}>
+              <span class="vbar-f" style="height:${(d.avgOrders / maxDow) * 100}%;background:${i === 0 || i === 6 ? '#eda100' : '#2a78d6'}"></span>
               <em>${W.DOW_LABELS[i]}</em></div>`).join('')}</div>
         </div>
       </div>`;

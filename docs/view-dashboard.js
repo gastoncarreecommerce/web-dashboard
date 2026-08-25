@@ -4,15 +4,15 @@
   const W = (window.W = window.W || {});
 
   function kpi({ icon, label, value, sub, delta, spark, color, tip }) {
-    return `<div class="tile"${tip ? ` ${W.chart.tip(tip)}` : ''}>
-      <div class="tile-head">
-        <span class="tile-icon" style="background:${color}1a;color:${color}">${icon}</span>
+    return `<div class="kpi"${tip ? ` ${W.chart.tip(tip)}` : ''}>
+      <div class="kpi-t">
+        <span class="kpi-ic" style="background:${color}14;color:${color}">${W.icon(icon, 16)}</span>
         ${delta !== undefined ? W.deltaBadge(delta) : ''}
       </div>
-      <div class="tile-value">${value}</div>
-      <div class="tile-label">${W.esc(label)}</div>
-      ${sub ? `<div class="tile-sub">${sub}</div>` : ''}
-      ${spark ? `<div class="tile-spark">${spark}</div>` : ''}
+      <div class="kpi-v">${value}</div>
+      <div class="kpi-l">${W.esc(label)}</div>
+      ${sub ? `<div class="kpi-s">${sub}</div>` : ''}
+      ${spark ? `<div class="kpi-spark">${spark}</div>` : ''}
     </div>`;
   }
 
@@ -104,7 +104,7 @@
     const catalog = await W.load('catalog').catch(() => null);
 
     if (!daily.days.length) {
-      el.innerHTML = `<div class="empty-state"><h2>Todavía no hay datos</h2>
+      el.innerHTML = `<div class="empty"><h2>Todavía no hay datos</h2>
         <p>Corré el backfill inicial para poblar el historial (ver README).</p></div>`;
       return;
     }
@@ -136,28 +136,28 @@
     const d = (a, b) => (cmp ? W.delta(a, b) : undefined);
 
     const color = bucket === 'all' ? '#2a78d6' : W.SEGMENT_COLOR[bucket];
-    const icon = bucket === 'all' ? '🌐' : W.SEGMENT_ICON[bucket];
+    const icon = bucket === 'all' ? 'globe' : W.SEGMENT_ICON_NAME[bucket];
 
     const tiles = [
       kpi({ icon, label: 'Pedidos', value: W.fmtNumC(cur.orders), delta: d(cur.orders, prev.orders), color,
         spark: W.chart.sparkline(orders, color), tip: `<strong>Pedidos</strong><span class="tip-row">${W.fmtNum(cur.orders)} en el período</span>` }),
-      kpi({ icon: '💰', label: 'GMV', value: W.fmtMoneyC(cur.gmv), delta: d(cur.gmv, prev.gmv), color: '#1baf7a',
+      kpi({ icon: 'money', label: 'GMV', value: W.fmtMoneyC(cur.gmv), delta: d(cur.gmv, prev.gmv), color: '#1baf7a',
         spark: W.chart.sparkline(gmvs, '#1baf7a'), tip: `<strong>GMV</strong><span class="tip-row">${W.fmtMoney(cur.gmv)}</span>` }),
-      kpi({ icon: '🧾', label: 'Ticket promedio', value: W.fmtMoney(W.ticket(cur.gmv, cur.orders)),
+      kpi({ icon: 'ticket', label: 'Ticket promedio', value: W.fmtMoney(W.ticket(cur.gmv, cur.orders)),
         delta: d(W.ticket(cur.gmv, cur.orders), W.ticket(prev.gmv, prev.orders)), color: '#eb6834', sub: 'GMV / pedidos' }),
-      kpi({ icon: '📦', label: 'Unidades por pedido', value: W.fmtDec(W.unitsPerOrder(cur.units, cur.orders), 1),
+      kpi({ icon: 'box', label: 'Unidades por pedido', value: W.fmtDec(W.unitsPerOrder(cur.units, cur.orders), 1),
         delta: d(W.unitsPerOrder(cur.units, cur.orders), W.unitsPerOrder(prev.units, prev.orders)), color: '#4a3aa7', sub: 'tamaño de canasta' }),
     ];
 
     if (bucket === 'all') {
       tiles.push(
-        kpi({ icon: '👥', label: 'Clientes activos', value: W.fmtNumC(cur.activeCustomers),
+        kpi({ icon: 'users', label: 'Clientes activos', value: W.fmtNumC(cur.activeCustomers),
           delta: d(cur.activeCustomers, prev.activeCustomers), color: '#e87ba4', sub: 'suma de activos por día' }),
-        kpi({ icon: '✨', label: 'Clientes nuevos', value: W.fmtNumC(cur.newCustomers),
+        kpi({ icon: 'sparkles', label: 'Clientes nuevos', value: W.fmtNumC(cur.newCustomers),
           delta: d(cur.newCustomers, prev.newCustomers), color: '#eda100',
           spark: W.chart.sparkline(cur.series.map((s) => s.newCustomers), '#eda100'),
           sub: cur.activeCustomers ? `${W.fmtPct(cur.newCustomers / cur.activeCustomers)} de los activos` : '' }),
-        kpi({ icon: '🏷️', label: 'Descuentos', value: W.fmtMoneyC(cur.discount), delta: d(cur.discount, prev.discount),
+        kpi({ icon: 'tag', label: 'Descuentos', value: W.fmtMoneyC(cur.discount), delta: d(cur.discount, prev.discount),
           color: '#e34948', sub: cur.gmv ? `${W.fmtPct(cur.discount / (cur.gmv + cur.discount))} del valor bruto` : '' })
       );
 
@@ -167,7 +167,7 @@
       const cancPrev = cmp ? W.cancellations(prev.statusStats) : null;
       if (canc.totalOrders) {
         tiles.push(kpi({
-          icon: '🚫', label: 'Cancelaciones', value: W.fmtPct(canc.rate),
+          icon: 'ban', label: 'Cancelaciones', value: W.fmtPct(canc.rate),
           delta: cmp ? W.delta(canc.rate, cancPrev.rate) : undefined,
           color: '#e34948',
           sub: `${W.fmtNumC(canc.cancelledOrders)} pedidos · ${W.fmtMoneyC(canc.cancelledGmv)} no facturados`,
@@ -224,46 +224,46 @@
     const insights = compare ? buildInsights(cur, prev, range, daily, catalog, bucket) : [];
 
     el.innerHTML = `
-      <div class="tiles">${tiles.join('')}</div>
+      <div class="kpis">${tiles.join('')}</div>
 
-      ${insights.length ? `<div class="insights">
-        <div class="insights-head"><h3>Qué está pasando</h3><span>lectura automática del período vs. el anterior</span></div>
-        <div class="insights-grid">${insights
-          .map((i) => `<div class="insight ${i.kind}"><h4>${W.esc(i.title)}</h4><p>${W.esc(i.text)}</p></div>`)
+      ${insights.length ? `<div>
+        <div class="ins-h"><h3>Qué está pasando</h3><span>lectura automática del período vs. el anterior</span></div>
+        <div class="ins-g">${insights
+          .map((i) => `<div class="ins ${i.kind}">${W.icon(i.kind === 'good' ? 'trend' : i.kind === 'bad' ? 'trendDown' : i.kind === 'warn' ? 'warn' : 'info', 16)}<div><h4>${W.esc(i.title)}</h4><p>${W.esc(i.text)}</p></div></div>`)
           .join('')}</div></div>` : ''}
 
-      <div class="panel">
-        <div class="panel-head">
+      <div class="card">
+        <div class="card-h">
           <div><h3>Pedidos por día</h3><p>${W.fmtDayLong(range.from)} → ${W.fmtDayLong(range.to)} · ${bucket === 'all' ? 'todos los segmentos' : W.SEGMENT_LABEL[bucket]}</p></div>
-          <button class="btn-ghost" data-export="daily">⭳ CSV</button>
+          <button class="btn" data-export="daily">${W.icon("download",14)}CSV</button>
         </div>
         ${W.chart.line({ labels, series: mainSeries, height: 260 })}
       </div>
 
-      <div class="grid-2">
-        <div class="panel">
-          <div class="panel-head"><div><h3>Proyección de cierre de mes</h3><p>al ritmo de los primeros ${elapsed} de ${dim} días</p></div></div>
-          <div class="projection">
+      <div class="g2">
+        <div class="card">
+          <div class="card-h"><div><h3>Proyección de cierre de mes</h3><p>al ritmo de los primeros ${elapsed} de ${dim} días</p></div></div>
+          <div class="proj">
             <div class="proj-main">
-              <span class="proj-value">${W.fmtMoneyC(paceGmv)}</span>
-              <span class="proj-label">GMV proyectado · ${W.fmtNumC(paceOrders)} pedidos</span>
-              ${prevMonth.gmv > 0 ? `<span class="proj-cmp">${W.deltaBadge(W.delta(paceGmv, prevMonth.gmv))} vs. mes anterior cerrado (${W.fmtMoneyC(prevMonth.gmv)})</span>` : ''}
+              <span class="proj-v">${W.fmtMoneyC(paceGmv)}</span>
+              <span class="proj-l">GMV proyectado · ${W.fmtNumC(paceOrders)} pedidos</span>
+              ${prevMonth.gmv > 0 ? `<span class="proj-c">${W.deltaBadge(W.delta(paceGmv, prevMonth.gmv))} vs. mes anterior cerrado (${W.fmtMoneyC(prevMonth.gmv)})</span>` : ''}
             </div>
             <div class="proj-bar">
-              <div class="proj-bar-fill" style="width:${Math.min(100, (elapsed / dim) * 100)}%"></div>
-              <span class="proj-bar-label">${W.fmtMoneyC(mtd.gmv)} acumulado · ${Math.round((elapsed / dim) * 100)}% del mes transcurrido</span>
+              <div class="proj-f" style="width:${Math.min(100, (elapsed / dim) * 100)}%"></div>
+              <span class="proj-bl">${W.fmtMoneyC(mtd.gmv)} acumulado · ${Math.round((elapsed / dim) * 100)}% del mes transcurrido</span>
             </div>
           </div>
         </div>
 
-        <div class="panel">
-          <div class="panel-head"><div><h3>Mix de GMV por segmento</h3><p>participación diaria</p></div></div>
+        <div class="card">
+          <div class="card-h"><div><h3>Mix de GMV por segmento</h3><p>participación diaria</p></div></div>
           ${W.chart.stackedBars({ labels, series: mixSeries, height: 200, pct: true, yFmt: W.fmtMoneyC })}
         </div>
       </div>
 
-      ${hasHourly && bucket === 'all' ? `<div class="panel">
-        <div class="panel-head"><div><h3>Cuándo compran</h3><p>pedidos por día de la semana y hora (AR) — dónde conviene disparar campañas</p></div></div>
+      ${hasHourly && bucket === 'all' ? `<div class="card">
+        <div class="card-h"><div><h3>Cuándo compran</h3><p>pedidos por día de la semana y hora (AR) — dónde conviene disparar campañas</p></div></div>
         ${W.chart.heatmap({
           rows: W.DOW_LABELS,
           cols: Array.from({ length: 24 }, (_, h) => String(h).padStart(2, '0')),
@@ -273,19 +273,19 @@
         })}
       </div>` : ''}
 
-      <div class="panel">
-        <div class="panel-head">
+      <div class="card">
+        <div class="card-h">
           <div><h3>Fuentes de marketing</h3><p>atribución por utmSource de VTEX</p></div>
-          <button class="btn-ghost" data-export="marketing">⭳ CSV</button>
+          <button class="btn" data-export="marketing">${W.icon("download",14)}CSV</button>
         </div>
-        <table class="data-table">
+        <table class="tbl">
           <thead><tr><th>Fuente</th><th class="num">Pedidos</th><th class="num">GMV</th><th class="num">Ticket</th><th style="width:26%">% GMV</th></tr></thead>
           <tbody>${mkRows.length ? mkRows.map(([k, v]) => `<tr>
               <td>${W.esc(k)}</td>
               <td class="num">${W.fmtNum(v.orders)}</td>
               <td class="num">${W.fmtMoney(v.gmv)}</td>
               <td class="num">${W.fmtMoney(W.ticket(v.gmv, v.orders))}</td>
-              <td><div class="bar-cell"><span class="bar-track"><span class="bar-fill" style="width:${(v.gmv / (mkTotal || 1)) * 100}%"></span></span><b>${W.fmtPct(v.gmv / (mkTotal || 1))}</b></div></td>
+              <td><div class="barcell"><span class="bartrack"><span class="barfill" style="width:${(v.gmv / (mkTotal || 1)) * 100}%"></span></span><b>${W.fmtPct(v.gmv / (mkTotal || 1))}</b></div></td>
             </tr>`).join('') : '<tr><td colspan="5" class="muted">Sin datos en este rango</td></tr>'}</tbody>
         </table>
       </div>`;
