@@ -23,6 +23,14 @@ on:
         description: 'Traer mails desde VTEX Master Data y publicarlos al repo privado'
         type: boolean
         default: true
+      releer_todo:
+        description: 'Releer la base ENTERA de clientes (~2h). Sin esto trae solo lo que cambió.'
+        type: boolean
+        default: false
+      desde:
+        description: 'Traer solo lo modificado desde esta fecha (YYYY-MM-DD). Vacío = automático.'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -45,6 +53,28 @@ jobs:
         if: ${{ github.event.inputs.recalcular != 'false' }}
         run: node src/aggregate.js
 
+      # Sin esto cada sync releía los 5,1M de clientes desde cero (~2h15).
+      # Con el CSV previo como base, solo hace falta pedir el delta.
+      - name: Bajar el mapeo previo del repo privado
+        if: ${{ github.event.inputs.traer_mails != 'false' }}
+        env:
+          PRIVATE_DATA_REPO: ${{ secrets.PRIVATE_DATA_REPO }}
+          PRIVATE_DATA_TOKEN: ${{ secrets.PRIVATE_DATA_TOKEN }}
+        run: |
+          mkdir -p private-out
+          if [ -z "$PRIVATE_DATA_REPO" ] || [ -z "$PRIVATE_DATA_TOKEN" ]; then
+            echo "Sin repo privado configurado: se lee la base completa."
+            exit 0
+          fi
+          git clone --depth 1 "https://x-access-token:$PRIVATE_DATA_TOKEN@github.com/$PRIVATE_DATA_REPO.git" /tmp/privbase 2>/dev/null || true
+          for f in hash-email.csv .sync-state.json; do
+            [ -f "/tmp/privbase/$f" ] && cp "/tmp/privbase/$f" "private-out/$f" && echo "  base: $f"
+          done
+          rm -rf /tmp/privbase
+          [ -f private-out/hash-email.csv ] \
+            && echo "Base previa: $(($(wc -l < private-out/hash-email.csv) - 1)) mails" \
+            || echo "No hay base previa: se lee la base completa."
+
       - name: Traer mails desde Master Data
         if: ${{ github.event.inputs.traer_mails != 'false' }}
         env:
@@ -52,6 +82,8 @@ jobs:
           VTEX_APP_KEY: ${{ secrets.VTEX_APP_KEY }}
           VTEX_APP_TOKEN: ${{ secrets.VTEX_APP_TOKEN }}
           VTEX_ENVIRONMENT: ${{ secrets.VTEX_ENVIRONMENT }}
+          FULL_RESYNC: ${{ github.event.inputs.releer_todo }}
+          MD_SINCE: ${{ github.event.inputs.desde }}
         run: node src/fetch-emails.js
 
       - name: Publicar mails al repo privado
@@ -72,10 +104,11 @@ jobs:
           fi
           git clone --depth 1 "https://x-access-token:$PRIVATE_DATA_TOKEN@github.com/$PRIVATE_DATA_REPO.git" /tmp/privrepo
           cp private-out/hash-email.csv /tmp/privrepo/hash-email.csv
+          [ -f private-out/.sync-state.json ] && cp private-out/.sync-state.json /tmp/privrepo/.sync-state.json
           cd /tmp/privrepo
           git config user.name "webdash-bot"
           git config user.email "webdash-bot@users.noreply.github.com"
-          git add hash-email.csv
+          git add hash-email.csv .sync-state.json
           if git diff --staged --quiet; then
             echo "Sin cambios en el mapeo de mails."
           else

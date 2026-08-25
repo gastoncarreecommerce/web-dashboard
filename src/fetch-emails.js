@@ -36,6 +36,15 @@ const RESUME_EVERY = 25;
 const OUT_DIR = path.join(__dirname, '..', 'private-out');
 const OUT_FILE = path.join(OUT_DIR, 'hash-email.csv');
 const STATE_FILE = path.join(OUT_DIR, '.scroll-state.json');
+// Persistido en el repo PRIVADO junto al CSV: sobrevive de una corrida a otra.
+const SYNC_FILE = path.join(OUT_DIR, '.sync-state.json');
+
+// Campo de Master Data por el que se filtra el incremental. Configurable por si
+// la cuenta usa otro nombre; el probe de abajo avisa si no existe.
+const SINCE_FIELD = process.env.MD_SINCE_FIELD || 'updatedIn';
+// Margen hacia atrás: Master Data no es inmediatamente consistente y el reloj
+// del runner no es el de VTEX. Un día de solape cuesta poco y evita agujeros.
+const OVERLAP_DAYS = Number(process.env.MD_OVERLAP_DAYS || 1);
 
 function baseUrl() {
   const { account, environment } = getEnvOrThrow();
@@ -52,10 +61,14 @@ function headers() {
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** Una página del scroll. Devuelve { rows, token }. */
-async function scrollPage(token, retries = 5) {
-  const url = token
-    ? `${baseUrl()}/api/dataentities/CL/scroll?_token=${encodeURIComponent(token)}`
-    : `${baseUrl()}/api/dataentities/CL/scroll?_fields=email,document&_size=${SIZE}`;
+async function scrollPage(token, since, retries = 5) {
+  let url;
+  if (token) {
+    url = `${baseUrl()}/api/dataentities/CL/scroll?_token=${encodeURIComponent(token)}`;
+  } else {
+    url = `${baseUrl()}/api/dataentities/CL/scroll?_fields=email,document&_size=${SIZE}`;
+    if (since) url += `&_where=${encodeURIComponent(`${SINCE_FIELD}>${since}`)}`;
+  }
 
   for (let a = 0; a <= retries; a++) {
     try {
@@ -77,6 +90,42 @@ async function scrollPage(token, retries = 5) {
   throw new Error('No se pudo traer la página del scroll');
 }
 
+/**
+ * Comprueba que Master Data acepte el filtro antes de largar el scroll entero.
+ * Si el campo no existe o la sintaxis no le gusta, la API devuelve un error y
+ * conviene enterarse ahora y no después de bajar media base equivocada.
+ */
+async function incrementalFunciona(since) {
+  const url = `${baseUrl()}/api/dataentities/CL/search?_fields=email&_where=${
+    encodeURIComponent(`${SINCE_FIELD}>${since}`)}`;
+  try {
+    const res = await fetch(url, { headers: { ...headers(), 'REST-Range': 'resources=0-0' } });
+    if (res.ok) return true;
+    console.warn(`⚠ Master Data rechazó el filtro por ${SINCE_FIELD} (HTTP ${res.status}).`);
+  } catch (e) {
+    console.warn(`⚠ No se pudo verificar el filtro por ${SINCE_FIELD}: ${e.message}`);
+  }
+  return false;
+}
+
+/** Desde cuándo pedir. null = base completa. */
+function watermark() {
+  if (process.env.FULL_RESYNC === 'true') {
+    console.log('FULL_RESYNC=true: se relee la base entera.');
+    return null;
+  }
+  const manual = (process.env.MD_SINCE || '').trim();
+  if (manual) return manual;
+  if (!fs.existsSync(SYNC_FILE) || !fs.existsSync(OUT_FILE)) return null;
+  try {
+    const w = JSON.parse(fs.readFileSync(SYNC_FILE, 'utf8')).lastSync;
+    if (!w) return null;
+    const d = new Date(w);
+    d.setUTCDate(d.getUTCDate() - OVERLAP_DAYS);
+    return d.toISOString().slice(0, 10);
+  } catch { return null; }
+}
+
 function loadExisting() {
   const map = new Map();
   if (fs.existsSync(OUT_FILE)) {
@@ -93,6 +142,11 @@ function loadExisting() {
   return { map, token };
 }
 
+function saveSync(startedAt) {
+  fs.mkdirSync(OUT_DIR, { recursive: true });
+  fs.writeFileSync(SYNC_FILE, JSON.stringify({ lastSync: startedAt, field: SINCE_FIELD }, null, 2));
+}
+
 function save(map, token) {
   fs.mkdirSync(OUT_DIR, { recursive: true });
   const q = (v) => (/[",\n]/.test(v) ? '"' + String(v).replace(/"/g, '""') + '"' : v);
@@ -103,9 +157,30 @@ function save(map, token) {
 }
 
 async function main() {
+  const startedAt = new Date().toISOString();
   const { map, token: resumeToken } = loadExisting();
-  if (map.size) console.log(`Reanudando: ya había ${map.size.toLocaleString('es-AR')} mails.`);
-  console.log('Leyendo la base de clientes (Master Data · scroll)…');
+  const antes = map.size;
+  if (antes) console.log(`Partiendo de ${antes.toLocaleString('es-AR')} mails ya conocidos.`);
+
+  // Solo tiene sentido pedir el delta si hay una base previa sobre la que
+  // aplicarlo: sin CSV de partida, un incremental dejaría la base incompleta.
+  let since = watermark();
+  if (since && !antes) {
+    console.log('Hay marca de tiempo pero no hay CSV de partida: se lee la base completa.');
+    since = null;
+  }
+  if (since && !(await incrementalFunciona(since))) {
+    console.warn('  → se cae a la lectura completa.');
+    since = null;
+  }
+
+  // El token manda: si viene de una corrida cortada, continúa AQUELLA lectura,
+  // sea la que haya sido. El filtro solo se aplica al pedir la primera página.
+  console.log(resumeToken
+    ? 'Reanudando la lectura que quedó a medias (Master Data · scroll)…'
+    : since
+      ? `Leyendo SOLO los clientes con ${SINCE_FIELD} > ${since} (Master Data · scroll)…`
+      : 'Leyendo la base de clientes COMPLETA (Master Data · scroll)…');
 
   let token = resumeToken;
   let pages = 0;
@@ -113,7 +188,7 @@ async function main() {
   const t0 = Date.now();
 
   for (;;) {
-    const { rows, token: next } = await scrollPage(token);
+    const { rows, token: next } = await scrollPage(token, since);
     if (!rows || !rows.length) break;
 
     rowsSeen += rows.length;
@@ -135,9 +210,15 @@ async function main() {
   }
 
   save(map, null);
+  // La marca es el arranque de ESTA corrida, no el final: cualquier cliente
+  // modificado mientras el scroll avanzaba entra en el próximo delta.
+  saveSync(startedAt);
+
   const withDni = [...map.values()].filter((v) => v.dni).length;
   console.log(`\n✅ ${map.size.toLocaleString('es-AR')} mails (${withDni.toLocaleString('es-AR')} con DNI) en ${OUT_FILE}`);
+  if (since) console.log(`   ${(map.size - antes).toLocaleString('es-AR')} nuevos en este delta.`);
   console.log(`   ${rowsSeen.toLocaleString('es-AR')} registros recorridos en ${((Date.now() - t0) / 60000).toFixed(1)} min.`);
+  console.log(`   Próxima corrida: solo lo modificado desde ${startedAt.slice(0, 10)}.`);
   console.log('   CONTIENE PII — no commitear al repo público.');
 }
 
