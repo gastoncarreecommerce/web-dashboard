@@ -1,0 +1,69 @@
+# Prueba SOLO el paso de publicar al repo privado, con datos FALSOS.
+#
+# Sirve para validar que PRIVATE_DATA_REPO/PRIVATE_DATA_TOKEN están bien
+# configurados (permiso de escritura, repo reconocido como privado, el push
+# entra) sin tener que esperar las ~2h15 del scroll completo de Master Data.
+# No toca VTEX ni PII real — genera dos filas inventadas.
+#
+# Este workflow es una herramienta de diagnóstico: se puede borrar una vez que
+# el sync real publique bien.
+name: WebDash test — publicar al repo privado (datos falsos)
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  test-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Armar datos falsos
+        run: |
+          mkdir -p private-out/base private-out/audiencias
+          echo "email,dni" > private-out/base/0.csv
+          echo "prueba@example.com,12345678" >> private-out/base/0.csv
+          echo "hash,email,dni" > private-out/audiencias/0.csv
+          echo "0123456789abcdef,prueba@example.com,12345678" >> private-out/audiencias/0.csv
+          echo '{"generatedAt":"'"$(date -u +%FT%TZ)"'","shards":["0"],"rows":1,"withEmail":1,"withDni":1}' > private-out/audiencias/manifest.json
+          echo '{"lastSync":"'"$(date -u +%FT%TZ)"'","field":"test","nota":"corrida de PRUEBA, no reemplaza al sync real"}' > private-out/.sync-state.json
+
+      - name: Publicar al repo privado (prueba)
+        env:
+          PRIVATE_DATA_REPO: ${{ secrets.PRIVATE_DATA_REPO }}
+          PRIVATE_DATA_TOKEN: ${{ secrets.PRIVATE_DATA_TOKEN }}
+        run: |
+          if [ -z "$PRIVATE_DATA_REPO" ] || [ -z "$PRIVATE_DATA_TOKEN" ]; then
+            echo "::error::Falta PRIVATE_DATA_REPO o PRIVATE_DATA_TOKEN."
+            exit 1
+          fi
+          echo "Repo destino: $PRIVATE_DATA_REPO"
+          VIS=$(curl -sS -H "Authorization: Bearer $PRIVATE_DATA_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$PRIVATE_DATA_REPO")
+          echo "$VIS" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+if 'private' not in d:
+    print('::error::La API no devolvió un repo válido:', d.get('message', d))
+    sys.exit(1)
+print('  private:', d['private'], '| default_branch:', d['default_branch'], '| permissions:', d.get('permissions'))
+if not d['private']:
+    print('::error::El repo no figura como privado.'); sys.exit(1)
+if not d.get('permissions', {}).get('push'):
+    print('::error::El token no tiene permiso de push sobre este repo.'); sys.exit(1)
+"
+          git clone --depth 1 "https://x-access-token:$PRIVATE_DATA_TOKEN@github.com/$PRIVATE_DATA_REPO.git" /tmp/privrepo
+          rm -rf /tmp/privrepo/_test-publish
+          mkdir -p /tmp/privrepo/_test-publish
+          cp -r private-out/base /tmp/privrepo/_test-publish/base
+          cp -r private-out/audiencias /tmp/privrepo/_test-publish/audiencias
+          cp private-out/.sync-state.json /tmp/privrepo/_test-publish/.sync-state.json
+          cd /tmp/privrepo
+          git config user.name "webdash-bot"
+          git config user.email "webdash-bot@users.noreply.github.com"
+          git add _test-publish
+          git commit -m "test: prueba de publicación (datos falsos, borrar carpeta _test-publish)"
+          git push
+          echo "✅ Publicado en $PRIVATE_DATA_REPO bajo _test-publish/ — anda a borrar esa carpeta a mano."
