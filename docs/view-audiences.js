@@ -46,7 +46,7 @@
       { name: 'Anti-churn (fieles)', icon: 'heart', rules: [{ field: 'ciclo', op: 'es', value: 'activo' }, { field: 'pedidos', op: '≥', value: 4 }] },
       { name: 'Perdidos', icon: 'sleep', rules: [{ field: 'ciclo', op: 'es', value: 'perdido' }] },
     ]},
-    { group: 'Cupones', items: [
+    { group: 'Cupones', needs: 'coupon', items: [
       { name: 'Cupón-dependientes', icon: 'tag', rules: [{ field: 'cuponPct', op: '≥', value: 70 }, { field: 'pedidos', op: '≥', value: 2 }] },
       { name: 'Nunca usó cupón', icon: 'shield', rules: [{ field: 'cuponPedidos', op: '=', value: 0 }, { field: 'pedidos', op: '≥', value: 2 }] },
       { name: 'Churn recuperable con cupón', icon: 'refresh', rules: [{ field: 'ciclo', op: 'es', value: 'churn' }, { field: 'cuponPct', op: '≥', value: 40 }] },
@@ -180,7 +180,9 @@
   // ── Render ────────────────────────────────────────────────────────────────
   function ruleRow(r, i) {
     const f = FIELDS[r.field];
+    const av = availability();
     const fieldOpts = Object.entries(FIELDS)
+      .filter(([k]) => (av.coupon || !k.startsWith('cupon')) && (av.payment || k !== 'medioPago'))
       .map(([k, v]) => `<option value="${k}"${k === r.field ? ' selected' : ''}>${W.esc(v.label)}</option>`).join('');
     const opOpts = f.ops.map((o) => `<option${o === r.op ? ' selected' : ''}>${o}</option>`).join('');
 
@@ -210,6 +212,14 @@
     </div>`;
   }
 
+  /** Qué datos por-cliente están disponibles en el índice actual. */
+  function availability() {
+    return {
+      coupon: idx.hasCouponData !== false && (idx.cp || []).some((v) => v > 0),
+      payment: idx.hasPaymentData !== false && (idx.payments || []).length > 0,
+    };
+  }
+
   W.viewAudiences = async function (ctx) {
     const { el } = ctx;
     if (!idx) {
@@ -230,6 +240,7 @@
     }
     await loadEmails();
 
+    const avail = availability();
     const matches = evaluate();
     const sum = summarize(matches);
     const share = idx.count ? sum.customers / idx.count : 0;
@@ -283,9 +294,14 @@
               <div><h3>Constructor de audiencias</h3><p>combiná condiciones y exportá la lista de mails para la campaña</p></div>
             </div>
 
-            ${PRESETS.map((g, gi) => `<div class="pre-group"><label>${W.esc(g.group)}</label>
+            ${PRESETS.map((g, gi) => {
+              const off = g.needs && !avail[g.needs];
+              return `<div class="pre-group"><label>${W.esc(g.group)}${off
+                ? ` <span class="scope" ${W.chart.tip('El dato de cupón por cliente se empezó a guardar después del backfill inicial. Se completa solo con las corridas diarias del pipeline, o de una con un backfill del período que quieras analizar.')}>sin datos todavía</span>`
+                : ''}</label>
               <div class="pre-row">${g.items.map((p, pi) =>
-                `<button class="pre" data-g="${gi}" data-p="${pi}">${W.icon(p.icon, 14)}${W.esc(p.name)}</button>`).join('')}</div></div>`).join('')}
+                `<button class="pre" data-g="${gi}" data-p="${pi}"${off ? ' disabled' : ''}>${W.icon(p.icon, 14)}${W.esc(p.name)}</button>`).join('')}</div></div>`;
+            }).join('')}
 
             <div class="rules">${rules.map(ruleRow).join('')}</div>
             <div class="rules-a">
@@ -323,7 +339,7 @@
               <div><em>Ticket promedio</em><b>${W.fmtMoney(W.ticket(sum.gmv, sum.orders))}</b></div>
               <div><em>Pedidos por cliente</em><b>${W.fmtDec(sum.customers ? sum.orders / sum.customers : 0, 1)}</b></div>
               <div><em>Días sin comprar</em><b>${W.fmtNum(sum.avgRecency)}</b></div>
-              <div><em>Pedidos con cupón</em><b>${W.fmtPct(sum.couponRate)}</b></div>
+              ${avail.coupon ? `<div><em>Pedidos con cupón</em><b>${W.fmtPct(sum.couponRate)}</b></div>` : ''}
             </div>
 
             <div class="mail-box">

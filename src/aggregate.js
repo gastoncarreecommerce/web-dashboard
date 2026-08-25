@@ -295,6 +295,11 @@ function main() {
   // definir churn en serio: no es "hace X días que no compra" a secas, sino
   // "hace mucho más de lo que suele tardar ESTE cliente en volver".
   const A = { h: [], o: [], g: [], f: [], l: [], sd: [], cd: [], cs: [], cp: [], ip: [], pd: [] };
+  // Los archivos diarios generados antes de que el pipeline capturara cupón y
+  // medio de pago por cliente no traen esos campos. Se detecta y se informa,
+  // para que la UI deshabilite esos filtros en vez de devolver 0 en todos y
+  // hacer creer que nadie usó cupón.
+  let anyCoupon = false, anyPayment = false;
   for (const [hash, p] of profiles) {
     const segEntries = Object.entries(p.segs).sort((a, b) => b[1] - a[1]);
     const catEntries = Object.entries(p.cats).sort((a, b) => b[1] - a[1]);
@@ -310,6 +315,8 @@ function main() {
     A.cd.push(catEntries.length ? catOf(catEntries[0][0]) : -1);
     A.cs.push(catEntries.slice(0, 5).map(([name]) => catOf(name)));
     A.cp.push(p.cp);
+    if (p.cp > 0) anyCoupon = true;
+    if (pmEntries.length) anyPayment = true;
     A.ip.push(p.o > 1 ? Math.round((li - fi) / (p.o - 1)) : 0);
     A.pd.push(pmEntries.length ? pmOf(pmEntries[0][0]) : -1);
   }
@@ -321,6 +328,8 @@ function main() {
     segments: SEGMENTS,
     categories: catNames,
     payments: pmNames,
+    hasCouponData: anyCoupon,
+    hasPaymentData: anyPayment,
     count: A.h.length,
     ...A,
   });

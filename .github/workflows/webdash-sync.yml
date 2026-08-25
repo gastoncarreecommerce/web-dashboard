@@ -1,0 +1,111 @@
+# Sincronización RÁPIDA — no vuelve a leer los pedidos de VTEX.
+#
+# Sirve para dos cosas que antes obligaban a rehacer el backfill entero:
+#
+#  1. Recalcular las métricas derivadas (ciclo de vida, churn, intervalo entre
+#     compras, cohortes) sobre los archivos diarios que ya están en el repo.
+#     Es puro cómputo local: segundos, cero llamadas a VTEX.
+#
+#  2. Traer los mails desde la base de clientes de VTEX (Master Data, entidad
+#     CL) en vez de desde los pedidos. El hash del dashboard es SHA-256 del
+#     email, así que con la lista de emails se reconstruye el mapeo completo:
+#     ~2.300 llamadas livianas contra las ~866.000 que costaría releer pedidos.
+name: WebDash sincronizar (rápido · sin releer pedidos)
+
+on:
+  workflow_dispatch:
+    inputs:
+      recalcular:
+        description: 'Recalcular métricas sobre los días ya guardados'
+        type: boolean
+        default: true
+      traer_mails:
+        description: 'Traer mails desde VTEX Master Data y publicarlos al repo privado'
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: webdash-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Recalcular métricas
+        if: ${{ github.event.inputs.recalcular != 'false' }}
+        run: node src/aggregate.js
+
+      - name: Traer mails desde Master Data
+        if: ${{ github.event.inputs.traer_mails != 'false' }}
+        env:
+          VTEX_ACCOUNT_NAME: ${{ secrets.VTEX_ACCOUNT_NAME }}
+          VTEX_APP_KEY: ${{ secrets.VTEX_APP_KEY }}
+          VTEX_APP_TOKEN: ${{ secrets.VTEX_APP_TOKEN }}
+          VTEX_ENVIRONMENT: ${{ secrets.VTEX_ENVIRONMENT }}
+        run: node src/fetch-emails.js
+
+      - name: Publicar mails al repo privado
+        if: ${{ github.event.inputs.traer_mails != 'false' }}
+        env:
+          PRIVATE_DATA_REPO: ${{ secrets.PRIVATE_DATA_REPO }}
+          PRIVATE_DATA_TOKEN: ${{ secrets.PRIVATE_DATA_TOKEN }}
+        run: |
+          if [ -z "$PRIVATE_DATA_REPO" ] || [ -z "$PRIVATE_DATA_TOKEN" ]; then
+            echo "::warning::Sin PRIVATE_DATA_REPO/PRIVATE_DATA_TOKEN: no se publican los mails."
+            exit 0
+          fi
+          VIS=$(curl -sS -H "Authorization: Bearer $PRIVATE_DATA_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$PRIVATE_DATA_REPO" | python3 -c "import sys,json; print(json.load(sys.stdin).get('private'))")
+          if [ "$VIS" != "True" ]; then
+            echo "::error::$PRIVATE_DATA_REPO no figura como privado (private=$VIS). No se publican mails."
+            exit 1
+          fi
+          git clone --depth 1 "https://x-access-token:$PRIVATE_DATA_TOKEN@github.com/$PRIVATE_DATA_REPO.git" /tmp/privrepo
+          cp private-out/hash-email.csv /tmp/privrepo/hash-email.csv
+          cd /tmp/privrepo
+          git config user.name "webdash-bot"
+          git config user.email "webdash-bot@users.noreply.github.com"
+          git add hash-email.csv
+          if git diff --staged --quiet; then
+            echo "Sin cambios en el mapeo de mails."
+          else
+            git commit -m "emails: sincronización desde Master Data"
+            for i in 1 2 3; do git push && break; sleep $((i*5)); git pull --rebase || true; done
+            echo "Publicado en $PRIVATE_DATA_REPO"
+          fi
+
+      # Guarda: la salida con PII vive en private-out/, que está gitignorado.
+      # Si por lo que sea aparece algo para commitear fuera de docs/data, se corta.
+      - name: Verificar que no se cuele PII al repo público
+        run: |
+          if git status --porcelain | grep -v '^ M docs/data/' | grep -q .; then
+            echo "::error::Cambios inesperados fuera de docs/data — abortando por seguridad."
+            git status --porcelain
+            exit 1
+          fi
+          echo "Sin PII fuera de private-out/ ✓"
+
+      - name: Commitear métricas
+        run: |
+          git config user.name "webdash-bot"
+          git config user.email "webdash-bot@users.noreply.github.com"
+          git add docs/data/
+          if git diff --staged --quiet; then
+            echo "Sin cambios."
+          else
+            git commit -m "chore(data): recálculo de métricas [skip ci]"
+            for i in 1 2 3 4; do
+              git push && break
+              sleep $((i*5)); git pull --rebase --autostash || true
+            done
+          fi

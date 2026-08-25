@@ -432,3 +432,6 @@ details.more[open] summary { margin-bottom: .45rem; }
   .nav-item { justify-content: center; }
   .nav-brand { justify-content: center; padding: 1rem .5rem; }
 }
+
+.pre:disabled { opacity: .45; cursor: not-allowed; }
+.pre:disabled:hover { border-color: var(--line); color: var(--ink-2); background: var(--surface-2); }
