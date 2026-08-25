@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Lee todos los docs/data/web/daily/YYYY-MM-DD.json desde
+ * Lee todos los data/daily/YYYY-MM-DD.json desde
  * config/pipeline-config.json > detailWindowStartDate y produce los datasets
  * públicos que consume el dashboard:
  *
@@ -107,7 +107,7 @@ function main() {
       const prev = JSON.parse(fs.readFileSync(prevPath, 'utf8'));
       if (prev.daysAggregated > 0 && !process.env.ALLOW_EMPTY_AGGREGATE) {
         console.error(`✗ No hay archivos diarios, pero las métricas actuales tienen ${prev.daysAggregated} días.`);
-        console.error('  Se aborta para no dejar el dashboard en cero. Revisá docs/data/web/daily/.');
+        console.error('  Se aborta para no dejar el dashboard en cero. Revisá data/daily/.');
         console.error('  Si el vaciado es intencional, correr con ALLOW_EMPTY_AGGREGATE=1.');
         process.exit(1);
       }
