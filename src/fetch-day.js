@@ -62,7 +62,8 @@ function emptySegmentAgg() {
   return {
     orders: 0, gmv: 0, units: 0,
     customerCounts: {}, marketing: {},
-    categories: {}, coupons: {}, payments: {}, productsById: {},
+    categories: {}, categoriesN1: {}, categoriesN2: {},
+    coupons: {}, payments: {}, productsById: {},
     hourly: new Array(24).fill(0),
   };
 }
@@ -71,19 +72,44 @@ function marketingSource(order) {
   return order.marketingData?.utmSource || 'sin_atribucion';
 }
 
+const NO_CATEGORY = 'Sin categoría';
+
 /**
- * Departamento (categoría raíz) del item. VTEX manda `productCategoryIds` como
- * "/161/1610/" y `productCategories` como { "161": "Almacén", "1610": "Aceites" }.
- * Se toma el primer id del path = el departamento. Si el pedido no trae esos
- * campos (varía por versión de la API), cae a 'Sin categoría'.
+ * N1 (departamento) / N2 (rubro) / N3 (detalle) de un item, de más general a
+ * más específico.
+ *
+ * VTEX manda la ruta completa en additionalInfo.categoriesIds, RAÍZ primero
+ * (ej. "/161/190/193/" = Almacén → Sal, aderezos y saborizadores → Hierbas
+ * secas y especias), y additionalInfo.categories como [{id,name}, …] en el
+ * orden CONTRARIO (más específico primero) — confirmado contra pedidos
+ * reales en config/channel-map.report.json.
+ *
+ * Una versión anterior de esta función buscaba `item.productCategoryIds` y
+ * `item.productCategories`, que son campos de la API de CATÁLOGO y nunca
+ * vienen en el item de un pedido — así que siempre fallaba en silencio y
+ * caía al respaldo (el primer elemento de additionalInfo.categories, que es
+ * el nivel MÁS específico, no el departamento). Por eso "categoría
+ * dominante" venía mostrando cosas como "Smart TV" en vez de "Electro".
+ *
+ * Cuando el árbol tiene menos de 3 niveles, el nivel que falta repite el más
+ * profundo disponible en vez de quedar vacío (ej. un producto de solo 2
+ * niveles tiene N2 y N3 iguales).
  */
-function itemDepartment(item) {
-  const ids = String(item.productCategoryIds || '').split('/').filter(Boolean);
-  const cats = item.productCategories || {};
-  if (ids.length && cats[ids[0]]) return String(cats[ids[0]]);
-  const arr = item.additionalInfo?.categories;
-  if (Array.isArray(arr) && arr.length && arr[0]?.name) return String(arr[0].name);
-  return 'Sin categoría';
+function itemCategoryPath(item) {
+  const ai = item.additionalInfo || {};
+  const byId = new Map((ai.categories || []).map((c) => [String(c.id), c.name]).filter(([, n]) => n));
+
+  const ids = String(ai.categoriesIds || '').split('/').filter(Boolean);
+  let names = ids.map((id) => byId.get(id)).filter(Boolean);
+
+  // Sin la ruta (pedidos de antes de trackear esto, o el campo no vino): el
+  // array de categorías solo alcanza en orden inverso al de la ruta.
+  if (!names.length && ai.categories?.length) {
+    names = [...ai.categories].reverse().map((c) => c.name).filter(Boolean);
+  }
+
+  if (!names.length) return { n1: NO_CATEGORY, n2: NO_CATEGORY, n3: NO_CATEGORY };
+  return { n1: names[0], n2: names[1] || names[0], n3: names[names.length - 1] };
 }
 
 function orderHourAR(order) {
@@ -189,13 +215,17 @@ function applyOrderToAcc(acc, full) {
   }
 
   // ── Productos y categorías (a nivel línea de ítem) ────────────────────────
-  const orderCats = new Set();
+  const orderCats = new Set(), orderCatsN1 = new Set(), orderCatsN2 = new Set();
   for (const item of view.items) {
     const qty = Number(item.quantity) || 0;
     const lineGmv = ((Number(item.sellingPrice) || 0) * qty) / 100;
-    const dept = itemDepartment(item);
+    const { n1, n2, n3: dept } = itemCategoryPath(item);
     orderCats.add(dept);
+    orderCatsN1.add(n1);
+    orderCatsN2.add(n2);
     bump(agg.categories, dept, 1, lineGmv, qty);
+    bump(agg.categoriesN1, n1, 1, lineGmv, qty);
+    bump(agg.categoriesN2, n2, 1, lineGmv, qty);
 
     const id = String(item.refId || item.id || item.name || 'sin_sku');
     const p = (agg.productsById[id] = agg.productsById[id] || {
@@ -213,11 +243,17 @@ function applyOrderToAcc(acc, full) {
   const hash = customerHash(full);
   if (hash) {
     agg.customerCounts[hash] = (agg.customerCounts[hash] || 0) + 1;
-    const c = (acc.customers[hash] = acc.customers[hash] || { o: 0, g: 0, s: {}, c: {}, cp: 0, pm: {} });
+    const c = (acc.customers[hash] = acc.customers[hash] || { o: 0, g: 0, s: {}, c: {}, c1: {}, c2: {}, cp: 0, pm: {} });
+    // repair.js puede traer este cliente desde un día con schema viejo (sin
+    // c1/c2 todavía) y sumarle acá un pedido reparado: no asumir que existen.
+    c.c1 = c.c1 || {};
+    c.c2 = c.c2 || {};
     c.o += 1;
     c.g += gmv;
     c.s[view.bucket] = (c.s[view.bucket] || 0) + 1;
     for (const dept of orderCats) c.c[dept] = (c.c[dept] || 0) + 1;
+    for (const n1 of orderCatsN1) c.c1[n1] = (c.c1[n1] || 0) + 1;
+    for (const n2 of orderCatsN2) c.c2[n2] = (c.c2[n2] || 0) + 1;
     // cp = pedidos con cupón. Es lo que permite separar "compra siempre con
     // descuento" de "compra a precio lleno" en el constructor de audiencias.
     if (coupon) c.cp += 1;
@@ -244,6 +280,8 @@ function accFromDayFile(day) {
       customerCounts: { ...(src.customerCounts || {}) },
       marketing: { ...(src.marketing || {}) },
       categories: { ...(src.categories || {}) },
+      categoriesN1: { ...(src.categoriesN1 || {}) },
+      categoriesN2: { ...(src.categoriesN2 || {}) },
       coupons: { ...(src.coupons || {}) },
       payments: { ...(src.payments || {}) },
       hourly: (src.hourly || new Array(24).fill(0)).slice(),
@@ -277,6 +315,8 @@ function finalizeDay(acc, meta) {
       customerCounts: a.customerCounts,
       marketing: a.marketing,
       categories: a.categories,
+      categoriesN1: a.categoriesN1,
+      categoriesN2: a.categoriesN2,
       coupons: a.coupons,
       payments: a.payments,
       hourly: a.hourly,
@@ -419,7 +459,7 @@ if (require.main === module) {
 module.exports = {
   fetchDay,
   arDayRange,
-  itemDepartment,
+  itemCategoryPath,
   newDayAcc,
   applyOrderToAcc,
   accFromDayFile,

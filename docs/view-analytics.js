@@ -15,6 +15,12 @@
   let productQuery = '';
   let selectedProv = null; // provincia abierta en el mapa
   let mapMetric = 'gmv';   // 'gmv' | 'orders'
+  let catLevel = 'n3';     // 'n1' (departamento) | 'n2' (rubro) | 'n3' (detalle)
+  const CAT_LEVEL = {
+    n1: { key: 'categoriesN1', label: 'Departamento' },
+    n2: { key: 'categoriesN2', label: 'Rubro' },
+    n3: { key: 'categories', label: 'Detalle' },
+  };
 
   const SEG_ALL = 'all';
   const segsOf = (bucket) => (bucket === SEG_ALL ? W.SEGMENTS : [bucket]);
@@ -174,7 +180,7 @@
       ? products.filter((p) => `${p.name} ${p.sku} ${p.dept}`.toLowerCase().includes(productQuery.toLowerCase()))
       : products;
 
-    const categories = Object.entries(cur.categories).map(([name, v]) => ({ name, ...v })).sort((a, b) => b.gmv - a.gmv);
+    const categories = Object.entries(cur[CAT_LEVEL[catLevel].key] || {}).map(([name, v]) => ({ name, ...v })).sort((a, b) => b.gmv - a.gmv);
     const coupons = Object.entries(cur.coupons).map(([code, v]) => ({ code, ...v })).sort((a, b) => b.gmv - a.gmv);
     const payments = Object.entries(cur.payments).map(([group, v]) => ({ group, ...v })).sort((a, b) => b.gmv - a.gmv);
     const noCatalog = !cur.hasCatalog;
@@ -204,7 +210,7 @@
       rows: products.map((p) => [p.sku, p.name, p.dept, p.qty, p.gmv, p.orders]),
     };
     ctx.exports.categories = {
-      filename: `webdash-categorias-${tag}.csv`,
+      filename: `webdash-categorias-${CAT_LEVEL[catLevel].key}-${tag}.csv`,
       headers: ['categoria', 'lineas_pedido', 'unidades', 'gmv'],
       rows: categories.map((c) => [c.name, c.orders, Math.round(c.units), Math.round(c.gmv)]),
     };
@@ -287,7 +293,13 @@
         <div class="card">
           <div class="card-h">
             <div><h3>Categorías</h3><p>${scopeTxt} ${catalogWarn}</p></div>
-            <button class="btn" data-export="categories">${W.icon('download', 14)}CSV</button>
+            <div class="card-a">
+              <div class="seg-ctl">
+                ${Object.entries(CAT_LEVEL).map(([k, v]) =>
+                  `<button data-catlevel="${k}" class="${catLevel === k ? 'on' : ''}">${v.label}</button>`).join('')}
+              </div>
+              <button class="btn" data-export="categories">${W.icon('download', 14)}CSV</button>
+            </div>
           </div>
           ${categories.length ? W.chart.barsH({
             items: categories.slice(0, 12).map((c, i) => ({ label: c.name, value: c.gmv, sub: `${W.fmtNum(c.units)} unidades`, color: W.SERIES[i % W.SERIES.length] })),
@@ -380,6 +392,9 @@
 
     document.querySelectorAll('[data-metric]').forEach((b) =>
       b.addEventListener('click', () => { mapMetric = b.dataset.metric; W.render(); }));
+
+    document.querySelectorAll('[data-catlevel]').forEach((b) =>
+      b.addEventListener('click', () => { catLevel = b.dataset.catlevel; W.render(); }));
 
     // Clic en el mapa o en la tabla de ranking: abre / cierra la provincia.
     document.querySelectorAll('[data-prov]').forEach((elp) =>

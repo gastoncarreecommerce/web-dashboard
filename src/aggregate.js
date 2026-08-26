@@ -137,6 +137,8 @@ function main() {
   // ── Acumuladores de catálogo / cohortes / audiencias ────────────────────
   const catalogProducts = {};
   const catalogCategories = {};
+  const catalogCategoriesN1 = {};
+  const catalogCategoriesN2 = {};
   const catalogCoupons = {};
   const catalogPayments = {};
   const hourlyTotal = new Array(24).fill(0);
@@ -182,6 +184,8 @@ function main() {
         // Catálogo por segmento (schema 2). En los días viejos no está y queda
         // vacío: la UI lo detecta y avisa en vez de mostrar cero.
         categories: daySeg.categories || {},
+        categoriesN1: daySeg.categoriesN1 || {},
+        categoriesN2: daySeg.categoriesN2 || {},
         coupons: daySeg.coupons || {},
         payments: daySeg.payments || {},
         hourly: daySeg.hourly || null,
@@ -225,6 +229,8 @@ function main() {
         e.qty += p.qty; e.gmv += p.gmv; e.orders += p.orders;
       }
       for (const [k, v] of Object.entries(src.categories || {})) addInto(catalogCategories, k, v);
+      for (const [k, v] of Object.entries(src.categoriesN1 || {})) addInto(catalogCategoriesN1, k, v);
+      for (const [k, v] of Object.entries(src.categoriesN2 || {})) addInto(catalogCategoriesN2, k, v);
       for (const [k, v] of Object.entries(src.coupons || {})) addInto(catalogCoupons, k, v);
       for (const [k, v] of Object.entries(src.payments || {})) addInto(catalogPayments, k, v);
       (src.hourly || []).forEach((n, h) => (hourlyTotal[h] += n));
@@ -242,7 +248,7 @@ function main() {
     for (const [hash, c] of Object.entries(day.customers || {})) {
       let p = profiles.get(hash);
       if (!p) {
-        p = { o: 0, g: 0, first: date, last: date, segs: {}, cats: {}, cp: 0, pms: {}, days: [] };
+        p = { o: 0, g: 0, first: date, last: date, segs: {}, cats: {}, catsN1: {}, catsN2: {}, cp: 0, pms: {}, days: [] };
         profiles.set(hash, p);
         cohortFirstMonth.set(hash, month);
         newCustomers += 1;
@@ -253,6 +259,8 @@ function main() {
       p.cp += c.cp || 0;
       for (const [s, n] of Object.entries(c.s || {})) p.segs[s] = (p.segs[s] || 0) + n;
       for (const [cat, n] of Object.entries(c.c || {})) p.cats[cat] = (p.cats[cat] || 0) + n;
+      for (const [cat, n] of Object.entries(c.c1 || {})) p.catsN1[cat] = (p.catsN1[cat] || 0) + n;
+      for (const [cat, n] of Object.entries(c.c2 || {})) p.catsN2[cat] = (p.catsN2[cat] || 0) + n;
       for (const [pm, n] of Object.entries(c.pm || {})) p.pms[pm] = (p.pms[pm] || 0) + n;
 
       const cm = cohortFirstMonth.get(hash);
@@ -324,6 +332,18 @@ function main() {
       gmv: Math.round(v.gmv),
       units: Math.round(v.units),
     })),
+    categoriesN1: topEntries(catalogCategoriesN1, TOP_CATEGORIES, ([name, v]) => ({
+      name,
+      orders: v.orders,
+      gmv: Math.round(v.gmv),
+      units: Math.round(v.units),
+    })),
+    categoriesN2: topEntries(catalogCategoriesN2, TOP_CATEGORIES, ([name, v]) => ({
+      name,
+      orders: v.orders,
+      gmv: Math.round(v.gmv),
+      units: Math.round(v.units),
+    })),
     coupons: topEntries(catalogCoupons, 200, ([code, v]) => ({ code, orders: v.orders, gmv: Math.round(v.gmv) })),
     payments: topEntries(catalogPayments, 50, ([group, v]) => ({ group, orders: v.orders, gmv: Math.round(v.gmv) })),
     hourly: hourlyTotal,
@@ -353,40 +373,37 @@ function main() {
   });
 
   // ── audience-index.json (hasheado, columnar para que pese menos) ────────
-  const catIndex = new Map();
-  const catNames = [];
-  const catOf = (name) => {
-    if (!catIndex.has(name)) {
-      catIndex.set(name, catNames.length);
-      catNames.push(name);
-    }
-    return catIndex.get(name);
-  };
-
-  const pmIndex = new Map();
-  const pmNames = [];
-  const pmOf = (name) => {
-    if (!pmIndex.has(name)) {
-      pmIndex.set(name, pmNames.length);
-      pmNames.push(name);
-    }
-    return pmIndex.get(name);
-  };
+  // Factory en vez de triplicar el Map+array a mano: se usa una vez para
+  // categorías N3 (de siempre), y una vez más para cada nivel nuevo (N1/N2).
+  function makeIndexer() {
+    const index = new Map();
+    const names = [];
+    return { names, of: (name) => {
+      if (!index.has(name)) { index.set(name, names.length); names.push(name); }
+      return index.get(name);
+    } };
+  }
+  const { names: catNames, of: catOf } = makeIndexer();
+  const { names: catNamesN1, of: catOfN1 } = makeIndexer();
+  const { names: catNamesN2, of: catOfN2 } = makeIndexer();
+  const { names: pmNames, of: pmOf } = makeIndexer();
 
   const dayIndex = new Map(days.map((d, i) => [d, i]));
   // cp = pedidos con cupón · ip = días promedio entre compras (0 si compró una
   // sola vez) · pd = medio de pago dominante. `ip` es lo que hace posible
   // definir churn en serio: no es "hace X días que no compra" a secas, sino
   // "hace mucho más de lo que suele tardar ESTE cliente en volver".
-  const A = { h: [], o: [], g: [], f: [], l: [], sd: [], cd: [], cs: [], cp: [], ip: [], pd: [] };
+  const A = { h: [], o: [], g: [], f: [], l: [], sd: [], cd: [], cd1: [], cd2: [], cs: [], cp: [], ip: [], pd: [] };
   // Los archivos diarios generados antes de que el pipeline capturara cupón y
   // medio de pago por cliente no traen esos campos. Se detecta y se informa,
   // para que la UI deshabilite esos filtros en vez de devolver 0 en todos y
   // hacer creer que nadie usó cupón.
-  let anyCoupon = false, anyPayment = false;
+  let anyCoupon = false, anyPayment = false, anyCategoryN1 = false;
   for (const [hash, p] of profiles) {
     const segEntries = Object.entries(p.segs).sort((a, b) => b[1] - a[1]);
     const catEntries = Object.entries(p.cats).sort((a, b) => b[1] - a[1]);
+    const catEntriesN1 = Object.entries(p.catsN1).sort((a, b) => b[1] - a[1]);
+    const catEntriesN2 = Object.entries(p.catsN2).sort((a, b) => b[1] - a[1]);
     const pmEntries = Object.entries(p.pms).sort((a, b) => b[1] - a[1]);
     const fi = dayIndex.get(p.first) ?? 0;
     const li = dayIndex.get(p.last) ?? 0;
@@ -397,6 +414,9 @@ function main() {
     A.l.push(li);
     A.sd.push(segEntries.length ? SEGMENTS.indexOf(segEntries[0][0]) : -1);
     A.cd.push(catEntries.length ? catOf(catEntries[0][0]) : -1);
+    A.cd1.push(catEntriesN1.length ? catOfN1(catEntriesN1[0][0]) : -1);
+    A.cd2.push(catEntriesN2.length ? catOfN2(catEntriesN2[0][0]) : -1);
+    if (catEntriesN1.length) anyCategoryN1 = true;
     A.cs.push(catEntries.slice(0, 5).map(([name]) => catOf(name)));
     A.cp.push(p.cp);
     if (p.cp > 0) anyCoupon = true;
@@ -411,9 +431,17 @@ function main() {
     days,
     segments: SEGMENTS,
     categories: catNames,
+    categoriesN1: catNamesN1,
+    categoriesN2: catNamesN2,
     payments: pmNames,
     hasCouponData: anyCoupon,
     hasPaymentData: anyPayment,
+    // Los archivos de antes de esta función no traen categoriesN1/N2 por
+    // pedido (el bug que hacía que "categoría dominante" mostrara el nivel
+    // más específico en vez del departamento): hasta que se reprocesen con
+    // un backfill, N1/N2 quedan vacíos y la UI lo avisa en vez de dejar
+    // pensar que nadie compra en ningún departamento.
+    hasCategoryLevels: anyCategoryN1,
     count: A.h.length,
     ...A,
   });

@@ -23,8 +23,10 @@
   const FIELDS = {
     ciclo:        { label: 'Ciclo de vida', type: 'lifecycle', ops: ['es', 'no es'] },
     segDominante: { label: 'Segmento dominante', type: 'segment', ops: ['es', 'no es'] },
-    catDominante: { label: 'Categoría dominante', type: 'category', ops: ['es', 'no es'] },
-    comproEnCat:  { label: 'Compró en la categoría', type: 'category', ops: ['sí', 'no'] },
+    catDomN1:     { label: 'Departamento dominante (N1)', type: 'categoryN1', ops: ['es', 'no es'] },
+    catDomN2:     { label: 'Rubro dominante (N2)', type: 'categoryN2', ops: ['es', 'no es'] },
+    catDominante: { label: 'Categoría dominante (N3, detalle)', type: 'category', ops: ['es', 'no es'] },
+    comproEnCat:  { label: 'Compró en la categoría (N3)', type: 'category', ops: ['sí', 'no'] },
     medioPago:    { label: 'Medio de pago habitual', type: 'payment', ops: ['es', 'no es'] },
     pedidos:      { label: 'Cantidad de pedidos', type: 'number', ops: ['≥', '≤', '='] },
     gasto:        { label: 'Gasto total (ARS)', type: 'number', ops: ['≥', '≤'] },
@@ -94,6 +96,8 @@
         const f = FIELDS[r.field];
         if (!f) return null;
         if (f.type === 'category') return { ...r, ci: idx.categories.indexOf(r.value) };
+        if (f.type === 'categoryN1') return { ...r, ci: (idx.categoriesN1 || []).indexOf(r.value) };
+        if (f.type === 'categoryN2') return { ...r, ci: (idx.categoriesN2 || []).indexOf(r.value) };
         if (f.type === 'segment') return { ...r, si: idx.segments.indexOf(r.value) };
         if (f.type === 'payment') return { ...r, pi: (idx.payments || []).indexOf(r.value) };
         if (f.type === 'lifecycle') return { ...r };
@@ -110,6 +114,8 @@
           case 'ciclo': ok = r.op === 'es' ? D.life[i] === r.value : D.life[i] !== r.value; break;
           case 'segDominante': ok = r.op === 'es' ? idx.sd[i] === r.si : idx.sd[i] !== r.si; break;
           case 'catDominante': ok = r.op === 'es' ? idx.cd[i] === r.ci : idx.cd[i] !== r.ci; break;
+          case 'catDomN1': ok = r.op === 'es' ? idx.cd1?.[i] === r.ci : idx.cd1?.[i] !== r.ci; break;
+          case 'catDomN2': ok = r.op === 'es' ? idx.cd2?.[i] === r.ci : idx.cd2?.[i] !== r.ci; break;
           case 'medioPago': ok = r.op === 'es' ? idx.pd?.[i] === r.pi : idx.pd?.[i] !== r.pi; break;
           case 'comproEnCat': { const has = idx.cs[i].includes(r.ci); ok = r.op === 'sí' ? has : !has; break; }
           case 'pedidos': ok = cmp(idx.o[i], r.op, r.num); break;
@@ -184,7 +190,8 @@
     const f = FIELDS[r.field];
     const av = availability();
     const fieldOpts = Object.entries(FIELDS)
-      .filter(([k]) => (av.coupon || !k.startsWith('cupon')) && (av.payment || k !== 'medioPago'))
+      .filter(([k]) => (av.coupon || !k.startsWith('cupon')) && (av.payment || k !== 'medioPago')
+        && (av.categoryLevels || (k !== 'catDomN1' && k !== 'catDomN2')))
       .map(([k, v]) => `<option value="${k}"${k === r.field ? ' selected' : ''}>${W.esc(v.label)}</option>`).join('');
     const opOpts = f.ops.map((o) => `<option${o === r.op ? ' selected' : ''}>${o}</option>`).join('');
 
@@ -198,8 +205,11 @@
     } else if (f.type === 'payment') {
       val = `<select class="rule-v" data-i="${i}">${(idx.payments || [])
         .map((p) => `<option value="${W.esc(p)}"${p === r.value ? ' selected' : ''}>${W.esc(p)}</option>`).join('')}</select>`;
-    } else if (f.type === 'category') {
-      val = `<select class="rule-v" data-i="${i}">${idx.categories
+    } else if (f.type === 'category' || f.type === 'categoryN1' || f.type === 'categoryN2') {
+      const list = f.type === 'categoryN1' ? (idx.categoriesN1 || [])
+        : f.type === 'categoryN2' ? (idx.categoriesN2 || [])
+        : idx.categories;
+      val = `<select class="rule-v" data-i="${i}">${list
         .map((c) => `<option value="${W.esc(c)}"${c === r.value ? ' selected' : ''}>${W.esc(c)}</option>`).join('')}</select>`;
     } else {
       val = `<input class="rule-v" data-i="${i}" type="number" value="${W.esc(r.value)}" />`;
@@ -219,6 +229,7 @@
     return {
       coupon: idx.hasCouponData !== false && (idx.cp || []).some((v) => v > 0),
       payment: idx.hasPaymentData !== false && (idx.payments || []).length > 0,
+      categoryLevels: idx.hasCategoryLevels === true,
     };
   }
 
@@ -255,14 +266,18 @@
       filename: `webdash-audiencia-datos-${new Date().toISOString().slice(0, 10)}.csv`,
       headers: ['hash', 'ciclo_de_vida', 'pedidos', 'gasto_total', 'ticket_promedio', 'primera_compra',
         'ultima_compra', 'dias_sin_comprar', 'intervalo_promedio_dias', 'ratio_abandono',
-        'pedidos_con_cupon', 'pct_con_cupon', 'segmento_dominante', 'categoria_dominante', 'medio_pago'],
+        'pedidos_con_cupon', 'pct_con_cupon', 'segmento_dominante',
+        'departamento_dominante_n1', 'rubro_dominante_n2', 'categoria_dominante_n3', 'medio_pago'],
       rows: matches.map((i) => [
         idx.h[i], W.LIFECYCLE[D.life[i]].label, idx.o[i], idx.g[i],
         Math.round(idx.o[i] ? idx.g[i] / idx.o[i] : 0),
         idx.days[idx.f[i]], idx.days[idx.l[i]], D.recency[i],
         idx.ip ? idx.ip[i] : 0, D.churn[i].toFixed(2),
         idx.cp ? idx.cp[i] : 0, D.couponPct[i].toFixed(1),
-        W.SEGMENT_LABEL[idx.segments[idx.sd[i]]] || '', idx.categories[idx.cd[i]] || '',
+        W.SEGMENT_LABEL[idx.segments[idx.sd[i]]] || '',
+        (idx.categoriesN1 || [])[idx.cd1?.[i]] || '',
+        (idx.categoriesN2 || [])[idx.cd2?.[i]] || '',
+        idx.categories[idx.cd[i]] || '',
         (idx.payments || [])[idx.pd?.[i]] || '',
       ]),
     };
@@ -469,6 +484,7 @@
       const i = +e.target.dataset.i, field = e.target.value, f = FIELDS[field];
       const dflt = {
         lifecycle: 'churn', segment: idx.segments[0], category: idx.categories[0],
+        categoryN1: (idx.categoriesN1 || [])[0], categoryN2: (idx.categoriesN2 || [])[0],
         payment: (idx.payments || [])[0] || '', number: 1,
       }[f.type];
       rules[i] = { field, op: f.ops[0], value: dflt };

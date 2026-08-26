@@ -105,7 +105,7 @@
       gmv: 0, orders: 0, units: 0, discount: 0, newCustomers: 0, activeCustomers: 0,
       marketing: {}, series: [], bySegment: {}, hourly: new Array(24).fill(0), statusStats: {},
       // Catálogo del rango, ya recortado al segmento elegido (schema 2).
-      categories: {}, coupons: {}, payments: {}, hasCatalog: false,
+      categories: {}, categoriesN1: {}, categoriesN2: {}, coupons: {}, payments: {}, hasCatalog: false,
     };
     for (const s of W.SEGMENTS) acc.bySegment[s] = { gmv: 0, orders: 0, units: 0 };
 
@@ -125,7 +125,7 @@
           const e = (acc.marketing[name] = acc.marketing[name] || { gmv: 0, orders: 0 });
           e.gmv += v.gmv; e.orders += v.orders;
         }
-        for (const key of ['categories', 'coupons', 'payments']) {
+        for (const key of ['categories', 'categoriesN1', 'categoriesN2', 'coupons', 'payments']) {
           for (const [name, v] of Object.entries(seg[key] || {})) {
             acc.hasCatalog = true;
             const e = (acc[key][name] = acc[key][name] || { orders: 0, gmv: 0, units: 0 });
