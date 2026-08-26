@@ -13,6 +13,13 @@
 # lo hace el pipeline diario. Esto es solo "qué pinta hoy hasta ahora".
 name: WebDash hoy en vivo
 
+# Todos los checkouts de este workflow fijan ref: claude/carrefour-webdash-
+# analytics-xojjfs a propósito. Es workflow_dispatch: quien lo corre elige una
+# rama en el desplegable de GitHub, y el checkout+commit+push sigue esa
+# elección por defecto. Como la rama que sirve Vercel es específicamente esa,
+# elegir "main" en el desplegable (el hábito natural) escribía los datos en
+# una rama que la producción nunca lee — pasó de verdad: un backfill entero
+# de 237 días quedó invisible en producción durante horas hasta notarlo.
 on:
   schedule:
     - cron: '*/30 * * * *'
@@ -31,6 +38,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: claude/carrefour-webdash-analytics-xojjfs
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
