@@ -287,6 +287,11 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
 .vbar em { font-style: normal; font-size: .62rem; color: var(--ink-4); }
 
 /* ── Tablas ──────────────────────────────────────────────────────────────── */
+/* Sin este contenedor, una tabla más ancha que la tarjeta desborda la PÁGINA
+   entera (scroll horizontal del body) en vez de scrollear solo la tabla. Con
+   el historial completo cargado los montos de GMV se volvieron mucho más
+   largos y esto pasó de invisible a real. */
+.tbl-wrap { overflow-x: auto; }
 .tbl { width: 100%; border-collapse: collapse; }
 .tbl th, .tbl td { text-align: left; padding: .48rem .6rem; border-bottom: 1px solid var(--grid); font-size: .8rem; }
 .tbl th { color: var(--ink-3); font-weight: 650; font-size: .665rem; text-transform: uppercase; letter-spacing: .05em; }

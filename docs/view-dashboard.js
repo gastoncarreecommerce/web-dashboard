@@ -278,7 +278,7 @@
           <div><h3>Fuentes de marketing</h3><p>atribución por utmSource de VTEX</p></div>
           <button class="btn" data-export="marketing">${W.icon("download",14)}CSV</button>
         </div>
-        <table class="tbl">
+        <div class="tbl-wrap"><table class="tbl">
           <thead><tr><th>Fuente</th><th class="num">Pedidos</th><th class="num">GMV</th><th class="num">Ticket</th><th style="width:26%">% GMV</th></tr></thead>
           <tbody>${mkRows.length ? mkRows.map(([k, v]) => `<tr>
               <td>${W.esc(k)}</td>
@@ -287,7 +287,7 @@
               <td class="num">${W.fmtMoney(W.ticket(v.gmv, v.orders))}</td>
               <td><div class="barcell"><span class="bartrack"><span class="barfill" style="width:${(v.gmv / (mkTotal || 1)) * 100}%"></span></span><b>${W.fmtPct(v.gmv / (mkTotal || 1))}</b></div></td>
             </tr>`).join('') : '<tr><td colspan="5" class="muted">Sin datos en este rango</td></tr>'}</tbody>
-        </table>
+        </table></div>
       </div>`;
   };
 })();

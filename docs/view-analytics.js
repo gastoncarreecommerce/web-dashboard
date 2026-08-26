@@ -80,12 +80,12 @@
         </div>
       </div>
       <div class="maprank">
-        <table class="tbl dense">
+        <div class="tbl-wrap"><table class="tbl dense">
           <thead><tr><th>Provincia</th><th class="num">Pedidos</th><th class="num">GMV</th></tr></thead>
           <tbody>${ranked.length ? ranked.map((r) => `<tr class="provrow${selectedProv === r.code ? ' on' : ''}" data-prov="${r.code}">
               <td>${W.esc(r.name)}</td><td class="num">${W.fmtNum(r.orders)}</td><td class="num">${W.fmtMoneyC(r.gmv)}</td></tr>`).join('')
             : '<tr><td colspan="3" class="muted">Sin datos geográficos en este rango</td></tr>'}</tbody>
-        </table>
+        </table></div>
       </div>
     </div>`;
   }
@@ -109,7 +109,7 @@
           <button class="btn-p" id="xlsx-stores">${W.icon('download', 14)}Exportar XLSX</button>
         </div>
       </div>
-      <table class="tbl">
+      <div class="tbl-wrap"><table class="tbl">
         <thead><tr><th>#</th><th>Tienda</th><th>Provincia</th><th class="num">Pedidos</th><th class="num">GMV</th><th class="num">Ticket</th><th style="width:18%">Participación</th></tr></thead>
         <tbody>${rows.length ? rows.slice(0, 60).map((r, i) => {
           const share = rows[0].gmv ? r.gmv / rows[0].gmv : 0;
@@ -119,7 +119,7 @@
             <td class="num">${W.fmtMoney(W.ticket(r.gmv, r.orders))}</td>
             <td><div class="barcell"><span class="bartrack"><span class="barfill" style="width:${share * 100}%"></span></span></div></td></tr>`;
         }).join('') : '<tr><td colspan="7" class="muted">Sin tiendas en este rango</td></tr>'}</tbody>
-      </table>
+      </table></div>
       ${rows.length > 60 ? `<p class="muted" style="font-size:.75rem;padding-top:.6rem">Mostrando 60 de ${W.fmtNum(rows.length)} — el XLSX trae todas.</p>` : ''}
     </div>` };
   }
@@ -231,7 +231,7 @@
           <button class="btn" data-export="segments">${W.icon('download', 14)}CSV</button>
         </div>
         <div class="split">
-          <table class="tbl">
+          <div class="tbl-wrap"><table class="tbl">
             <thead><tr><th>Segmento</th><th class="num">Pedidos</th><th class="num">GMV</th><th class="num">Ticket</th><th class="num">U./pedido</th><th class="num">Share</th></tr></thead>
             <tbody>${segRows.map((r) => `<tr>
                 <td><span class="dot" style="background:${r.color}"></span>${W.esc(r.label)}</td>
@@ -240,7 +240,7 @@
                 <td class="num">${W.fmtMoney(r.ticket)}</td>
                 <td class="num">${W.fmtDec(r.upo, 1)}</td>
                 <td class="num">${W.fmtPct(r.share)}</td></tr>`).join('')}</tbody>
-          </table>
+          </table></div>
           <div>${W.chart.donut({
             items: segRows.filter((r) => r.gmv > 0).map((r) => ({ label: r.label, value: r.gmv, color: r.color })),
             centerValue: W.fmtMoneyC(all.gmv), centerLabel: 'GMV total',
@@ -275,11 +275,11 @@
         </div>
         ${W.chart.barsH({ items: filtered.slice(0, 15).map((p) => ({ label: p.name, sub: p.dept, value: p.gmv })), valueFmt: W.fmtMoneyC, color: 'var(--s1)' })}
         <details class="more"><summary>Ver tabla completa (${W.fmtNum(filtered.length)} productos)</summary>
-          <table class="tbl dense">
+          <div class="tbl-wrap"><table class="tbl dense">
             <thead><tr><th>#</th><th>Producto</th><th>Departamento</th><th class="num">Unidades</th><th class="num">GMV</th></tr></thead>
             <tbody>${filtered.slice(0, 200).map((p, i) => `<tr><td class="muted">${i + 1}</td><td>${W.esc(p.name)}</td>
               <td class="muted">${W.esc(p.dept)}</td><td class="num">${W.fmtNum(p.qty)}</td><td class="num">${W.fmtMoney(p.gmv)}</td></tr>`).join('')}</tbody>
-          </table>
+          </table></div>
         </details>
       </div>
 
@@ -314,14 +314,14 @@
           <div><span>${W.fmtNum(coupons.length)}</span><em>cupones distintos</em></div>
           <div><span>${W.fmtMoneyC(all.discount)}</span><em>descuento del período</em></div>
         </div>
-        <table class="tbl">
+        <div class="tbl-wrap"><table class="tbl">
           <thead><tr><th>Cupón</th><th class="num">Pedidos</th><th class="num">GMV asociado</th><th class="num">Ticket</th><th style="width:20%">Volumen</th></tr></thead>
           <tbody>${coupons.length ? coupons.slice(0, 25).map((c) => `<tr><td><code>${W.esc(c.code)}</code></td>
               <td class="num">${W.fmtNum(c.orders)}</td><td class="num">${W.fmtMoney(c.gmv)}</td>
               <td class="num">${W.fmtMoney(W.ticket(c.gmv, c.orders))}</td>
               <td><div class="barcell"><span class="bartrack"><span class="barfill" style="width:${(c.gmv / (coupons[0].gmv || 1)) * 100}%"></span></span></div></td></tr>`).join('')
             : '<tr><td colspan="5" class="muted">Sin cupones para este filtro.</td></tr>'}</tbody>
-        </table>
+        </table></div>
       </div>
 
       <div class="card">
@@ -334,14 +334,14 @@
           <div><span>${W.fmtNumC(canc.cancelledOrders)}</span><em>pedidos cancelados</em></div>
           <div><span>${W.fmtMoneyC(canc.cancelledGmv)}</span><em>monto no facturado</em></div>
         </div>
-        <table class="tbl">
+        <div class="tbl-wrap"><table class="tbl">
           <thead><tr><th>Estado</th><th>Cuenta</th><th class="num">Pedidos</th><th class="num">Monto</th><th style="width:18%">% pedidos</th></tr></thead>
           <tbody>${statusRows.length ? statusRows.map((r) => `<tr><td><code>${W.esc(r.status)}</code></td>
               <td>${r.counts ? '<span class="pill ok">Sí</span>' : r.cancelled ? '<span class="pill no">No · cancelado</span>' : '<span class="pill n">No</span>'}</td>
               <td class="num">${W.fmtNum(r.orders)}</td><td class="num">${W.fmtMoney(r.gmv)}</td>
               <td><div class="barcell"><span class="bartrack"><span class="barfill" style="width:${(r.orders / (canc.totalOrders || 1)) * 100}%;background:${r.counts ? 'var(--pos)' : r.cancelled ? 'var(--neg)' : 'var(--ink-4)'}"></span></span><b>${W.fmtPct(r.orders / (canc.totalOrders || 1))}</b></div></td></tr>`).join('')
             : '<tr><td colspan="5" class="muted">Sin datos</td></tr>'}</tbody>
-        </table>
+        </table></div>
       </div>
 
       <div class="card">
