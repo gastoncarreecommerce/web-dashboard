@@ -15,6 +15,15 @@
   let days = [];
   let startDate = null;
   let exportsBag = {};
+  let meta = null;
+
+  // El punto de "en vivo" solo se prende si hoy tiene datos Y son recientes:
+  // el pipeline en vivo corre cada 30 min, así que más de 90 sin actualizar
+  // significa que se cortó, no que "hoy" dejó de existir.
+  function liveFresh() {
+    if (!meta?.generatedAt || !days.includes(W.arToday())) return false;
+    return Date.now() - new Date(meta.generatedAt).getTime() < 90 * 60 * 1000;
+  }
 
   const NAV_ICON = { dashboard: 'dashboard', analytics: 'analytics', audiences: 'audience' };
   const TITLES = { dashboard: 'Dashboard', analytics: 'Analítica', audiences: 'Audiencias' };
@@ -73,6 +82,7 @@
     paintChrome();
     document.querySelectorAll('#presets button').forEach((b) => b.classList.toggle('on', b.dataset.preset === state.preset));
     $('view-title').textContent = TITLES[state.view];
+    $('preset-today').classList.toggle('is-live', liveFresh());
 
     // Dashboard y Analítica se filtran por segmento; Audiencias mira la base
     // completa, así que ahí la fila no aplica.
@@ -84,9 +94,12 @@
     $('range-label').style.display = state.view === 'audiences' ? 'none' : '';
 
     if (state.range) {
-      $('range-label').textContent = state.range.from === state.range.to
-        ? W.fmtDayLong(state.range.from)
-        : `${W.fmtDayLong(state.range.from)} → ${W.fmtDayLong(state.range.to)}`;
+      const isToday = state.preset === 'today' && state.range.from === W.arToday();
+      $('range-label').textContent = isToday
+        ? `Hoy ${liveFresh() ? '· en vivo, actualizado ' + W.timeAgo(meta.generatedAt) : '· todavía sin datos de hoy'}`
+        : state.range.from === state.range.to
+          ? W.fmtDayLong(state.range.from)
+          : `${W.fmtDayLong(state.range.from)} → ${W.fmtDayLong(state.range.to)}`;
       $('date-from').value = state.range.from;
       $('date-to').value = state.range.to;
       const pr = W.previousRange(state.range);
@@ -129,7 +142,6 @@
   });
 
   async function main() {
-    let meta = null;
     try {
       const daily = await W.load('daily-summary');
       days = daily.days.map((d) => d.date);

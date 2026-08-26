@@ -39,6 +39,12 @@
   W.fmtPct = (n, d = 1) => `${((n || 0) * 100).toFixed(d)}%`;
   W.fmtDay = (d) => new Date(`${d}T00:00:00Z`).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
   W.fmtDayLong = (d) => new Date(`${d}T00:00:00Z`).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' });
+  W.timeAgo = (iso) => {
+    const min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+    if (min < 1) return 'recién';
+    if (min < 60) return `hace ${min} min`;
+    return `hace ${Math.round(min / 60)} h`;
+  };
   W.fmtMonth = (m) => new Date(`${m}-01T00:00:00Z`).toLocaleDateString('es-AR', { month: 'short', year: '2-digit' });
   W.esc = (s) =>
     String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -53,11 +59,19 @@
   };
   W.daysBetween = (a, b) => Math.round((new Date(`${b}T00:00:00Z`) - new Date(`${a}T00:00:00Z`)) / 86400000) + 1;
 
+  // Fecha de "hoy" en el huso horario de la operación (AR), no el del navegador
+  // de quien mira el dashboard — el pipeline cierra los días en ese huso.
+  W.arToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }).format(new Date());
+
   W.presetRange = function (preset, days, startDate) {
     if (!days || !days.length) return null;
     const last = days[days.length - 1];
     switch (preset) {
-      case 'yesterday': return { from: last, to: last };
+      // 'today'/'yesterday' se calculan contra el reloj real, no contra el
+      // último día del array: desde que el pipeline en vivo agrega el día de
+      // hoy, el último día YA NO es siempre "ayer".
+      case 'today': { const t = W.arToday(); return { from: t, to: t }; }
+      case 'yesterday': { const t = W.addDays(W.arToday(), -1); return { from: t, to: t }; }
       case '7d': return { from: W.addDays(last, -6), to: last };
       case '30d': return { from: W.addDays(last, -29), to: last };
       case '90d': return { from: W.addDays(last, -89), to: last };

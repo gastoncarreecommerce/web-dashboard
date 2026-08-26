@@ -17,6 +17,7 @@
   let emailSource = '';
   let emailTried = false;
   let rules = W.store.get('audienceRules', [{ field: 'ciclo', op: 'es', value: 'churn' }]);
+  const sameRules = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
   // ── Campos disponibles en el constructor ──────────────────────────────────
   const FIELDS = {
@@ -323,7 +324,8 @@
         </div>
         <div class="lifes">${W.LIFECYCLE_ORDER.map((k) => {
           const L = W.LIFECYCLE[k], n = lifeAll[k] || 0;
-          return `<button class="life" data-life="${k}">
+          const on = sameRules(rules, [{ field: 'ciclo', op: 'es', value: k }]);
+          return `<button class="life${on ? ' on' : ''}" data-life="${k}">
             <div class="life-t" style="color:${L.color}">${W.icon(L.icon, 14)}${W.esc(L.label)}</div>
             <div class="life-n">${W.fmtNumC(n)}</div>
             <div class="life-p">${W.fmtPct(idx.count ? n / idx.count : 0)} de la base</div>
@@ -344,8 +346,10 @@
               return `<div class="pre-group"><label>${W.esc(g.group)}${off
                 ? ` <span class="scope" ${W.chart.tip('El dato de cupón por cliente se empezó a guardar después del backfill inicial. Se completa solo con las corridas diarias del pipeline, o de una con un backfill del período que quieras analizar.')}>sin datos todavía</span>`
                 : ''}</label>
-              <div class="pre-row">${g.items.map((p, pi) =>
-                `<button class="pre" data-g="${gi}" data-p="${pi}"${off ? ' disabled' : ''}>${W.icon(p.icon, 14)}${W.esc(p.name)}</button>`).join('')}</div></div>`;
+              <div class="pre-row">${g.items.map((p, pi) => {
+                const on = sameRules(rules, p.rules);
+                return `<button class="pre${on ? ' on' : ''}" data-g="${gi}" data-p="${pi}"${off ? ' disabled' : ''}>${W.icon(p.icon, 14)}${W.esc(p.name)}</button>`;
+              }).join('')}</div></div>`;
             }).join('')}
 
             <div class="rules">${rules.map(ruleRow).join('')}</div>

@@ -14,6 +14,10 @@ on:
         description: 'Fecha a procesar (YYYY-MM-DD). Vacío = ayer (AR)'
         required: false
         default: ''
+      reconcile_days:
+        description: 'Días hacia atrás a reprocesar por pagos que confirman tarde (efectivo, Rapipago, etc.)'
+        required: false
+        default: '5'
 
 permissions:
   contents: write
@@ -43,6 +47,34 @@ jobs:
             DATE=$(TZ=America/Argentina/Buenos_Aires date -d yesterday +%Y-%m-%d)
           fi
           node src/fetch-day.js "$DATE"
+
+      # Un día se procesa una sola vez, en un momento fijo (03:00 AR). Un
+      # pedido que a esa hora todavía está en payment-pending (efectivo,
+      # Rapipago, Pago Fácil, reintento de tarjeta) queda afuera de las
+      # métricas de ese día, y como el archivo ya está escrito nunca se
+      # revisa de nuevo — aunque el pago se confirme unas horas después. Por
+      # eso los últimos días reales de la serie siempre parecían tener menos
+      # pedidos de los que en verdad hay.
+      #
+      # La solución es reabrir la ventana de días recientes en cada corrida:
+      # fetch-day.js relee el estado ACTUAL de VTEX para esa fecha y pisa el
+      # archivo entero (--force), así que un pedido que confirmó pago después
+      # de la primera pasada entra en la próxima. Días más viejos que la
+      # ventana no se tocan: para esta cuenta los pagos ya están resueltos
+      # bastante antes de los 5 días de default.
+      - name: Reconciliar los últimos días (pagos que confirman tarde)
+        env:
+          VTEX_ACCOUNT_NAME: ${{ secrets.VTEX_ACCOUNT_NAME }}
+          VTEX_APP_KEY: ${{ secrets.VTEX_APP_KEY }}
+          VTEX_APP_TOKEN: ${{ secrets.VTEX_APP_TOKEN }}
+          VTEX_ENVIRONMENT: ${{ secrets.VTEX_ENVIRONMENT }}
+        run: |
+          N="${{ github.event.inputs.reconcile_days || '5' }}"
+          for i in $(seq 1 "$N"); do
+            D=$(TZ=America/Argentina/Buenos_Aires date -d "$i days ago" +%Y-%m-%d)
+            echo "Reconciliando $D..."
+            node src/fetch-day.js "$D" --force
+          done
 
       # Reintenta los pedidos que hayan fallado en cualquier día ya procesado,
       # no solo en el de hoy: así ningún hueco queda pendiente para siempre.
