@@ -13,7 +13,13 @@
  * ISO 3166-2 (AR-B, AR-C, …) — los mismos que usa src/geo.js para clasificar
  * la provincia de cada pedido, así que el cruce es directo.
  *
- * Uso: node scripts/build-ar-map.js /ruta/ne_10m_admin_1_states_provinces.geojson
+ * Las Islas Malvinas son parte de la provincia de Tierra del Fuego, Antártida
+ * e Islas del Atlántico Sur (Ley 26.651 de cartografía nacional) — cualquier
+ * mapa que se publique en la Argentina las tiene que mostrar así. Natural
+ * Earth las trae como país aparte en el dataset admin-0 (con otra soberanía),
+ * así que hay que agregarlas a mano al contorno de Tierra del Fuego.
+ *
+ * Uso: node scripts/build-ar-map.js <ne_10m_admin_1_states_provinces.geojson> [ne_10m_admin_0_countries.geojson]
  */
 const fs = require('fs');
 const path = require('path');
@@ -77,15 +83,33 @@ function main() {
   const feats = gj.features.filter((f) => f.properties.adm0_a3 === 'ARG' && f.properties.iso_3166_2);
   if (!feats.length) { console.error('No se encontraron provincias argentinas.'); process.exit(1); }
 
+  // Malvinas: rings extra que se suman al contorno de Tierra del Fuego (AR-V),
+  // no una provincia propia. Natural Earth las llama "Falkland Is." y les
+  // pone soberanía británica (GB1); acá se ignora esa atribución a propósito.
+  const extraRingsByCode = {};
+  const countriesSrc = process.argv[3];
+  if (countriesSrc) {
+    if (!fs.existsSync(countriesSrc)) { console.error(`No existe ${countriesSrc}`); process.exit(1); }
+    const countries = JSON.parse(fs.readFileSync(countriesSrc, 'utf8'));
+    const falklands = countries.features.find((f) => /Falkland/i.test(f.properties.NAME || f.properties.ADMIN || ''));
+    if (!falklands) {
+      console.warn('⚠ No se encontraron las Islas Malvinas en el GeoJSON de países — se genera el mapa sin ellas.');
+    } else {
+      extraRingsByCode['AR-V'] = ringsOf(falklands.geometry);
+      console.log(`Malvinas: ${extraRingsByCode['AR-V'].length} anillo(s) sumados a Tierra del Fuego.`);
+    }
+  } else {
+    console.warn('⚠ Sin el GeoJSON de países (2º argumento): el mapa sale sin las Islas Malvinas.');
+  }
+  const allExtraRings = Object.values(extraRingsByCode).flat();
+
   // Bounding box en coordenadas proyectadas, para escalar todo al viewBox.
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  for (const f of feats) {
-    for (const ring of ringsOf(f.geometry)) {
-      for (const [lon, lat] of ring) {
-        const [x, y] = mercator(lon, lat);
-        if (x < minX) minX = x; if (x > maxX) maxX = x;
-        if (y < minY) minY = y; if (y > maxY) maxY = y;
-      }
+  for (const ring of [...feats.flatMap((f) => ringsOf(f.geometry)), ...allExtraRings]) {
+    for (const [lon, lat] of ring) {
+      const [x, y] = mercator(lon, lat);
+      if (x < minX) minX = x; if (x > maxX) maxX = x;
+      if (y < minY) minY = y; if (y > maxY) maxY = y;
     }
   }
   const scale = W / (maxX - minX);
@@ -101,7 +125,8 @@ function main() {
   for (const f of feats) {
     const code = f.properties.iso_3166_2;
     const parts = [];
-    for (const ring of ringsOf(f.geometry)) {
+    const rings = [...ringsOf(f.geometry), ...(extraRingsByCode[code] || [])];
+    for (const ring of rings) {
       // Islas y recortes minúsculos solo agregan peso.
       if (ring.length < 4) continue;
       const proj = ring.map(project);
