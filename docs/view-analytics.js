@@ -146,8 +146,12 @@
   }
 
   function renderStoreOrders(store, orders, range, emailMap) {
+    // o.t es el creationDate crudo de VTEX, en UTC: para un pedido de las
+    // 00:30 UTC, cortar el string a lo bruto da un día que en AR todavía es
+    // "ayer". W.arDateOf() hace la misma conversión que ya usa el resto del
+    // pipeline para agrupar por día.
     const inRange = orders.filter((o) => {
-      const day = o.t.slice(0, 10);
+      const day = W.arDateOf(o.t);
       return day >= range.from && day <= range.to;
     });
     const totalGmv = inRange.reduce((s, o) => s + o.g, 0);

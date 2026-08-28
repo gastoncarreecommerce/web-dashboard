@@ -63,6 +63,18 @@
   // de quien mira el dashboard — el pipeline cierra los días en ese huso.
   W.arToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }).format(new Date());
 
+  // Día calendario (YYYY-MM-DD) en huso AR de un timestamp ISO cualquiera —
+  // AR es UTC-3 fijo, sin horario de verano, así que restar 3h y leer la
+  // fecha en UTC da el día correcto sin importar qué offset traiga el string
+  // original. Necesario para filtrar pedidos por rango: un pedido creado a
+  // las 00:30 UTC es todavía "ayer" en AR, y compararlo con el string ISO
+  // crudo (que arranca con el día UTC) los ubicaba un día más tarde.
+  W.arDateOf = (iso) => {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return null;
+    return new Date(d.getTime() - 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  };
+
   W.presetRange = function (preset, days, startDate) {
     if (!days || !days.length) return null;
     const last = days[days.length - 1];
