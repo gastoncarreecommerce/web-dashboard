@@ -158,31 +158,15 @@
   }
 
   // ── Emails desde el repo privado ──────────────────────────────────────────
-  /** Parsea hash,email,dni (dni opcional: los archivos viejos no lo traen). */
-  function parseHashEmailCsv(text) {
-    const lines = String(text).split(/\r?\n/);
-    const map = new Map();
-    const start = (lines[0] || '').toLowerCase().includes('hash') ? 1 : 0;
-    for (let i = start; i < lines.length; i++) {
-      if (!lines[i].trim()) continue;
-      const c = lines[i].split(',');
-      const h = (c[0] || '').trim();
-      const email = (c[1] || '').trim().replace(/^"|"$/g, '');
-      const dni = (c[2] || '').trim().replace(/^"|"$/g, '');
-      if (h && (email || dni)) map.set(h, { email, dni });
-    }
-    return map.size ? map : null;
-  }
+  // parseHashEmailCsv / loadEmailMap viven en core.js: el detalle de pedidos
+  // de una tienda en Analítica necesita el mismo cruce hash -> email.
+  const parseHashEmailCsv = W.parseHashEmailCsv;
 
   async function loadEmails() {
     if (emailTried) return;
     emailTried = true;
-    try {
-      const res = await fetch('/api/audience-emails', { cache: 'no-store' });
-      if (!res.ok) return;
-      const map = parseHashEmailCsv(await res.text());
-      if (map) { emailMap = map; emailSource = 'repositorio privado'; }
-    } catch { /* sin backend (local): queda el modo manual */ }
+    const map = await W.loadEmailMap();
+    if (map) { emailMap = map; emailSource = 'repositorio privado'; }
   }
 
   // ── Render ────────────────────────────────────────────────────────────────

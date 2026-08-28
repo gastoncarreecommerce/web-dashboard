@@ -145,6 +145,11 @@ function newDayAcc() {
     // adentro: así el nombre de la tienda no se repite cuatro veces.
     provinces: {},
     stores: {},
+    // Un registro liviano por pedido con tienda: es lo único que permite
+    // listar "qué pedidos hizo esta tienda" en Analítica sin volver a leer
+    // VTEX. No lleva email (eso es privado); el cruce hash->email se hace
+    // en el navegador igual que en Audiencias.
+    orders: [],
     customers: {},
     // hash -> email real. Se escribe a private-out/ (gitignored) y de ahí al
     // repositorio PRIVADO; nunca al archivo diario público.
@@ -265,6 +270,26 @@ function applyOrderToAcc(acc, full) {
     const doc = String(full.clientProfileData?.document || '').trim();
     if (email || doc) acc.emails[hash] = { email: email || '', doc };
   }
+
+  // ── Registro por pedido, solo si tiene tienda ────────────────────────────
+  // Claves cortas a propósito: esto se repite por cada pedido de cada día del
+  // historial, así que el ahorro por campo se nota multiplicado por cientos
+  // de miles de filas.
+  if (store) {
+    acc.orders.push({
+      id: full.orderId,
+      t: full.creationDate,
+      s: store.code,
+      sg: view.bucket,
+      h: hash || null,
+      g: Math.round(gmv),
+      it: view.items.map((item) => ({
+        n: item.name || 'sin_nombre',
+        q: Number(item.quantity) || 0,
+        g: Math.round(((Number(item.sellingPrice) || 0) * (Number(item.quantity) || 0)) / 100),
+      })),
+    });
+  }
   return true;
 }
 
@@ -290,6 +315,7 @@ function accFromDayFile(day) {
   }
   acc.provinces = JSON.parse(JSON.stringify(day.provinces || {}));
   acc.stores = JSON.parse(JSON.stringify(day.stores || {}));
+  acc.orders = JSON.parse(JSON.stringify(day.orders || []));
   acc.customers = { ...(day.customers || {}) };
   // acc.emails queda vacío a propósito: el archivo público no los tiene. Al
   // reparar un día solo se recuperan los de los pedidos reprocesados.
@@ -346,6 +372,7 @@ function finalizeDay(acc, meta) {
     segments,
     provinces: acc.provinces,
     stores: acc.stores,
+    orders: acc.orders,
     distinctSkus,
     productRowsSeen: acc.productRowsSeen,
     customers: acc.customers,

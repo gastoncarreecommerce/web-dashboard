@@ -13,7 +13,8 @@
   const W = (window.W = window.W || {});
 
   let productQuery = '';
-  let selectedProv = null; // provincia abierta en el mapa
+  let selectedProv = null;  // provincia abierta en el mapa
+  let selectedStore = null; // { code, name } de la tienda con el detalle de pedidos abierto
   let mapMetric = 'gmv';   // 'gmv' | 'orders'
   let catLevel = 'n3';     // 'n1' (departamento) | 'n2' (rubro) | 'n3' (detalle)
   const CAT_LEVEL = {
@@ -109,7 +110,7 @@
 
     return { rows, html: `<div class="card">
       <div class="card-h">
-        <div><h3>${title}</h3><p>${W.fmtNum(rows.length)} tiendas · ordenadas por GMV${provCode ? ' · hacé clic en el mapa para cambiar de provincia' : ''}</p></div>
+        <div><h3>${title}</h3><p>${W.fmtNum(rows.length)} tiendas · ordenadas por GMV · hacé clic en una fila para ver sus pedidos${provCode ? ' · clic en el mapa para cambiar de provincia' : ''}</p></div>
         <div class="card-a">
           ${provCode ? '<button class="btn" id="clear-prov">Ver todas</button>' : ''}
           <button class="btn-p" id="xlsx-stores">${W.icon('download', 14)}Exportar XLSX</button>
@@ -119,7 +120,8 @@
         <thead><tr><th>#</th><th>Tienda</th><th>Provincia</th><th class="num">Pedidos</th><th class="num">GMV</th><th class="num">Ticket</th><th style="width:18%">Participación</th></tr></thead>
         <tbody>${rows.length ? rows.slice(0, 60).map((r, i) => {
           const share = rows[0].gmv ? r.gmv / rows[0].gmv : 0;
-          return `<tr><td class="muted">${i + 1}</td><td>${W.esc(r.name)}</td>
+          const on = selectedStore?.code === r.code;
+          return `<tr class="storerow${on ? ' on' : ''}" data-store="${r.code}" data-store-name="${W.esc(r.name)}"><td class="muted">${i + 1}</td><td>${W.esc(r.name)}</td>
             <td class="muted">${W.esc(M.provinces[r.prov]?.name || '—')}</td>
             <td class="num">${W.fmtNum(r.orders)}</td><td class="num">${W.fmtMoney(r.gmv)}</td>
             <td class="num">${W.fmtMoney(W.ticket(r.gmv, r.orders))}</td>
@@ -128,6 +130,51 @@
       </table></div>
       ${rows.length > 60 ? `<p class="muted" style="font-size:.75rem;padding-top:.6rem">Mostrando 60 de ${W.fmtNum(rows.length)} — el XLSX trae todas.</p>` : ''}
     </div>` };
+  }
+
+  /**
+   * Pedidos de una tienda en el rango elegido. Se guardan particionados por
+   * tienda y mes (docs/data/web/orders/<código>/<mes>.json) para que abrir
+   * el detalle de UNA tienda no baje los pedidos de las otras 180 — un mes
+   * que la tienda no operó simplemente no tiene archivo (404 = sin pedidos).
+   */
+  async function loadStoreOrders(storeCode, months) {
+    const perMonth = await Promise.all(
+      months.map((m) => W.load(`orders/${storeCode}/${m}`).catch(() => []))
+    );
+    return perMonth.flat();
+  }
+
+  function renderStoreOrders(store, orders, range, emailMap) {
+    const inRange = orders.filter((o) => {
+      const day = o.t.slice(0, 10);
+      return day >= range.from && day <= range.to;
+    });
+    const totalGmv = inRange.reduce((s, o) => s + o.g, 0);
+
+    return `<div class="card" id="store-orders">
+      <div class="card-h">
+        <div><h3>Pedidos de ${W.esc(store.name)}</h3>
+          <p>${W.fmtDayLong(range.from)} → ${W.fmtDayLong(range.to)} · ${W.fmtNum(inRange.length)} pedidos · ${W.fmtMoney(totalGmv)}
+            ${emailMap ? '' : `<span class="scope" ${W.chart.tip('Los mails viven en el repositorio privado. Si no aparecen, todavía no se configuró /api/audience-emails.')}>${W.icon('warn', 11)} sin mails</span>`}</p>
+        </div>
+        <button class="btn" id="close-store-orders">${W.icon('close', 14)}Cerrar</button>
+      </div>
+      <div class="tbl-wrap"><table class="tbl dense">
+        <thead><tr><th>Pedido</th><th>Fecha</th><th>Mail</th><th>Productos</th><th class="num">GMV</th></tr></thead>
+        <tbody>${inRange.length ? inRange.map((o) => {
+          const email = o.h && emailMap?.get(o.h)?.email;
+          const items = o.it.map((it) => `${W.esc(it.n)} ×${it.q}`).join(', ');
+          return `<tr>
+            <td class="muted">${W.esc(o.id)}</td>
+            <td class="muted">${new Date(o.t).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', dateStyle: 'short', timeStyle: 'short' })}</td>
+            <td>${email ? W.esc(email) : '<span class="muted">sin mail</span>'}</td>
+            <td class="muted" style="max-width:420px">${items}</td>
+            <td class="num">${W.fmtMoney(o.g)}</td>
+          </tr>`;
+        }).join('') : '<tr><td colspan="5" class="muted">Sin pedidos de esta tienda en el rango elegido.</td></tr>'}</tbody>
+      </table></div>
+    </div>`;
   }
 
   // ── Vista ─────────────────────────────────────────────────────────────────
@@ -196,6 +243,18 @@
     const geoAgg = geo ? sumGeo(geo, range, bucket) : null;
     const hasGeo = geoAgg && Object.keys(geoAgg.prov).length > 0;
     const storesPanel = hasGeo ? renderStores(geo, geoAgg, selectedProv) : null;
+
+    // Detalle de pedidos de la tienda elegida. Se resuelve ACÁ (no en el
+    // render) porque viewAnalytics ya es async y así el HTML sale completo
+    // en una sola pasada, sin parpadeo de "cargando" en medio de la tarjeta.
+    let storeOrdersPanel = null;
+    if (selectedStore) {
+      const [orders, emailMap] = await Promise.all([
+        loadStoreOrders(selectedStore.code, months),
+        W.loadEmailMap(),
+      ]);
+      storeOrdersPanel = renderStoreOrders(selectedStore, orders, range, emailMap);
+    }
 
     // ── Exportaciones ───────────────────────────────────────────────────────
     const tag = `${range.from}_${range.to}_${bucket}`;
@@ -266,7 +325,8 @@
         </div>
         ${renderMap(geo, geoAgg, mapMetric)}
       </div>
-      ${storesPanel.html}`
+      ${storesPanel.html}
+      ${storeOrdersPanel || ''}`
       : `<div class="card"><div class="card-h"><div><h3>Ventas por provincia</h3>
           <p>Provincia y tienda se empezaron a capturar después del backfill. Al reprocesar el historial aparece el mapa acá.</p></div></div></div>`}
 
@@ -404,6 +464,15 @@
         W.render();
       }));
     document.getElementById('clear-prov')?.addEventListener('click', () => { selectedProv = null; W.render(); });
+
+    // Clic en una fila de tienda: abre / cierra el detalle de sus pedidos.
+    document.querySelectorAll('[data-store]').forEach((elr) =>
+      elr.addEventListener('click', () => {
+        const code = elr.dataset.store;
+        selectedStore = selectedStore?.code === code ? null : { code, name: elr.dataset.storeName };
+        W.render();
+      }));
+    document.getElementById('close-store-orders')?.addEventListener('click', () => { selectedStore = null; W.render(); });
 
     document.getElementById('xlsx-stores')?.addEventListener('click', () => {
       if (!storesPanel) return;

@@ -339,6 +339,39 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
+  // ── Mails desde el repo privado ────────────────────────────────────────────
+  // Compartido por Audiencias (exportar la base) y por el detalle de pedidos
+  // de una tienda en Analítica: los dos necesitan cruzar hash -> email.
+  /** Parsea hash,email,dni (dni opcional: los archivos viejos no lo traen). */
+  W.parseHashEmailCsv = function (text) {
+    const lines = String(text).split(/\r?\n/);
+    const map = new Map();
+    const start = (lines[0] || '').toLowerCase().includes('hash') ? 1 : 0;
+    for (let i = start; i < lines.length; i++) {
+      if (!lines[i].trim()) continue;
+      const c = lines[i].split(',');
+      const h = (c[0] || '').trim();
+      const email = (c[1] || '').trim().replace(/^"|"$/g, '');
+      const dni = (c[2] || '').trim().replace(/^"|"$/g, '');
+      if (h && (email || dni)) map.set(h, { email, dni });
+    }
+    return map.size ? map : null;
+  };
+
+  // Una sola promesa compartida: si dos vistas piden el mapa a la vez (o la
+  // misma vista dos veces), solo hay UN fetch al repo privado.
+  let emailMapPromise = null;
+  /** hash -> { email, dni } | null si no hay repo privado configurado. */
+  W.loadEmailMap = function () {
+    if (!emailMapPromise) {
+      emailMapPromise = fetch('/api/audience-emails', { cache: 'no-store' })
+        .then((res) => (res.ok ? res.text() : null))
+        .then((text) => (text ? W.parseHashEmailCsv(text) : null))
+        .catch(() => null);
+    }
+    return emailMapPromise;
+  };
+
   W.toast = function (msg, kind) {
     let el = document.getElementById('toast');
     if (!el) {

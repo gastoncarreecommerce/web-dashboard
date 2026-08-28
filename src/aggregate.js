@@ -156,6 +156,10 @@ function main() {
   // esos textos 236 veces.
   const geoDays = [];
   const storeMeta = {};
+  // Pedidos por tienda: se guardan por tienda y por mes (no por día, y no
+  // todos juntos) para que "ver los pedidos de esta tienda" en Analítica
+  // baje solo un archivo chico en vez de los pedidos de las 180 tiendas.
+  const ordersByStoreMonth = {};
   // Productos: por segmento y por mes. Por día sería enorme (250 skus × 4
   // segmentos × 236 días) y a nivel mes alcanza para analizar surtido.
   const productsBySegMonth = {};
@@ -214,6 +218,12 @@ function main() {
       if (Object.keys(row).length) gs[code] = row;
     }
     if (Object.keys(gp).length || Object.keys(gs).length) geoDays.push({ date, prov: gp, stores: gs });
+
+    // Pedidos por tienda (schema 2 con orders[]; días de antes no lo traen).
+    for (const o of day.orders || []) {
+      const bucket = (ordersByStoreMonth[o.s] = ordersByStoreMonth[o.s] || {});
+      (bucket[month] = bucket[month] || []).push(o);
+    }
 
     // Totales de catálogo: en schema 2 vienen dentro de cada segmento; en los
     // días viejos venían a nivel día. Se soportan los dos para poder convivir
@@ -296,6 +306,19 @@ function main() {
     // days[i] = { date, prov: { AR-B: { food: [pedidos, gmv] } }, stores: {...} }
     days: geoDays,
   });
+
+  // ── orders/<tienda>/<mes>.json (detalle de pedidos, por tienda y mes) ───
+  // Sparse a propósito: solo existe el archivo de una tienda-mes si esa
+  // tienda tuvo pedidos ese mes. El cliente pide el archivo exacto que
+  // necesita y no le importa si no existe (404 = sin pedidos ese mes).
+  let ordersFilesWritten = 0, ordersBytesTotal = 0;
+  for (const [storeCode, byMonth] of Object.entries(ordersByStoreMonth)) {
+    for (const [m, list] of Object.entries(byMonth)) {
+      list.sort((a, b) => (a.t < b.t ? -1 : a.t > b.t ? 1 : 0));
+      ordersBytesTotal += writeJson(`docs/data/web/orders/${storeCode}/${m}.json`, list);
+      ordersFilesWritten += 1;
+    }
+  }
 
   // ── products.json (por segmento y por mes) ──────────────────────────────
   const productsOut = {};
@@ -473,6 +496,7 @@ function main() {
     statusTotals: Object.fromEntries(Object.entries(statusTotals).sort((a, b) => b[1].orders - a[1].orders)),
     hasSegmentCatalog: dailySeries.some((d) => SEGMENTS.some((s) => Object.keys(d.segments[s]?.categories || {}).length)),
     hasGeo: geoDays.length > 0,
+    hasStoreOrders: ordersFilesWritten > 0,
     fileSizes: {
       'geo.json': sizeGeo,
       'products.json': sizeProducts,
@@ -480,6 +504,7 @@ function main() {
       'catalog.json': sizeCatalog,
       'cohorts.json': sizeCohorts,
       'audience-index.json': sizeAudience,
+      'orders/**': ordersBytesTotal,
     },
     warning:
       missingDays.length > 0
@@ -493,6 +518,7 @@ function main() {
   console.log(`Agregado OK. Días: ${days.length}. Faltantes: ${missingDays.length}. Clientes únicos: ${profiles.size}.`);
   console.log(`  daily-summary ${mb(sizeDaily)} · catalog ${mb(sizeCatalog)} · cohorts ${mb(sizeCohorts)} · audience ${mb(sizeAudience)}`);
   console.log(`  geo ${mb(sizeGeo)} (${geoDays.length} días, ${Object.keys(storeMeta).length} tiendas) · products ${mb(sizeProducts)}`);
+  console.log(`  orders ${mb(ordersBytesTotal)} (${ordersFilesWritten} archivos tienda-mes)`);
   if (sizeAudience > 25 * 1048576) {
     console.warn('  ⚠ audience-index.json supera 25MB: el navegador va a tardar en cargarlo. Considerar acotar la ventana.');
   }

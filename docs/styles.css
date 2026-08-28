@@ -463,6 +463,8 @@ details.more[open] summary { margin-bottom: .45rem; }
 .maprank { max-height: 460px; overflow-y: auto; }
 .provrow { cursor: pointer; }
 .provrow.on { background: var(--brand-soft); font-weight: 600; }
+.storerow { cursor: pointer; }
+.storerow.on { background: var(--brand-soft); font-weight: 600; }
 
 /* ── Configuración de churn ──────────────────────────────────────────────── */
 .churn-cfg { display: flex; flex-direction: column; gap: .75rem; }
