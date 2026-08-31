@@ -17,6 +17,10 @@
   let emailSource = '';
   let emailTried = false;
   let rules = W.store.get('audienceRules', [{ field: 'ciclo', op: 'es', value: 'churn' }]);
+  // Panel avanzado de configuración de churn: colapsado por defecto (es
+  // config, no la acción principal de la página) — se acordaba de si el
+  // usuario lo abrió para no volver a cerrarlo en cada re-render.
+  let churnOpen = false;
   const sameRules = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
   // ── Campos disponibles en el constructor ──────────────────────────────────
@@ -280,41 +284,45 @@
 
     const C = W.CHURN;
     el.innerHTML = `
-      <div class="card">
-        <div class="card-h">
-          <div><h3>Cómo se define el churn</h3>
-          <p>no hay una definición única: ajustá el criterio según la campaña y todo el tablero se recalcula</p></div>
-          <button class="btn" id="churn-reset">${W.icon('refresh', 14)}Volver al default</button>
-        </div>
-        <div class="churn-cfg">
-          <div class="churn-mode">
-            <label class="${C.mode === 'ratio' ? 'on' : ''}"><input type="radio" name="cmode" value="ratio" ${C.mode === 'ratio' ? 'checked' : ''}/>
-              <b>Según el ritmo de cada cliente</b><em>churn cuando tarda N veces más de lo que suele tardar. Se adapta a quien compra semanal y a quien compra cada dos meses.</em></label>
-            <label class="${C.mode === 'dias' ? 'on' : ''}"><input type="radio" name="cmode" value="dias" ${C.mode === 'dias' ? 'checked' : ''}/>
-              <b>Días fijos sin comprar</b><em>churn a los N días para todos por igual. Es el criterio clásico: churners de 30, 60, 180 días.</em></label>
-          </div>
-
-          ${C.mode === 'dias' ? `
-            <div class="churn-presets">
-              <span>Atajos:</span>
-              ${[30, 60, 90, 180].map((d) => `<button class="chip-sm${C.churnDays === d ? ' on' : ''}" data-cd="${d}">${d} días</button>`).join('')}
+      <details class="card adv" id="churn-adv" ${churnOpen ? 'open' : ''}>
+        <summary class="adv-h">
+          <div class="adv-h-t">${W.icon('chevronR', 15, 'adv-caret')}<div>
+            <h3>Cómo se define el churn</h3>
+            <p>criterio actual: <strong>${W.esc(W.churnCriterion())}</strong> — hacé clic para ajustarlo</p>
+          </div></div>
+        </summary>
+        <div class="adv-body">
+          <div class="churn-cfg">
+            <div class="churn-mode">
+              <label class="${C.mode === 'ratio' ? 'on' : ''}"><input type="radio" name="cmode" value="ratio" ${C.mode === 'ratio' ? 'checked' : ''}/>
+                <b>Según el ritmo de cada cliente</b><em>churn cuando tarda N veces más de lo que suele tardar. Se adapta a quien compra semanal y a quien compra cada dos meses.</em></label>
+              <label class="${C.mode === 'dias' ? 'on' : ''}"><input type="radio" name="cmode" value="dias" ${C.mode === 'dias' ? 'checked' : ''}/>
+                <b>Días fijos sin comprar</b><em>churn a los N días para todos por igual. Es el criterio clásico: churners de 30, 60, 180 días.</em></label>
             </div>
-            <div class="churn-fields">
-              <label>En riesgo desde<input class="inp" type="number" min="1" data-c="riskDays" value="${C.riskDays}"/><span>días</span></label>
-              <label>Churn desde<input class="inp" type="number" min="1" data-c="churnDays" value="${C.churnDays}"/><span>días</span></label>
-            </div>`
-          : `<div class="churn-fields">
-              <label>En riesgo desde<input class="inp" type="number" min="1" step="0.1" data-c="riskRatio" value="${C.riskRatio}"/><span>× su intervalo</span></label>
-              <label>Churn desde<input class="inp" type="number" min="1" step="0.1" data-c="churnRatio" value="${C.churnRatio}"/><span>× su intervalo</span></label>
-              <label>Sin historial, asumir<input class="inp" type="number" min="1" data-c="fallbackInterval" value="${C.fallbackInterval}"/><span>días de intervalo</span></label>
-            </div>`}
 
-          <div class="churn-fields">
-            <label>Perdido desde<input class="inp" type="number" min="1" data-c="lostDays" value="${C.lostDays}"/><span>días</span></label>
-            <label>"Nuevo" hasta<input class="inp" type="number" min="1" data-c="newDays" value="${C.newDays}"/><span>días de su 1ª compra</span></label>
+            ${C.mode === 'dias' ? `
+              <div class="churn-presets">
+                <span>Atajos:</span>
+                ${[30, 60, 90, 180].map((d) => `<button class="chip-sm${C.churnDays === d ? ' on' : ''}" data-cd="${d}">${d} días</button>`).join('')}
+              </div>
+              <div class="churn-fields">
+                <label>En riesgo desde<input class="inp" type="number" min="1" data-c="riskDays" value="${C.riskDays}"/><span>días</span></label>
+                <label>Churn desde<input class="inp" type="number" min="1" data-c="churnDays" value="${C.churnDays}"/><span>días</span></label>
+              </div>`
+            : `<div class="churn-fields">
+                <label>En riesgo desde<input class="inp" type="number" min="1" step="0.1" data-c="riskRatio" value="${C.riskRatio}"/><span>× su intervalo</span></label>
+                <label>Churn desde<input class="inp" type="number" min="1" step="0.1" data-c="churnRatio" value="${C.churnRatio}"/><span>× su intervalo</span></label>
+                <label>Sin historial, asumir<input class="inp" type="number" min="1" data-c="fallbackInterval" value="${C.fallbackInterval}"/><span>días de intervalo</span></label>
+              </div>`}
+
+            <div class="churn-fields">
+              <label>Perdido desde<input class="inp" type="number" min="1" data-c="lostDays" value="${C.lostDays}"/><span>días</span></label>
+              <label>"Nuevo" hasta<input class="inp" type="number" min="1" data-c="newDays" value="${C.newDays}"/><span>días de su 1ª compra</span></label>
+            </div>
+            <button class="btn" id="churn-reset">${W.icon('refresh', 14)}Volver al default</button>
           </div>
         </div>
-      </div>
+      </details>
 
       <div class="card">
         <div class="card-h">
@@ -442,6 +450,8 @@
   function wire(matches, sum, withMail) {
     const $ = (s) => document.querySelector(s);
     const $$ = (s) => [...document.querySelectorAll(s)];
+
+    $('#churn-adv')?.addEventListener('toggle', (e) => { churnOpen = e.target.open; });
 
     $$('input[name="cmode"]').forEach((r) => r.addEventListener('change', (e) => applyChurn({ mode: e.target.value })));
     $$('[data-c]').forEach((inp) => inp.addEventListener('change', (e) => {

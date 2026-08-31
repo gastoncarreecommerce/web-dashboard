@@ -470,9 +470,41 @@ details.more[open] summary { margin-bottom: .45rem; }
    acento visual + el auto-scroll (JS) hacen explícito que lo que se abrió
    es consecuencia directa del clic en la fila de arriba, no una tarjeta más
    suelta en medio de la lista. */
-#store-orders { border-left: 3px solid var(--brand); animation: store-orders-in .35s ease; }
-#store-orders .item-cell { max-width: 340px; }
-@keyframes store-orders-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+#geo-detail .item-cell { max-width: 340px; }
+
+/* Breadcrumb del drill-down provincia → tienda → pedidos: reemplaza a tener
+   una tarjeta nueva por nivel apilada más abajo — todo pasa DENTRO de la
+   misma tarjeta, y el breadcrumb dice en qué nivel estás y cómo volver. */
+.crumb { display: flex; align-items: center; gap: .3rem; margin-bottom: .3rem; flex-wrap: wrap; }
+.crumb-item {
+  background: none; border: none; font: inherit; font-size: .78rem; font-weight: 600;
+  color: var(--ink-3); cursor: pointer; padding: .1rem .2rem; border-radius: 5px;
+}
+.crumb-item:hover:not(.current) { color: var(--brand); text-decoration: underline; }
+.crumb-item.current { color: var(--ink); cursor: default; }
+.crumb-sep { color: var(--ink-4); display: flex; }
+/* Sin esto, el scrollIntoView de JS alinea el borde de arriba de la tarjeta
+   justo con el borde de arriba del viewport — que es DONDE EMPIEZA la barra
+   superior sticky, así que el breadcrumb quedaba tapado detrás de ella y
+   solo se veía la tabla, quedando igual de confuso que antes del fix. */
+#geo-detail { scroll-margin-top: 116px; animation: geo-detail-in .3s ease; }
+@keyframes geo-detail-in { from { opacity: .4; } to { opacity: 1; } }
+
+/* ── Panel avanzado colapsable (details con pinta de card) ──────────────────
+   Usado para configuración que no es la acción principal de la página (p.ej.
+   el criterio de churn en Audiencias): arranca cerrado para no competir
+   visualmente con lo que sí se usa todo el tiempo, pero el resumen en el
+   summary siempre muestra el estado actual sin necesidad de abrirlo. */
+.adv summary { list-style: none; cursor: pointer; }
+.adv summary::-webkit-details-marker { display: none; }
+.adv-h { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.adv-h-t { display: flex; align-items: flex-start; gap: .55rem; }
+.adv-h-t h3 { font-size: .94rem; }
+.adv-h-t p { font-size: .755rem; color: var(--ink-3); margin-top: .15rem; }
+.adv-h-t strong { color: var(--ink-2); }
+.adv-caret { margin-top: .2rem; color: var(--ink-4); transition: transform .15s; flex-shrink: 0; }
+.adv[open] .adv-caret { transform: rotate(90deg); }
+.adv-body { margin-top: .85rem; padding-top: .85rem; border-top: 1px solid var(--line); }
 
 /* ── Configuración de churn ──────────────────────────────────────────────── */
 .churn-cfg { display: flex; flex-direction: column; gap: .75rem; }

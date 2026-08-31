@@ -97,6 +97,9 @@
     </div>`;
   }
 
+  // Devuelve solo el CONTENIDO (tabla + nota), sin tarjeta propia: se monta
+  // dentro de la tarjeta única de geografía, con breadcrumb, para que abrir
+  // una provincia o una tienda no vaya apilando tarjetas nuevas más abajo.
   function renderStores(geo, agg, provCode) {
     const M = W.AR_MAP;
     const rows = Object.entries(agg.stores)
@@ -104,18 +107,7 @@
       .filter((r) => !provCode || r.prov === provCode)
       .sort((a, b) => b.gmv - a.gmv);
 
-    const title = provCode
-      ? `Tiendas de ${W.esc(M.provinces[provCode]?.name || provCode)}`
-      : 'Tiendas (todas las provincias)';
-
-    return { rows, html: `<div class="card">
-      <div class="card-h">
-        <div><h3>${title}</h3><p>${W.fmtNum(rows.length)} tiendas · ordenadas por GMV · hacé clic en una fila para ver sus pedidos${provCode ? ' · clic en el mapa para cambiar de provincia' : ''}</p></div>
-        <div class="card-a">
-          ${provCode ? '<button class="btn" id="clear-prov">Ver todas</button>' : ''}
-          <button class="btn-p" id="xlsx-stores">${W.icon('download', 14)}Exportar XLSX</button>
-        </div>
-      </div>
+    return { rows, html: `
       <div class="tbl-wrap"><table class="tbl">
         <thead><tr><th>#</th><th>Tienda</th><th>Provincia</th><th class="num">Pedidos</th><th class="num">GMV</th><th class="num">Ticket</th><th style="width:18%">Participación</th></tr></thead>
         <tbody>${rows.length ? rows.slice(0, 60).map((r, i) => {
@@ -128,8 +120,7 @@
             <td><div class="barcell"><span class="bartrack"><span class="barfill" style="width:${share * 100}%"></span></span></div></td></tr>`;
         }).join('') : '<tr><td colspan="7" class="muted">Sin tiendas en este rango</td></tr>'}</tbody>
       </table></div>
-      ${rows.length > 60 ? `<p class="muted" style="font-size:.75rem;padding-top:.6rem">Mostrando 60 de ${W.fmtNum(rows.length)} — el XLSX trae todas.</p>` : ''}
-    </div>` };
+      ${rows.length > 60 ? `<p class="muted" style="font-size:.75rem;padding-top:.6rem">Mostrando 60 de ${W.fmtNum(rows.length)} — el XLSX trae todas.</p>` : ''}` };
   }
 
   /**
@@ -164,17 +155,7 @@
     const sorted = [...inRange].sort((a, b) => (a.t < b.t ? 1 : a.t > b.t ? -1 : 0));
     const shown = sorted.slice(0, STORE_ORDERS_MAX_ROWS);
 
-    return { rows: sorted, html: `<div class="card" id="store-orders">
-      <div class="card-h">
-        <div><h3>Pedidos de ${W.esc(store.name)}</h3>
-          <p>${W.fmtDayLong(range.from)} → ${W.fmtDayLong(range.to)} · ${W.fmtNum(inRange.length)} pedidos · ${W.fmtMoney(totalGmv)}
-            ${emailMap ? '' : `<span class="scope" ${W.chart.tip('Los mails viven en el repositorio privado. Si no aparecen, todavía no se configuró /api/audience-emails.')}>${W.icon('warn', 11)} sin mails</span>`}</p>
-        </div>
-        <div class="card-a">
-          <button class="btn-p" id="xlsx-store-orders">${W.icon('download', 14)}Exportar XLSX</button>
-          <button class="btn" id="close-store-orders">${W.icon('close', 14)}Cerrar</button>
-        </div>
-      </div>
+    return { rows: sorted, count: inRange.length, gmv: totalGmv, emailMap, html: `
       <div class="tbl-wrap"><table class="tbl dense">
         <thead><tr><th>Pedido</th><th>Fecha</th><th>Mail</th><th>Productos</th><th class="num">GMV</th></tr></thead>
         <tbody>${shown.length ? shown.map((o) => {
@@ -195,8 +176,7 @@
           </tr>`;
         }).join('') : '<tr><td colspan="5" class="muted">Sin pedidos de esta tienda en el rango elegido.</td></tr>'}</tbody>
       </table></div>
-      ${inRange.length > STORE_ORDERS_MAX_ROWS ? `<p class="muted" style="font-size:.75rem;padding-top:.6rem">Mostrando los ${W.fmtNum(STORE_ORDERS_MAX_ROWS)} más recientes de ${W.fmtNum(inRange.length)} — el XLSX trae todos.</p>` : ''}
-    </div>` };
+      ${inRange.length > STORE_ORDERS_MAX_ROWS ? `<p class="muted" style="font-size:.75rem;padding-top:.6rem">Mostrando los ${W.fmtNum(STORE_ORDERS_MAX_ROWS)} más recientes de ${W.fmtNum(inRange.length)} — el XLSX trae todos.</p>` : ''}` };
   }
 
   // ── Vista ─────────────────────────────────────────────────────────────────
@@ -348,8 +328,29 @@
         </div>
         ${renderMap(geo, geoAgg, mapMetric)}
       </div>
-      ${storesPanel.html}
-      ${storeOrdersPanel ? storeOrdersPanel.html : ''}`
+      <div class="card" id="geo-detail">
+        <div class="card-h">
+          <div>
+            <div class="crumb">
+              <button class="crumb-item${!selectedProv ? ' current' : ''}" data-crumb="root">Todas las tiendas</button>
+              ${selectedProv ? `<span class="crumb-sep">${W.icon('chevronR', 12)}</span>
+                <button class="crumb-item${!selectedStore ? ' current' : ''}" data-crumb="prov">${W.esc(W.AR_MAP.provinces[selectedProv]?.name || selectedProv)}</button>` : ''}
+              ${selectedStore ? `<span class="crumb-sep">${W.icon('chevronR', 12)}</span>
+                <span class="crumb-item current">${W.esc(selectedStore.name)}</span>` : ''}
+            </div>
+            <p>${selectedStore
+              ? `${W.fmtDayLong(range.from)} → ${W.fmtDayLong(range.to)} · ${W.fmtNum(storeOrdersPanel.count)} pedidos · ${W.fmtMoney(storeOrdersPanel.gmv)}
+                 ${storeOrdersPanel.emailMap ? '' : `<span class="scope" ${W.chart.tip('Los mails viven en el repositorio privado. Si no aparecen, todavía no se configuró /api/audience-emails.')}>${W.icon('warn', 11)} sin mails</span>`}`
+              : `${W.fmtNum(storesPanel.rows.length)} tiendas · ordenadas por GMV · hacé clic en una fila para ver sus pedidos`}</p>
+          </div>
+          <div class="card-a">
+            ${selectedStore
+              ? `<button class="btn-p" id="xlsx-store-orders">${W.icon('download', 14)}Exportar XLSX</button>`
+              : `<button class="btn-p" id="xlsx-stores">${W.icon('download', 14)}Exportar XLSX</button>`}
+          </div>
+        </div>
+        ${selectedStore ? storeOrdersPanel.html : storesPanel.html}
+      </div>`
       : `<div class="card"><div class="card-h"><div><h3>Ventas por provincia</h3>
           <p>Provincia y tienda se empezaron a capturar después del backfill. Al reprocesar el historial aparece el mapa acá.</p></div></div></div>`}
 
@@ -459,22 +460,24 @@
 
     wire(ctx, geo, geoAgg, storesPanel, storeOrdersPanel);
 
-    // El panel de pedidos de la tienda aparece MÁS ABAJO en la página (después
-    // del mapa y del ranking): sin este scroll, al elegir una tienda quedaba
-    // fuera de la vista y parecía que "no pasó nada". Solo en la apertura, no
-    // en cada re-render (si no, cada clic te tira para abajo de nuevo).
-    if (selectedStore && !wasStoreOpenBeforeRender) {
+    // La tarjeta de geografía cambia de contenido (provincia → tiendas →
+    // pedidos) más abajo en la página: sin este scroll, elegir una provincia
+    // o una tienda no se notaba y parecía que el clic no hizo nada. Solo
+    // scrollea en la transición de "cerrado" a "abierto" de cada nivel, no
+    // en cada re-render (si no, cada clic — incluso cambiar de fecha — tira
+    // la página para abajo de nuevo).
+    const drillKey = hasGeo ? `${selectedProv || ''}|${selectedStore?.code || ''}` : '';
+    if (drillKey && drillKey !== lastDrillKey) {
       requestAnimationFrame(() => {
-        document.getElementById('store-orders')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById('geo-detail')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     }
-    wasStoreOpenBeforeRender = !!selectedStore;
+    lastDrillKey = drillKey;
   };
 
-  // Recuerda si el panel de pedidos ya estaba abierto en el render anterior,
-  // para distinguir "se acaba de abrir" (scrollear) de "se re-renderiza
-  // porque cambió el rango de fechas" (no scrollear).
-  let wasStoreOpenBeforeRender = false;
+  // Última combinación provincia|tienda que ya generó un scroll, para no
+  // repetirlo en cada re-render (p.ej. al cambiar el rango de fechas).
+  let lastDrillKey = '';
 
   function wire(ctx, geo, geoAgg, storesPanel, storeOrdersPanel) {
     const search = document.getElementById('prod-search');
@@ -500,10 +503,12 @@
       elp.addEventListener('click', () => {
         const code = elp.dataset.prov;
         selectedProv = selectedProv === code ? null : code;
+        // Cambiar de provincia deja atrás la tienda que estuviera abierta —
+        // si no, la tarjeta de pedidos seguía apuntando a una tienda que ya
+        // no pertenece a la provincia recién elegida.
+        selectedStore = null;
         W.render();
       }));
-    document.getElementById('clear-prov')?.addEventListener('click', () => { selectedProv = null; W.render(); });
-
     // Clic en una fila de tienda: abre / cierra el detalle de sus pedidos.
     document.querySelectorAll('[data-store]').forEach((elr) =>
       elr.addEventListener('click', () => {
@@ -511,7 +516,15 @@
         selectedStore = selectedStore?.code === code ? null : { code, name: elr.dataset.storeName };
         W.render();
       }));
-    document.getElementById('close-store-orders')?.addEventListener('click', () => { selectedStore = null; W.render(); });
+
+    // Breadcrumb de la tarjeta de geografía: "Todas las tiendas" vuelve al
+    // principio, el nombre de la provincia vuelve un nivel (a las tiendas).
+    document.querySelectorAll('[data-crumb]').forEach((b) =>
+      b.addEventListener('click', () => {
+        if (b.dataset.crumb === 'root') selectedProv = null;
+        selectedStore = null;
+        W.render();
+      }));
 
     document.getElementById('xlsx-store-orders')?.addEventListener('click', () => {
       if (!storeOrdersPanel) return;
