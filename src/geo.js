@@ -92,6 +92,29 @@ function provinceCode(order) {
 }
 
 /**
+ * Extrae el nombre de tienda de un texto tipo courierName. VTEX carga ahí el
+ * código y el prefijo del método de envío pegados al nombre, con separador
+ * "-" a veces con espacios ("Envío a domicilio 0009 - Hiper Cba Colón") y a
+ * veces sin ellos ("Envío a Domicilio 6001-Express Maestro Vidal") — usar
+ * solo `lastIndexOf(' - ')` deja pasar el string entero sin cortar en el
+ * segundo caso, y el prefijo "Envío a Domicilio 6001-" quedaba pegado
+ * adelante del nombre real en el ranking de tiendas.
+ * Si no hay nombre después del último guion (p.ej. "Envío a Domicilio 3",
+ * un bucket genérico sin tienda puntual), devuelve null: mejor no atribuirlo
+ * a ninguna tienda que mostrar el texto del método de envío como si lo fuera.
+ */
+function extractDeliveryStoreName(raw) {
+  const cn = String(raw || '').trim();
+  if (!cn) return null;
+  const m = cn.match(/.*-\s*(.+)$/);
+  const name = (m ? m[1] : cn).trim();
+  // "Envío a Domicilio", "Envío a Sede", etc: prefijo del método de envío sin
+  // ningún nombre de tienda pegado después (no había guion para cortar).
+  if (!name || /^env[ií]o a \S+\s*$/i.test(name)) return null;
+  return name;
+}
+
+/**
  * Tienda que despachó el pedido.
  *
  * Los pedidos reales traen el dato dentro de logisticsInfo:
@@ -113,18 +136,15 @@ function orderStore(order) {
   for (const l of li) {
     for (const d of l?.deliveryIds || []) {
       const code = String(d.courierId || '').split('_')[0];
-      const cn = String(d.courierName || '');
-      const dash = cn.lastIndexOf(' - ');
-      const name = dash >= 0 ? cn.slice(dash + 3).trim() : cn.trim();
-      if (code || name) return { code: code || 'sin_codigo', name: name || code };
+      const name = extractDeliveryStoreName(d.courierName);
+      if (code && name) return { code, name };
     }
     if (l?.deliveryCompany) {
-      const cn = String(l.deliveryCompany);
-      const dash = cn.lastIndexOf(' - ');
-      if (dash >= 0) return { code: 'sin_codigo', name: cn.slice(dash + 3).trim() };
+      const name = extractDeliveryStoreName(l.deliveryCompany);
+      if (name) return { code: 'sin_codigo', name };
     }
   }
   return null;
 }
 
-module.exports = { PROVINCES, provinceCode, orderStore, normText: norm };
+module.exports = { PROVINCES, provinceCode, orderStore, extractDeliveryStoreName, normText: norm };

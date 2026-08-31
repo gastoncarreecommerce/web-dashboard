@@ -145,6 +145,12 @@
     return perMonth.flat();
   }
 
+  // Techo de filas que se pintan en la tabla: una tienda grande en un rango
+  // largo puede tener varios miles de pedidos, y armar esa cantidad de <tr>
+  // con el detalle de productos de cada uno es lo que trababa el navegador
+  // al abrir el panel. Se muestran los más recientes y el XLSX trae todos.
+  const STORE_ORDERS_MAX_ROWS = 300;
+
   function renderStoreOrders(store, orders, range, emailMap) {
     // o.t es el creationDate crudo de VTEX, en UTC: para un pedido de las
     // 00:30 UTC, cortar el string a lo bruto da un día que en AR todavía es
@@ -155,30 +161,42 @@
       return day >= range.from && day <= range.to;
     });
     const totalGmv = inRange.reduce((s, o) => s + o.g, 0);
+    const sorted = [...inRange].sort((a, b) => (a.t < b.t ? 1 : a.t > b.t ? -1 : 0));
+    const shown = sorted.slice(0, STORE_ORDERS_MAX_ROWS);
 
-    return `<div class="card" id="store-orders">
+    return { rows: sorted, html: `<div class="card" id="store-orders">
       <div class="card-h">
         <div><h3>Pedidos de ${W.esc(store.name)}</h3>
           <p>${W.fmtDayLong(range.from)} → ${W.fmtDayLong(range.to)} · ${W.fmtNum(inRange.length)} pedidos · ${W.fmtMoney(totalGmv)}
             ${emailMap ? '' : `<span class="scope" ${W.chart.tip('Los mails viven en el repositorio privado. Si no aparecen, todavía no se configuró /api/audience-emails.')}>${W.icon('warn', 11)} sin mails</span>`}</p>
         </div>
-        <button class="btn" id="close-store-orders">${W.icon('close', 14)}Cerrar</button>
+        <div class="card-a">
+          <button class="btn-p" id="xlsx-store-orders">${W.icon('download', 14)}Exportar XLSX</button>
+          <button class="btn" id="close-store-orders">${W.icon('close', 14)}Cerrar</button>
+        </div>
       </div>
       <div class="tbl-wrap"><table class="tbl dense">
         <thead><tr><th>Pedido</th><th>Fecha</th><th>Mail</th><th>Productos</th><th class="num">GMV</th></tr></thead>
-        <tbody>${inRange.length ? inRange.map((o) => {
+        <tbody>${shown.length ? shown.map((o) => {
           const email = o.h && emailMap?.get(o.h)?.email;
-          const items = o.it.map((it) => `${W.esc(it.n)} ×${it.q}`).join(', ');
+          const ITEMS_PREVIEW = 4;
+          const full = o.it.map((it) => `${it.n} ×${it.q}`).join(', ');
+          const preview = o.it.slice(0, ITEMS_PREVIEW).map((it) => `${W.esc(it.n)} ×${it.q}`).join(', ');
+          const rest = o.it.length - ITEMS_PREVIEW;
+          const items = rest > 0
+            ? `${preview} <span class="muted" ${W.chart.tip(`<strong>${W.fmtNum(o.it.length)} productos</strong><span class="tip-row">${W.esc(full)}</span>`)}>+${rest} más</span>`
+            : preview;
           return `<tr>
             <td class="muted">${W.esc(o.id)}</td>
             <td class="muted">${new Date(o.t).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', dateStyle: 'short', timeStyle: 'short' })}</td>
             <td>${email ? W.esc(email) : '<span class="muted">sin mail</span>'}</td>
-            <td class="muted" style="max-width:420px">${items}</td>
+            <td class="muted item-cell">${items}</td>
             <td class="num">${W.fmtMoney(o.g)}</td>
           </tr>`;
         }).join('') : '<tr><td colspan="5" class="muted">Sin pedidos de esta tienda en el rango elegido.</td></tr>'}</tbody>
       </table></div>
-    </div>`;
+      ${inRange.length > STORE_ORDERS_MAX_ROWS ? `<p class="muted" style="font-size:.75rem;padding-top:.6rem">Mostrando los ${W.fmtNum(STORE_ORDERS_MAX_ROWS)} más recientes de ${W.fmtNum(inRange.length)} — el XLSX trae todos.</p>` : ''}
+    </div>` };
   }
 
   // ── Vista ─────────────────────────────────────────────────────────────────
@@ -258,6 +276,7 @@
         W.loadEmailMap(),
       ]);
       storeOrdersPanel = renderStoreOrders(selectedStore, orders, range, emailMap);
+      storeOrdersPanel.emailMap = emailMap;
     }
 
     // ── Exportaciones ───────────────────────────────────────────────────────
@@ -330,7 +349,7 @@
         ${renderMap(geo, geoAgg, mapMetric)}
       </div>
       ${storesPanel.html}
-      ${storeOrdersPanel || ''}`
+      ${storeOrdersPanel ? storeOrdersPanel.html : ''}`
       : `<div class="card"><div class="card-h"><div><h3>Ventas por provincia</h3>
           <p>Provincia y tienda se empezaron a capturar después del backfill. Al reprocesar el historial aparece el mapa acá.</p></div></div></div>`}
 
@@ -438,10 +457,26 @@
           <span class="vbar-f" style="height:${(n / maxHour) * 100}%"></span><em>${h % 3 === 0 ? String(h).padStart(2, '0') : ''}</em></div>`).join('')}</div>
       </div>`;
 
-    wire(ctx, geo, geoAgg, storesPanel);
+    wire(ctx, geo, geoAgg, storesPanel, storeOrdersPanel);
+
+    // El panel de pedidos de la tienda aparece MÁS ABAJO en la página (después
+    // del mapa y del ranking): sin este scroll, al elegir una tienda quedaba
+    // fuera de la vista y parecía que "no pasó nada". Solo en la apertura, no
+    // en cada re-render (si no, cada clic te tira para abajo de nuevo).
+    if (selectedStore && !wasStoreOpenBeforeRender) {
+      requestAnimationFrame(() => {
+        document.getElementById('store-orders')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+    wasStoreOpenBeforeRender = !!selectedStore;
   };
 
-  function wire(ctx, geo, geoAgg, storesPanel) {
+  // Recuerda si el panel de pedidos ya estaba abierto en el render anterior,
+  // para distinguir "se acaba de abrir" (scrollear) de "se re-renderiza
+  // porque cambió el rango de fechas" (no scrollear).
+  let wasStoreOpenBeforeRender = false;
+
+  function wire(ctx, geo, geoAgg, storesPanel, storeOrdersPanel) {
     const search = document.getElementById('prod-search');
     if (search) {
       search.addEventListener('input', (e) => {
@@ -477,6 +512,22 @@
         W.render();
       }));
     document.getElementById('close-store-orders')?.addEventListener('click', () => { selectedStore = null; W.render(); });
+
+    document.getElementById('xlsx-store-orders')?.addEventListener('click', () => {
+      if (!storeOrdersPanel) return;
+      const emailMap = storeOrdersPanel.emailMap;
+      const rows = storeOrdersPanel.rows.map((o) => [
+        o.id,
+        new Date(o.t).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }),
+        (o.h && emailMap?.get(o.h)?.email) || '',
+        o.it.map((it) => `${it.n} x${it.q}`).join(' | '),
+        Math.round(o.g),
+      ]);
+      W.downloadXLSX(`webdash-pedidos-${selectedStore.code}-${ctx.range.from}_${ctx.range.to}.xlsx`, [
+        { name: 'Pedidos', rows: [['Pedido', 'Fecha', 'Mail', 'Productos', 'GMV'], ...rows] },
+      ]);
+      W.toast(`Exportados ${W.fmtNum(rows.length)} pedidos.`, 'good');
+    });
 
     document.getElementById('xlsx-stores')?.addEventListener('click', () => {
       if (!storesPanel) return;

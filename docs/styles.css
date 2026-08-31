@@ -466,6 +466,14 @@ details.more[open] summary { margin-bottom: .45rem; }
 .storerow { cursor: pointer; }
 .storerow.on { background: var(--brand-soft); font-weight: 600; }
 
+/* El panel de pedidos de una tienda aparece más abajo en la página — este
+   acento visual + el auto-scroll (JS) hacen explícito que lo que se abrió
+   es consecuencia directa del clic en la fila de arriba, no una tarjeta más
+   suelta en medio de la lista. */
+#store-orders { border-left: 3px solid var(--brand); animation: store-orders-in .35s ease; }
+#store-orders .item-cell { max-width: 340px; }
+@keyframes store-orders-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+
 /* ── Configuración de churn ──────────────────────────────────────────────── */
 .churn-cfg { display: flex; flex-direction: column; gap: .75rem; }
 .churn-mode { display: grid; grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); gap: .6rem; }
