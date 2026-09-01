@@ -168,14 +168,23 @@
 
   /**
    * Pedidos de una tienda en el rango elegido. Se guardan particionados por
-   * tienda (docs/data/web/orders/<código>.json, con los meses como claves
-   * adentro) para que abrir el detalle de UNA tienda no baje los pedidos de
-   * las otras 180 — una tienda que nunca operó simplemente no tiene archivo
-   * (404 = sin pedidos). Un solo pedido HTTP trae todos los meses de esa
-   * tienda de una vez, en vez de uno por mes.
+   * tienda Y semestre (docs/data/web/orders/<código>/<año>-H1|H2.json, con
+   * los meses de ese semestre como claves adentro): así cada archivo queda
+   * chico para siempre (las tiendas más grandes rondan los 50 MB por
+   * semestre) en vez de crecer sin límite. Un rango típico (mes, trimestre)
+   * cae en un solo semestre → un solo pedido HTTP; un rango que cruza fin
+   * de año pide como mucho 2.
    */
+  function halfYearOf(month) {
+    const [y, m] = month.split('-');
+    return `${y}-H${Number(m) <= 6 ? 1 : 2}`;
+  }
   async function loadStoreOrders(storeCode, months) {
-    const byMonth = await W.load(`orders/${storeCode}`).catch(() => ({}));
+    const halves = [...new Set(months.map(halfYearOf))];
+    const perHalf = await Promise.all(
+      halves.map((h) => W.load(`orders/${storeCode}/${h}`).catch(() => ({})))
+    );
+    const byMonth = Object.assign({}, ...perHalf);
     return months.flatMap((m) => byMonth[m] || []);
   }
 

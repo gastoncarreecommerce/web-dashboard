@@ -352,27 +352,34 @@ function main() {
     days: geoDays,
   });
 
-  // ── orders/<tienda>.json (detalle de pedidos, por tienda — TODOS los meses
-  // adentro) ────────────────────────────────────────────────────────────────
-  // Antes era un archivo por tienda POR MES (orders/<tienda>/<mes>.json): con
-  // ~180 tiendas activas × 9 meses eso ya eran más de 500 archivos, y sigue
-  // creciendo un mes más para siempre. Vercel tiene que revisar CADA archivo
-  // de docs/ en cada despliegue, así que la cantidad de archivos (no tanto
-  // el peso total) es lo que hacía lento cada "actualización en vivo" — y
-  // solo iba a empeorar con el tiempo. Un archivo por tienda (con los meses
-  // como claves adentro) fija el conteo en ~180 para siempre: un mes nuevo
-  // agranda archivos existentes, no crea uno nuevo. El cliente sigue pidiendo
-  // solo la tienda que le interesa (no las otras 180), y de paso una tienda
-  // con varios meses en pantalla pasa de N pedidos HTTP a uno solo.
+  // ── orders/<tienda>/<semestre>.json (detalle de pedidos, por tienda y
+  // semestre — los meses de ese semestre van adentro) ─────────────────────
+  // Antes era un archivo por tienda POR MES: con ~180 tiendas activas × 9
+  // meses eso ya eran más de 500 archivos, y seguía creciendo un mes más
+  // para siempre. Un archivo único por tienda (sin partición) se probó y se
+  // descartó enseguida: las tiendas más grandes YA superan los 50-75 MB con
+  // apenas 9 meses — a ese ritmo iban a pasar los 100 MB (el límite duro de
+  // GitHub, no una sugerencia) en un par de meses más y iban a tirar abajo
+  // la actualización automática. Partir por semestre acota cada archivo a
+  // ~6 meses de una tienda para siempre (las más grandes rondan los 50 MB
+  // por semestre, con margen), y la cantidad de archivos solo crece cada
+  // 6 meses (al abrir un semestre nuevo), no cada mes.
+  function halfYearOf(month) {
+    const [y, m] = month.split('-');
+    return `${y}-H${Number(m) <= 6 ? 1 : 2}`;
+  }
   let ordersFilesWritten = 0, ordersBytesTotal = 0;
   for (const [storeCode, byMonth] of Object.entries(ordersByStoreMonth)) {
-    const out = {};
+    const byHalf = {};
     for (const [m, list] of Object.entries(byMonth)) {
       list.sort((a, b) => (a.t < b.t ? -1 : a.t > b.t ? 1 : 0));
-      out[m] = list;
+      const half = (byHalf[halfYearOf(m)] = byHalf[halfYearOf(m)] || {});
+      half[m] = list;
     }
-    ordersBytesTotal += writeJson(`docs/data/web/orders/${storeCode}.json`, out);
-    ordersFilesWritten += 1;
+    for (const [half, out] of Object.entries(byHalf)) {
+      ordersBytesTotal += writeJson(`docs/data/web/orders/${storeCode}/${half}.json`, out);
+      ordersFilesWritten += 1;
+    }
   }
 
   // ── order-index/<mes>.json (TODOS los pedidos, sin items, por mes) ──────
@@ -585,7 +592,7 @@ function main() {
   console.log(`Agregado OK. Días: ${days.length}. Faltantes: ${missingDays.length}. Clientes únicos: ${profiles.size}.`);
   console.log(`  daily-summary ${mb(sizeDaily)} · catalog ${mb(sizeCatalog)} · cohorts ${mb(sizeCohorts)} · audience ${mb(sizeAudience)}`);
   console.log(`  geo ${mb(sizeGeo)} (${geoDays.length} días, ${Object.keys(storeMeta).length} tiendas) · products ${mb(sizeProducts)}`);
-  console.log(`  orders ${mb(ordersBytesTotal)} (${ordersFilesWritten} archivos, uno por tienda)`);
+  console.log(`  orders ${mb(ordersBytesTotal)} (${ordersFilesWritten} archivos, uno por tienda y semestre)`);
   console.log(`  order-index ${mb(orderIndexBytesTotal)} (${Object.keys(orderIndexByMonth).length} meses)`);
   if (sizeAudience > 25 * 1048576) {
     console.warn('  ⚠ audience-index.json supera 25MB: el navegador va a tardar en cargarlo. Considerar acotar la ventana.');
