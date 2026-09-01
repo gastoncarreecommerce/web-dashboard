@@ -314,6 +314,11 @@ function applyOrderToAcc(acc, full) {
       sg: view.bucket,
       h: hash || null,
       g: Math.round(gmv),
+      st: full.status || null,
+      // Solo si tiene cupón: la gran mayoría de los pedidos no lleva ninguno,
+      // y omitir la clave en vez de guardar un array vacío ahorra bastante
+      // en un archivo que se repite por cada pedido del historial.
+      ...(couponList.length ? { cp: couponList } : {}),
       it: view.items.map((item) => ({
         n: item.name || 'sin_nombre',
         q: Number(item.quantity) || 0,

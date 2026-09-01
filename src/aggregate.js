@@ -162,6 +162,7 @@ function main() {
   // todos juntos) para que "ver los pedidos de esta tienda" en Analítica
   // baje solo un archivo chico en vez de los pedidos de las 180 tiendas.
   const ordersByStoreMonth = {};
+  const orderIndexByMonth = {};
   // Productos: por segmento y por mes. Por día sería enorme (250 skus × 4
   // segmentos × 236 días) y a nivel mes alcanza para analizar surtido.
   const productsBySegMonth = {};
@@ -227,6 +228,14 @@ function main() {
     for (const o of day.orders || []) {
       const bucket = (ordersByStoreMonth[o.s] = ordersByStoreMonth[o.s] || {});
       (bucket[month] = bucket[month] || []).push(o);
+      // Índice liviano de TODOS los pedidos (sin items) por mes: lo usan el
+      // detalle de "qué pedidos usaron este cupón" en Cupones y las pestañas
+      // por estado del XLSX de Estados de pedido. o.st/o.cp solo existen en
+      // pedidos procesados después de agregarlos acá — días previos quedan
+      // sin esos campos (undefined), no reprocesables sin volver a pedirle a VTEX.
+      (orderIndexByMonth[month] = orderIndexByMonth[month] || []).push({
+        id: o.id, t: o.t, s: o.s, sg: o.sg, h: o.h, g: o.g, st: o.st || null, cp: o.cp || undefined,
+      });
     }
 
     // Totales de catálogo: en schema 2 vienen dentro de cada segmento; en los
@@ -285,10 +294,28 @@ function main() {
       cohortActivity.get(key).add(hash);
     }
 
+    // El horario por hora vive a nivel DÍA en schema 1 (day.hourly) y a nivel
+    // SEGMENTO en schema 2 (day.segments[s].hourly) — sin este fallback,
+    // daily-summary.json quedaba con hourly:null para todos los días schema 2
+    // (todo el historial reciente) y el heatmap de "Cuándo compran" del
+    // Dashboard no tenía con qué dibujarse, aunque el dato SÍ estaba guardado.
+    let dayHourly = day.hourly || null;
+    if (!dayHourly) {
+      const summed = new Array(24).fill(0);
+      let any = false;
+      for (const seg of SEGMENTS) {
+        const h = daySegments[seg]?.hourly;
+        if (!h) continue;
+        any = true;
+        h.forEach((n, i) => (summed[i] += n));
+      }
+      dayHourly = any ? summed : null;
+    }
+
     dailySeries.push({
       date,
       segments: daySegments,
-      hourly: day.hourly || null,
+      hourly: dayHourly,
       discount: day.discountTotal || 0,
       newCustomers,
       activeCustomers: Object.keys(day.customers || {}).length,
@@ -324,6 +351,16 @@ function main() {
       ordersBytesTotal += writeJson(`docs/data/web/orders/${storeCode}/${m}.json`, list);
       ordersFilesWritten += 1;
     }
+  }
+
+  // ── order-index/<mes>.json (TODOS los pedidos, sin items, por mes) ──────
+  // Alimenta "ver detalle" de un cupón (Cupones) y las pestañas por estado
+  // del XLSX de Estados de pedido — ambos necesitan buscar en TODOS los
+  // pedidos del rango, no solo los de una tienda.
+  let orderIndexBytesTotal = 0;
+  for (const [m, list] of Object.entries(orderIndexByMonth)) {
+    list.sort((a, b) => (a.t < b.t ? -1 : a.t > b.t ? 1 : 0));
+    orderIndexBytesTotal += writeJson(`docs/data/web/order-index/${m}.json`, list);
   }
 
   // ── products.json (por segmento y por mes) ──────────────────────────────
@@ -527,6 +564,7 @@ function main() {
   console.log(`  daily-summary ${mb(sizeDaily)} · catalog ${mb(sizeCatalog)} · cohorts ${mb(sizeCohorts)} · audience ${mb(sizeAudience)}`);
   console.log(`  geo ${mb(sizeGeo)} (${geoDays.length} días, ${Object.keys(storeMeta).length} tiendas) · products ${mb(sizeProducts)}`);
   console.log(`  orders ${mb(ordersBytesTotal)} (${ordersFilesWritten} archivos tienda-mes)`);
+  console.log(`  order-index ${mb(orderIndexBytesTotal)} (${Object.keys(orderIndexByMonth).length} meses)`);
   if (sizeAudience > 25 * 1048576) {
     console.warn('  ⚠ audience-index.json supera 25MB: el navegador va a tardar en cargarlo. Considerar acotar la ventana.');
   }

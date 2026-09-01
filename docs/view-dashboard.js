@@ -6,7 +6,7 @@
   function kpi({ icon, label, value, sub, delta, spark, color, tip }) {
     return `<div class="kpi"${tip ? ` ${W.chart.tip(tip)}` : ''}>
       <div class="kpi-t">
-        <span class="kpi-ic" style="background:${color}26;color:${color}">${W.icon(icon, 18)}</span>
+        <span class="kpi-ic" style="background:${color}38;color:${color}">${W.icon(icon, 18)}</span>
         ${delta !== undefined ? W.deltaBadge(delta) : ''}
       </div>
       <div class="kpi-v">${value}</div>
@@ -269,12 +269,6 @@
 
       ${segTiles.length ? `<div class="kpis kpis-seg">${segTiles.join('')}</div>` : ''}
 
-      ${insights.length ? `<div>
-        <div class="ins-h"><h3>Qué está pasando</h3><span>lectura automática del período vs. el anterior</span></div>
-        <div class="ins-g">${insights
-          .map((i) => `<div class="ins ${i.kind}">${W.icon(i.kind === 'good' ? 'trend' : i.kind === 'bad' ? 'trendDown' : i.kind === 'warn' ? 'warn' : 'info', 16)}<div><h4>${W.esc(i.title)}</h4><p>${W.esc(i.text)}</p></div></div>`)
-          .join('')}</div></div>` : ''}
-
       <div class="card">
         <div class="card-h">
           <div><h3>Pedidos por día</h3><p>${W.fmtDayLong(range.from)} → ${W.fmtDayLong(range.to)} · ${bucket === 'all' ? 'todos los segmentos' : W.SEGMENT_LABEL[bucket]}</p></div>
@@ -282,6 +276,12 @@
         </div>
         ${W.chart.line({ labels, series: mainSeries, height: 260 })}
       </div>
+
+      ${insights.length ? `<div>
+        <div class="ins-h"><h3>Qué está pasando</h3><span>lectura automática del período vs. el anterior</span></div>
+        <div class="ins-g">${insights
+          .map((i) => `<div class="ins ${i.kind}">${W.icon(i.kind === 'good' ? 'trend' : i.kind === 'bad' ? 'trendDown' : i.kind === 'warn' ? 'warn' : 'info', 16)}<div><h4>${W.esc(i.title)}</h4><p>${W.esc(i.text)}</p></div></div>`)
+          .join('')}</div></div>` : ''}
 
       <div class="g2">
         <div class="card">
@@ -306,12 +306,14 @@
       </div>
 
       ${hasHourly && bucket === 'all' ? `<div class="card">
-        <div class="card-h"><div><h3>Cuándo compran</h3><p>pedidos por día de la semana y hora (AR) — dónde conviene disparar campañas</p></div></div>
+        <div class="card-h"><div><h3>Heatmap de horarios pico</h3><p>volumen de pedidos por día de la semana y hora (AR) · requiere ≥7 días para tener sentido — dónde conviene disparar campañas</p></div></div>
         ${W.chart.heatmap({
           rows: W.DOW_LABELS,
           cols: Array.from({ length: 24 }, (_, h) => String(h).padStart(2, '0')),
           matrix: dowHour,
           fmt: W.fmtNumC,
+          showValues: false,
+          legend: true,
           tipFmt: (r, c, v) => `<strong>${r} ${c}:00</strong><span class="tip-row"><b>${W.fmtNum(v)}</b> pedidos</span>`,
         })}
       </div>` : ''}`;

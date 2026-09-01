@@ -184,14 +184,17 @@
   };
 
   /** Barras horizontales (pareto de productos, categorías, cupones…). */
+  // r.img (opcional, URL ya resuelta) agrega una miniatura antes del label —
+  // hoy solo lo usa el ranking de productos de Analítica.
   C.barsH = function ({ items, valueFmt = W.fmtMoneyC, color = 'var(--s1)', maxRows = 20, showRank = true }) {
     const rows = items.slice(0, maxRows);
     if (!rows.length) return '<div class="chart-empty">Sin datos en este rango.</div>';
     const max = Math.max(...rows.map((r) => r.value), 1);
     return `<div class="barsh">${rows
       .map((r, i) => `
-        <div class="barsh-row" ${C.tip(`<strong>${W.esc(r.label)}</strong><span class="tip-row">${W.esc(r.sub || '')} <b>${valueFmt(r.value)}</b></span>`)}>
+        <div class="barsh-row${r.img !== undefined ? ' has-img' : ''}" ${C.tip(`<strong>${W.esc(r.label)}</strong><span class="tip-row">${W.esc(r.sub || '')} <b>${valueFmt(r.value)}</b></span>`)}>
           ${showRank ? `<span class="barsh-rank">${i + 1}</span>` : ''}
+          ${r.img !== undefined ? (r.img ? `<img class="barsh-img" src="${r.img}" alt="" loading="lazy" />` : `<span class="barsh-img barsh-img-ph">${W.icon('box', 14)}</span>`) : ''}
           <span class="barsh-label">${W.esc(r.label)}</span>
           <span class="barsh-track"><span class="barsh-fill" style="width:${(r.value / max) * 100}%;background:${r.color || color}"></span></span>
           <span class="barsh-value">${valueFmt(r.value)}</span>
@@ -203,7 +206,12 @@
    * Heatmap genérico (cohortes, hora × día de semana, grilla RFM).
    * matrix[r][c] = número | null. `fmt` formatea el valor de la celda.
    */
-  C.heatmap = function ({ rows, cols, matrix, fmt = W.fmtNum, tipFmt, rowSub, cellPct = false }) {
+  // showValues=false da el estilo "mapa de calor" limpio (solo color, el
+  // número sale en el tooltip) — mejor para matrices grandes tipo hora × día
+  // de semana (168 celdas), donde un número en cada celda es puro ruido
+  // visual. Las cohortes (pocas celdas, cada una importa) siguen mostrando
+  // el valor adentro por default.
+  C.heatmap = function ({ rows, cols, matrix, fmt = W.fmtNum, tipFmt, rowSub, cellPct = false, showValues = true, legend = false }) {
     if (!rows.length || !cols.length) return '<div class="chart-empty">Sin datos suficientes.</div>';
     let max = 0;
     for (const r of matrix) for (const v of r) if (v != null && v > max) max = v;
@@ -223,14 +231,16 @@
             const bg = C.rampColor(t);
             const dark = t > 0.55;
             const tip = tipFmt ? tipFmt(rLabel, cLabel, v, t) : `<strong>${W.esc(rLabel)} → ${W.esc(cLabel)}</strong><span class="tip-row">${fmt(v)}</span>`;
-            return `<td class="hm-cell" style="background:${bg};color:${dark ? '#fff' : 'var(--ink)'}" ${C.tip(tip)}>${cellPct ? W.fmtPct(t, 0) : fmt(v)}</td>`;
+            const label = cellPct ? W.fmtPct(t, 0) : fmt(v);
+            return `<td class="hm-cell" style="background:${bg};color:${dark ? '#fff' : 'var(--ink)'}" ${C.tip(tip)}>${showValues ? label : ''}</td>`;
           })
           .join('');
         return `<tr><th class="hm-row">${W.esc(rLabel)}${rowSub ? `<span>${W.esc(rowSub[ri] || '')}</span>` : ''}</th>${cells}</tr>`;
       })
       .join('');
 
-    return `<div class="hm-wrap"><table class="heatmap"><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+    return `<div class="hm-wrap"><table class="heatmap${showValues ? '' : ' hm-clean'}"><thead>${head}</thead><tbody>${body}</tbody></table></div>
+      ${legend ? `<div class="maplegend hm-legend"><span>Menos</span><i style="background:linear-gradient(90deg, ${C.rampColor(.1)}, ${C.rampColor(1)})"></i><span>Más (máx ${fmt(max)})</span></div>` : ''}`;
   };
 
   /** Donut para participación (medios de pago, mix de segmentos). */

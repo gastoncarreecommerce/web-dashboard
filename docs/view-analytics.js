@@ -13,6 +13,7 @@
   const W = (window.W = window.W || {});
 
   let productQuery = '';
+  let storeQuery = '';
   let selectedProv = null;  // provincia abierta en el mapa
   let selectedStore = null; // { code, name } de la tienda con el detalle de pedidos abierto
   let mapMetric = 'gmv';   // 'gmv' | 'orders'
@@ -28,6 +29,34 @@
     brand: { key: 'paymentBrands', label: 'Marca', field: 'brand' },
     installments: { key: 'installments', label: 'Cuotas', field: 'label' },
   };
+
+  /**
+   * Imagen del producto por EAN, vía OpenFoodFacts (base pública y gratuita
+   * de productos de supermercado, sin API key). El sku que guarda VTEX suele
+   * ser el EAN/código de barras de góndola — si no tiene forma de EAN
+   * (8/12/13/14 dígitos) ni vale la pena intentarlo. Best-effort: cualquier
+   * falla (sin red, producto no está en la base, timeout) cae a null y se
+   * muestra un placeholder — nunca rompe el panel de productos.
+   * Cacheado en memoria: no se repite la búsqueda en cada re-render.
+   */
+  const productImgCache = new Map();
+  async function resolveProductImg(sku) {
+    if (productImgCache.has(sku)) return productImgCache.get(sku);
+    if (!/^\d{8}(\d{4,6})?$/.test(String(sku || ''))) { productImgCache.set(sku, null); return null; }
+    let url = null;
+    try {
+      const ctrl = new AbortController();
+      const to = setTimeout(() => ctrl.abort(), 2500);
+      const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${sku}.json?fields=image_front_small_url`, { signal: ctrl.signal });
+      clearTimeout(to);
+      if (res.ok) {
+        const data = await res.json();
+        url = data?.product?.image_front_small_url || null;
+      }
+    } catch { /* sin red, timeout, o CORS — se sigue sin imagen */ }
+    productImgCache.set(sku, url);
+    return url;
+  }
 
   const SEG_ALL = 'all';
   const segsOf = (bucket) => (bucket === SEG_ALL ? W.SEGMENTS : [bucket]);
@@ -106,17 +135,24 @@
   // Devuelve solo el CONTENIDO (tabla + nota), sin tarjeta propia: se monta
   // dentro de la tarjeta única de geografía, con breadcrumb, para que abrir
   // una provincia o una tienda no vaya apilando tarjetas nuevas más abajo.
+  // Top 10 por default (el XLSX trae todas) — buscar por nombre destraba el
+  // resto sin tener que bajar el archivo solo para clickear una tienda chica.
+  const STORES_TOP = 10;
   function renderStores(geo, agg, provCode) {
     const M = W.AR_MAP;
     const rows = Object.entries(agg.stores)
       .map(([code, v]) => ({ code, name: geo.stores?.[code]?.name || code, prov: geo.stores?.[code]?.prov || null, ...v }))
       .filter((r) => !provCode || r.prov === provCode)
       .sort((a, b) => b.gmv - a.gmv);
+    const shown = storeQuery
+      ? rows.filter((r) => r.name.toLowerCase().includes(storeQuery.toLowerCase()))
+      : rows.slice(0, STORES_TOP);
 
     return { rows, html: `
       <div class="tbl-wrap"><table class="tbl">
         <thead><tr><th>#</th><th>Tienda</th><th>Provincia</th><th class="num">Pedidos</th><th class="num">GMV</th><th class="num">Ticket</th><th style="width:18%">Participación</th></tr></thead>
-        <tbody>${rows.length ? rows.slice(0, 60).map((r, i) => {
+        <tbody>${shown.length ? shown.map((r) => {
+          const i = rows.indexOf(r);
           const share = rows[0].gmv ? r.gmv / rows[0].gmv : 0;
           const on = selectedStore?.code === r.code;
           return `<tr class="storerow${on ? ' on' : ''}" data-store="${r.code}" data-store-name="${W.esc(r.name)}"><td class="muted">${i + 1}</td><td>${W.esc(r.name)}</td>
@@ -124,9 +160,9 @@
             <td class="num">${W.fmtNum(r.orders)}</td><td class="num">${W.fmtMoney(r.gmv)}</td>
             <td class="num">${W.fmtMoney(W.ticket(r.gmv, r.orders))}</td>
             <td><div class="barcell"><span class="bartrack"><span class="barfill" style="width:${share * 100}%"></span></span></div></td></tr>`;
-        }).join('') : '<tr><td colspan="7" class="muted">Sin tiendas en este rango</td></tr>'}</tbody>
+        }).join('') : `<tr><td colspan="7" class="muted">${storeQuery ? 'Ninguna tienda coincide con la búsqueda' : 'Sin tiendas en este rango'}</td></tr>`}</tbody>
       </table></div>
-      ${rows.length > 60 ? `<p class="muted" style="font-size:.75rem;padding-top:.6rem">Mostrando 60 de ${W.fmtNum(rows.length)} — el XLSX trae todas.</p>` : ''}` };
+      ${!storeQuery && rows.length > STORES_TOP ? `<p class="muted" style="font-size:.75rem;padding-top:.6rem">Mostrando ${STORES_TOP} de ${W.fmtNum(rows.length)} — buscá por nombre o exportá el XLSX para verlas todas.</p>` : ''}` };
   }
 
   /**
@@ -234,6 +270,7 @@
     const filtered = productQuery
       ? products.filter((p) => `${p.name} ${p.sku} ${p.dept}`.toLowerCase().includes(productQuery.toLowerCase()))
       : products;
+    const topProductImgs = await Promise.all(filtered.slice(0, 10).map((p) => resolveProductImg(p.sku)));
 
     const categories = Object.entries(cur[CAT_LEVEL[catLevel].key] || {}).map(([name, v]) => ({ name, ...v })).sort((a, b) => b.gmv - a.gmv);
     const payments = Object.entries(cur[PAY_LEVEL[payLevel].key] || {}).map(([name, v]) => ({ name, ...v })).sort((a, b) => b.gmv - a.gmv);
@@ -345,9 +382,10 @@
               : `${W.fmtNum(storesPanel.rows.length)} tiendas · ordenadas por GMV · hacé clic en una fila para ver sus pedidos`}</p>
           </div>
           <div class="card-a">
+            ${!selectedStore ? `<input class="inp inp-search" id="store-search" type="search" placeholder="Buscar tienda…" value="${W.esc(storeQuery)}" />` : ''}
             ${selectedStore
               ? `<button class="btn-p" id="xlsx-store-orders">${W.icon('download', 14)}Exportar XLSX</button>`
-              : `<button class="btn-p" id="xlsx-stores">${W.icon('download', 14)}Exportar XLSX</button>`}
+              : `<button class="btn-p" id="xlsx-stores">${W.icon('download', 14)}Exportar XLSX (todas)</button>`}
           </div>
         </div>
         ${selectedStore ? storeOrdersPanel.html : storesPanel.html}
@@ -357,21 +395,16 @@
 
       <div class="card">
         <div class="card-h">
-          <div><h3>Productos más vendidos</h3><p>${scopeTxt}
+          <div><h3>Top 10 productos más vendidos</h3><p>${scopeTxt}
             <span class="scope" ${W.chart.tip('El ranking se agrega por mes: el rango se redondea a los meses que toca. Para el día exacto está el detalle crudo en data/daily.')}>por mes</span></p></div>
           <div class="card-a">
             <input class="inp inp-search" id="prod-search" type="search" placeholder="Buscar producto…" value="${W.esc(productQuery)}" />
-            <button class="btn" data-export="products">${W.icon('download', 14)}XLSX</button>
+            <button class="btn" data-export="products">${W.icon('download', 14)}XLSX (todos)</button>
           </div>
         </div>
-        ${W.chart.barsH({ items: filtered.slice(0, 15).map((p) => ({ label: p.name, sub: p.dept, value: p.gmv })), valueFmt: W.fmtMoneyC, color: 'var(--s1)' })}
-        <details class="more"><summary>Ver tabla completa (${W.fmtNum(filtered.length)} productos)</summary>
-          <div class="tbl-wrap"><table class="tbl dense">
-            <thead><tr><th>#</th><th>Producto</th><th>Departamento</th><th class="num">Unidades</th><th class="num">GMV</th></tr></thead>
-            <tbody>${filtered.slice(0, 200).map((p, i) => `<tr><td class="muted">${i + 1}</td><td>${W.esc(p.name)}</td>
-              <td class="muted">${W.esc(p.dept)}</td><td class="num">${W.fmtNum(p.qty)}</td><td class="num">${W.fmtMoney(p.gmv)}</td></tr>`).join('')}</tbody>
-          </table></div>
-        </details>
+        ${filtered.length ? W.chart.barsH({ items: filtered.slice(0, 10).map((p, i) => ({ label: p.name, sub: p.dept, value: p.gmv, img: topProductImgs[i] })), valueFmt: W.fmtMoneyC, color: 'var(--s1)' })
+          : '<div class="chart-empty">Sin productos para este filtro.</div>'}
+        ${filtered.length > 10 ? `<p class="muted" style="font-size:.75rem;padding-top:.6rem">Mostrando 10 de ${W.fmtNum(filtered.length)} — el XLSX trae todos los que matchean la búsqueda.</p>` : ''}
       </div>
 
       <div class="g2">
@@ -413,7 +446,10 @@
       <div class="card">
         <div class="card-h">
           <div><h3>Estados de pedido</h3><p>${W.fmtDayLong(range.from)} → ${W.fmtDayLong(range.to)} · todos los pedidos del canal, incluidos los que no cuentan</p></div>
-          <button class="btn" data-export="statuses">${W.icon('download', 14)}XLSX</button>
+          <div class="card-a">
+            <button class="btn" data-export="statuses">${W.icon('download', 14)}XLSX (resumen)</button>
+            <button class="btn-p" id="xlsx-statuses-detail" ${W.chart.tip('Un Excel con una pestaña por estado (Todos, Facturados, Cancelados, etc.) y el detalle de cada pedido: número, fecha, tienda, mail y monto. Solo incluye pedidos procesados después de este cambio — los de antes no tienen el estado guardado por pedido.')}>${W.icon('layers', 14)}XLSX con detalle por pedido</button>
+          </div>
         </div>
         <div class="strip">
           <div><span>${W.fmtPct(canc.rate)}</span><em>tasa de cancelación</em></div>
@@ -448,7 +484,7 @@
           <span class="vbar-f" style="height:${(n / maxHour) * 100}%"></span><em>${h % 3 === 0 ? String(h).padStart(2, '0') : ''}</em></div>`).join('')}</div>
       </div>`;
 
-    wire(ctx, geo, geoAgg, storesPanel, storeOrdersPanel);
+    wire(ctx, geo, geoAgg, storesPanel, storeOrdersPanel, months);
 
     // La tarjeta de geografía cambia de contenido (provincia → tiendas →
     // pedidos) más abajo en la página: sin este scroll, elegir una provincia
@@ -469,7 +505,7 @@
   // repetirlo en cada re-render (p.ej. al cambiar el rango de fechas).
   let lastDrillKey = '';
 
-  function wire(ctx, geo, geoAgg, storesPanel, storeOrdersPanel) {
+  function wire(ctx, geo, geoAgg, storesPanel, storeOrdersPanel, months) {
     const search = document.getElementById('prod-search');
     if (search) {
       search.addEventListener('input', (e) => {
@@ -477,6 +513,18 @@
         const pos = e.target.selectionStart;
         W.render().then(() => {
           const s2 = document.getElementById('prod-search');
+          if (s2) { s2.focus(); s2.setSelectionRange(pos, pos); }
+        });
+      });
+    }
+
+    const storeSearch = document.getElementById('store-search');
+    if (storeSearch) {
+      storeSearch.addEventListener('input', (e) => {
+        storeQuery = e.target.value;
+        const pos = e.target.selectionStart;
+        W.render().then(() => {
+          const s2 = document.getElementById('store-search');
           if (s2) { s2.focus(); s2.setSelectionRange(pos, pos); }
         });
       });
@@ -500,6 +548,7 @@
         // si no, la tarjeta de pedidos seguía apuntando a una tienda que ya
         // no pertenece a la provincia recién elegida.
         selectedStore = null;
+        storeQuery = '';
         W.render();
       }));
     // Clic en una fila de tienda: abre / cierra el detalle de sus pedidos.
@@ -514,7 +563,7 @@
     // principio, el nombre de la provincia vuelve un nivel (a las tiendas).
     document.querySelectorAll('[data-crumb]').forEach((b) =>
       b.addEventListener('click', () => {
-        if (b.dataset.crumb === 'root') selectedProv = null;
+        if (b.dataset.crumb === 'root') { selectedProv = null; storeQuery = ''; }
         selectedStore = null;
         W.render();
       }));
@@ -533,6 +582,54 @@
         { name: 'Pedidos', rows: [['Pedido', 'Fecha', 'Mail', 'Productos', 'GMV'], ...rows] },
       ]);
       W.toast(`Exportados ${W.fmtNum(rows.length)} pedidos.`, 'good');
+    });
+
+    document.getElementById('xlsx-statuses-detail')?.addEventListener('click', async () => {
+      const btn = document.getElementById('xlsx-statuses-detail');
+      btn.disabled = true;
+      try {
+        const [perMonth, emailMap] = await Promise.all([
+          Promise.all(months.map((m) => W.load(`order-index/${m}`).catch(() => []))),
+          W.loadEmailMap(),
+        ]);
+        const all = perMonth.flat().filter((o) => {
+          const day = W.arDateOf(o.t);
+          return day >= ctx.range.from && day <= ctx.range.to;
+        });
+        if (!all.length) { W.toast('No hay pedidos con detalle por estado en este rango todavía.', 'bad'); return; }
+
+        const CANCELLED = W.CANCELLED_STATUSES;
+        const INVOICED = ['invoiced', 'invoice', 'handling', 'ready-for-handling', 'shipped', 'order-accepted', 'payment-approved'];
+        const toRows = (list) => [
+          ['Pedido', 'Fecha', 'Tienda', 'Segmento', 'Mail', 'Estado', 'GMV'],
+          ...list.map((o) => [
+            o.id,
+            new Date(o.t).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }),
+            o.s, o.sg,
+            (o.h && emailMap?.get(o.h)?.email) || '',
+            o.st || 'sin dato',
+            o.g,
+          ]),
+        ];
+
+        const sheets = [{ name: 'Todos', rows: toRows(all) }];
+        const facturados = all.filter((o) => INVOICED.includes(o.st));
+        const cancelados = all.filter((o) => CANCELLED.includes(o.st));
+        if (facturados.length) sheets.push({ name: 'Facturados', rows: toRows(facturados) });
+        if (cancelados.length) sheets.push({ name: 'Cancelados', rows: toRows(cancelados) });
+
+        // Un pestaña por cada otro estado real (hasta 10, para no llenar el
+        // archivo de pestañas si VTEX manda estados poco frecuentes).
+        const otherStatuses = [...new Set(all.map((o) => o.st).filter((s) => s && !INVOICED.includes(s) && !CANCELLED.includes(s)))];
+        for (const st of otherStatuses.slice(0, 10)) {
+          sheets.push({ name: st.slice(0, 31), rows: toRows(all.filter((o) => o.st === st)) });
+        }
+
+        W.downloadXLSX(`webdash-estados-detalle-${ctx.range.from}_${ctx.range.to}.xlsx`, sheets);
+        W.toast(`Exportados ${W.fmtNum(all.length)} pedidos en ${sheets.length} pestañas.`, 'good');
+      } finally {
+        btn.disabled = false;
+      }
     });
 
     document.getElementById('xlsx-stores')?.addEventListener('click', () => {
