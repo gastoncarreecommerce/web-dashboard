@@ -255,6 +255,9 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
 .btn-p:hover { box-shadow: 0 6px 18px var(--brand-glow); transform: translateY(-1px); }
 .btn-p:active { transform: translateY(0); }
 .btn-p:disabled, .btn:disabled { background: var(--surface-3); border-color: var(--line); color: var(--ink-4); cursor: not-allowed; box-shadow: none; transform: none; }
+.btn-p.is-busy { background: linear-gradient(135deg, var(--brand), #7c3aed); color: #fff; opacity: .85; }
+.btn-p.is-busy .ri svg { animation: spin .9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 .blk { display: flex; width: 100%; justify-content: center; margin-top: .6rem; padding: .55rem; }
 
 .inp {
@@ -582,3 +585,28 @@ details.more[open] summary { margin-bottom: .45rem; }
 }
 .chip-sm:hover { border-color: var(--brand); color: var(--brand); }
 .chip-sm.on { border-color: var(--brand); background: var(--brand-soft); color: var(--brand); font-weight: 600; }
+
+/* ── Modal de aviso ("primera versión") ──────────────────────────────────── */
+.modal-back {
+  position: fixed; inset: 0; background: rgba(22, 17, 58, .55); backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center; z-index: 200; padding: 1rem;
+  animation: modalIn .18s var(--ease);
+}
+@keyframes modalIn { from { opacity: 0; } to { opacity: 1; } }
+.modal-card {
+  width: 100%; max-width: 440px; background: var(--surface); border-radius: var(--r-lg);
+  box-shadow: 0 24px 60px rgba(22,17,58,.35); overflow: hidden;
+  animation: modalPop .22s var(--ease);
+}
+@keyframes modalPop { from { opacity: 0; transform: translateY(10px) scale(.97); } to { opacity: 1; transform: none; } }
+.modal-hero {
+  background: linear-gradient(135deg, var(--brand), #7c3aed); padding: 1.5rem 1.5rem 1.3rem;
+  color: #fff; display: flex; gap: .8rem; align-items: flex-start;
+}
+.modal-hero .mi { flex-shrink: 0; width: 38px; height: 38px; border-radius: 11px; background: rgba(255,255,255,.18); display: flex; align-items: center; justify-content: center; }
+.modal-hero h3 { margin: 0 0 .15rem; font-size: 1.05rem; }
+.modal-hero p { margin: 0; font-size: .8rem; opacity: .9; }
+.modal-body { padding: 1.3rem 1.5rem 1.5rem; }
+.modal-body p { margin: 0 0 1rem; font-size: .88rem; line-height: 1.55; color: var(--ink-2); }
+.modal-body p b { color: var(--ink); }
+.modal-body button { width: 100%; justify-content: center; padding: .65rem; font-size: .85rem; }

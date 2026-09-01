@@ -204,37 +204,98 @@
       location.href = '/login.html';
     });
 
-    // Le pide a VTEX el día de hoy AHORA, en vez de esperar el cron de cada
-    // 30 min. Dispara el mismo workflow de siempre — el resultado queda
-    // commiteado, así que apenas Vercel redespliegue (~1 min) todo el que
-    // entre ve el número fresco, no hace falta que cada uno lo pida.
+    // Le pide a VTEX el día de hoy AHORA, en vez de esperar la corrida
+    // automática de cada 30 min. El pedido en sí es rápido, pero traer los
+    // pedidos + guardarlos tarda unos minutos de verdad — así que en vez de
+    // tirar un mensaje único y dejar al usuario adivinando si ya está,
+    // el botón se queda "actualizando" y consulta solo, cada 15s, si ya
+    // apareció información más nueva. Cuando aparece, recarga la pantalla
+    // sola. Nada de esto se cuenta: para quien lo usa es solo "actualizar".
     const refreshBtn = $('refresh-today');
     if (refreshBtn) {
-      refreshBtn.querySelector('.ri').innerHTML = W.icon('refresh', 14);
-      let cooldownUntil = 0;
-      refreshBtn.addEventListener('click', async () => {
-        if (Date.now() < cooldownUntil) {
-          W.toast('Ya se pidió hace poco — VTEX + el commit tardan un par de minutos.', 'bad');
-          return;
+      const icon = refreshBtn.querySelector('.ri');
+      const label = refreshBtn.querySelector('.rl');
+      icon.innerHTML = W.icon('refresh', 14);
+      let busy = false;
+
+      const setBusy = (on, text) => {
+        busy = on;
+        refreshBtn.disabled = on;
+        refreshBtn.classList.toggle('is-busy', on);
+        if (label) label.textContent = text;
+      };
+
+      async function fetchFreshMeta() {
+        try {
+          const res = await fetch(`data/${W.CHANNEL}/_meta/run-info.json?t=${Date.now()}`, { cache: 'no-store' });
+          return res.ok ? await res.json() : null;
+        } catch {
+          return null;
         }
-        refreshBtn.disabled = true;
+      }
+
+      function pollUntilFresh(baselineAt) {
+        const deadline = Date.now() + 6 * 60 * 1000;
+        const tick = async () => {
+          if (!busy) return; // se canceló (no debería pasar, pero por las dudas)
+          const fresh = await fetchFreshMeta();
+          if (fresh?.generatedAt && fresh.generatedAt !== baselineAt) {
+            W.toast('Listo, ya está la información actualizada.', 'good');
+            location.reload();
+            return;
+          }
+          if (Date.now() > deadline) {
+            setBusy(false, 'Actualizar');
+            W.toast('Todavía no llegó — probá de nuevo en unos minutos.', 'bad');
+            return;
+          }
+          setTimeout(tick, 15000);
+        };
+        setTimeout(tick, 15000);
+      }
+
+      refreshBtn.addEventListener('click', async () => {
+        if (busy) { W.toast('Ya se está actualizando, esperá un toque.', 'bad'); return; }
+        setBusy(true, 'Actualizando…');
         try {
           const res = await fetch('/api/refresh-today', { method: 'POST' });
-          const data = await res.json().catch(() => ({}));
-          if (res.ok) {
-            W.toast(data.message || 'Actualización pedida — esperá un par de minutos y volvé a mirar.', 'good');
-            cooldownUntil = Date.now() + 90 * 1000;
-          } else if (data.error === 'not_configured') {
-            W.toast('La actualización manual todavía no está configurada (falta un secret en Vercel).', 'bad');
-          } else {
-            W.toast(data.message || 'No se pudo pedir la actualización.', 'bad');
+          if (!res.ok) {
+            setBusy(false, 'Actualizar');
+            W.toast('No se pudo pedir la actualización. Probá de nuevo en un rato.', 'bad');
+            return;
           }
+          W.toast('Pidiendo la información de hoy — puede tardar unos minutos.', 'good');
+          pollUntilFresh(meta?.generatedAt || null);
         } catch {
-          W.toast('No se pudo conectar para pedir la actualización.', 'bad');
-        } finally {
-          setTimeout(() => { refreshBtn.disabled = false; }, 3000);
+          setBusy(false, 'Actualizar');
+          W.toast('No se pudo conectar. Probá de nuevo en un rato.', 'bad');
         }
       });
+    }
+
+    // Aviso de "primera versión": una sola vez por sesión de navegador (no en
+    // cada cambio de pestaña dentro del dashboard, que sería machacante), para
+    // que nadie confunda un número que todavía hay que afinar con un dato ya
+    // cerrado.
+    if (!sessionStorage.getItem('webdash_v1_notice_seen')) {
+      sessionStorage.setItem('webdash_v1_notice_seen', '1');
+      const back = document.createElement('div');
+      back.className = 'modal-back';
+      back.innerHTML = `
+        <div class="modal-card">
+          <div class="modal-hero">
+            <span class="mi">${W.icon('sparkles', 20)}</span>
+            <div><h3>Esta es la primera versión</h3><p>Todavía estamos afinando el dashboard</p></div>
+          </div>
+          <div class="modal-body">
+            <p>Acordate de <b>comparar los datos con tu información real</b>. Estamos en la etapa de corregir datos y funcionalidades, así que puede haber cosas para ajustar.</p>
+            <button class="btn-p" id="notice-ok">Entendido</button>
+          </div>
+        </div>`;
+      document.body.appendChild(back);
+      const close = () => back.remove();
+      back.querySelector('#notice-ok').addEventListener('click', close);
+      back.addEventListener('click', (e) => { if (e.target === back) close(); });
     }
 
     W.render();

@@ -37,7 +37,8 @@ export default async function handler(req, res) {
 
   const token = process.env.WORKFLOW_DISPATCH_TOKEN;
   if (!token) {
-    return res.status(404).json({ error: 'not_configured', message: 'Falta configurar WORKFLOW_DISPATCH_TOKEN en Vercel.' });
+    console.error('refresh-today: falta WORKFLOW_DISPATCH_TOKEN en las env vars de Vercel');
+    return res.status(404).json({ error: 'not_configured' });
   }
 
   try {
@@ -57,11 +58,15 @@ export default async function handler(req, res) {
 
     // GitHub responde 204 sin cuerpo cuando el dispatch se aceptó.
     if (r.status === 204) {
-      return res.status(202).json({ ok: true, message: 'Se pidió la actualización — VTEX + el commit tardan un par de minutos.' });
+      return res.status(202).json({ ok: true });
     }
+    // El detalle técnico queda en el log del servidor; al usuario nunca le
+    // sirve ver "GitHub respondió 403: ..." — solo lo confunde.
     const body = await r.text().catch(() => '');
-    return res.status(502).json({ error: 'github_error', message: `GitHub respondió ${r.status}: ${body.slice(0, 300)}` });
+    console.error(`refresh-today: GitHub respondió ${r.status}: ${body.slice(0, 300)}`);
+    return res.status(502).json({ error: 'upstream_error' });
   } catch (e) {
-    return res.status(502).json({ error: 'fetch_failed', message: e.message });
+    console.error('refresh-today: fetch_failed', e);
+    return res.status(502).json({ error: 'upstream_error' });
   }
 }
