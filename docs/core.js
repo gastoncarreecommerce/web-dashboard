@@ -92,9 +92,16 @@
       default: return null;
     }
   };
+  // Para rangos cortos (día, "ayer", una semana) compara contra el mismo
+  // período hace exactamente 7 días — mismo día de semana — en vez del
+  // período inmediatamente anterior: comparar un martes contra un domingo
+  // (tráfico muy distinto) daba variaciones que no significaban nada. Para
+  // rangos largos (mes, trimestre, todo) sigue comparando contra el bloque
+  // inmediatamente anterior de igual longitud, que es lo que tiene sentido ahí.
   W.previousRange = (range) => {
     const n = W.daysBetween(range.from, range.to);
-    return { from: W.addDays(range.from, -n), to: W.addDays(range.from, -1) };
+    const shift = n <= 7 ? 7 : n;
+    return { from: W.addDays(range.from, -shift), to: W.addDays(range.to, -shift) };
   };
 
   // ── Carga de datasets (cacheada) ──────────────────────────────────────────
@@ -117,7 +124,8 @@
       gmv: 0, orders: 0, units: 0, discount: 0, newCustomers: 0, activeCustomers: 0,
       marketing: {}, series: [], bySegment: {}, hourly: new Array(24).fill(0), statusStats: {},
       // Catálogo del rango, ya recortado al segmento elegido (schema 2).
-      categories: {}, categoriesN1: {}, categoriesN2: {}, coupons: {}, payments: {}, hasCatalog: false,
+      categories: {}, categoriesN1: {}, categoriesN2: {}, coupons: {}, payments: {},
+      paymentBrands: {}, installments: {}, hasCatalog: false,
     };
     for (const s of W.SEGMENTS) acc.bySegment[s] = { gmv: 0, orders: 0, units: 0 };
 
@@ -137,7 +145,7 @@
           const e = (acc.marketing[name] = acc.marketing[name] || { gmv: 0, orders: 0 });
           e.gmv += v.gmv; e.orders += v.orders;
         }
-        for (const key of ['categories', 'categoriesN1', 'categoriesN2', 'coupons', 'payments']) {
+        for (const key of ['categories', 'categoriesN1', 'categoriesN2', 'coupons', 'payments', 'paymentBrands', 'installments']) {
           for (const [name, v] of Object.entries(seg[key] || {})) {
             acc.hasCatalog = true;
             const e = (acc[key][name] = acc[key][name] || { orders: 0, gmv: 0, units: 0 });

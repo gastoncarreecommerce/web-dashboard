@@ -50,6 +50,8 @@
     refresh: '<path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>',
     chevronR: '<path d="m9 18 6-6-6-6"/>',
     chevronD: '<path d="m6 9 6 6 6-6"/>',
+    megaphone: '<path d="m3 11 18-5v12L3 13v-2Z"/><path d="M11.6 16.8 13 21h-2.6l-2-4.5"/>',
+    percent: '<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M5 19 19 5"/>',
   };
 
   /** Devuelve el SVG del ícono. size en px. */

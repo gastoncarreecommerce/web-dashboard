@@ -63,7 +63,7 @@ function emptySegmentAgg() {
     orders: 0, gmv: 0, units: 0,
     customerCounts: {}, marketing: {},
     categories: {}, categoriesN1: {}, categoriesN2: {},
-    coupons: {}, payments: {}, productsById: {},
+    coupons: {}, payments: {}, paymentBrands: {}, installments: {}, productsById: {},
     hourly: new Array(24).fill(0),
   };
 }
@@ -129,6 +129,25 @@ function paymentGroups(order) {
   return out.size ? [...out] : ['sin_dato'];
 }
 
+/**
+ * Detalle por pago: marca (paymentSystemName, ej. "Visa", "Mastercard") y
+ * cuotas. `group` da "creditCard" para toda tarjeta de crédito por igual —
+ * esto es lo que permite distinguir Visa de Mastercard y contado de 12
+ * cuotas. Devuelve un item por pago (un pedido puede combinar más de uno).
+ */
+function paymentDetails(order) {
+  const out = [];
+  for (const t of order.paymentData?.transactions || []) {
+    for (const p of t.payments || []) {
+      const group = String(p.group || 'otro');
+      const brand = String(p.paymentSystemName || p.group || 'Sin dato');
+      const installments = Number(p.installments) || 1;
+      out.push({ group, brand, installments });
+    }
+  }
+  return out.length ? out : [{ group: 'sin_dato', brand: 'Sin dato', installments: 1 }];
+}
+
 function bump(map, key, orders, gmv, units) {
   const e = (map[key] = map[key] || { orders: 0, gmv: 0, units: 0 });
   e.orders += orders;
@@ -187,8 +206,15 @@ function applyOrderToAcc(acc, full) {
   const hour = orderHourAR(full);
   if (hour != null) agg.hourly[hour] += 1;
 
-  const coupon = full.marketingData?.coupon;
-  if (coupon) {
+  // VTEX guarda TODOS los cupones de un pedido en un solo string separado por
+  // comas ("LECHE5K,ENVIOGRATIS,SUPER26") — usarlo tal cual como clave hacía
+  // que cada combinación distinta de cupones apareciera como un "cupón" propio
+  // en vez de contar cada cupón individual. Un pedido con 3 cupones suma sus
+  // $gmv/pedidos a los 3, no se prorratea: la pregunta que responde esta tabla
+  // es "cuántos pedidos usaron el cupón X", no "a qué cupón se le atribuye el pedido".
+  const couponRaw = full.marketingData?.coupon;
+  const couponList = couponRaw ? couponRaw.split(',').map((c) => c.trim()).filter(Boolean) : [];
+  for (const coupon of couponList) {
     const c = (agg.coupons[coupon] = agg.coupons[coupon] || { orders: 0, gmv: 0, units: 0 });
     c.orders += 1;
     c.gmv += gmv;
@@ -199,6 +225,11 @@ function applyOrderToAcc(acc, full) {
   if (disc && typeof disc.value === 'number') acc.discountTotal += Math.abs(disc.value) / 100;
 
   for (const g of paymentGroups(full)) bump(agg.payments, g, 1, gmv, 0);
+  for (const pd of paymentDetails(full)) {
+    bump(agg.paymentBrands, pd.brand, 1, gmv, 0);
+    const instKey = pd.installments > 1 ? `${pd.installments} cuotas` : '1 pago';
+    bump(agg.installments, instKey, 1, gmv, 0);
+  }
 
   // ── Provincia y tienda ────────────────────────────────────────────────────
   const prov = provinceCode(full);
@@ -261,7 +292,7 @@ function applyOrderToAcc(acc, full) {
     for (const n2 of orderCatsN2) c.c2[n2] = (c.c2[n2] || 0) + 1;
     // cp = pedidos con cupón. Es lo que permite separar "compra siempre con
     // descuento" de "compra a precio lleno" en el constructor de audiencias.
-    if (coupon) c.cp += 1;
+    if (couponList.length) c.cp += 1;
     for (const g of paymentGroups(full)) c.pm[g] = (c.pm[g] || 0) + 1;
 
     // El DNI se guarda junto al email, en la salida privada: la base de
@@ -309,6 +340,8 @@ function accFromDayFile(day) {
       categoriesN2: { ...(src.categoriesN2 || {}) },
       coupons: { ...(src.coupons || {}) },
       payments: { ...(src.payments || {}) },
+      paymentBrands: { ...(src.paymentBrands || {}) },
+      installments: { ...(src.installments || {}) },
       hourly: (src.hourly || new Array(24).fill(0)).slice(),
     });
     for (const p of src.products || []) seg.productsById[p.sku] = { ...p };
@@ -345,6 +378,8 @@ function finalizeDay(acc, meta) {
       categoriesN2: a.categoriesN2,
       coupons: a.coupons,
       payments: a.payments,
+      paymentBrands: a.paymentBrands,
+      installments: a.installments,
       hourly: a.hourly,
       products: all.slice(0, TOP_PRODUCTS_PER_SEGMENT).map((p) => ({
         sku: p.sku, name: p.name, dept: p.dept,

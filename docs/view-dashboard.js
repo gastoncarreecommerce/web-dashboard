@@ -6,7 +6,7 @@
   function kpi({ icon, label, value, sub, delta, spark, color, tip }) {
     return `<div class="kpi"${tip ? ` ${W.chart.tip(tip)}` : ''}>
       <div class="kpi-t">
-        <span class="kpi-ic" style="background:${color}14;color:${color}">${W.icon(icon, 16)}</span>
+        <span class="kpi-ic" style="background:${color}26;color:${color}">${W.icon(icon, 18)}</span>
         ${delta !== undefined ? W.deltaBadge(delta) : ''}
       </div>
       <div class="kpi-v">${value}</div>
@@ -95,6 +95,38 @@
       });
     }
 
+    // Segmento con mejor y peor variación de GMV — solo tiene sentido mirando
+    // el canal completo, para no comparar un segmento contra sí mismo.
+    if (bucket === 'all') {
+      const segDeltas = W.SEGMENTS
+        .map((s) => ({ s, d: W.delta(cur.bySegment[s].gmv, prev.bySegment[s]?.gmv || 0) }))
+        .filter((x) => x.d != null && prev.bySegment[x.s]?.gmv > 0);
+      if (segDeltas.length >= 2) {
+        const best = segDeltas.reduce((a, b) => (b.d > a.d ? b : a));
+        if (best.d > 0.05) {
+          out.push({ kind: 'good', title: `${W.SEGMENT_LABEL[best.s]} es el que más crece`,
+            text: `GMV ${W.fmtPct(best.d)} vs. el período de comparación — la palanca más fuerte del canal ahora mismo.` });
+        }
+        const worst = segDeltas.reduce((a, b) => (b.d < a.d ? b : a));
+        if (worst.d < -0.1 && worst.s !== best.s) {
+          out.push({ kind: 'warn', title: `${W.SEGMENT_LABEL[worst.s]} viene en baja`,
+            text: `GMV ${W.fmtPct(worst.d)} vs. el período de comparación. Vale la pena revisar qué cambió ahí.` });
+        }
+      }
+    }
+
+    // Categoría dominante del período — sencillo pero de un vistazo dice qué
+    // mueve la aguja del surtido.
+    const catEntries = Object.entries(cur.categories || {}).sort((a, b) => b[1].gmv - a[1].gmv);
+    if (catEntries.length && cur.gmv > 0) {
+      const [topName, topV] = catEntries[0];
+      const share = topV.gmv / cur.gmv;
+      if (share > 0.08) {
+        out.push({ kind: 'info', title: `${topName} lidera el surtido`,
+          text: `${W.fmtPct(share)} del GMV del período — ${W.fmtMoneyC(topV.gmv)} en ${W.fmtNum(topV.orders)} líneas de pedido.` });
+      }
+    }
+
     return out;
   }
 
@@ -148,6 +180,22 @@
       kpi({ icon: 'box', label: 'Unidades por pedido', value: W.fmtDec(W.unitsPerOrder(cur.units, cur.orders), 1),
         delta: d(W.unitsPerOrder(cur.units, cur.orders), W.unitsPerOrder(prev.units, prev.orders)), color: '#4a3aa7', sub: 'tamaño de canasta' }),
     ];
+
+    // Un tile por segmento, siempre visibles juntos cuando se mira "Todos" —
+    // antes había que apretar cada chip (Food/Non Food/Marketplace/Quick) uno
+    // por uno para ver sus números; ahora se ven los 4 de una sola vez, como
+    // en el dashboard de la app.
+    const segTiles = bucket === 'all'
+      ? W.SEGMENTS.map((s) => {
+          const c = cur.bySegment[s], p = prev.bySegment[s] || { gmv: 0, orders: 0 };
+          return kpi({
+            icon: W.SEGMENT_ICON_NAME[s], label: W.SEGMENT_LABEL[s], value: W.fmtNumC(c.orders),
+            delta: d(c.orders, p.orders), color: W.SEGMENT_COLOR[s],
+            sub: W.fmtMoneyC(c.gmv),
+            tip: `<strong>${W.esc(W.SEGMENT_LABEL[s])}</strong><span class="tip-row">${W.fmtNum(c.orders)} pedidos</span><span class="tip-row">${W.fmtMoney(c.gmv)}</span>`,
+          });
+        })
+      : [];
 
     if (bucket === 'all') {
       tiles.push(
@@ -207,14 +255,7 @@
       day.hourly.forEach((n, h) => (dowHour[dow][h] += n));
     }
 
-    // ── Fuentes de marketing ────────────────────────────────────────────────
-    const mkRows = Object.entries(cur.marketing).sort((a, b) => b[1].gmv - a[1].gmv);
-    const mkTotal = mkRows.reduce((s, [, v]) => s + v.gmv, 0);
-    ctx.exports.marketing = {
-      filename: `webdash-marketing-${range.from}_${range.to}.csv`,
-      headers: ['fuente', 'pedidos', 'gmv', 'ticket', 'share_gmv'],
-      rows: mkRows.map(([k, v]) => [k, v.orders, Math.round(v.gmv), Math.round(W.ticket(v.gmv, v.orders)), (v.gmv / (mkTotal || 1)).toFixed(4)]),
-    };
+    // La atribución por utmSource tiene su propia página (Marketing) ahora.
     ctx.exports.daily = {
       filename: `webdash-diario-${bucket}-${range.from}_${range.to}.csv`,
       headers: ['fecha', 'pedidos', 'gmv', 'unidades', 'ticket'],
@@ -226,6 +267,8 @@
     el.innerHTML = `
       <div class="kpis">${tiles.join('')}</div>
 
+      ${segTiles.length ? `<div class="kpis kpis-seg">${segTiles.join('')}</div>` : ''}
+
       ${insights.length ? `<div>
         <div class="ins-h"><h3>Qué está pasando</h3><span>lectura automática del período vs. el anterior</span></div>
         <div class="ins-g">${insights
@@ -235,7 +278,7 @@
       <div class="card">
         <div class="card-h">
           <div><h3>Pedidos por día</h3><p>${W.fmtDayLong(range.from)} → ${W.fmtDayLong(range.to)} · ${bucket === 'all' ? 'todos los segmentos' : W.SEGMENT_LABEL[bucket]}</p></div>
-          <button class="btn" data-export="daily">${W.icon("download",14)}CSV</button>
+          <button class="btn" data-export="daily">${W.icon("download",14)}XLSX</button>
         </div>
         ${W.chart.line({ labels, series: mainSeries, height: 260 })}
       </div>
@@ -271,23 +314,6 @@
           fmt: W.fmtNumC,
           tipFmt: (r, c, v) => `<strong>${r} ${c}:00</strong><span class="tip-row"><b>${W.fmtNum(v)}</b> pedidos</span>`,
         })}
-      </div>` : ''}
-
-      <div class="card">
-        <div class="card-h">
-          <div><h3>Fuentes de marketing</h3><p>atribución por utmSource de VTEX</p></div>
-          <button class="btn" data-export="marketing">${W.icon("download",14)}CSV</button>
-        </div>
-        <div class="tbl-wrap"><table class="tbl">
-          <thead><tr><th>Fuente</th><th class="num">Pedidos</th><th class="num">GMV</th><th class="num">Ticket</th><th style="width:26%">% GMV</th></tr></thead>
-          <tbody>${mkRows.length ? mkRows.map(([k, v]) => `<tr>
-              <td>${W.esc(k)}</td>
-              <td class="num">${W.fmtNum(v.orders)}</td>
-              <td class="num">${W.fmtMoney(v.gmv)}</td>
-              <td class="num">${W.fmtMoney(W.ticket(v.gmv, v.orders))}</td>
-              <td><div class="barcell"><span class="bartrack"><span class="barfill" style="width:${(v.gmv / (mkTotal || 1)) * 100}%"></span></span><b>${W.fmtPct(v.gmv / (mkTotal || 1))}</b></div></td>
-            </tr>`).join('') : '<tr><td colspan="5" class="muted">Sin datos en este rango</td></tr>'}</tbody>
-        </table></div>
-      </div>`;
+      </div>` : ''}`;
   };
 })();

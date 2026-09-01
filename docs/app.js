@@ -25,8 +25,8 @@
     return Date.now() - new Date(meta.generatedAt).getTime() < 90 * 60 * 1000;
   }
 
-  const NAV_ICON = { dashboard: 'dashboard', analytics: 'analytics', audiences: 'audience' };
-  const TITLES = { dashboard: 'Dashboard', analytics: 'Analítica', audiences: 'Audiencias' };
+  const NAV_ICON = { dashboard: 'dashboard', analytics: 'analytics', coupons: 'tag', marketing: 'megaphone', audiences: 'audience' };
+  const TITLES = { dashboard: 'Dashboard', analytics: 'Analítica', coupons: 'Cupones', marketing: 'Marketing', audiences: 'Audiencias' };
 
   function paintChrome() {
     document.querySelectorAll('.nav-item').forEach((n) => {
@@ -84,9 +84,9 @@
     $('view-title').textContent = TITLES[state.view];
     $('preset-today').classList.toggle('is-live', liveFresh());
 
-    // Dashboard y Analítica se filtran por segmento; Audiencias mira la base
-    // completa, así que ahí la fila no aplica.
-    const hasSeg = state.view === 'dashboard' || state.view === 'analytics';
+    // Dashboard, Analítica, Cupones y Marketing se filtran por segmento;
+    // Audiencias mira la base completa, así que ahí la fila no aplica.
+    const hasSeg = ['dashboard', 'analytics', 'coupons', 'marketing'].includes(state.view);
     $('row2').style.display = hasSeg ? '' : 'none';
     $('cmp-wrap').style.display = state.view === 'dashboard' ? '' : 'none';
     // Audiencias mira toda la base histórica, no un rango.
@@ -96,7 +96,11 @@
     if (state.range) {
       const isToday = state.preset === 'today' && state.range.from === W.arToday();
       $('range-label').textContent = isToday
-        ? `Hoy ${liveFresh() ? '· en vivo, actualizado ' + W.timeAgo(meta.generatedAt) : '· todavía sin datos de hoy'}`
+        // Nunca "en vivo": el pipeline actualiza cada ~30 min, no en tiempo
+        // real — decir "en vivo" y mostrar datos con 30 min de atraso es lo
+        // que generaba la confusión. Se muestra la hora real de la última
+        // actualización, sin prometer algo que no es.
+        ? `Hoy ${liveFresh() ? '· actualizado ' + W.timeAgo(meta.generatedAt) : '· todavía sin datos de hoy'}`
         : state.range.from === state.range.to
           ? W.fmtDayLong(state.range.from)
           : `${W.fmtDayLong(state.range.from)} → ${W.fmtDayLong(state.range.to)}`;
@@ -124,6 +128,8 @@
     try {
       if (state.view === 'dashboard') await W.viewDashboard(ctx);
       else if (state.view === 'analytics') await W.viewAnalytics(ctx);
+      else if (state.view === 'coupons') await W.viewCoupons(ctx);
+      else if (state.view === 'marketing') await W.viewMarketing(ctx);
       else await W.viewAudiences(ctx);
     } catch (e) {
       $('content').innerHTML = `<div class="empty err"><h2>Algo falló al renderizar</h2><p>${W.esc(e.message)}</p></div>`;
@@ -137,7 +143,7 @@
     if (!btn) return;
     const spec = exportsBag[btn.dataset.export];
     if (!spec) { W.toast('No hay datos para exportar todavía.', 'bad'); return; }
-    W.downloadCSV(spec.filename, spec.headers, spec.rows);
+    W.downloadXLSX(spec.filename.replace(/\.csv$/, '.xlsx'), [{ name: 'Datos', rows: [spec.headers, ...spec.rows] }]);
     W.toast(`Exportadas ${W.fmtNum(spec.rows.length)} filas.`, 'good');
   });
 
@@ -154,14 +160,14 @@
       return;
     }
 
+    // El footer es lo único siempre visible sin scroll extra: solo va acá lo
+    // que le sirve a quien mira el negocio (cuándo se actualizó, cuánta base
+    // hay) — nada de detalles de infraestructura o del pipeline interno.
     if (meta) {
       const bits = [`Actualizado ${new Date(meta.generatedAt).toLocaleString('es-AR')}`];
       if (meta.uniqueCustomers) bits.push(`${W.fmtNumC(meta.uniqueCustomers)} clientes`);
-      if (meta.daysAggregated) bits.push(`${meta.daysAggregated} días`);
+      if (meta.daysAggregated) bits.push(`${meta.daysAggregated} días de historial`);
       $('meta').innerHTML = bits.map((b) => `<span>${W.esc(b)}</span>`).join('');
-      if (meta.warning) {
-        $('meta').innerHTML += `<span class="w" ${W.chart.tip(W.esc(meta.warning))}>${W.icon('warn', 13)}${W.esc(meta.warning.slice(0, 64))}${meta.warning.length > 64 ? '…' : ''}</span>`;
-      }
     }
 
     document.querySelectorAll('.nav-item').forEach((n) =>

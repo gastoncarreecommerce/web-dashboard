@@ -18,9 +18,15 @@
   let mapMetric = 'gmv';   // 'gmv' | 'orders'
   let catLevel = 'n3';     // 'n1' (departamento) | 'n2' (rubro) | 'n3' (detalle)
   const CAT_LEVEL = {
-    n1: { key: 'categoriesN1', label: 'Departamento' },
-    n2: { key: 'categoriesN2', label: 'Rubro' },
-    n3: { key: 'categories', label: 'Detalle' },
+    n1: { key: 'categoriesN1', label: 'N1' },
+    n2: { key: 'categoriesN2', label: 'N2' },
+    n3: { key: 'categories', label: 'N3' },
+  };
+  let payLevel = 'group'; // 'group' (creditCard/débito/…) | 'brand' (Visa/Mastercard/…) | 'installments' (cuotas)
+  const PAY_LEVEL = {
+    group: { key: 'payments', label: 'Grupo', field: 'group' },
+    brand: { key: 'paymentBrands', label: 'Marca', field: 'brand' },
+    installments: { key: 'installments', label: 'Cuotas', field: 'label' },
   };
 
   const SEG_ALL = 'all';
@@ -230,8 +236,8 @@
       : products;
 
     const categories = Object.entries(cur[CAT_LEVEL[catLevel].key] || {}).map(([name, v]) => ({ name, ...v })).sort((a, b) => b.gmv - a.gmv);
-    const coupons = Object.entries(cur.coupons).map(([code, v]) => ({ code, ...v })).sort((a, b) => b.gmv - a.gmv);
-    const payments = Object.entries(cur.payments).map(([group, v]) => ({ group, ...v })).sort((a, b) => b.gmv - a.gmv);
+    const payments = Object.entries(cur[PAY_LEVEL[payLevel].key] || {}).map(([name, v]) => ({ name, ...v })).sort((a, b) => b.gmv - a.gmv);
+    const hasPayDetail = Object.keys(cur.paymentBrands || {}).length > 0;
     const noCatalog = !cur.hasCatalog;
 
     // ── Estados de pedido (siempre del canal completo: vienen del listado) ──
@@ -276,11 +282,6 @@
       headers: ['categoria', 'lineas_pedido', 'unidades', 'gmv'],
       rows: categories.map((c) => [c.name, c.orders, Math.round(c.units), Math.round(c.gmv)]),
     };
-    ctx.exports.coupons = {
-      filename: `webdash-cupones-${tag}.csv`,
-      headers: ['cupon', 'pedidos', 'gmv', 'ticket'],
-      rows: coupons.map((c) => [c.code, c.orders, Math.round(c.gmv), Math.round(W.ticket(c.gmv, c.orders))]),
-    };
     ctx.exports.statuses = {
       filename: `webdash-estados-${range.from}_${range.to}.csv`,
       headers: ['estado', 'cuenta_para_metricas', 'es_cancelacion', 'pedidos', 'monto'],
@@ -296,7 +297,7 @@
       <div class="card">
         <div class="card-h">
           <div><h3>Comparativa de segmentos</h3><p>${W.fmtDayLong(range.from)} → ${W.fmtDayLong(range.to)} · variación vs. período anterior</p></div>
-          <button class="btn" data-export="segments">${W.icon('download', 14)}CSV</button>
+          <button class="btn" data-export="segments">${W.icon('download', 14)}XLSX</button>
         </div>
         <div class="split">
           <div class="tbl-wrap"><table class="tbl">
@@ -360,7 +361,7 @@
             <span class="scope" ${W.chart.tip('El ranking se agrega por mes: el rango se redondea a los meses que toca. Para el día exacto está el detalle crudo en data/daily.')}>por mes</span></p></div>
           <div class="card-a">
             <input class="inp inp-search" id="prod-search" type="search" placeholder="Buscar producto…" value="${W.esc(productQuery)}" />
-            <button class="btn" data-export="products">${W.icon('download', 14)}CSV</button>
+            <button class="btn" data-export="products">${W.icon('download', 14)}XLSX</button>
           </div>
         </div>
         ${W.chart.barsH({ items: filtered.slice(0, 15).map((p) => ({ label: p.name, sub: p.dept, value: p.gmv })), valueFmt: W.fmtMoneyC, color: 'var(--s1)' })}
@@ -382,7 +383,7 @@
                 ${Object.entries(CAT_LEVEL).map(([k, v]) =>
                   `<button data-catlevel="${k}" class="${catLevel === k ? 'on' : ''}">${v.label}</button>`).join('')}
               </div>
-              <button class="btn" data-export="categories">${W.icon('download', 14)}CSV</button>
+              <button class="btn" data-export="categories">${W.icon('download', 14)}XLSX</button>
             </div>
           </div>
           ${categories.length ? W.chart.barsH({
@@ -392,9 +393,18 @@
         </div>
 
         <div class="card">
-          <div class="card-h"><div><h3>Medios de pago</h3><p>${scopeTxt} ${catalogWarn}</p></div></div>
+          <div class="card-h">
+            <div><h3>Medios de pago</h3><p>${scopeTxt} ${catalogWarn}
+              ${!hasPayDetail ? `<span class="scope" ${W.chart.tip('El detalle por marca de tarjeta y cuotas se empezó a guardar después de este cambio: los días previos solo tienen el grupo (crédito/débito/etc).')}>${W.icon('info', 11)} marca/cuotas: desde hoy</span>` : ''}</p></div>
+            <div class="card-a">
+              <div class="seg-ctl">
+                ${Object.entries(PAY_LEVEL).map(([k, v]) =>
+                  `<button data-paylevel="${k}" class="${payLevel === k ? 'on' : ''}">${v.label}</button>`).join('')}
+              </div>
+            </div>
+          </div>
           ${payments.length ? W.chart.donut({
-            items: payments.slice(0, 6).map((p, i) => ({ label: p.group, value: p.gmv, color: W.SERIES[i % W.SERIES.length] })),
+            items: payments.slice(0, 8).map((p, i) => ({ label: p.name, value: p.gmv, color: W.SERIES[i % W.SERIES.length] })),
             centerValue: W.fmtNumC(payments.reduce((s, p) => s + p.orders, 0)), centerLabel: 'pedidos',
           }) : '<div class="chart-empty">Sin datos de medios de pago para este filtro.</div>'}
         </div>
@@ -402,28 +412,8 @@
 
       <div class="card">
         <div class="card-h">
-          <div><h3>Cupones</h3><p>${scopeTxt} ${catalogWarn}</p></div>
-          <button class="btn" data-export="coupons">${W.icon('download', 14)}CSV</button>
-        </div>
-        <div class="strip">
-          <div><span>${W.fmtPct(cur.orders ? coupons.reduce((s, c) => s + c.orders, 0) / cur.orders : 0)}</span><em>de los pedidos usó cupón</em></div>
-          <div><span>${W.fmtNum(coupons.length)}</span><em>cupones distintos</em></div>
-          <div><span>${W.fmtMoneyC(all.discount)}</span><em>descuento del período</em></div>
-        </div>
-        <div class="tbl-wrap"><table class="tbl">
-          <thead><tr><th>Cupón</th><th class="num">Pedidos</th><th class="num">GMV asociado</th><th class="num">Ticket</th><th style="width:20%">Volumen</th></tr></thead>
-          <tbody>${coupons.length ? coupons.slice(0, 25).map((c) => `<tr><td><code>${W.esc(c.code)}</code></td>
-              <td class="num">${W.fmtNum(c.orders)}</td><td class="num">${W.fmtMoney(c.gmv)}</td>
-              <td class="num">${W.fmtMoney(W.ticket(c.gmv, c.orders))}</td>
-              <td><div class="barcell"><span class="bartrack"><span class="barfill" style="width:${(c.gmv / (coupons[0].gmv || 1)) * 100}%"></span></span></div></td></tr>`).join('')
-            : '<tr><td colspan="5" class="muted">Sin cupones para este filtro.</td></tr>'}</tbody>
-        </table></div>
-      </div>
-
-      <div class="card">
-        <div class="card-h">
           <div><h3>Estados de pedido</h3><p>${W.fmtDayLong(range.from)} → ${W.fmtDayLong(range.to)} · todos los pedidos del canal, incluidos los que no cuentan</p></div>
-          <button class="btn" data-export="statuses">${W.icon('download', 14)}CSV</button>
+          <button class="btn" data-export="statuses">${W.icon('download', 14)}XLSX</button>
         </div>
         <div class="strip">
           <div><span>${W.fmtPct(canc.rate)}</span><em>tasa de cancelación</em></div>
@@ -497,6 +487,9 @@
 
     document.querySelectorAll('[data-catlevel]').forEach((b) =>
       b.addEventListener('click', () => { catLevel = b.dataset.catlevel; W.render(); }));
+
+    document.querySelectorAll('[data-paylevel]').forEach((b) =>
+      b.addEventListener('click', () => { payLevel = b.dataset.paylevel; W.render(); }));
 
     // Clic en el mapa o en la tabla de ranking: abre / cierra la provincia.
     document.querySelectorAll('[data-prov]').forEach((elp) =>

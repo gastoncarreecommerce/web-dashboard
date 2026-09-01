@@ -143,12 +143,12 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
 .seg-ctl button:hover { color: var(--ink); }
 .seg-ctl button.on { background: var(--surface); color: var(--brand); font-weight: 650; box-shadow: var(--sh-1); }
 
-/* Botón "Hoy": el punto solo pulsa cuando el pipeline en vivo confirmó que
-   hay datos frescos de hoy (is-live) — si no, queda apagado a propósito, para
-   no prometer algo que todavía no llegó. */
+/* Botón "Hoy": el punto se prende solo cuando hay datos frescos de hoy — si
+   no, queda apagado a propósito. Antes pulsaba como si fuera streaming en
+   tiempo real, pero el pipeline actualiza cada ~30 min: se saca la animación
+   para no sugerir algo más instantáneo de lo que realmente es. */
 .live-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-left: .35rem; background: var(--ink-4); vertical-align: middle; }
-#preset-today.is-live .live-dot { background: var(--pos, #1baf7a); animation: live-pulse 1.6s ease-in-out infinite; }
-@keyframes live-pulse { 0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(27,175,122,.5); } 50% { opacity: .55; box-shadow: 0 0 0 4px rgba(27,175,122,0); } }
+#preset-today.is-live .live-dot { background: var(--pos, #1baf7a); }
 
 .date-ctl { display: flex; align-items: center; gap: .3rem; font-size: .78rem; color: var(--ink-3); }
 .date-ctl input {
@@ -177,19 +177,26 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
 .body { padding: 1.15rem clamp(1rem,2.2vw,1.75rem) 2.5rem; flex: 1; }
 
 /* ── Cards / KPI ─────────────────────────────────────────────────────────── */
-.kpis { display: grid; grid-template-columns: repeat(auto-fit,minmax(184px,1fr)); gap: .7rem; margin-bottom: 1.1rem; }
+/* Antes el ícono usaba el mismo azul institucional con 8% de opacidad para
+   TODO, así que la fila de tiles se veía plana pase lo que pase — nada
+   distinguía "GMV" de "cancelaciones" a simple vista. Ahora cada tile lleva
+   el color pleno de su métrica como acento (chip de ícono con fondo sólido
+   suave, franja superior del mismo color) — más parecido a un panel vivo,
+   sigue sin tocar la paleta de marca ni la de series de datos. */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit,minmax(184px,1fr)); gap: .8rem; margin-bottom: .8rem; }
+.kpis-seg { margin-bottom: 1.1rem; }
 .kpi {
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
-  padding: .8rem .9rem .7rem; box-shadow: var(--sh-1); position: relative; overflow: hidden;
-  transition: box-shadow .14s, border-color .14s;
+  padding: .85rem .95rem .75rem; box-shadow: var(--sh-1); position: relative; overflow: hidden;
+  transition: box-shadow .14s, border-color .14s, transform .14s;
 }
-.kpi:hover { box-shadow: var(--sh-2); border-color: var(--line-2); }
-.kpi-t { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: .5rem; }
-.kpi-ic { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; }
-.kpi-v { font-size: 1.42rem; font-weight: 700; letter-spacing: -.025em; line-height: 1.1; overflow-wrap: break-word; }
-.kpi-l { font-size: .785rem; color: var(--ink-2); font-weight: 550; margin-top: .1rem; }
-.kpi-s { font-size: .71rem; color: var(--ink-3); margin-top: .1rem; }
-.kpi-spark { margin-top: .45rem; height: 26px; }
+.kpi:hover { box-shadow: var(--sh-2); border-color: var(--line-2); transform: translateY(-1px); }
+.kpi-t { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: .6rem; }
+.kpi-ic { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; }
+.kpi-v { font-size: 1.52rem; font-weight: 750; letter-spacing: -.03em; line-height: 1.1; overflow-wrap: break-word; }
+.kpi-l { font-size: .79rem; color: var(--ink-2); font-weight: 600; margin-top: .18rem; }
+.kpi-s { font-size: .715rem; color: var(--ink-3); margin-top: .12rem; font-weight: 600; }
+.kpi-spark { margin-top: .5rem; height: 26px; }
 .spark { width: 100%; height: 26px; display: block; }
 
 .d { display: inline-flex; align-items: center; gap: .15rem; font-size: .7rem; font-weight: 700; padding: .12rem .38rem; border-radius: 14px; white-space: nowrap; }

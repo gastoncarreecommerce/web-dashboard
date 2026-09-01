@@ -141,6 +141,8 @@ function main() {
   const catalogCategoriesN2 = {};
   const catalogCoupons = {};
   const catalogPayments = {};
+  const catalogPaymentBrands = {};
+  const catalogInstallments = {};
   const hourlyTotal = new Array(24).fill(0);
   const dowTotals = new Array(7).fill(null).map(() => ({ orders: 0, gmv: 0, days: 0 }));
 
@@ -192,6 +194,8 @@ function main() {
         categoriesN2: daySeg.categoriesN2 || {},
         coupons: daySeg.coupons || {},
         payments: daySeg.payments || {},
+        paymentBrands: daySeg.paymentBrands || {},
+        installments: daySeg.installments || {},
         hourly: daySeg.hourly || null,
       };
 
@@ -243,6 +247,8 @@ function main() {
       for (const [k, v] of Object.entries(src.categoriesN2 || {})) addInto(catalogCategoriesN2, k, v);
       for (const [k, v] of Object.entries(src.coupons || {})) addInto(catalogCoupons, k, v);
       for (const [k, v] of Object.entries(src.payments || {})) addInto(catalogPayments, k, v);
+      for (const [k, v] of Object.entries(src.paymentBrands || {})) addInto(catalogPaymentBrands, k, v);
+      for (const [k, v] of Object.entries(src.installments || {})) addInto(catalogInstallments, k, v);
       (src.hourly || []).forEach((n, h) => (hourlyTotal[h] += n));
     }
 
@@ -369,6 +375,8 @@ function main() {
     })),
     coupons: topEntries(catalogCoupons, 200, ([code, v]) => ({ code, orders: v.orders, gmv: Math.round(v.gmv) })),
     payments: topEntries(catalogPayments, 50, ([group, v]) => ({ group, orders: v.orders, gmv: Math.round(v.gmv) })),
+    paymentBrands: topEntries(catalogPaymentBrands, 50, ([brand, v]) => ({ brand, orders: v.orders, gmv: Math.round(v.gmv) })),
+    installments: topEntries(catalogInstallments, 30, ([label, v]) => ({ label, orders: v.orders, gmv: Math.round(v.gmv) })),
     hourly: hourlyTotal,
     dayOfWeek: dowTotals.map((d) => ({
       orders: d.orders,

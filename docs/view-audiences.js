@@ -21,15 +21,23 @@
   // config, no la acción principal de la página) — se acordaba de si el
   // usuario lo abrió para no volver a cerrarlo en cada re-render.
   let churnOpen = false;
-  const sameRules = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  // "Activo" ahora significa "estas reglas están TODAS presentes" (subconjunto),
+  // no "son exactamente las únicas reglas" — desde que las tarjetas de ciclo de
+  // vida y los presets se combinan en vez de reemplazarse, más de una pueden
+  // estar prendidas a la vez.
+  const hasRules = (current, subset) => {
+    const key = (r) => `${r.field}|${r.op}|${r.value}`;
+    const have = new Set(current.map(key));
+    return subset.every((r) => have.has(key(r)));
+  };
 
   // ── Campos disponibles en el constructor ──────────────────────────────────
   const FIELDS = {
     ciclo:        { label: 'Ciclo de vida', type: 'lifecycle', ops: ['es', 'no es'] },
     segDominante: { label: 'Segmento dominante', type: 'segment', ops: ['es', 'no es'] },
-    catDomN1:     { label: 'Departamento dominante (N1)', type: 'categoryN1', ops: ['es', 'no es'] },
-    catDomN2:     { label: 'Rubro dominante (N2)', type: 'categoryN2', ops: ['es', 'no es'] },
-    catDominante: { label: 'Categoría dominante (N3, detalle)', type: 'category', ops: ['es', 'no es'] },
+    catDomN1:     { label: 'Categoría N1 dominante', type: 'categoryN1', ops: ['es', 'no es'] },
+    catDomN2:     { label: 'Categoría N2 dominante', type: 'categoryN2', ops: ['es', 'no es'] },
+    catDominante: { label: 'Categoría N3 dominante', type: 'category', ops: ['es', 'no es'] },
     comproEnCat:  { label: 'Compró en la categoría (N3)', type: 'category', ops: ['sí', 'no'] },
     medioPago:    { label: 'Medio de pago habitual', type: 'payment', ops: ['es', 'no es'] },
     pedidos:      { label: 'Cantidad de pedidos', type: 'number', ops: ['≥', '≤', '='] },
@@ -255,7 +263,7 @@
       headers: ['hash', 'ciclo_de_vida', 'pedidos', 'gasto_total', 'ticket_promedio', 'primera_compra',
         'ultima_compra', 'dias_sin_comprar', 'intervalo_promedio_dias', 'ratio_abandono',
         'pedidos_con_cupon', 'pct_con_cupon', 'segmento_dominante',
-        'departamento_dominante_n1', 'rubro_dominante_n2', 'categoria_dominante_n3', 'medio_pago'],
+        'categoria_n1_dominante', 'categoria_n2_dominante', 'categoria_n3_dominante', 'medio_pago'],
       rows: matches.map((i) => [
         idx.h[i], W.LIFECYCLE[D.life[i]].label, idx.o[i], idx.g[i],
         Math.round(idx.o[i] ? idx.g[i] / idx.o[i] : 0),
@@ -331,7 +339,7 @@
         </div>
         <div class="lifes">${W.LIFECYCLE_ORDER.map((k) => {
           const L = W.LIFECYCLE[k], n = lifeAll[k] || 0;
-          const on = sameRules(rules, [{ field: 'ciclo', op: 'es', value: k }]);
+          const on = hasRules(rules, [{ field: "ciclo", op: "es", value: k }]);
           return `<button class="life${on ? ' on' : ''}" data-life="${k}">
             <div class="life-t" style="color:${L.color}">${W.icon(L.icon, 14)}${W.esc(L.label)}</div>
             <div class="life-n">${W.fmtNumC(n)}</div>
@@ -354,7 +362,7 @@
                 ? ` <span class="scope" ${W.chart.tip('El dato de cupón por cliente se empezó a guardar después del backfill inicial. Se completa solo con las corridas diarias del pipeline, o de una con un backfill del período que quieras analizar.')}>sin datos todavía</span>`
                 : ''}</label>
               <div class="pre-row">${g.items.map((p, pi) => {
-                const on = sameRules(rules, p.rules);
+                const on = hasRules(rules, p.rules);
                 return `<button class="pre${on ? ' on' : ''}" data-g="${gi}" data-p="${pi}"${off ? ' disabled' : ''}>${W.icon(p.icon, 14)}${W.esc(p.name)}</button>`;
               }).join('')}</div></div>`;
             }).join('')}
@@ -402,13 +410,15 @@
               <h4>${W.icon('mail', 15)}Base de contactos</h4>
               ${emailMap
                 ? `<div class="mail-ok">${W.icon('check', 15)}<div><strong>${W.fmtNum(withMail)}</strong> con mail · <strong>${W.fmtNum(withDni)}</strong> con DNI
-                     <span class="mail-src">de ${W.fmtNum(sum.customers)} · origen: ${W.esc(emailSource)}</span></div></div>`
-                : `<p class="mail-no">Los mails no se guardan en este repo: los publica el pipeline en un repositorio
-                     <strong>privado</strong> y se leen por <code>/api/audience-emails</code>. Si todavía no corrió,
-                     podés cargar el CSV a mano — el cruce ocurre en tu navegador.</p>`}
+                     <span class="mail-src">de ${W.fmtNum(sum.customers)} clientes en esta audiencia</span></div></div>`
+                : `<p class="mail-no">Los contactos todavía no están disponibles acá. Mientras tanto podés cargar tu
+                     propia base — el cruce se hace en tu navegador, sin subir nada.</p>`}
 
               <button class="btn-p blk" id="exp-mails" ${emailMap && (withMail || withDni) ? '' : 'disabled'}>
                 ${W.icon('download', 15)}Exportar base (DNI + MAIL)
+              </button>
+              <button class="btn blk" id="exp-dni" ${emailMap && withDni ? '' : 'disabled'} ${W.chart.tip('Solo la columna DNI, sin mail — el formato que piden las plataformas de push/SMS.')}>
+                ${W.icon('download', 15)}Exportar solo DNI (para push)
               </button>
               <button class="btn blk" data-export="audienceData" ${sum.customers ? '' : 'disabled'}>
                 ${W.icon('layers', 15)}Exportar datos (sin mails)
@@ -440,6 +450,27 @@
 
   function persist() { W.store.set('audienceRules', rules); W.render(); }
 
+  /**
+   * Suma condiciones en vez de reemplazar todo lo que ya había armado — antes
+   * tocar un ciclo de vida o un preset pisaba las reglas anteriores, así que
+   * no se podían combinar ("Churners" + "Ticket alto") sin escribirlo a mano
+   * en el constructor. Tocar de nuevo lo mismo lo saca (toggle); tocar un
+   * campo que ya tenía otra condición la reemplaza (no tiene sentido pedir
+   * "ciclo = churn Y ciclo = activo" a la vez).
+   */
+  function toggleRules(newRules) {
+    const key = (r) => `${r.field}|${r.op}|${r.value}`;
+    const newKeys = new Set(newRules.map(key));
+    const allAlreadyOn = newRules.every((nr) => rules.some((r) => key(r) === key(nr)));
+    if (allAlreadyOn) {
+      rules = rules.filter((r) => !newKeys.has(key(r)));
+    } else {
+      const fields = new Set(newRules.map((r) => r.field));
+      rules = [...rules.filter((r) => !fields.has(r.field)), ...newRules];
+    }
+    persist();
+  }
+
   /** Los umbrales cambian el ciclo de vida de cada cliente: hay que recalcular. */
   function applyChurn(patch) {
     W.setChurn(patch);
@@ -466,12 +497,10 @@
     $('#churn-reset')?.addEventListener('click', () => { W.resetChurn(); D = derive(); W.render(); });
 
     $$('.life').forEach((b) => b.addEventListener('click', () => {
-      rules = [{ field: 'ciclo', op: 'es', value: b.dataset.life }];
-      persist();
+      toggleRules([{ field: 'ciclo', op: 'es', value: b.dataset.life }]);
     }));
     $$('.pre[data-g]').forEach((b) => b.addEventListener('click', () => {
-      rules = JSON.parse(JSON.stringify(PRESETS[+b.dataset.g].items[+b.dataset.p].rules));
-      persist();
+      toggleRules(JSON.parse(JSON.stringify(PRESETS[+b.dataset.g].items[+b.dataset.p].rules)));
     }));
 
     $$('.rule-f').forEach((sel) => sel.addEventListener('change', (e) => {
@@ -524,8 +553,22 @@
         rows.push([v.dni || '', v.email || '']);
       }
       if (!rows.length) { W.toast('Ningún cliente de la audiencia tiene datos de contacto.', 'bad'); return; }
-      W.downloadCSV(`webdash-base-${new Date().toISOString().slice(0, 10)}.csv`, ['DNI', 'MAIL'], rows);
+      W.downloadXLSX(`webdash-base-${new Date().toISOString().slice(0, 10)}.xlsx`, [{ name: 'Contactos', rows: [['DNI', 'MAIL'], ...rows] }]);
       W.toast(`Exportados ${W.fmtNum(rows.length)} contactos.`, 'good');
+    });
+
+    // Solo DNI, una columna, sin mail — el formato que piden las plataformas
+    // de push/SMS (a diferencia del mailing, que necesita DNI + MAIL juntos).
+    $('#exp-dni')?.addEventListener('click', () => {
+      if (!emailMap) return;
+      const rows = [];
+      for (const i of matches) {
+        const v = emailMap.get(idx.h[i]);
+        if (v?.dni) rows.push([v.dni]);
+      }
+      if (!rows.length) { W.toast('Ningún cliente de la audiencia tiene DNI.', 'bad'); return; }
+      W.downloadXLSX(`webdash-push-dni-${new Date().toISOString().slice(0, 10)}.xlsx`, [{ name: 'DNI', rows: [['DNI'], ...rows] }]);
+      W.toast(`Exportados ${W.fmtNum(rows.length)} DNI.`, 'good');
     });
 
     $('#save-aud')?.addEventListener('click', () => {
