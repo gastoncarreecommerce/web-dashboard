@@ -69,11 +69,23 @@ function listAvailableDays(startDate) {
     .sort();
 }
 
+/**
+ * No escribe si el contenido es byte-a-byte igual al que ya está en disco.
+ * aggregate.js recalcula TODO desde data/daily/ en cada corrida, así que sin
+ * esto cada uno de los ~1300 archivos de docs/data/web quedaría con una
+ * fecha de modificación nueva aunque su contenido no haya cambiado — git lo
+ * vería como "sin cambios" igual (compara contenido, no mtime), pero evitar
+ * la escritura innecesaria es gratis y deja el disco/los diffs más claros.
+ */
 function writeJson(relPath, data) {
   const outPath = path.join(__dirname, '..', relPath);
+  const json = JSON.stringify(data);
+  if (fs.existsSync(outPath) && fs.readFileSync(outPath, 'utf8') === json) {
+    return fs.statSync(outPath).size;
+  }
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
-  fs.writeFileSync(outPath, JSON.stringify(data));
-  return fs.statSync(outPath).size;
+  fs.writeFileSync(outPath, json);
+  return Buffer.byteLength(json);
 }
 
 function addInto(target, key, v) {
@@ -340,17 +352,27 @@ function main() {
     days: geoDays,
   });
 
-  // ── orders/<tienda>/<mes>.json (detalle de pedidos, por tienda y mes) ───
-  // Sparse a propósito: solo existe el archivo de una tienda-mes si esa
-  // tienda tuvo pedidos ese mes. El cliente pide el archivo exacto que
-  // necesita y no le importa si no existe (404 = sin pedidos ese mes).
+  // ── orders/<tienda>.json (detalle de pedidos, por tienda — TODOS los meses
+  // adentro) ────────────────────────────────────────────────────────────────
+  // Antes era un archivo por tienda POR MES (orders/<tienda>/<mes>.json): con
+  // ~180 tiendas activas × 9 meses eso ya eran más de 500 archivos, y sigue
+  // creciendo un mes más para siempre. Vercel tiene que revisar CADA archivo
+  // de docs/ en cada despliegue, así que la cantidad de archivos (no tanto
+  // el peso total) es lo que hacía lento cada "actualización en vivo" — y
+  // solo iba a empeorar con el tiempo. Un archivo por tienda (con los meses
+  // como claves adentro) fija el conteo en ~180 para siempre: un mes nuevo
+  // agranda archivos existentes, no crea uno nuevo. El cliente sigue pidiendo
+  // solo la tienda que le interesa (no las otras 180), y de paso una tienda
+  // con varios meses en pantalla pasa de N pedidos HTTP a uno solo.
   let ordersFilesWritten = 0, ordersBytesTotal = 0;
   for (const [storeCode, byMonth] of Object.entries(ordersByStoreMonth)) {
+    const out = {};
     for (const [m, list] of Object.entries(byMonth)) {
       list.sort((a, b) => (a.t < b.t ? -1 : a.t > b.t ? 1 : 0));
-      ordersBytesTotal += writeJson(`docs/data/web/orders/${storeCode}/${m}.json`, list);
-      ordersFilesWritten += 1;
+      out[m] = list;
     }
+    ordersBytesTotal += writeJson(`docs/data/web/orders/${storeCode}.json`, out);
+    ordersFilesWritten += 1;
   }
 
   // ── order-index/<mes>.json (TODOS los pedidos, sin items, por mes) ──────
@@ -563,7 +585,7 @@ function main() {
   console.log(`Agregado OK. Días: ${days.length}. Faltantes: ${missingDays.length}. Clientes únicos: ${profiles.size}.`);
   console.log(`  daily-summary ${mb(sizeDaily)} · catalog ${mb(sizeCatalog)} · cohorts ${mb(sizeCohorts)} · audience ${mb(sizeAudience)}`);
   console.log(`  geo ${mb(sizeGeo)} (${geoDays.length} días, ${Object.keys(storeMeta).length} tiendas) · products ${mb(sizeProducts)}`);
-  console.log(`  orders ${mb(ordersBytesTotal)} (${ordersFilesWritten} archivos tienda-mes)`);
+  console.log(`  orders ${mb(ordersBytesTotal)} (${ordersFilesWritten} archivos, uno por tienda)`);
   console.log(`  order-index ${mb(orderIndexBytesTotal)} (${Object.keys(orderIndexByMonth).length} meses)`);
   if (sizeAudience > 25 * 1048576) {
     console.warn('  ⚠ audience-index.json supera 25MB: el navegador va a tardar en cargarlo. Considerar acotar la ventana.');

@@ -168,15 +168,15 @@
 
   /**
    * Pedidos de una tienda en el rango elegido. Se guardan particionados por
-   * tienda y mes (docs/data/web/orders/<código>/<mes>.json) para que abrir
-   * el detalle de UNA tienda no baje los pedidos de las otras 180 — un mes
-   * que la tienda no operó simplemente no tiene archivo (404 = sin pedidos).
+   * tienda (docs/data/web/orders/<código>.json, con los meses como claves
+   * adentro) para que abrir el detalle de UNA tienda no baje los pedidos de
+   * las otras 180 — una tienda que nunca operó simplemente no tiene archivo
+   * (404 = sin pedidos). Un solo pedido HTTP trae todos los meses de esa
+   * tienda de una vez, en vez de uno por mes.
    */
   async function loadStoreOrders(storeCode, months) {
-    const perMonth = await Promise.all(
-      months.map((m) => W.load(`orders/${storeCode}/${m}`).catch(() => []))
-    );
-    return perMonth.flat();
+    const byMonth = await W.load(`orders/${storeCode}`).catch(() => ({}));
+    return months.flatMap((m) => byMonth[m] || []);
   }
 
   // Techo de filas que se pintan en la tabla: una tienda grande en un rango
