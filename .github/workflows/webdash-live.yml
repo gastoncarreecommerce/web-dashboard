@@ -2,12 +2,14 @@
 # número "en vivo" en vez de tener que esperar al pipeline de las 03:00 AR
 # del día siguiente.
 #
-# Es el mismo fetch-day.js del pipeline diario, aplicado al día de hoy con
-# --force en cada corrida (el día está incompleto por definición mientras
-# no termine, así que se vuelve a leer entero cada vez, no de forma
-# incremental). El costo escala con los pedidos que ya entraron hoy, así que
-# es barato a la mañana y crece hacia la noche — nunca más caro que un día
-# completo del pipeline normal.
+# Es el mismo fetch-day.js del pipeline diario, con --incremental: solo le
+# pide detalle a VTEX a los pedidos que todavía no estaban contados de una
+# pasada anterior de HOY (el listado completo sí se revisa siempre, es
+# barato). Antes era --force en cada corrida, releyendo el día entero desde
+# cero cada 30 min — hacia la noche, con miles de pedidos ya sumados, eso
+# volvía a pedir el detalle de TODOS de nuevo, cada vez más lento a medida
+# que avanzaba el día. Con --incremental el costo de cada corrida es
+# proporcional a lo NUEVO desde la pasada anterior, no al total del día.
 #
 # A propósito NO reintenta pedidos caídos (src/repair.js) ni toca mails: eso
 # lo hace el pipeline diario. Esto es solo "qué pinta hoy hasta ahora".
@@ -53,7 +55,7 @@ jobs:
         run: |
           TODAY=$(TZ=America/Argentina/Buenos_Aires date +%Y-%m-%d)
           echo "Hoy (AR): $TODAY"
-          node src/fetch-day.js "$TODAY" --force
+          node src/fetch-day.js "$TODAY" --incremental
 
       - name: Agregar
         run: node src/aggregate.js

@@ -234,8 +234,16 @@
         }
       }
 
+      // Traer los pedidos de hoy + guardarlos es un proceso de varios pasos
+      // (pedirle a VTEX, procesar, guardar) que de punta a punta puede tardar
+      // bastante más de lo que parece a simple vista — 6 minutos de espera se
+      // quedaban cortos y el botón parecía "colgado" sin explicación. Ahora
+      // espera hasta 12 minutos y de paso muestra hace cuánto está esperando,
+      // para que quede claro que sigue trabajando y no que se rompió.
+      const POLL_MAX_MS = 12 * 60 * 1000;
+      const POLL_STEP_MS = 15000;
       function pollUntilFresh(baselineAt) {
-        const deadline = Date.now() + 6 * 60 * 1000;
+        const start = Date.now();
         const tick = async () => {
           if (!busy) return; // se canceló (no debería pasar, pero por las dudas)
           const fresh = await fetchFreshMeta();
@@ -244,14 +252,16 @@
             location.reload();
             return;
           }
-          if (Date.now() > deadline) {
+          const elapsedMin = Math.floor((Date.now() - start) / 60000);
+          if (Date.now() - start > POLL_MAX_MS) {
             setBusy(false, 'Actualizar');
             W.toast('Todavía no llegó — probá de nuevo en unos minutos.', 'bad');
             return;
           }
-          setTimeout(tick, 15000);
+          setBusy(true, elapsedMin > 0 ? `Actualizando… (${elapsedMin} min)` : 'Actualizando…');
+          setTimeout(tick, POLL_STEP_MS);
         };
-        setTimeout(tick, 15000);
+        setTimeout(tick, POLL_STEP_MS);
       }
 
       refreshBtn.addEventListener('click', async () => {

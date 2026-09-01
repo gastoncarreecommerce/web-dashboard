@@ -177,12 +177,18 @@ function newDayAcc() {
     webGmv: 0,
     discountTotal: 0,
     productRowsSeen: 0,
+    // Todo orderId ya pasado por applyOrderToAcc (web o no — su canal no
+    // cambia). Es lo que permite que una actualización en vivo posterior no
+    // vuelva a pedirle el detalle a VTEX de un pedido que ya tiene sumado:
+    // ver fetchDay({ incremental: true }).
+    processedIds: new Set(),
   };
 }
 
 /** Suma UN pedido completo al acumulador. Es todo lo que hay que hacer por pedido,
  *  así que sirve igual para el fetch inicial y para reparar los que fallaron. */
 function applyOrderToAcc(acc, full) {
+  acc.processedIds.add(String(full.orderId));
   if (orderChannel(full, channelMap) !== 'web') return false;
 
   const view = classifyOrder(full, segmentMap);
@@ -361,6 +367,7 @@ function accFromDayFile(day) {
   acc.webGmv = day.webGmv || 0;
   acc.discountTotal = day.discountTotal || 0;
   acc.productRowsSeen = day.productRowsSeen || 0;
+  acc.processedIds = new Set(day.processedIds || []);
   return acc;
 }
 
@@ -416,6 +423,10 @@ function finalizeDay(acc, meta) {
     distinctSkus,
     productRowsSeen: acc.productRowsSeen,
     customers: acc.customers,
+    // Ver newDayAcc(): habilita que la próxima actualización en vivo de este
+    // mismo día sea incremental en vez de re-pedirle el detalle a VTEX de
+    // pedidos que ya están sumados acá.
+    processedIds: [...acc.processedIds],
   };
   // Los emails viajan por fuera del objeto público (no enumerable para que un
   // JSON.stringify accidental del día nunca los arrastre).
@@ -439,9 +450,36 @@ function writeDayEmails(dateStr, emails) {
   return n;
 }
 
-async function fetchDay(dateStr) {
+/**
+ * incremental: true reutiliza lo que ya está sumado en data/daily/<fecha>.json
+ * (si existe y tiene processedIds — los días viejos no lo tienen, y ahí se cae
+ * sola a un fetch completo, que es lo seguro) y solo le pide el detalle a VTEX
+ * a los pedidos que todavía no están contados. El listado (paso 1, barato) se
+ * recorre completo igual siempre: es lo que da el conteo real de "cuántos
+ * pedidos hay hoy" y las estadísticas por estado, no tiene sentido cachearlo.
+ *
+ * Por qué no alcanza con mirar `acc.orders`: ese array solo lleva pedidos con
+ * tienda resuelta (ver applyOrderToAcc), así que un pedido sin tienda ya
+ * contado igual volvería a pedirse Y volvería a sumarse — duplicado. Por eso
+ * el criterio de "ya lo tengo" es su propio set aparte (processedIds), no una
+ * lista que se filtró por otra razón.
+ */
+async function fetchDay(dateStr, { incremental = false } = {}) {
   const { fromISO, toISO } = arDayRange(dateStr);
-  const acc = newDayAcc();
+
+  let acc = null;
+  let knownIds = new Set();
+  if (incremental) {
+    try {
+      const existing = JSON.parse(fs.readFileSync(path.join(OUT_DIR, `${dateStr}.json`), 'utf8'));
+      if (Array.isArray(existing.processedIds)) {
+        acc = accFromDayFile(existing);
+        knownIds = acc.processedIds;
+      }
+    } catch { /* no existe todavía: primera pasada del día, fetch completo */ }
+  }
+  if (!acc) acc = newDayAcc();
+
   const unknownStatuses = new Set();
   let scanned = 0;
 
@@ -462,11 +500,13 @@ async function fetchDay(dateStr) {
       unknownStatuses.add(st);
     }
     if (!isIncludedStatus(summary, statusFilter)) continue;
+    if (knownIds.has(String(summary.orderId))) continue; // ya sumado en una pasada anterior de hoy
     idsToFetch.push(summary.orderId);
   }
 
-  // Paso 2: los detalles, en paralelo. Es la parte cara (una llamada por pedido)
-  // y la única forma de saber el canal, el seller y el cliente.
+  // Paso 2: los detalles, en paralelo. Es la parte cara (una llamada por pedido,
+  // y la única forma de saber el canal, el seller y el cliente) — por eso vale
+  // la pena saltear acá los que el paso incremental ya identificó como sabidos.
   const failedOrderIds = [];
   await forEachLimit(idsToFetch, DETAIL_CONCURRENCY, async (orderId) => {
     let full;
@@ -496,19 +536,20 @@ async function fetchDay(dateStr) {
 async function main() {
   const dateArg = process.argv[2];
   const force = process.argv.includes('--force');
+  const incremental = process.argv.includes('--incremental');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateArg || '')) {
-    console.error('Uso: node src/fetch-day.js YYYY-MM-DD [--force]');
+    console.error('Uso: node src/fetch-day.js YYYY-MM-DD [--force | --incremental]');
     process.exit(1);
   }
 
   const outPath = path.join(OUT_DIR, `${dateArg}.json`);
-  if (fs.existsSync(outPath) && !force) {
-    console.log(`Ya existe ${outPath}, salteando (usar --force para rehacerlo).`);
+  if (fs.existsSync(outPath) && !force && !incremental) {
+    console.log(`Ya existe ${outPath}, salteando (usar --force o --incremental para actualizarlo).`);
     return;
   }
 
-  console.log(`Procesando ${dateArg}...`);
-  const day = await fetchDay(dateArg);
+  console.log(`Procesando ${dateArg}${incremental ? ' (incremental)' : ''}...`);
+  const day = await fetchDay(dateArg, { incremental });
   fs.mkdirSync(OUT_DIR, { recursive: true });
   fs.writeFileSync(outPath, JSON.stringify(day));
   const nEmails = writeDayEmails(dateArg, day._emails);
