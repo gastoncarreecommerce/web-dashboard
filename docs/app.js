@@ -204,6 +204,39 @@
       location.href = '/login.html';
     });
 
+    // Le pide a VTEX el día de hoy AHORA, en vez de esperar el cron de cada
+    // 30 min. Dispara el mismo workflow de siempre — el resultado queda
+    // commiteado, así que apenas Vercel redespliegue (~1 min) todo el que
+    // entre ve el número fresco, no hace falta que cada uno lo pida.
+    const refreshBtn = $('refresh-today');
+    if (refreshBtn) {
+      refreshBtn.querySelector('.ri').innerHTML = W.icon('refresh', 14);
+      let cooldownUntil = 0;
+      refreshBtn.addEventListener('click', async () => {
+        if (Date.now() < cooldownUntil) {
+          W.toast('Ya se pidió hace poco — VTEX + el commit tardan un par de minutos.', 'bad');
+          return;
+        }
+        refreshBtn.disabled = true;
+        try {
+          const res = await fetch('/api/refresh-today', { method: 'POST' });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok) {
+            W.toast(data.message || 'Actualización pedida — esperá un par de minutos y volvé a mirar.', 'good');
+            cooldownUntil = Date.now() + 90 * 1000;
+          } else if (data.error === 'not_configured') {
+            W.toast('La actualización manual todavía no está configurada (falta un secret en Vercel).', 'bad');
+          } else {
+            W.toast(data.message || 'No se pudo pedir la actualización.', 'bad');
+          }
+        } catch {
+          W.toast('No se pudo conectar para pedir la actualización.', 'bad');
+        } finally {
+          setTimeout(() => { refreshBtn.disabled = false; }, 3000);
+        }
+      });
+    }
+
     W.render();
   }
 

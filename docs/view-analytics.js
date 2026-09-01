@@ -31,29 +31,30 @@
   };
 
   /**
-   * Imagen del producto por EAN, vía OpenFoodFacts (base pública y gratuita
-   * de productos de supermercado, sin API key). El sku que guarda VTEX suele
-   * ser el EAN/código de barras de góndola — si no tiene forma de EAN
-   * (8/12/13/14 dígitos) ni vale la pena intentarlo. Best-effort: cualquier
-   * falla (sin red, producto no está en la base, timeout) cae a null y se
-   * muestra un placeholder — nunca rompe el panel de productos.
-   * Cacheado en memoria: no se repite la búsqueda en cada re-render.
+   * Imagen real del producto, desde el catálogo de VTEX — vía
+   * /api/product-image (server-side, ver api/product-image.js) en vez de
+   * pegarle directo a VTEX desde el navegador, porque VTEX no manda headers
+   * CORS para ese endpoint. El sku que guarda VTEX suele ser el EAN/código
+   * de barras de góndola — si no tiene forma de EAN (8 a 14 dígitos) ni vale
+   * la pena intentarlo. Best-effort: cualquier falla (sin red, producto sin
+   * imagen, timeout) cae a null y se muestra un placeholder — nunca rompe el
+   * panel de productos. Cacheado en memoria: no se repite en cada re-render.
    */
   const productImgCache = new Map();
   async function resolveProductImg(sku) {
     if (productImgCache.has(sku)) return productImgCache.get(sku);
-    if (!/^\d{8}(\d{4,6})?$/.test(String(sku || ''))) { productImgCache.set(sku, null); return null; }
+    if (!/^\d{8,14}$/.test(String(sku || ''))) { productImgCache.set(sku, null); return null; }
     let url = null;
     try {
       const ctrl = new AbortController();
-      const to = setTimeout(() => ctrl.abort(), 2500);
-      const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${sku}.json?fields=image_front_small_url`, { signal: ctrl.signal });
+      const to = setTimeout(() => ctrl.abort(), 3000);
+      const res = await fetch(`/api/product-image?ean=${encodeURIComponent(sku)}`, { signal: ctrl.signal });
       clearTimeout(to);
       if (res.ok) {
         const data = await res.json();
-        url = data?.product?.image_front_small_url || null;
+        url = data?.image || null;
       }
-    } catch { /* sin red, timeout, o CORS — se sigue sin imagen */ }
+    } catch { /* sin red, timeout, o VTEX no tiene el producto — se sigue sin imagen */ }
     productImgCache.set(sku, url);
     return url;
   }

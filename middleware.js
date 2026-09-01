@@ -15,7 +15,7 @@
  */
 export const config = {
   // Se excluyen solo los recursos que la propia pantalla de login necesita.
-  matcher: ['/((?!api/login|api/logout|login.html|login.css|favicon.ico|_next/static).*)'],
+  matcher: ['/((?!api/login|api/logout|login.html|login.css|favicon.ico|favicon.svg|_next/static).*)'],
 };
 
 const COOKIE = 'webdash_session';
