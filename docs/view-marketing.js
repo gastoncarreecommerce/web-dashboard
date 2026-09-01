@@ -41,7 +41,7 @@
     ctx.exports.marketingDetail = {
       filename: `webdash-marketing-${range.from}_${range.to}.csv`,
       headers: ['fuente', 'pedidos', 'gmv', 'ticket', 'share_gmv_atribuido'],
-      rows: allRows.map((r) => [r.source, r.orders, Math.round(r.gmv), Math.round(W.ticket(r.gmv, r.orders)), r === direct ? '' : (r.gmv / (total || 1)).toFixed(4)]),
+      rows: allRows.map((r) => [r.source, r.orders, Math.round(r.gmv), Math.round(W.ticket(r.gmv, r.orders)), r === direct ? '' : r.gmv / (total || 1)]),
     };
 
     const top5 = rows.slice(0, 5);

@@ -246,10 +246,17 @@
     }));
 
     // ── Heatmap día de semana × hora ────────────────────────────────────────
+    // Hoy queda afuera a propósito: es un día a medio terminar (las horas que
+    // todavía no pasaron van en 0 sí o sí), así que mezclarlo hundía el
+    // promedio de lo que sea que hoy toque ser — un martes cualquiera se veía
+    // muerto solo porque "hoy" resultó ser martes y recién eran las 10 de la
+    // mañana. El resto del historial de ese día de semana no se pierde, solo
+    // el día de hoy en curso.
+    const today = W.arToday();
     const dowHour = Array.from({ length: 7 }, () => new Array(24).fill(0));
     let hasHourly = false;
     for (const day of daily.days) {
-      if (day.date < range.from || day.date > range.to || !day.hourly) continue;
+      if (day.date < range.from || day.date > range.to || day.date === today || !day.hourly) continue;
       hasHourly = true;
       const dow = new Date(`${day.date}T12:00:00Z`).getUTCDay();
       day.hourly.forEach((n, h) => (dowHour[dow][h] += n));
@@ -306,7 +313,8 @@
       </div>
 
       ${hasHourly && bucket === 'all' ? `<div class="card">
-        <div class="card-h"><div><h3>Heatmap de horarios pico</h3><p>volumen de pedidos por día de la semana y hora (AR) · requiere ≥7 días para tener sentido — dónde conviene disparar campañas</p></div></div>
+        <div class="card-h"><div><h3>Heatmap de horarios pico</h3><p>volumen de pedidos por día de la semana y hora (AR) · requiere ≥7 días para tener sentido — dónde conviene disparar campañas
+          <span class="scope" ${W.chart.tip('Hoy queda afuera del promedio: es un día a medio terminar (las horas que todavía no pasaron cuentan 0 pedidos), así que lo distorsionaba para cualquier día de la semana que le tocara ser hoy.')}>${W.icon('info', 11)} sin el día de hoy</span></p></div></div>
         ${W.chart.heatmap({
           rows: W.DOW_LABELS,
           cols: Array.from({ length: 24 }, (_, h) => String(h).padStart(2, '0')),

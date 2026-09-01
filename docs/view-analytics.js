@@ -307,7 +307,7 @@
     ctx.exports.segments = {
       filename: `webdash-segmentos-${tag}.csv`,
       headers: ['segmento', 'pedidos', 'gmv', 'unidades', 'ticket', 'unidades_por_pedido', 'share_gmv'],
-      rows: segRows.map((r) => [r.label, r.orders, Math.round(r.gmv), Math.round(r.units), Math.round(r.ticket), r.upo.toFixed(2), r.share.toFixed(4)]),
+      rows: segRows.map((r) => [r.label, r.orders, Math.round(r.gmv), Math.round(r.units), Math.round(r.ticket), Number(r.upo.toFixed(2)), r.share]),
     };
     ctx.exports.products = {
       filename: `webdash-productos-${tag}.csv`,

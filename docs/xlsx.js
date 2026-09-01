@@ -88,13 +88,43 @@
     return s;
   };
 
-  function sheetXml(rows) {
+  // Estilos de número (ver xl/styles.xml más abajo): 2 = entero con separador
+  // de miles, 3 = decimal con separador de miles, 4 = porcentaje. El símbolo
+  // real (punto de miles, coma decimal) lo pone Excel según la configuración
+  // regional de quien lo abre — acá solo se dice "esto es un entero/decimal/%",
+  // nunca un string armado a mano, así Excel también puede sumar la columna.
+  const NUM_STYLE = { int: 2, dec: 3, pct: 4 };
+
+  /**
+   * Adivina el formato de cada columna mirando el encabezado (fila 0) y, si
+   * no dice nada, si los valores de esa columna tienen decimales. Pensado
+   * para no tener que anotar `formats` a mano en cada exportación — con que
+   * las columnas se llamen razonable (gmv, ticket, pct_algo, share_algo)
+   * alcanza. `pct` asume que el valor YA es una fracción 0–1 (0.2557, no 25.57).
+   */
+  function detectFormats(rows) {
+    if (rows.length < 2) return [];
+    const header = rows[0];
+    const dataRows = rows.slice(1);
+    return header.map((h, c) => {
+      const name = String(h ?? '').toLowerCase();
+      if (/pct|share|tasa|porcentaje|participaci|%/.test(name)) return 'pct';
+      const vals = dataRows.map((r) => r[c]).filter((v) => typeof v === 'number' && Number.isFinite(v));
+      if (!vals.length) return null;
+      return vals.some((v) => !Number.isInteger(v)) ? 'dec' : 'int';
+    });
+  }
+
+  function sheetXml(rows, formats) {
+    const fmts = formats || detectFormats(rows);
     const body = rows.map((row, r) => {
       const cells = row.map((v, c) => {
         const ref = `${colName(c)}${r + 1}`;
-        const style = r === 0 ? ' s="1"' : '';
+        const isNum = typeof v === 'number' && Number.isFinite(v);
+        const styleIdx = r === 0 ? 1 : (isNum && NUM_STYLE[fmts[c]]) || 0;
+        const style = styleIdx ? ` s="${styleIdx}"` : '';
         // Los números van sin t="inlineStr" para que Excel los trate como número.
-        if (typeof v === 'number' && Number.isFinite(v)) return `<c r="${ref}"${style}><v>${v}</v></c>`;
+        if (isNum) return `<c r="${ref}"${style}><v>${v}</v></c>`;
         const text = v == null ? '' : String(v);
         if (!text) return `<c r="${ref}"${style}/>`;
         return `<c r="${ref}"${style} t="inlineStr"><is><t xml:space="preserve">${esc(text)}</t></is></c>`;
@@ -127,10 +157,12 @@
       { name: 'xl/_rels/workbook.xml.rels', content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${
         list.map((_, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('')}<Relationship Id="rIdS" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>` },
-      // Dos estilos: 0 normal, 1 negrita (encabezado).
+      // 0 normal, 1 negrita (encabezado), 2 entero con miles, 3 decimal con
+      // miles, 4 porcentaje — 3/4/10 son IDs de formato estándar de Excel
+      // (#,##0 / #,##0.00 / 0.00%), no hace falta declararlos aparte.
       { name: 'xl/styles.xml', content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="1"><fill><patternFill patternType="none"/></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="2"><xf xfId="0"/><xf xfId="0" fontId="1" applyFont="1"/></cellXfs></styleSheet>` },
-      ...list.map((s, i) => ({ name: `xl/worksheets/sheet${i + 1}.xml`, content: sheetXml(s.rows) })),
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="1"><fill><patternFill patternType="none"/></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="5"><xf xfId="0"/><xf xfId="0" fontId="1" applyFont="1"/><xf xfId="0" numFmtId="3" applyNumberFormat="1"/><xf xfId="0" numFmtId="4" applyNumberFormat="1"/><xf xfId="0" numFmtId="10" applyNumberFormat="1"/></cellXfs></styleSheet>` },
+      ...list.map((s, i) => ({ name: `xl/worksheets/sheet${i + 1}.xml`, content: sheetXml(s.rows, s.formats) })),
     ];
 
     const url = URL.createObjectURL(zip(files));

@@ -21,6 +21,10 @@
   // config, no la acción principal de la página) — se acordaba de si el
   // usuario lo abrió para no volver a cerrarlo en cada re-render.
   let churnOpen = false;
+  // Constructor de condiciones "a mano" (campo/operador/valor): colapsado por
+  // defecto — los presets y las tarjetas de ciclo de vida ya cubren el uso
+  // común combinándose entre sí, esto queda para lo que no cubren.
+  let rulesAdvOpen = false;
   // "Activo" ahora significa "estas reglas están TODAS presentes" (subconjunto),
   // no "son exactamente las únicas reglas" — desde que las tarjetas de ciclo de
   // vida y los presets se combinan en vez de reemplazarse, más de una pueden
@@ -182,6 +186,19 @@
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
+  // Texto en criollo de una regla, para el chip de "condiciones activas" —
+  // sin esto, la única forma de saber qué está combinado era leer la fila
+  // técnica de campo/operador/valor, que es justo lo que se quería evitar.
+  function ruleLabel(r) {
+    const f = FIELDS[r.field];
+    if (!f) return `${r.field} ${r.op} ${r.value}`;
+    let val = r.value;
+    if (f.type === 'lifecycle') val = W.LIFECYCLE[r.value]?.label || r.value;
+    else if (f.type === 'segment') val = W.SEGMENT_LABEL[r.value] || r.value;
+    else if (f.type === 'number') val = ['gasto', 'ticket'].includes(r.field) ? W.fmtMoney(Number(r.value)) : W.fmtNum(Number(r.value));
+    return `${f.label} ${r.op} ${val}`;
+  }
+
   function ruleRow(r, i) {
     const f = FIELDS[r.field];
     const av = availability();
@@ -268,8 +285,8 @@
         idx.h[i], W.LIFECYCLE[D.life[i]].label, idx.o[i], idx.g[i],
         Math.round(idx.o[i] ? idx.g[i] / idx.o[i] : 0),
         idx.days[idx.f[i]], idx.days[idx.l[i]], D.recency[i],
-        idx.ip ? idx.ip[i] : 0, D.churn[i].toFixed(2),
-        idx.cp ? idx.cp[i] : 0, D.couponPct[i].toFixed(1),
+        idx.ip ? idx.ip[i] : 0, Number(D.churn[i].toFixed(2)),
+        idx.cp ? idx.cp[i] : 0, D.couponPct[i] / 100,
         W.SEGMENT_LABEL[idx.segments[idx.sd[i]]] || '',
         (idx.categoriesN1 || [])[idx.cd1?.[i]] || '',
         (idx.categoriesN2 || [])[idx.cd2?.[i]] || '',
@@ -356,6 +373,13 @@
               <div><h3>Constructor de audiencias</h3><p>combiná condiciones y exportá la lista de mails para la campaña</p></div>
             </div>
 
+            <div class="active-rules">
+              ${rules.length
+                ? rules.map((r, i) => `<span class="chip-rule">${W.esc(ruleLabel(r))}<button class="chip-rule-x" data-rule-i="${i}" title="Quitar">${W.icon('close', 12)}</button></span>`).join('')
+                : '<p class="muted" style="font-size:.8rem;margin:0">Sin condiciones todavía — tocá un ciclo de vida, un preset de abajo, o armá una condición personalizada.</p>'}
+              ${rules.length ? `<button class="btn-s" id="clear-rules">${W.icon('close', 13)}Limpiar todo</button>` : ''}
+            </div>
+
             ${PRESETS.map((g, gi) => {
               const off = g.needs && !avail[g.needs];
               return `<div class="pre-group"><label>${W.esc(g.group)}${off
@@ -367,11 +391,20 @@
               }).join('')}</div></div>`;
             }).join('')}
 
-            <div class="rules">${rules.map(ruleRow).join('')}</div>
-            <div class="rules-a">
-              <button class="btn-s" id="add-rule">${W.icon('plus', 14)}Agregar condición</button>
-              <button class="btn" id="clear-rules">Limpiar</button>
-            </div>
+            <details class="adv" id="rules-adv" ${rulesAdvOpen ? 'open' : ''}>
+              <summary class="adv-h">
+                <div class="adv-h-t">${W.icon('chevronR', 15, 'adv-caret')}<div>
+                  <h3>Condición personalizada</h3>
+                  <p>elegí un campo, un operador y un valor a mano — para armar algo que los presets de arriba no cubren</p>
+                </div></div>
+              </summary>
+              <div class="adv-body">
+                <div class="rules">${rules.map(ruleRow).join('')}</div>
+                <div class="rules-a">
+                  <button class="btn-s" id="add-rule">${W.icon('plus', 14)}Agregar condición</button>
+                </div>
+              </div>
+            </details>
           </div>
 
           <div class="g2">
@@ -483,6 +516,11 @@
     const $$ = (s) => [...document.querySelectorAll(s)];
 
     $('#churn-adv')?.addEventListener('toggle', (e) => { churnOpen = e.target.open; });
+    $('#rules-adv')?.addEventListener('toggle', (e) => { rulesAdvOpen = e.target.open; });
+    $$('.chip-rule-x').forEach((b) => b.addEventListener('click', () => {
+      rules = rules.filter((_, i) => i !== Number(b.dataset.ruleI));
+      persist();
+    }));
 
     $$('input[name="cmode"]').forEach((r) => r.addEventListener('change', (e) => applyChurn({ mode: e.target.value })));
     $$('[data-c]').forEach((inp) => inp.addEventListener('change', (e) => {

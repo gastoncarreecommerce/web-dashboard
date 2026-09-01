@@ -389,6 +389,17 @@ details.more[open] summary { margin-bottom: .45rem; }
 @media (max-width: 1120px) { .aud { grid-template-columns: 1fr; } }
 .aud-side .stick { position: sticky; top: 116px; }
 
+/* Resumen en criollo de las condiciones combinadas — antes la única forma de
+   ver "qué está armado" era leer la fila técnica de campo/operador/valor. */
+.active-rules { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-bottom: 1rem; padding-bottom: .9rem; border-bottom: 1px solid var(--line); }
+.chip-rule {
+  display: inline-flex; align-items: center; gap: .3rem;
+  background: var(--brand-soft); color: var(--brand-strong); border: 1px solid var(--brand-line);
+  border-radius: 18px; padding: .3rem .4rem .3rem .68rem; font-size: .77rem; font-weight: 600;
+}
+.chip-rule-x { background: none; border: none; color: var(--brand-strong); opacity: .6; cursor: pointer; padding: .2rem; border-radius: 50%; display: flex; transition: opacity .12s, background .12s; }
+.chip-rule-x:hover { opacity: 1; background: rgba(79,70,229,.15); }
+
 .pre-group { margin-bottom: .7rem; }
 .pre-group > label { display: block; font-size: .655rem; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-3); font-weight: 700; margin-bottom: .3rem; }
 .pre-row { display: flex; gap: .35rem; flex-wrap: wrap; }

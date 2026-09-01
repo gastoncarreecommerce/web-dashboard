@@ -97,7 +97,7 @@
     ctx.exports.coupons = {
       filename: `webdash-cupones-${range.from}_${range.to}.csv`,
       headers: ['cupon', 'pedidos', 'gmv', 'ticket', 'share_gmv'],
-      rows: allCoupons.map((c) => [c.code, c.orders, Math.round(c.gmv), Math.round(W.ticket(c.gmv, c.orders)), (c.gmv / (totalCouponGmv || 1)).toFixed(4)]),
+      rows: allCoupons.map((c) => [c.code, c.orders, Math.round(c.gmv), Math.round(W.ticket(c.gmv, c.orders)), c.gmv / (totalCouponGmv || 1)]),
     };
 
     const kpi = ({ icon, label, value, sub, color }) => `<div class="kpi">
