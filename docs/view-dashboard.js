@@ -146,33 +146,6 @@
     const prev = W.sumRange(daily, bucket, prevRange);
     const showDelta = compare ? undefined : null;
 
-    // ── "Hoy" en vivo ─────────────────────────────────────────────────────
-    // Pedidos y GMV de HOY salen de datos guardados (actualizados cada 30
-    // min como mucho), así que nunca coinciden centavo a centavo con VTEX en
-    // el momento exacto en que alguien mira la pantalla. Cuando el rango
-    // elegido es exactamente hoy y se están mirando todos los segmentos, se
-    // consulta directo a VTEX (solo el listado de pedidos del día — barato,
-    // no pide el detalle de cada uno) y se pisan esos dos números con el
-    // valor real del momento. El resto (por segmento, categorías, cupones,
-    // heatmap) sigue viniendo de lo guardado: separarlo por canal/categoría
-    // sí requiere el detalle de cada pedido, que a la tarde/noche con miles
-    // de pedidos ya no es instantáneo.
-    let liveToday = null;
-    if (bucket === 'all' && range.from === range.to && range.from === W.arToday()) {
-      liveToday = await fetch('/api/today-live', { cache: 'no-store' })
-        .then((r) => (r.ok ? r.json() : null))
-        .catch(() => null);
-      if (liveToday) {
-        cur.orders = liveToday.orders;
-        cur.gmv = liveToday.gmv;
-        const todayPoint = cur.series[cur.series.length - 1];
-        if (todayPoint?.date === range.from) {
-          todayPoint.orders = liveToday.orders;
-          todayPoint.gmv = liveToday.gmv;
-        }
-      }
-    }
-
     const labels = cur.series.map((s) => s.date);
     const orders = cur.series.map((s) => s.orders);
     const gmvs = cur.series.map((s) => s.gmv);
@@ -197,14 +170,10 @@
     const color = bucket === 'all' ? '#2a78d6' : W.SEGMENT_COLOR[bucket];
     const icon = bucket === 'all' ? 'globe' : W.SEGMENT_ICON_NAME[bucket];
 
-    const liveSub = liveToday
-      ? `<span class="live-dot" style="background:#1baf7a"></span> en vivo · recién consultado a VTEX`
-      : undefined;
-
     const tiles = [
-      kpi({ icon, label: 'Pedidos', value: W.fmtNumC(cur.orders), delta: d(cur.orders, prev.orders), color, sub: liveSub,
+      kpi({ icon, label: 'Pedidos', value: W.fmtNumC(cur.orders), delta: d(cur.orders, prev.orders), color,
         spark: W.chart.sparkline(orders, color), tip: `<strong>Pedidos</strong><span class="tip-row">${W.fmtNum(cur.orders)} en el período</span>` }),
-      kpi({ icon: 'money', label: 'GMV', value: W.fmtMoneyC(cur.gmv), delta: d(cur.gmv, prev.gmv), color: '#1baf7a', sub: liveSub,
+      kpi({ icon: 'money', label: 'GMV', value: W.fmtMoneyC(cur.gmv), delta: d(cur.gmv, prev.gmv), color: '#1baf7a',
         spark: W.chart.sparkline(gmvs, '#1baf7a'), tip: `<strong>GMV</strong><span class="tip-row">${W.fmtMoney(cur.gmv)}</span>` }),
       kpi({ icon: 'ticket', label: 'Ticket promedio', value: W.fmtMoney(W.ticket(cur.gmv, cur.orders)),
         delta: d(W.ticket(cur.gmv, cur.orders), W.ticket(prev.gmv, prev.orders)), color: '#eb6834', sub: 'GMV / pedidos' }),
