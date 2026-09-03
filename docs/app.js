@@ -125,6 +125,10 @@
 
     exportsBag = {};
     const ctx = { range: state.range, bucket: state.bucket, compare: state.compare, el: $('content'), exports: exportsBag };
+    // El sondeo de "Hoy en vivo" del Dashboard se corta acá antes de cambiar
+    // de vista: si no, seguiría pidiendo datos de fondo aunque ya no se esté
+    // mirando esa pantalla. W.viewDashboard lo vuelve a prender si corresponde.
+    if (state.view !== 'dashboard') W.stopTodayLivePoll?.();
     try {
       if (state.view === 'dashboard') await W.viewDashboard(ctx);
       else if (state.view === 'analytics') await W.viewAnalytics(ctx);

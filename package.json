@@ -13,5 +13,8 @@
     "inspect:channels": "node src/inspect-channels.js",
     "test": "node --test test/"
   },
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@upstash/redis": "^1.38.3"
+  }
 }
