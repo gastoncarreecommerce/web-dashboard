@@ -1,8 +1,11 @@
 /**
- * GET /api/today-live — pedidos y GMV de HOY, canal WEB únicamente,
- * consultados a VTEX casi en el momento. Pensado para que el frontend lo
- * pida cada 15s mientras alguien mira "Hoy" (mismo patrón que el otro
- * dashboard de VTEX de la cuenta), sin repetir el costo caro cada vez.
+ * GET /api/today-live — pedidos y GMV de HOY, canal WEB únicamente, SIN
+ * filtrar por estado (cuenta todo lo que VTEX tenga creado hoy para ese
+ * canal, pendientes y cancelados incluidos) — a propósito, para que
+ * coincida con el total crudo que se ve en VTEX. Consultado casi en el
+ * momento: pensado para que el frontend lo pida cada 15s mientras alguien
+ * mira "Hoy" (mismo patrón que el otro dashboard de VTEX de la cuenta),
+ * sin repetir el costo caro cada vez.
  *
  * Cómo evita volver a pedir todo: el listado de pedidos del día (barato,
  * trae status pero NO el canal) se revisa completo en cada llamada. El
@@ -25,7 +28,7 @@
  */
 import { verifySession } from './_session.js';
 import {
-  getRedis, getChannelMap, getStatusFilter, orderChannel, vtexBaseUrl, vtexHeaders, vtexGetOrder, todayAR, cacheKey,
+  getRedis, getChannelMap, orderChannel, vtexBaseUrl, vtexHeaders, vtexGetOrder, todayAR, cacheKey,
 } from './_live-cache.js';
 
 const MAX_PAGE = 30; // límite duro de la VTEX Order Search API
@@ -110,14 +113,20 @@ export default async function handler(req, res) {
 
     if (toFetch.length) {
       const channelMap = getChannelMap();
-      const statusFilter = getStatusFilter();
       const fresh = {};
       await forEachLimit(toFetch, DETAIL_CONCURRENCY, async (orderId) => {
         try {
           const order = await vtexGetOrder(orderId);
           fresh[orderId] = {
             channel: orderChannel(order, channelMap),
-            counts: statusFilter.includeStatuses.includes(order.status),
+            // A propósito SIN filtrar por estado (pedido explícito del usuario,
+            // 2026-09-04): tiene que coincidir con el total crudo que se ve en
+            // VTEX, que tampoco filtra pendientes/cancelados. El resto del
+            // dashboard (todo lo que no es "Hoy en vivo") sigue usando
+            // config/status-filter.json para reportar solo ventas confirmadas
+            // — son preguntas distintas ("cuántos pedidos hay hoy en VTEX" vs.
+            // "cuántas ventas reales hubo"), y cada vista responde la suya.
+            counts: true,
             gmv: typeof order.value === 'number' ? order.value / 100 : 0,
           };
         } catch {

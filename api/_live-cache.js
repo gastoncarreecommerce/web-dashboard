@@ -42,14 +42,6 @@ export function getChannelMap() {
   return _channelMap;
 }
 
-let _statusFilter;
-export function getStatusFilter() {
-  if (!_statusFilter) {
-    _statusFilter = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'config', 'status-filter.json'), 'utf8'));
-  }
-  return _statusFilter;
-}
-
 /** Misma regla que src/classify.js#orderChannel — duplicada a propósito para
  * no depender de un require() cruzado entre CJS (src/) y ESM (api/). */
 export function orderChannel(order, channelMap) {
