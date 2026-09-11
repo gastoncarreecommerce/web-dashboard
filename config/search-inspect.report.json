@@ -1,0 +1,796 @@
+{
+  "propertyId": "295860202",
+  "days": 30,
+  "generatedAt": "2026-09-11T20:50:43.917Z",
+  "events": [
+    {
+      "event": "Click",
+      "count": 90362040,
+      "users": 1962758
+    },
+    {
+      "event": "page_view",
+      "count": 23107490,
+      "users": 3057298
+    },
+    {
+      "event": "view_promotion",
+      "count": 15238138,
+      "users": 1174839
+    },
+    {
+      "event": "view_item_list",
+      "count": 8559995,
+      "users": 885486
+    },
+    {
+      "event": "click",
+      "count": 6219554,
+      "users": 722301
+    },
+    {
+      "event": "scroll",
+      "count": 5828378,
+      "users": 1773372
+    },
+    {
+      "event": "session_start",
+      "count": 4930713,
+      "users": 2995617
+    },
+    {
+      "event": "add_to_cart",
+      "count": 4534097,
+      "users": 121430
+    },
+    {
+      "event": "user_engagement",
+      "count": 4199712,
+      "users": 1223235
+    },
+    {
+      "event": "search",
+      "count": 4122394,
+      "users": 544918
+    },
+    {
+      "event": "view_cart",
+      "count": 4113720,
+      "users": 154188
+    },
+    {
+      "event": "view_item",
+      "count": 2340570,
+      "users": 824400
+    },
+    {
+      "event": "seleccion_header",
+      "count": 2284308,
+      "users": 509827
+    },
+    {
+      "event": "first_visit",
+      "count": 2159424,
+      "users": 2087325
+    },
+    {
+      "event": "PosibleComprador",
+      "count": 1982695,
+      "users": 1888229
+    },
+    {
+      "event": "remove_from_cart",
+      "count": 1268531,
+      "users": 100443
+    },
+    {
+      "event": "select_item",
+      "count": 1127390,
+      "users": 373816
+    },
+    {
+      "event": "seleccion_subcategoria_2",
+      "count": 699646,
+      "users": 175762
+    },
+    {
+      "event": "banner_cookies",
+      "count": 650220,
+      "users": 592585
+    },
+    {
+      "event": "seleccion_login",
+      "count": 556195,
+      "users": 183006
+    },
+    {
+      "event": "begin_checkout",
+      "count": 503710,
+      "users": 86723
+    },
+    {
+      "event": "seleccion_subcategoria",
+      "count": 438645,
+      "users": 135207
+    },
+    {
+      "event": "open_folletos",
+      "count": 356072,
+      "users": 142815
+    },
+    {
+      "event": "event_click",
+      "count": 319643,
+      "users": 75891
+    },
+    {
+      "event": "login",
+      "count": 315154,
+      "users": 154608
+    },
+    {
+      "event": "select_service",
+      "count": 291714,
+      "users": 225208
+    },
+    {
+      "event": "select_payment_info",
+      "count": 235033,
+      "users": 89373
+    },
+    {
+      "event": "add_payment_info",
+      "count": 226510,
+      "users": 86650
+    },
+    {
+      "event": "select_promotion",
+      "count": 200388,
+      "users": 126501
+    },
+    {
+      "event": "add_shipping_info",
+      "count": 187856,
+      "users": 79921
+    },
+    {
+      "event": "notview_promo_bsf",
+      "count": 181324,
+      "users": 66602
+    },
+    {
+      "event": "seleccion_entrega",
+      "count": 155926,
+      "users": 80824
+    },
+    {
+      "event": "purchase",
+      "count": 113696,
+      "users": 67571
+    },
+    {
+      "event": "seleccion_categoria",
+      "count": 111467,
+      "users": 53231
+    },
+    {
+      "event": "view_search_results",
+      "count": 88326,
+      "users": 51010
+    },
+    {
+      "event": "sucursal_retiro",
+      "count": 48495,
+      "users": 34533
+    },
+    {
+      "event": "envio_domicilio",
+      "count": 47933,
+      "users": 37933
+    },
+    {
+      "event": "guardar_direccion",
+      "count": 33109,
+      "users": 29209
+    },
+    {
+      "event": "add_to_wishlist",
+      "count": 29953,
+      "users": 6904
+    },
+    {
+      "event": "disponibilidad_entrega",
+      "count": 28850,
+      "users": 10640
+    },
+    {
+      "event": "mi_carrefour",
+      "count": 26948,
+      "users": 22010
+    },
+    {
+      "event": "entrega_inmediata",
+      "count": 17961,
+      "users": 11195
+    },
+    {
+      "event": "file_download",
+      "count": 7426,
+      "users": 4301
+    },
+    {
+      "event": "probar_direccion",
+      "count": 5671,
+      "users": 5264
+    },
+    {
+      "event": "carrefour_checkout_fields_retry",
+      "count": 1528,
+      "users": 1437
+    },
+    {
+      "event": "view_promo_bsf",
+      "count": 1286,
+      "users": 1082
+    },
+    {
+      "event": "carrefour_checkout_fields_fail",
+      "count": 273,
+      "users": 211
+    },
+    {
+      "event": "video_progress",
+      "count": 68,
+      "users": 16
+    },
+    {
+      "event": "shipping_too_many_requests",
+      "count": 36,
+      "users": 30
+    },
+    {
+      "event": "video_start",
+      "count": 19,
+      "users": 16
+    },
+    {
+      "event": "click_cta_bsf",
+      "count": 14,
+      "users": 14
+    },
+    {
+      "event": "video_complete",
+      "count": 14,
+      "users": 12
+    },
+    {
+      "event": "view_minicart_segment",
+      "count": 14,
+      "users": 5
+    },
+    {
+      "event": "busqueda",
+      "count": 2,
+      "users": 1
+    },
+    {
+      "event": "view_minicart",
+      "count": 1,
+      "users": 1
+    }
+  ],
+  "searchEventNames": [
+    "search",
+    "view_search_results"
+  ],
+  "searchTermAttempts": [
+    {
+      "eventName": "search",
+      "dim": "searchTerm",
+      "ok": true,
+      "sample": [
+        {
+          "term": "Leche",
+          "count": 28045
+        },
+        {
+          "term": "",
+          "count": 22904
+        },
+        {
+          "term": "leche",
+          "count": 22078
+        },
+        {
+          "term": "Aceite",
+          "count": 14116
+        },
+        {
+          "term": "manteca",
+          "count": 11533
+        },
+        {
+          "term": "azucar",
+          "count": 10516
+        },
+        {
+          "term": "aceite",
+          "count": 10298
+        },
+        {
+          "term": "Manteca",
+          "count": 10127
+        },
+        {
+          "term": "papel higienico",
+          "count": 9665
+        },
+        {
+          "term": "papel%20higienico",
+          "count": 9629
+        },
+        {
+          "term": "yerba",
+          "count": 9364
+        },
+        {
+          "term": "Fideos",
+          "count": 9175
+        },
+        {
+          "term": "atun",
+          "count": 8629
+        },
+        {
+          "term": "arroz",
+          "count": 8433
+        },
+        {
+          "term": "Azucar",
+          "count": 8404
+        },
+        {
+          "term": "Yerba",
+          "count": 8387
+        },
+        {
+          "term": "fideos",
+          "count": 8372
+        },
+        {
+          "term": "cafe",
+          "count": 8299
+        },
+        {
+          "term": "Cafe",
+          "count": 8059
+        },
+        {
+          "term": "Arroz",
+          "count": 7674
+        },
+        {
+          "term": "Cerveza",
+          "count": 7672
+        },
+        {
+          "term": "Dulce de leche",
+          "count": 7276
+        },
+        {
+          "term": "Dulce%20de%20leche",
+          "count": 7186
+        },
+        {
+          "term": "Harina",
+          "count": 7124
+        },
+        {
+          "term": "Carne",
+          "count": 6544
+        },
+        {
+          "term": "queso crema",
+          "count": 6237
+        },
+        {
+          "term": "queso%20crema",
+          "count": 6197
+        },
+        {
+          "term": "mayonesa",
+          "count": 6095
+        },
+        {
+          "term": "Queso crema",
+          "count": 6088
+        },
+        {
+          "term": "dulce de leche",
+          "count": 6034
+        }
+      ]
+    },
+    {
+      "eventName": "search",
+      "dim": "customEvent:search_term",
+      "ok": true,
+      "sample": [
+        {
+          "term": "Leche",
+          "count": 28052
+        },
+        {
+          "term": "",
+          "count": 23018
+        },
+        {
+          "term": "leche",
+          "count": 22331
+        },
+        {
+          "term": "Aceite",
+          "count": 14242
+        },
+        {
+          "term": "manteca",
+          "count": 11736
+        },
+        {
+          "term": "azucar",
+          "count": 10735
+        },
+        {
+          "term": "aceite",
+          "count": 10420
+        },
+        {
+          "term": "Manteca",
+          "count": 10104
+        },
+        {
+          "term": "papel higienico",
+          "count": 9741
+        },
+        {
+          "term": "papel%20higienico",
+          "count": 9710
+        },
+        {
+          "term": "yerba",
+          "count": 9408
+        },
+        {
+          "term": "Fideos",
+          "count": 9226
+        },
+        {
+          "term": "atun",
+          "count": 8820
+        },
+        {
+          "term": "fideos",
+          "count": 8592
+        },
+        {
+          "term": "Yerba",
+          "count": 8541
+        },
+        {
+          "term": "arroz",
+          "count": 8491
+        },
+        {
+          "term": "Azucar",
+          "count": 8362
+        },
+        {
+          "term": "cafe",
+          "count": 8211
+        },
+        {
+          "term": "Cafe",
+          "count": 7798
+        },
+        {
+          "term": "Arroz",
+          "count": 7687
+        },
+        {
+          "term": "Cerveza",
+          "count": 7639
+        },
+        {
+          "term": "Harina",
+          "count": 7248
+        },
+        {
+          "term": "Dulce de leche",
+          "count": 7207
+        },
+        {
+          "term": "Dulce%20de%20leche",
+          "count": 7123
+        },
+        {
+          "term": "Carne",
+          "count": 6715
+        },
+        {
+          "term": "queso crema",
+          "count": 6286
+        },
+        {
+          "term": "dulce de leche",
+          "count": 6277
+        },
+        {
+          "term": "queso%20crema",
+          "count": 6244
+        },
+        {
+          "term": "dulce%20de%20leche",
+          "count": 6235
+        },
+        {
+          "term": "Queso crema",
+          "count": 6219
+        }
+      ]
+    },
+    {
+      "eventName": "view_search_results",
+      "dim": "searchTerm",
+      "ok": true,
+      "sample": [
+        {
+          "term": "/bebidas/gaseosas/gaseosas-cola/coca-cola",
+          "count": 4746
+        },
+        {
+          "term": "/almacen/aceites-y-vinagres/aceites-comunes/aceites-de-oliva/aceites-en-aerosol/aceites-especiales",
+          "count": 4101
+        },
+        {
+          "term": "/perfumeria-y-farmacia/cuidado-del-cabello/dove",
+          "count": 2905
+        },
+        {
+          "term": "/lacteos-y-productos-frescos/manteca",
+          "count": 2391
+        },
+        {
+          "term": "/almacen/enlatados-y-conservas/conservas-de-pescado/atun-al-natural/atun-en-aceite",
+          "count": 2299
+        },
+        {
+          "term": "/tex/zapatillas",
+          "count": 1924
+        },
+        {
+          "term": "/limpieza/rollos-de-cocina-y-servilletas/rollo-de-cocina",
+          "count": 1715
+        },
+        {
+          "term": "/almacen/comidas-instantaneas/arcor/gallo/knorr",
+          "count": 1479
+        },
+        {
+          "term": "/almacen/sal-aderezos-y-saborizadores/mayonesa",
+          "count": 1171
+        },
+        {
+          "term": "/limpieza/limpieza-de-la-ropa/jabones-para-la-ropa/detergente/jabon-liquido-para-ropa",
+          "count": 880
+        },
+        {
+          "term": "/frutas-y-verduras/verduras/papa/papa-blanca",
+          "count": 878
+        },
+        {
+          "term": "/jugueteria-y-libreria/jugueteria/munecos-y-munecas",
+          "count": 717
+        },
+        {
+          "term": "/mascotas/alimentos-para-perros",
+          "count": 694
+        },
+        {
+          "term": "/lacteos-y-productos-frescos/mantecas-margarinas-y-levaduras/levadura-fresca/levadura-seca",
+          "count": 665
+        },
+        {
+          "term": "/carnes-y-pescados/carne-vacuna/carne-picada",
+          "count": 609
+        },
+        {
+          "term": "/jugueteria-y-libreria/jugueteria/autos-y-pistas-de-juguete",
+          "count": 592
+        },
+        {
+          "term": "/carnes-y-pescados/carne-vacuna/asado/tapa-de-asado",
+          "count": 537
+        },
+        {
+          "term": "/bebidas/vinos/vinos-tintos",
+          "count": 498
+        },
+        {
+          "term": "/almacen/harinas/avena/salvado-de-avena",
+          "count": 491
+        },
+        {
+          "term": "/electro-y-tecnologia/informatica-y-gaming/notebooks-y-pc/notebook",
+          "count": 481
+        },
+        {
+          "term": "/lacteos-y-productos-frescos/fiambres/jamon-cocido/jamon-crudo",
+          "count": 469
+        },
+        {
+          "term": "/electro-y-tecnologia/climatizacion/calefaccion-a-gas/calefaccion-a-lena/calefaccion-electrica",
+          "count": 466
+        },
+        {
+          "term": "/hogar/cocina-y-comedor/vajilla/plato/plato-de-madera/plato-fuente/plato-playo/plato-postre",
+          "count": 466
+        },
+        {
+          "term": "/almacen/aceites-y-vinagres/aceites-comunes/aceite-de-girasol",
+          "count": 464
+        },
+        {
+          "term": "/almacen/aceites-y-vinagres/vinagres-acetos-y-limon/vinagre-de-alcohol/vinagre-de-arroz/vinagre-de-manzana/vinagre-de-uva/vinagre-de-vino",
+          "count": 460
+        },
+        {
+          "term": "/electro-y-tecnologia/pequeños-electrodomesticos/tostadoras-y-sandwicheras/tostadora/tostadora-electrica",
+          "count": 433
+        },
+        {
+          "term": "/almacen/harinas/harinas-comunes-y-leudantes/harina-leudante",
+          "count": 431
+        },
+        {
+          "term": "/frutas-y-verduras/palta",
+          "count": 425
+        },
+        {
+          "term": "/lacteos-y-productos-frescos/leches-descremadas/leches-en-polvo/leches-enteras/leches-saborizadas/leches-vegetales/yogures-descremados/yogures-enteros",
+          "count": 425
+        },
+        {
+          "term": "/indumentaria/campera",
+          "count": 400
+        }
+      ]
+    },
+    {
+      "eventName": "view_search_results",
+      "dim": "customEvent:search_term",
+      "ok": true,
+      "sample": [
+        {
+          "term": "/bebidas/gaseosas/gaseosas-cola/coca-cola",
+          "count": 4827
+        },
+        {
+          "term": "/almacen/aceites-y-vinagres/aceites-comunes/aceites-de-oliva/aceites-en-aerosol/aceites-especiales",
+          "count": 4001
+        },
+        {
+          "term": "/perfumeria-y-farmacia/cuidado-del-cabello/dove",
+          "count": 2997
+        },
+        {
+          "term": "/lacteos-y-productos-frescos/manteca",
+          "count": 2355
+        },
+        {
+          "term": "/almacen/enlatados-y-conservas/conservas-de-pescado/atun-al-natural/atun-en-aceite",
+          "count": 2353
+        },
+        {
+          "term": "/tex/zapatillas",
+          "count": 1935
+        },
+        {
+          "term": "/limpieza/rollos-de-cocina-y-servilletas/rollo-de-cocina",
+          "count": 1615
+        },
+        {
+          "term": "/almacen/comidas-instantaneas/arcor/gallo/knorr",
+          "count": 1418
+        },
+        {
+          "term": "/almacen/sal-aderezos-y-saborizadores/mayonesa",
+          "count": 1085
+        },
+        {
+          "term": "/frutas-y-verduras/verduras/papa/papa-blanca",
+          "count": 987
+        },
+        {
+          "term": "/limpieza/limpieza-de-la-ropa/jabones-para-la-ropa/detergente/jabon-liquido-para-ropa",
+          "count": 959
+        },
+        {
+          "term": "/jugueteria-y-libreria/jugueteria/munecos-y-munecas",
+          "count": 711
+        },
+        {
+          "term": "/mascotas/alimentos-para-perros",
+          "count": 690
+        },
+        {
+          "term": "/jugueteria-y-libreria/jugueteria/autos-y-pistas-de-juguete",
+          "count": 618
+        },
+        {
+          "term": "/carnes-y-pescados/carne-vacuna/carne-picada",
+          "count": 607
+        },
+        {
+          "term": "/almacen/aceites-y-vinagres/vinagres-acetos-y-limon/vinagre-de-alcohol/vinagre-de-arroz/vinagre-de-manzana/vinagre-de-uva/vinagre-de-vino",
+          "count": 595
+        },
+        {
+          "term": "/lacteos-y-productos-frescos/mantecas-margarinas-y-levaduras/levadura-fresca/levadura-seca",
+          "count": 573
+        },
+        {
+          "term": "/lacteos-y-productos-frescos/fiambres/jamon-cocido/jamon-crudo",
+          "count": 527
+        },
+        {
+          "term": "/carnes-y-pescados/carne-vacuna/asado/tapa-de-asado",
+          "count": 518
+        },
+        {
+          "term": "/bebidas/vinos/vinos-tintos",
+          "count": 498
+        },
+        {
+          "term": "/almacen/harinas/avena/salvado-de-avena",
+          "count": 493
+        },
+        {
+          "term": "/electro-y-tecnologia/pequeños-electrodomesticos/tostadoras-y-sandwicheras/tostadora/tostadora-electrica",
+          "count": 464
+        },
+        {
+          "term": "/lacteos-y-productos-frescos/leches-descremadas/leches-en-polvo/leches-enteras/leches-saborizadas/leches-vegetales/yogures-descremados/yogures-enteros",
+          "count": 456
+        },
+        {
+          "term": "/almacen/aceites-y-vinagres/aceites-comunes/aceite-de-girasol",
+          "count": 448
+        },
+        {
+          "term": "/hogar/cocina-y-comedor/vajilla/plato/plato-de-madera/plato-fuente/plato-playo/plato-postre",
+          "count": 442
+        },
+        {
+          "term": "/almacen/harinas/harinas-comunes-y-leudantes/harina-leudante",
+          "count": 419
+        },
+        {
+          "term": "/indumentaria/campera",
+          "count": 416
+        },
+        {
+          "term": "/perfumes/23839/23839",
+          "count": 409
+        },
+        {
+          "term": "/frutas-y-verduras/palta",
+          "count": 397
+        },
+        {
+          "term": "/electro-y-tecnologia/informatica-y-gaming/notebooks-y-pc/notebook",
+          "count": 390
+        }
+      ]
+    }
+  ]
+}
