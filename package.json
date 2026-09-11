@@ -11,10 +11,12 @@
     "backfill": "node src/backfill.js",
     "aggregate": "node src/aggregate.js",
     "inspect:channels": "node src/inspect-channels.js",
+    "inspect:search": "node src/inspect-search.js",
     "test": "node --test test/"
   },
   "license": "UNLICENSED",
   "dependencies": {
-    "@upstash/redis": "^1.38.3"
+    "@upstash/redis": "^1.38.3",
+    "googleapis": "^180.0.0"
   }
 }
