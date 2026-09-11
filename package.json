@@ -12,6 +12,7 @@
     "aggregate": "node src/aggregate.js",
     "inspect:channels": "node src/inspect-channels.js",
     "inspect:search": "node src/inspect-search.js",
+    "inspect:search-diagnosis": "node src/inspect-search-diagnosis.js",
     "test": "node --test test/"
   },
   "license": "UNLICENSED",

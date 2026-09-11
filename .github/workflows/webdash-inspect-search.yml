@@ -27,10 +27,17 @@ jobs:
           GA4_PROPERTY_ID: ${{ secrets.GA4_PROPERTY_ID }}
         run: npm run inspect:search
 
+      - name: Diagnosticar top de búsquedas contra VTEX (¿cuáles no traen resultados?)
+        env:
+          VTEX_ACCOUNT_NAME: ${{ secrets.VTEX_ACCOUNT_NAME }}
+          VTEX_ENVIRONMENT: ${{ secrets.VTEX_ENVIRONMENT }}
+        run: npm run inspect:search-diagnosis
+
       - name: Commit report
         run: |
           git config user.name "webdash-bot"
           git config user.email "webdash-bot@users.noreply.github.com"
-          git add -f config/search-inspect.report.json
-          git diff --cached --quiet || git commit -m "chore(inspect): reporte de búsqueda GA4 [skip ci]"
+          [ -f config/search-inspect.report.json ] && git add -f config/search-inspect.report.json
+          [ -f config/search-diagnosis.report.json ] && git add -f config/search-diagnosis.report.json
+          git diff --cached --quiet || git commit -m "chore(inspect): reporte de búsqueda GA4 + diagnóstico VTEX [skip ci]"
           git push
