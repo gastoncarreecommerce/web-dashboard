@@ -87,17 +87,25 @@ async function main() {
     }
 
     // ── Paso 2: intentar el término buscado ────────────────────────────────
+    // Solo para "search": ya confirmamos en una corrida anterior que
+    // "view_search_results" guarda RUTAS DE CATEGORÍA en ese campo (navegar
+    // por categorías), no texto libre tipeado — no sirve para este
+    // diagnóstico. Traer un TOP grande (no solo 30): los problemas reales
+    // del buscador (términos sin resultados, mal escritos, marcas
+    // específicas) están en la cola larga, no en los términos genéricos más
+    // buscados — esos casi nunca fallan.
+    const TERM_LIMIT = Number(process.env.INSPECT_SEARCH_TERM_LIMIT || 1000);
     report.searchTermAttempts = [];
-    for (const eventName of searchEventNames) {
+    for (const eventName of searchEventNames.filter((n) => n === 'search')) {
       for (const dim of ['searchTerm', 'customEvent:search_term']) {
-        console.log(`\n2) Intentando desglosar "${eventName}" por dimensión "${dim}"...`);
+        console.log(`\n2) Intentando desglosar "${eventName}" por dimensión "${dim}" (hasta ${TERM_LIMIT} términos)...`);
         const res = await runReport(analyticsdata, propertyId, {
           dateRanges: [dateRange],
           dimensions: [{ name: dim }],
           metrics: [{ name: 'eventCount' }],
           dimensionFilter: { filter: { fieldName: 'eventName', stringFilter: { value: eventName } } },
           orderBys: [{ metric: { metricName: 'eventCount' }, desc: true }],
-          limit: '30',
+          limit: String(TERM_LIMIT),
         }).catch((e) => ({ error: e.message }));
 
         if (res.error) {
@@ -108,7 +116,7 @@ async function main() {
         const rows = (res.data.rows || []).map((r) => ({ term: r.dimensionValues[0].value, count: Number(r.metricValues[0].value) }));
         console.log(`  ✓ ${dim} funcionó — ${rows.length} términos distintos. Top 10:`);
         for (const r of rows.slice(0, 10)) console.log(`    "${r.term}" — ${r.count}`);
-        report.searchTermAttempts.push({ eventName, dim, ok: true, sample: rows.slice(0, 30) });
+        report.searchTermAttempts.push({ eventName, dim, ok: true, sample: rows });
       }
     }
   }

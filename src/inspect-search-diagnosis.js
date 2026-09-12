@@ -31,7 +31,7 @@ const path = require('path');
 
 const IN_PATH = path.join(__dirname, '..', 'config', 'search-inspect.report.json');
 const OUT_PATH = path.join(__dirname, '..', 'config', 'search-diagnosis.report.json');
-const TOP_N = Number(process.env.INSPECT_SEARCH_TOP_N || 40);
+const TOP_N = Number(process.env.INSPECT_SEARCH_TOP_N || 200);
 const CONCURRENCY = 8;
 
 function baseUrl() {
@@ -68,10 +68,20 @@ async function searchProductCount(term) {
   const res = await fetch(url, { headers: { Accept: 'application/json' } });
   if (!res.ok && res.status !== 206) throw new Error(`VTEX ${res.status}`);
   const products = await res.json().catch(() => []);
+  const count = Array.isArray(products) ? products.length : 0;
+
+  // VTEX manda el total real en esta cabecera ("resources 0-9/123"), pero
+  // solo cuando corta la respuesta (206) — si no viene, no hay forma de
+  // saber si "10" es el total real o si hay muchos más y esta consulta solo
+  // pidió los primeros 10. Se marca `capped` para no mostrar un número
+  // como si fuera exacto cuando en realidad es "10 o más".
   const range = res.headers.get('resources-content-range'); // "resources 0-9/123"
-  const total = range ? Number(range.split('/')[1]) : (Array.isArray(products) ? products.length : 0);
+  const total = range ? Number(range.split('/')[1]) : null;
+  const capped = !(Number.isFinite(total));
+
   return {
-    total: Number.isFinite(total) ? total : (Array.isArray(products) ? products.length : 0),
+    total: Number.isFinite(total) ? total : count,
+    capped: capped && count >= 10,
     sample: (products || []).slice(0, 3).map((p) => p.productName).filter(Boolean),
   };
 }
@@ -109,6 +119,7 @@ async function main() {
     try {
       const r = await searchProductCount(t.term);
       t.vtexResults = r.total;
+      t.vtexResultsCapped = r.capped; // true: "vtexResults o más" (no se pidió el total real, se cortó en la página)
       t.sampleProducts = r.sample;
       t.status = r.total === 0 ? 'sin_resultados' : r.total < 5 ? 'pocos_resultados' : 'ok';
     } catch (e) {
@@ -124,7 +135,8 @@ async function main() {
 
   for (const t of terms) {
     const tag = { sin_resultados: '✗ SIN RESULTADOS', pocos_resultados: '⚠ pocos resultados', error_consulta: '? error', ok: '✓' }[t.status];
-    console.log(`  ${tag.padEnd(20)} "${t.term}" — ${t.searchCount} búsquedas · ${t.vtexResults ?? '—'} productos`);
+    const productsTxt = t.vtexResults == null ? '—' : `${t.vtexResults}${t.vtexResultsCapped ? '+' : ''}`;
+    console.log(`  ${tag.padEnd(20)} "${t.term}" — ${t.searchCount} búsquedas · ${productsTxt} productos`);
   }
 
   const sinResultados = terms.filter((t) => t.status === 'sin_resultados');
