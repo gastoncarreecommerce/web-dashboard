@@ -1,0 +1,188 @@
+{
+  "generatedAt": "2026-09-11T21:12:02.271Z",
+  "source": "config/search-inspect.report.json (GA4, evento \"search\")",
+  "termsAnalyzed": 16,
+  "summary": {
+    "sinResultados": 0,
+    "pocosResultados": 0,
+    "ok": 16
+  },
+  "terms": [
+    {
+      "term": "leche",
+      "searchCount": 50123,
+      "vtexResults": 10,
+      "sampleProducts": [
+        "Cápsulas de café latte Carrefour Extra x 16 uni",
+        "Pepitas artesanales dulce de leche",
+        "Leche chocolatada ​Cindor 1 lt"
+      ],
+      "status": "ok"
+    },
+    {
+      "term": "aceite",
+      "searchCount": 24414,
+      "vtexResults": 10,
+      "sampleProducts": [
+        "Lomito de atún en aceite Carrefour Classic 170 grs",
+        "Aceite de girasol Pureza 900 cc.",
+        "Aceite de girasol Pureza 1500 cc."
+      ],
+      "status": "ok"
+    },
+    {
+      "term": "manteca",
+      "searchCount": 21660,
+      "vtexResults": 10,
+      "sampleProducts": [
+        "Manteca Primer Premio 200 g.",
+        "Manteca Primer Premio 100 g.",
+        "Medialunas de manteca x 6 u."
+      ],
+      "status": "ok"
+    },
+    {
+      "term": "dulce de leche",
+      "searchCount": 20496,
+      "vtexResults": 10,
+      "sampleProducts": [
+        "Pepitas artesanales dulce de leche",
+        "Licor Cusenier dulce de leche700 cc",
+        "Yogur entero Tregar dulce de leche"
+      ],
+      "status": "ok"
+    },
+    {
+      "term": "papel higienico",
+      "searchCount": 19294,
+      "vtexResults": 10,
+      "sampleProducts": [
+        "Papel higiénico hoja simple Carrefour Essential 4 x 80 m.",
+        "Palito porta rollo Carrefour papel higienico",
+        "Papel higiénico Elegante triple hoja 4 u."
+      ],
+      "status": "ok"
+    },
+    {
+      "term": "azucar",
+      "searchCount": 18920,
+      "vtexResults": 10,
+      "sampleProducts": [
+        "Azúcar Ledesma light 500 g.",
+        "Algodón de azúcar oosh (Modelos Surtidos)",
+        "Azúcar común Bulnez 1 kg"
+      ],
+      "status": "ok"
+    },
+    {
+      "term": "queso crema",
+      "searchCount": 18522,
+      "vtexResults": 10,
+      "sampleProducts": [
+        "Queso crema Ilolay clásico 290 grs",
+        "Queso crema Tregar light 190 g.",
+        "Queso crema Tregar clásico 190 g."
+      ],
+      "status": "ok"
+    },
+    {
+      "term": "yerba",
+      "searchCount": 17751,
+      "vtexResults": 10,
+      "sampleProducts": [
+        "Yerba mate Natura 500 g.",
+        "Yerba mate Amanda tradicional 500 grs",
+        "Yerba mate Unión liviana 500 g."
+      ],
+      "status": "ok"
+    },
+    {
+      "term": "fideos",
+      "searchCount": 17547,
+      "vtexResults": 10,
+      "sampleProducts": [
+        "Fideos Bellaterra 500 g.",
+        "Fideos foratini Lucchetti 500 g.",
+        "Fideos dedalitos Lucchetti 500 g."
+      ],
+      "status": "ok"
+    },
+    {
+      "term": "cafe",
+      "searchCount": 16358,
+      "vtexResults": 10,
+      "sampleProducts": [
+        "Café molido torrado Carrefour Classic 500 grs",
+        "Cápsulas de café latte Carrefour Extra x 16 uni",
+        "Cápsulas de café cortado Carrefour Extra x 16 uni"
+      ],
+      "status": "ok"
+    },
+    {
+      "term": "arroz",
+      "searchCount": 16107,
+      "vtexResults": 10,
+      "sampleProducts": [
+        "Harina de arroz sin tacc Abucel de arroz blanco 500 g.",
+        "Arroz yamaní 400 grs",
+        "Nestum Arroz 225 grs"
+      ],
+      "status": "ok"
+    },
+    {
+      "term": "atun",
+      "searchCount": 8629,
+      "vtexResults": 10,
+      "sampleProducts": [
+        "Lomito de atún en aceite Carrefour Classic 170 grs",
+        "Lomito de atún al natural Carrefour Classic 170 grs",
+        "Ensalada de atún Carrefour Classic 160 grs"
+      ],
+      "status": "ok"
+    },
+    {
+      "term": "cerveza",
+      "searchCount": 7672,
+      "vtexResults": 10,
+      "sampleProducts": [
+        "Cerveza rubia Mecklenburger Pilsener 330 ml",
+        "Cerveza rubia Budweiser 473 ml",
+        "Cerveza rubia Brahma 473 ml"
+      ],
+      "status": "ok"
+    },
+    {
+      "term": "harina",
+      "searchCount": 7124,
+      "vtexResults": 10,
+      "sampleProducts": [
+        "Harina leudante Chacabuco 1 kg",
+        "Harina integral Pureza 1 kg.",
+        "Harina leudante Bulnez 1 kg"
+      ],
+      "status": "ok"
+    },
+    {
+      "term": "carne",
+      "searchCount": 6544,
+      "vtexResults": 10,
+      "sampleProducts": [
+        "Empanada de carne 6 u.",
+        "Milanesa de carne x kg",
+        "Empanada de carne 2 u."
+      ],
+      "status": "ok"
+    },
+    {
+      "term": "mayonesa",
+      "searchCount": 6095,
+      "vtexResults": 10,
+      "sampleProducts": [
+        "Mayonesa Natura 950 g.",
+        "Mayonesa Cañuelas 500 cc.",
+        "Mayonesa Cañuelas 250 cc."
+      ],
+      "status": "ok"
+    }
+  ]
+}
