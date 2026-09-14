@@ -1,26 +1,32 @@
 /**
  * Helpers compartidos para "Hoy en vivo": el cache incremental en Redis
- * (Upstash) y la lógica de clasificación de canal, reutilizadas por
- * api/today-live.js. No es una ruta — no exporta un handler default,
- * Vercel no la trata como endpoint.
+ * (Upstash), usado por api/today-live.js.
+ *
+ * La clasificación de cada pedido (canal, segmento, categorías, provincia,
+ * tienda, medios de pago, etc.) NO se duplica acá — se importa directo de
+ * src/fetch-day.js (newDayAcc/applyOrderToAcc/finalizeDay), que es exactamente
+ * la misma función que usa el pipeline por lotes. Es un módulo CJS puro (sin
+ * I/O propio más allá de leer config/*.json), y Node permite importar un
+ * módulo CommonJS desde un archivo ESM sin problema — se probó explícitamente
+ * antes de este cambio. Así "hoy en vivo" y el histórico committeado nunca
+ * pueden desviarse en cómo cuentan un pedido.
  *
  * Por qué Redis y no re-pedirle todo a VTEX en cada consulta: WebDash es el
  * canal WEB, el mayoritario — a diferencia de un dashboard que solo mira un
  * puñado curado de vendedores, acá "hoy" puede tener miles de pedidos. Si
  * cada poll (cada 15s mientras la pantalla está abierta) le pidiera a VTEX
- * el detalle de TODOS de nuevo para saber cuáles son web, sería carísimo y
- * cada vez más lento según avanza el día. Este cache guarda, pedido por
- * pedido, si ya se sabe su canal — así cada poll solo pide detalle de los
- * pedidos NUEVOS desde la última vez (normalmente unos pocos).
+ * el detalle de TODOS de nuevo, sería carísimo y cada vez más lento según
+ * avanza el día. Este cache guarda, pedido por pedido, el JSON completo que
+ * devuelve VTEX — así cada poll solo pide detalle de los pedidos NUEVOS desde
+ * la última vez (normalmente unos pocos), y el resto se relee del cache para
+ * reconstruir el acumulado del día completo.
  *
- * Env vars en Vercel (agregar el storage "Upstash for Redis" desde Vercel
- * las carga solas, no hace falta escribirlas a mano):
+ * Env vars en Vercel (agregar el storage "Upstash for Redis" desde Vercel las
+ * carga solas, no hace falta escribirlas a mano):
  *   KV_REST_API_URL / KV_REST_API_TOKEN            (nombre histórico de Vercel KV)
  *   o UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN (nombre nativo de Upstash)
  */
 import { Redis } from '@upstash/redis';
-import fs from 'fs';
-import path from 'path';
 
 let redisClient;
 export function getRedis() {
@@ -32,25 +38,6 @@ export function getRedis() {
   // más simple de razonar/depurar.
   if (!redisClient) redisClient = new Redis({ url, token, responseEncoding: false });
   return redisClient;
-}
-
-let _channelMap;
-export function getChannelMap() {
-  if (!_channelMap) {
-    _channelMap = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'config', 'channel-map.json'), 'utf8'));
-  }
-  return _channelMap;
-}
-
-/** Misma regla que src/classify.js#orderChannel — duplicada a propósito para
- * no depender de un require() cruzado entre CJS (src/) y ESM (api/). */
-export function orderChannel(order, channelMap) {
-  const { appId, fieldName } = channelMap.customAppsField;
-  const apps = order.customData?.customApps || [];
-  const app = apps.find((a) => a.id === appId);
-  const raw = app?.fields?.[fieldName];
-  const value = raw == null ? null : String(raw).trim();
-  return value === channelMap.appValue ? 'app' : 'web';
 }
 
 export function vtexBaseUrl() {

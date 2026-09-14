@@ -17,10 +17,53 @@
   let exportsBag = {};
   let meta = null;
 
-  // El punto de "en vivo" solo se prende si hoy tiene datos Y son recientes:
-  // el pipeline en vivo corre cada 30 min, así que más de 90 sin actualizar
-  // significa que se cortó, no que "hoy" dejó de existir.
+  // ── "Hoy en vivo" ──────────────────────────────────────────────────────
+  // Sondea /api/today-live cada 15s mientras "hoy" esté dentro del rango
+  // elegido, sin importar la vista — el endpoint devuelve el día completo en
+  // el mismo formato que daily-summary.json, así que alcanza con pisar esa
+  // entrada en el objeto cacheado por W.load: todas las vistas (Dashboard,
+  // Analítica, Marketing, Cupones) lo leen del mismo cache y quedan al día
+  // sin ningún cambio propio. Solo el Dashboard se re-renderiza solo en cada
+  // poll (es la pantalla sin inputs de texto); en las demás el dato queda
+  // fresco para la próxima vez que el usuario interactúe y dispare un render.
+  const LIVE_VIEWS = ['dashboard', 'analytics', 'marketing', 'coupons'];
+  let liveTimer = null;
+  let liveQueriedAt = null;
+
+  function stopLive() {
+    if (liveTimer) { clearInterval(liveTimer); liveTimer = null; }
+  }
+
+  async function pollLiveToday() {
+    try {
+      const res = await fetch('/api/today-live', { cache: 'no-store' });
+      if (!res.ok) return; // sin storage configurado (404) o error transitorio: se reintenta el próximo tick
+      const live = await res.json();
+      const daily = await W.load('daily-summary');
+      const entry = {
+        date: live.date, segments: live.segments, hourly: null,
+        discount: live.discount || 0, newCustomers: live.newCustomers || 0,
+        activeCustomers: live.activeCustomers || 0, statusStats: live.statusStats || {},
+      };
+      const idx = daily.days.findIndex((d) => d.date === live.date);
+      if (idx >= 0) daily.days[idx] = entry;
+      else { daily.days.push(entry); daily.days.sort((a, b) => a.date.localeCompare(b.date)); }
+      if (!days.includes(live.date)) { days.push(live.date); days.sort(); }
+      liveQueriedAt = live.queriedAt;
+      if (state.view === 'dashboard') W.render();
+    } catch { /* red intermitente: se reintenta en el próximo tick, sin romper la pantalla */ }
+  }
+
+  function startLive() {
+    if (liveTimer) return;
+    pollLiveToday();
+    liveTimer = setInterval(pollLiveToday, 15000);
+  }
+
+  // El punto de "en vivo" se prende con el poll de arriba (actualiza cada
+  // 15s) o, a falta de eso, si el pipeline de 30 min todavía está fresco.
   function liveFresh() {
+    if (liveQueriedAt && Date.now() - new Date(liveQueriedAt).getTime() < 45000) return true;
     if (!meta?.generatedAt || !days.includes(W.arToday())) return false;
     return Date.now() - new Date(meta.generatedAt).getTime() < 90 * 60 * 1000;
   }
@@ -99,11 +142,9 @@
     if (state.range) {
       const isToday = state.preset === 'today' && state.range.from === W.arToday();
       $('range-label').textContent = isToday
-        // Nunca "en vivo": el pipeline actualiza cada ~30 min, no en tiempo
-        // real — decir "en vivo" y mostrar datos con 30 min de atraso es lo
-        // que generaba la confusión. Se muestra la hora real de la última
-        // actualización, sin prometer algo que no es.
-        ? `Hoy ${liveFresh() ? '· actualizado ' + W.timeAgo(meta.generatedAt) : '· todavía sin datos de hoy'}`
+        // Con el poll de /api/today-live esto sí es en vivo de verdad (cada
+        // 15s) — ya no depende de esperar la corrida de 30 min ni un deploy.
+        ? `Hoy ${liveFresh() ? '· en vivo · actualizado ' + W.timeAgo(liveQueriedAt || meta?.generatedAt) : '· todavía sin datos de hoy'}`
         : state.range.from === state.range.to
           ? W.fmtDayLong(state.range.from)
           : `${W.fmtDayLong(state.range.from)} → ${W.fmtDayLong(state.range.to)}`;
@@ -128,10 +169,11 @@
 
     exportsBag = {};
     const ctx = { range: state.range, bucket: state.bucket, compare: state.compare, el: $('content'), exports: exportsBag };
-    // El sondeo de "Hoy en vivo" del Dashboard se corta acá antes de cambiar
-    // de vista: si no, seguiría pidiendo datos de fondo aunque ya no se esté
-    // mirando esa pantalla. W.viewDashboard lo vuelve a prender si corresponde.
-    if (state.view !== 'dashboard') W.stopTodayLivePoll?.();
+
+    const todayInRange = state.range && W.arToday() >= state.range.from && W.arToday() <= state.range.to;
+    if (todayInRange && LIVE_VIEWS.includes(state.view)) startLive();
+    else stopLive();
+
     try {
       if (state.view === 'dashboard') await W.viewDashboard(ctx);
       else if (state.view === 'analytics') await W.viewAnalytics(ctx);

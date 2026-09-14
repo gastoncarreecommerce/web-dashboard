@@ -16,40 +16,6 @@
     </div>`;
   }
 
-  // ── "Hoy" en vivo ───────────────────────────────────────────────────────
-  // Sondea /api/today-live cada 15s (mismo patrón que el otro dashboard de
-  // VTEX de la cuenta) mientras la pantalla muestre exactamente "hoy, todos
-  // los segmentos". Solo actualiza los 3 tiles afectados (Pedidos, GMV,
-  // Ticket) en vez de re-renderizar toda la vista, para no interrumpir un
-  // scroll o un tooltip abierto cada 15 segundos.
-  W.stopTodayLivePoll = function () {
-    if (W._todayLiveTimer) { clearInterval(W._todayLiveTimer); W._todayLiveTimer = null; }
-  };
-
-  function startTodayLivePoll({ icon, color, prev, compare, sparkOrders, sparkGmv }) {
-    W.stopTodayLivePoll();
-    const tick = async () => {
-      const data = await fetch('/api/today-live', { cache: 'no-store' })
-        .then((r) => (r.ok ? r.json() : null))
-        .catch(() => null);
-      if (!data) return; // sin storage configurado, o VTEX no respondió: se deja lo que ya estaba mostrando
-      const sub = `<span class="live-dot" style="background:#1baf7a"></span> en vivo · canal web · ${W.timeAgo(data.queriedAt)}`;
-      const dOrders = compare ? W.delta(data.orders, prev.orders) : undefined;
-      const dGmv = compare ? W.delta(data.gmv, prev.gmv) : undefined;
-      const dTicket = compare ? W.delta(W.ticket(data.gmv, data.orders), W.ticket(prev.gmv, prev.orders)) : undefined;
-
-      const replace = (id, html) => { const node = document.getElementById(id); if (node) node.outerHTML = html; };
-      replace('kpi-orders', kpi({ id: 'kpi-orders', icon, label: 'Pedidos', value: W.fmtNumC(data.orders), delta: dOrders, color, sub,
-        spark: sparkOrders, tip: `<strong>Pedidos</strong><span class="tip-row">${W.fmtNum(data.orders)} en el período</span>` }));
-      replace('kpi-gmv', kpi({ id: 'kpi-gmv', icon: 'money', label: 'GMV', value: W.fmtMoneyC(data.gmv), delta: dGmv, color: '#1baf7a', sub,
-        spark: sparkGmv, tip: `<strong>GMV</strong><span class="tip-row">${W.fmtMoney(data.gmv)}</span>` }));
-      replace('kpi-ticket', kpi({ id: 'kpi-ticket', icon: 'ticket', label: 'Ticket promedio', value: W.fmtMoney(W.ticket(data.gmv, data.orders)),
-        delta: dTicket, color: '#eb6834', sub: 'GMV / pedidos' }));
-    };
-    tick();
-    W._todayLiveTimer = setInterval(tick, 15000);
-  }
-
   /** Observaciones automáticas: qué mirar / qué mejorar, sin tener que leer los gráficos. */
   function buildInsights(cur, prev, range, daily, catalog, bucket) {
     const out = [];
@@ -365,11 +331,5 @@
           tipFmt: (r, c, v) => `<strong>${r} ${c}:00</strong><span class="tip-row"><b>${W.fmtNum(v)}</b> pedidos</span>`,
         })}
       </div>` : ''}`;
-
-    if (bucket === 'all' && range.from === range.to && range.from === W.arToday()) {
-      startTodayLivePoll({ icon, color, prev, compare, sparkOrders, sparkGmv });
-    } else {
-      W.stopTodayLivePoll();
-    }
   };
 })();
