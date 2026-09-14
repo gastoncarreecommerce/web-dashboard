@@ -362,6 +362,7 @@ details.more[open] summary { margin-bottom: .45rem; }
 .pill.ok { color: var(--pos); background: var(--pos-soft); }
 .pill.no { color: var(--neg); background: var(--neg-soft); }
 .pill.n { color: var(--ink-3); background: var(--surface-3); }
+.pill.w { color: var(--warn); background: var(--warn-soft); }
 
 /* ── Insights ────────────────────────────────────────────────────────────── */
 .ins-h { display: flex; align-items: baseline; gap: .55rem; margin-bottom: .55rem; }

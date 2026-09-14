@@ -2,6 +2,10 @@ name: WebDash inspect search (GA4)
 
 on:
   workflow_dispatch: {}
+  # Corrida diaria automática: GA4 usa "yesterday" como último día de datos,
+  # así que correr una vez al día alcanza — más seguido no trae nada nuevo.
+  schedule:
+    - cron: '0 9 * * *' # 06:00 ART
 
 permissions:
   contents: write
@@ -39,5 +43,7 @@ jobs:
           git config user.email "webdash-bot@users.noreply.github.com"
           [ -f config/search-inspect.report.json ] && git add -f config/search-inspect.report.json
           [ -f config/search-diagnosis.report.json ] && git add -f config/search-diagnosis.report.json
+          [ -f docs/data/web/search-diagnosis.json ] && git add -f docs/data/web/search-diagnosis.json
+          [ -f docs/data/web/search-diagnosis-history.json ] && git add -f docs/data/web/search-diagnosis-history.json
           git diff --cached --quiet || git commit -m "chore(inspect): reporte de búsqueda GA4 + diagnóstico VTEX [skip ci]"
           git push

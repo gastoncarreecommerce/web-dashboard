@@ -25,8 +25,8 @@
     return Date.now() - new Date(meta.generatedAt).getTime() < 90 * 60 * 1000;
   }
 
-  const NAV_ICON = { dashboard: 'dashboard', analytics: 'analytics', coupons: 'tag', marketing: 'megaphone', audiences: 'audience' };
-  const TITLES = { dashboard: 'Dashboard', analytics: 'Analítica', coupons: 'Cupones', marketing: 'Marketing', audiences: 'Audiencias' };
+  const NAV_ICON = { dashboard: 'dashboard', analytics: 'analytics', coupons: 'tag', marketing: 'megaphone', buscador: 'search', audiences: 'audience' };
+  const TITLES = { dashboard: 'Dashboard', analytics: 'Analítica', coupons: 'Cupones', marketing: 'Marketing', buscador: 'Buscador', audiences: 'Audiencias' };
 
   function paintChrome() {
     document.querySelectorAll('.nav-item').forEach((n) => {
@@ -85,13 +85,16 @@
     $('preset-today').classList.toggle('is-live', liveFresh());
 
     // Dashboard, Analítica, Cupones y Marketing se filtran por segmento;
-    // Audiencias mira la base completa, así que ahí la fila no aplica.
+    // Audiencias mira la base completa y Buscador mira GA4 (no pedidos de
+    // VTEX), así que en esas dos la fila no aplica.
     const hasSeg = ['dashboard', 'analytics', 'coupons', 'marketing'].includes(state.view);
     $('row2').style.display = hasSeg ? '' : 'none';
     $('cmp-wrap').style.display = state.view === 'dashboard' ? '' : 'none';
-    // Audiencias mira toda la base histórica, no un rango.
-    $('date-controls').style.display = state.view === 'audiences' ? 'none' : '';
-    $('range-label').style.display = state.view === 'audiences' ? 'none' : '';
+    // Audiencias mira toda la base histórica y Buscador tiene su propia
+    // ventana fija (GA4, últimos 30 días) — ninguna usa el selector de rango.
+    const noRange = state.view === 'audiences' || state.view === 'buscador';
+    $('date-controls').style.display = noRange ? 'none' : '';
+    $('range-label').style.display = noRange ? 'none' : '';
 
     if (state.range) {
       const isToday = state.preset === 'today' && state.range.from === W.arToday();
@@ -117,7 +120,7 @@
 
     // Sin rango no hay nada que calcular: se muestra el estado vacío en vez de
     // dejar que cada vista falle leyendo range.from.
-    if (!state.range && state.view !== 'audiences') {
+    if (!state.range && state.view !== 'audiences' && state.view !== 'buscador') {
       $('content').innerHTML = `<div class="empty"><h2>Todavía no hay datos</h2>
         <p>Corré el backfill inicial para poblar el historial (ver README).</p></div>`;
       return;
@@ -134,6 +137,7 @@
       else if (state.view === 'analytics') await W.viewAnalytics(ctx);
       else if (state.view === 'coupons') await W.viewCoupons(ctx);
       else if (state.view === 'marketing') await W.viewMarketing(ctx);
+      else if (state.view === 'buscador') await W.viewBuscador(ctx);
       else await W.viewAudiences(ctx);
     } catch (e) {
       $('content').innerHTML = `<div class="empty err"><h2>Algo falló al renderizar</h2><p>${W.esc(e.message)}</p></div>`;
