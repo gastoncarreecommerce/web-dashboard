@@ -237,6 +237,11 @@ function main() {
     if (Object.keys(gp).length || Object.keys(gs).length) geoDays.push({ date, prov: gp, stores: gs });
 
     // Pedidos por tienda (schema 2 con orders[]; días de antes no lo traen).
+    // De paso arma qué tienda(s) visitó cada cliente hoy — se usa más abajo
+    // para "compró en la tienda X" en el constructor de audiencias. Solo
+    // cubre pedidos con tienda resuelta (mismo alcance que el resto de esta
+    // sección), así que es una cobertura parcial, no el 100% del historial.
+    const dayStoresByHash = {};
     for (const o of day.orders || []) {
       const bucket = (ordersByStoreMonth[o.s] = ordersByStoreMonth[o.s] || {});
       (bucket[month] = bucket[month] || []).push(o);
@@ -248,6 +253,7 @@ function main() {
       (orderIndexByMonth[month] = orderIndexByMonth[month] || []).push({
         id: o.id, t: o.t, s: o.s, sg: o.sg, h: o.h, g: o.g, st: o.st || null, cp: o.cp || undefined,
       });
+      if (o.h) (dayStoresByHash[o.h] = dayStoresByHash[o.h] || new Set()).add(o.s);
     }
 
     // Totales de catálogo: en schema 2 vienen dentro de cada segmento; en los
@@ -285,7 +291,7 @@ function main() {
     for (const [hash, c] of Object.entries(day.customers || {})) {
       let p = profiles.get(hash);
       if (!p) {
-        p = { o: 0, g: 0, first: date, last: date, segs: {}, cats: {}, catsN1: {}, catsN2: {}, cp: 0, pms: {}, days: [] };
+        p = { o: 0, g: 0, first: date, last: date, segs: {}, cats: {}, catsN1: {}, catsN2: {}, cp: 0, pms: {}, stores: {}, days: [] };
         profiles.set(hash, p);
         cohortFirstMonth.set(hash, month);
         newCustomers += 1;
@@ -299,6 +305,7 @@ function main() {
       for (const [cat, n] of Object.entries(c.c1 || {})) p.catsN1[cat] = (p.catsN1[cat] || 0) + n;
       for (const [cat, n] of Object.entries(c.c2 || {})) p.catsN2[cat] = (p.catsN2[cat] || 0) + n;
       for (const [pm, n] of Object.entries(c.pm || {})) p.pms[pm] = (p.pms[pm] || 0) + n;
+      for (const store of dayStoresByHash[hash] || []) p.stores[store] = (p.stores[store] || 0) + 1;
 
       const cm = cohortFirstMonth.get(hash);
       const key = `${cm}|${month}`;
@@ -484,24 +491,33 @@ function main() {
   const { names: catNamesN1, of: catOfN1 } = makeIndexer();
   const { names: catNamesN2, of: catOfN2 } = makeIndexer();
   const { names: pmNames, of: pmOf } = makeIndexer();
+  // Tiendas: se reusa el diccionario código->nombre que ya arma storeMeta (ver
+  // arriba, del geo.json) en vez de un indexer nuevo — mismo código, mismo
+  // nombre, en el mismo orden siempre (ordenado, no por orden de aparición).
+  const storeCodesList = Object.keys(storeMeta).sort();
+  const storeCodeIndex = new Map(storeCodesList.map((c, i) => [c, i]));
+  const storeNamesList = storeCodesList.map((c) => storeMeta[c].name || c);
 
   const dayIndex = new Map(days.map((d, i) => [d, i]));
   // cp = pedidos con cupón · ip = días promedio entre compras (0 si compró una
-  // sola vez) · pd = medio de pago dominante. `ip` es lo que hace posible
-  // definir churn en serio: no es "hace X días que no compra" a secas, sino
-  // "hace mucho más de lo que suele tardar ESTE cliente en volver".
-  const A = { h: [], o: [], g: [], f: [], l: [], sd: [], cd: [], cd1: [], cd2: [], cs: [], cp: [], ip: [], pd: [] };
-  // Los archivos diarios generados antes de que el pipeline capturara cupón y
-  // medio de pago por cliente no traen esos campos. Se detecta y se informa,
-  // para que la UI deshabilite esos filtros en vez de devolver 0 en todos y
-  // hacer creer que nadie usó cupón.
-  let anyCoupon = false, anyPayment = false, anyCategoryN1 = false;
+  // sola vez) · pd = medio de pago dominante · std = tienda dominante ·
+  // sts = hasta 5 tiendas donde más compró (para "compró en la tienda X").
+  // `ip` es lo que hace posible definir churn en serio: no es "hace X días
+  // que no compra" a secas, sino "hace mucho más de lo que suele tardar
+  // ESTE cliente en volver".
+  const A = { h: [], o: [], g: [], f: [], l: [], sd: [], cd: [], cd1: [], cd2: [], cs: [], cp: [], ip: [], pd: [], std: [], sts: [] };
+  // Los archivos diarios generados antes de que el pipeline capturara cupón,
+  // medio de pago o tienda por cliente no traen esos campos. Se detecta y se
+  // informa, para que la UI deshabilite esos filtros en vez de devolver 0 en
+  // todos y hacer creer que nadie usó cupón / nadie compró en tiendas.
+  let anyCoupon = false, anyPayment = false, anyCategoryN1 = false, anyStore = false;
   for (const [hash, p] of profiles) {
     const segEntries = Object.entries(p.segs).sort((a, b) => b[1] - a[1]);
     const catEntries = Object.entries(p.cats).sort((a, b) => b[1] - a[1]);
     const catEntriesN1 = Object.entries(p.catsN1).sort((a, b) => b[1] - a[1]);
     const catEntriesN2 = Object.entries(p.catsN2).sort((a, b) => b[1] - a[1]);
     const pmEntries = Object.entries(p.pms).sort((a, b) => b[1] - a[1]);
+    const storeEntries = Object.entries(p.stores || {}).sort((a, b) => b[1] - a[1]);
     const fi = dayIndex.get(p.first) ?? 0;
     const li = dayIndex.get(p.last) ?? 0;
     A.h.push(hash);
@@ -520,6 +536,9 @@ function main() {
     if (pmEntries.length) anyPayment = true;
     A.ip.push(p.o > 1 ? Math.round((li - fi) / (p.o - 1)) : 0);
     A.pd.push(pmEntries.length ? pmOf(pmEntries[0][0]) : -1);
+    A.std.push(storeEntries.length ? storeCodeIndex.get(storeEntries[0][0]) : -1);
+    A.sts.push(storeEntries.slice(0, 5).map(([code]) => storeCodeIndex.get(code)));
+    if (storeEntries.length) anyStore = true;
   }
 
   const sizeAudience = writeJson('docs/data/web/audience-index.json', {
@@ -531,8 +550,10 @@ function main() {
     categoriesN1: catNamesN1,
     categoriesN2: catNamesN2,
     payments: pmNames,
+    stores: storeNamesList,
     hasCouponData: anyCoupon,
     hasPaymentData: anyPayment,
+    hasStoreData: anyStore,
     // Los archivos de antes de esta función no traen categoriesN1/N2 por
     // pedido (el bug que hacía que "categoría dominante" mostrara el nivel
     // más específico en vez del departamento): hasta que se reprocesen con

@@ -17,14 +17,15 @@
   let emailSource = '';
   let emailTried = false;
   let rules = W.store.get('audienceRules', [{ field: 'ciclo', op: 'es', value: 'churn' }]);
+  // Wizard: 1 objetivo (elegir un preset o arrancar de cero), 2 afinar
+  // condiciones, 3 ver el resultado (composición + vista previa de clientes).
+  // No reemplaza el motor de reglas de abajo — solo ordena en qué momento se
+  // muestra cada parte, para no tirar todo junto en una sola pantalla larga.
+  let wizStep = 1;
   // Panel avanzado de configuración de churn: colapsado por defecto (es
   // config, no la acción principal de la página) — se acordaba de si el
   // usuario lo abrió para no volver a cerrarlo en cada re-render.
   let churnOpen = false;
-  // Constructor de condiciones "a mano" (campo/operador/valor): colapsado por
-  // defecto — los presets y las tarjetas de ciclo de vida ya cubren el uso
-  // común combinándose entre sí, esto queda para lo que no cubren.
-  let rulesAdvOpen = false;
   // "Activo" ahora significa "estas reglas están TODAS presentes" (subconjunto),
   // no "son exactamente las únicas reglas" — desde que las tarjetas de ciclo de
   // vida y los presets se combinan en vez de reemplazarse, más de una pueden
@@ -43,6 +44,7 @@
     catDomN2:     { label: 'Categoría N2 dominante', type: 'categoryN2', ops: ['es', 'no es'] },
     catDominante: { label: 'Categoría N3 dominante', type: 'category', ops: ['es', 'no es'] },
     comproEnCat:  { label: 'Compró en la categoría (N3)', type: 'category', ops: ['sí', 'no'] },
+    comproEnTienda: { label: 'Compró en la tienda', type: 'store', ops: ['sí', 'no'] },
     medioPago:    { label: 'Medio de pago habitual', type: 'payment', ops: ['es', 'no es'] },
     pedidos:      { label: 'Cantidad de pedidos', type: 'number', ops: ['≥', '≤', '='] },
     gasto:        { label: 'Gasto total (ARS)', type: 'number', ops: ['≥', '≤'] },
@@ -116,6 +118,7 @@
         if (f.type === 'categoryN2') return { ...r, ci: (idx.categoriesN2 || []).indexOf(r.value) };
         if (f.type === 'segment') return { ...r, si: idx.segments.indexOf(r.value) };
         if (f.type === 'payment') return { ...r, pi: (idx.payments || []).indexOf(r.value) };
+        if (f.type === 'store') return { ...r, sti: (idx.stores || []).indexOf(r.value) };
         if (f.type === 'lifecycle') return { ...r };
         return { ...r, num: Number(r.value) || 0 };
       })
@@ -134,6 +137,7 @@
           case 'catDomN2': ok = r.op === 'es' ? idx.cd2?.[i] === r.ci : idx.cd2?.[i] !== r.ci; break;
           case 'medioPago': ok = r.op === 'es' ? idx.pd?.[i] === r.pi : idx.pd?.[i] !== r.pi; break;
           case 'comproEnCat': { const has = idx.cs[i].includes(r.ci); ok = r.op === 'sí' ? has : !has; break; }
+          case 'comproEnTienda': { const has = (idx.sts?.[i] || []).includes(r.sti); ok = r.op === 'sí' ? has : !has; break; }
           case 'pedidos': ok = cmp(idx.o[i], r.op, r.num); break;
           case 'gasto': ok = cmp(idx.g[i], r.op, r.num); break;
           case 'ticket': ok = cmp(idx.o[i] ? idx.g[i] / idx.o[i] : 0, r.op, r.num); break;
@@ -204,7 +208,7 @@
     const av = availability();
     const fieldOpts = Object.entries(FIELDS)
       .filter(([k]) => (av.coupon || !k.startsWith('cupon')) && (av.payment || k !== 'medioPago')
-        && (av.categoryLevels || (k !== 'catDomN1' && k !== 'catDomN2')))
+        && (av.categoryLevels || (k !== 'catDomN1' && k !== 'catDomN2')) && (av.store || k !== 'comproEnTienda'))
       .map(([k, v]) => `<option value="${k}"${k === r.field ? ' selected' : ''}>${W.esc(v.label)}</option>`).join('');
     const opOpts = f.ops.map((o) => `<option${o === r.op ? ' selected' : ''}>${o}</option>`).join('');
 
@@ -218,6 +222,9 @@
     } else if (f.type === 'payment') {
       val = `<select class="rule-v" data-i="${i}">${(idx.payments || [])
         .map((p) => `<option value="${W.esc(p)}"${p === r.value ? ' selected' : ''}>${W.esc(p)}</option>`).join('')}</select>`;
+    } else if (f.type === 'store') {
+      val = `<select class="rule-v" data-i="${i}">${(idx.stores || [])
+        .map((s) => `<option value="${W.esc(s)}"${s === r.value ? ' selected' : ''}>${W.esc(s)}</option>`).join('')}</select>`;
     } else if (f.type === 'category' || f.type === 'categoryN1' || f.type === 'categoryN2') {
       const list = f.type === 'categoryN1' ? (idx.categoriesN1 || [])
         : f.type === 'categoryN2' ? (idx.categoriesN2 || [])
@@ -243,7 +250,40 @@
       coupon: idx.hasCouponData !== false && (idx.cp || []).some((v) => v > 0),
       payment: idx.hasPaymentData !== false && (idx.payments || []).length > 0,
       categoryLevels: idx.hasCategoryLevels === true,
+      store: idx.hasStoreData === true,
     };
+  }
+
+  // Gap real que tenía esta pantalla: nunca se veía QUIÉN entraba en la
+  // audiencia, solo agregados (donut, barras). Una muestra chica (no toda la
+  // lista — eso es lo que hace el export) alcanza para confirmar de un
+  // vistazo que las condiciones armadas traen a quien se espera.
+  const CUSTOMER_PREVIEW_ROWS = 20;
+  function customerPreviewTable(matches, emailMap) {
+    const shown = matches.slice(0, CUSTOMER_PREVIEW_ROWS);
+    return `<div class="card">
+      <div class="card-h"><div><h3>Vista previa de clientes</h3>
+        <p>muestra de ${W.fmtNum(shown.length)} de ${W.fmtNum(matches.length)} que matchean — el export de abajo trae todos</p></div></div>
+      <div class="tbl-wrap"><table class="tbl dense">
+        <thead><tr><th>Cliente</th><th>Ciclo</th><th class="num">Pedidos</th><th class="num">Gasto</th><th class="num">Ticket</th><th class="num">Días sin comprar</th><th>Segmento</th><th>Tienda</th></tr></thead>
+        <tbody>${shown.length ? shown.map((i) => {
+          const hash = idx.h[i];
+          const email = emailMap?.get(hash)?.email;
+          const storeName = idx.stores?.[idx.std?.[i]] || '—';
+          const L = W.LIFECYCLE[D.life[i]];
+          return `<tr>
+            <td>${email ? W.esc(email) : `<code>${W.esc(hash.slice(0, 10))}…</code>`}</td>
+            <td><span class="dot" style="background:${L.color}"></span>${W.esc(L.label)}</td>
+            <td class="num">${W.fmtNum(idx.o[i])}</td>
+            <td class="num">${W.fmtMoney(idx.g[i])}</td>
+            <td class="num">${W.fmtMoney(idx.o[i] ? idx.g[i] / idx.o[i] : 0)}</td>
+            <td class="num">${W.fmtNum(D.recency[i])}</td>
+            <td>${W.esc(W.SEGMENT_LABEL[idx.segments[idx.sd[i]]] || '—')}</td>
+            <td>${W.esc(storeName)}</td>
+          </tr>`;
+        }).join('') : '<tr><td colspan="8" class="muted">Ninguna condición matchea clientes.</td></tr>'}</tbody>
+      </table></div>
+    </div>`;
   }
 
   W.viewAudiences = async function (ctx) {
@@ -373,54 +413,70 @@
               <div><h3>Constructor de audiencias</h3><p>combiná condiciones y exportá la lista de mails para la campaña</p></div>
             </div>
 
+            <div class="wiz-steps">
+              ${[[1, 'Objetivo'], [2, 'Condiciones'], [3, 'Resultado']].map(([n, label]) =>
+                `<button class="wiz-step${wizStep === n ? ' on' : ''}" data-wizstep="${n}"><span class="wiz-n">${n}</span>${label}</button>`).join('')}
+            </div>
+
             <div class="active-rules">
               ${rules.length
                 ? rules.map((r, i) => `<span class="chip-rule">${W.esc(ruleLabel(r))}<button class="chip-rule-x" data-rule-i="${i}" title="Quitar">${W.icon('close', 12)}</button></span>`).join('')
-                : '<p class="muted" style="font-size:.8rem;margin:0">Sin condiciones todavía — tocá un ciclo de vida, un preset de abajo, o armá una condición personalizada.</p>'}
+                : '<p class="muted" style="font-size:.8rem;margin:0">Sin condiciones todavía — elegí un objetivo, un ciclo de vida arriba, o armá una condición personalizada.</p>'}
               ${rules.length ? `<button class="btn-s" id="clear-rules">${W.icon('close', 13)}Limpiar todo</button>` : ''}
             </div>
 
-            ${PRESETS.map((g, gi) => {
-              const off = g.needs && !avail[g.needs];
-              return `<div class="pre-group"><label>${W.esc(g.group)}${off
-                ? ` <span class="scope" ${W.chart.tip('El dato de cupón por cliente se empezó a guardar después del backfill inicial. Se completa solo con las corridas diarias del pipeline, o de una con un backfill del período que quieras analizar.')}>sin datos todavía</span>`
-                : ''}</label>
-              <div class="pre-row">${g.items.map((p, pi) => {
-                const on = hasRules(rules, p.rules);
-                return `<button class="pre${on ? ' on' : ''}" data-g="${gi}" data-p="${pi}"${off ? ' disabled' : ''}>${W.icon(p.icon, 14)}${W.esc(p.name)}</button>`;
-              }).join('')}</div></div>`;
-            }).join('')}
+            ${wizStep === 1 ? `
+              <p class="muted" style="font-size:.8rem;margin:0 0 .7rem">¿Qué querés lograr? Elegí un objetivo — te arma las condiciones y pasa directo a afinarlas.</p>
+              ${PRESETS.map((g, gi) => {
+                const off = g.needs && !avail[g.needs];
+                return `<div class="pre-group"><label>${W.esc(g.group)}${off
+                  ? ` <span class="scope" ${W.chart.tip('El dato de cupón por cliente se empezó a guardar después del backfill inicial. Se completa solo con las corridas diarias del pipeline, o de una con un backfill del período que quieras analizar.')}>sin datos todavía</span>`
+                  : ''}</label>
+                <div class="pre-row-big">${g.items.map((p, pi) =>
+                  `<button class="pre pre-big" data-goal-g="${gi}" data-goal-p="${pi}"${off ? ' disabled' : ''}>${W.icon(p.icon, 22)}<span>${W.esc(p.name)}</span></button>`).join('')}</div></div>`;
+              }).join('')}
+              <button class="btn" id="wiz-scratch">${W.icon('plus', 14)}Empezar sin preset (armar a mano)</button>
+            ` : ''}
 
-            <details class="adv" id="rules-adv" ${rulesAdvOpen ? 'open' : ''}>
-              <summary class="adv-h">
-                <div class="adv-h-t">${W.icon('chevronR', 15, 'adv-caret')}<div>
-                  <h3>Condición personalizada</h3>
-                  <p>elegí un campo, un operador y un valor a mano — para armar algo que los presets de arriba no cubren</p>
-                </div></div>
-              </summary>
-              <div class="adv-body">
+            ${wizStep === 2 ? `
+              ${PRESETS.map((g, gi) => {
+                const off = g.needs && !avail[g.needs];
+                return `<div class="pre-group"><label>${W.esc(g.group)}${off ? ' <span class="scope">sin datos todavía</span>' : ''}</label>
+                <div class="pre-row">${g.items.map((p, pi) => {
+                  const on = hasRules(rules, p.rules);
+                  return `<button class="pre${on ? ' on' : ''}" data-g="${gi}" data-p="${pi}"${off ? ' disabled' : ''}>${W.icon(p.icon, 14)}${W.esc(p.name)}</button>`;
+                }).join('')}</div></div>`;
+              }).join('')}
+              <div class="rules-custom">
+                <label style="display:block;font-size:.655rem;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-3);font-weight:700;margin-bottom:.4rem">Condiciones personalizadas</label>
                 <div class="rules">${rules.map(ruleRow).join('')}</div>
                 <div class="rules-a">
                   <button class="btn-s" id="add-rule">${W.icon('plus', 14)}Agregar condición</button>
+                  <button class="btn-p" id="wiz-to-result">Ver resultado${W.icon('chevronR', 14)}</button>
                 </div>
               </div>
-            </details>
+            ` : ''}
+
+            ${wizStep === 3 ? `<p class="muted" style="font-size:.8rem;margin:0"><button class="btn-s" id="wiz-back-cond">${W.icon('chevronR', 12)} volver a condiciones</button></p>` : ''}
           </div>
 
-          <div class="g2">
-            <div class="card">
-              <div class="card-h"><div><h3>Composición</h3><p>por segmento dominante</p></div></div>
-              ${W.chart.donut({
-                items: Object.entries(sum.bySeg).sort((a, b) => b[1] - a[1])
-                  .map(([s, v]) => ({ label: W.SEGMENT_LABEL[s] || s, value: v, color: W.SEGMENT_COLOR[s] || '#8b93a5' })),
-                valueFmt: W.fmtNum, centerValue: W.fmtNumC(sum.customers), centerLabel: 'clientes',
-              })}
+          ${wizStep === 3 ? `
+            <div class="g2">
+              <div class="card">
+                <div class="card-h"><div><h3>Composición</h3><p>por segmento dominante</p></div></div>
+                ${W.chart.donut({
+                  items: Object.entries(sum.bySeg).sort((a, b) => b[1] - a[1])
+                    .map(([s, v]) => ({ label: W.SEGMENT_LABEL[s] || s, value: v, color: W.SEGMENT_COLOR[s] || '#8b93a5' })),
+                  valueFmt: W.fmtNum, centerValue: W.fmtNumC(sum.customers), centerLabel: 'clientes',
+                })}
+              </div>
+              <div class="card">
+                <div class="card-h"><div><h3>Qué compran</h3><p>categoría principal de cada cliente</p></div></div>
+                ${W.chart.barsH({ items: topCats.map(([c, v]) => ({ label: c, value: v })), valueFmt: W.fmtNum, color: 'var(--s3)', maxRows: 10 })}
+              </div>
             </div>
-            <div class="card">
-              <div class="card-h"><div><h3>Qué compran</h3><p>categoría principal de cada cliente</p></div></div>
-              ${W.chart.barsH({ items: topCats.map(([c, v]) => ({ label: c, value: v })), valueFmt: W.fmtNum, color: 'var(--s3)', maxRows: 10 })}
-            </div>
-          </div>
+            ${customerPreviewTable(matches, emailMap)}
+          ` : ''}
         </div>
 
         <aside class="aud-side">
@@ -516,7 +572,6 @@
     const $$ = (s) => [...document.querySelectorAll(s)];
 
     $('#churn-adv')?.addEventListener('toggle', (e) => { churnOpen = e.target.open; });
-    $('#rules-adv')?.addEventListener('toggle', (e) => { rulesAdvOpen = e.target.open; });
     $$('.chip-rule-x').forEach((b) => b.addEventListener('click', () => {
       rules = rules.filter((_, i) => i !== Number(b.dataset.ruleI));
       persist();
@@ -541,12 +596,25 @@
       toggleRules(JSON.parse(JSON.stringify(PRESETS[+b.dataset.g].items[+b.dataset.p].rules)));
     }));
 
+    // Paso 1 del wizard: elegir un objetivo aplica esas condiciones Y pasa
+    // directo a "Condiciones" para afinarlas — a diferencia de los botones
+    // de arriba (paso 2), que solo togglean sin cambiar de paso.
+    $$('.pre[data-goal-g]').forEach((b) => b.addEventListener('click', () => {
+      rules = JSON.parse(JSON.stringify(PRESETS[+b.dataset.goalG].items[+b.dataset.goalP].rules));
+      wizStep = 2;
+      persist();
+    }));
+    $('#wiz-scratch')?.addEventListener('click', () => { rules = []; wizStep = 2; persist(); });
+    $$('[data-wizstep]').forEach((b) => b.addEventListener('click', () => { wizStep = Number(b.dataset.wizstep); W.render(); }));
+    $('#wiz-to-result')?.addEventListener('click', () => { wizStep = 3; W.render(); });
+    $('#wiz-back-cond')?.addEventListener('click', () => { wizStep = 2; W.render(); });
+
     $$('.rule-f').forEach((sel) => sel.addEventListener('change', (e) => {
       const i = +e.target.dataset.i, field = e.target.value, f = FIELDS[field];
       const dflt = {
         lifecycle: 'churn', segment: idx.segments[0], category: idx.categories[0],
         categoryN1: (idx.categoriesN1 || [])[0], categoryN2: (idx.categoriesN2 || [])[0],
-        payment: (idx.payments || [])[0] || '', number: 1,
+        payment: (idx.payments || [])[0] || '', store: (idx.stores || [])[0] || '', number: 1,
       }[f.type];
       rules[i] = { field, op: f.ops[0], value: dflt };
       persist();

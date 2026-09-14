@@ -416,6 +416,27 @@ details.more[open] summary { margin-bottom: .45rem; }
 .pre.on { border-color: transparent; color: #fff; background: linear-gradient(135deg, var(--brand), #7c3aed); font-weight: 650; box-shadow: 0 3px 10px var(--brand-glow); }
 .pre.on .ico { color: #fff; }
 
+/* ── Wizard de audiencias ────────────────────────────────────────────────── */
+.wiz-steps { display: flex; gap: .5rem; margin-bottom: 1rem; border-bottom: 1px solid var(--line); padding-bottom: .9rem; flex-wrap: wrap; }
+.wiz-step {
+  display: inline-flex; align-items: center; gap: .5rem; background: none; border: none;
+  padding: .3rem .5rem; font-size: .84rem; font-weight: 600; color: var(--ink-3); cursor: pointer; border-radius: 8px;
+}
+.wiz-step:hover { color: var(--ink); background: var(--surface-2); }
+.wiz-step.on { color: var(--brand-strong); }
+.wiz-n {
+  display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px;
+  border-radius: 50%; background: var(--surface-3); color: var(--ink-3); font-size: .72rem; font-weight: 700;
+}
+.wiz-step.on .wiz-n { background: linear-gradient(135deg, var(--brand), #7c3aed); color: #fff; }
+
+.pre-row-big { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: .5rem; }
+.pre-big {
+  flex-direction: column; justify-content: center; gap: .45rem; padding: 1rem .6rem; text-align: center;
+  border-radius: var(--r); font-size: .82rem;
+}
+.pre-big span { line-height: 1.25; }
+
 .rules { display: flex; flex-direction: column; gap: .4rem; }
 .rule { display: flex; align-items: center; gap: .35rem; flex-wrap: wrap; }
 .rule-j { font-size: .655rem; font-weight: 700; color: var(--ink-4); min-width: 40px; letter-spacing: .05em; }
