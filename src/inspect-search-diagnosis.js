@@ -30,6 +30,19 @@
  * SÍ trae resultados reales. No es una adivinanza: es una corrección
  * verificada en el momento.
  *
+ * "≥5 resultados" no alcanza para decir que un término está OK: VTEX puede
+ * devolver 10 productos que no tienen nada que ver (ej. "palta" trayendo
+ * shampoo con palta, "huevos" trayendo juguetes de Pascua) — eso cuenta
+ * como éxito si solo se mide cantidad, pero es exactamente el tipo de
+ * búsqueda que frustra a alguien de verdad. Sin usar IA (todavía no hay una
+ * key configurada — ver `assessRelevanceWithAI` más abajo), se mide
+ * CONSISTENCIA DE CATEGORÍA: un término de almacén real debería traer
+ * resultados concentrados en 1-2 categorías relacionadas. Si los primeros
+ * resultados están dispersos en categorías sin relación, es una señal
+ * honesta (no perfecta, pero verificable) de que el matching es débil. Un
+ * término así se marca `resultados_dispersos`, un escalón por debajo de
+ * `ok` aunque la cantidad alcance.
+ *
  * Salidas:
  *   - config/search-diagnosis.report.json         reporte completo (interno)
  *   - docs/data/web/search-diagnosis.json          versión recortada para el dashboard
@@ -49,6 +62,14 @@ const TOP_TERMS_SHOWN = 30;
 const HISTORY_MAX = 90;
 const CONCURRENCY = 8;
 const MAX_CANDIDATES_TRIED = 5;
+// Con menos de 3 productos con categoría conocida no hay muestra suficiente
+// para hablar de "dispersión" — se deja el término como está (no se castiga
+// por falta de dato). 60%: al menos 3 de los primeros 5, o 6 de los primeros
+// 10, comparten la categoría más frecuente — umbral conservador a propósito,
+// para no marcar como "disperso" un término que solo tiene variedad normal
+// de marcas dentro del mismo rubro.
+const DISPERSION_MIN_SAMPLE = 3;
+const DISPERSION_THRESHOLD = 0.6;
 
 function baseUrl() {
   const account = process.env.VTEX_ACCOUNT_NAME;
@@ -117,6 +138,28 @@ function topSearchTerms(report, n) {
     .slice(0, n);
 }
 
+/** Categoría de nivel superior de un producto del catálogo público de VTEX
+ * (`categories: ["/Almacén/Lácteos/Quesos/"]`, raíz primero). Devuelve null
+ * si el producto no trae esa info — pasa con catálogos más viejos, y no hay
+ * que inventar un dato que no está. */
+function topLevelCategory(product) {
+  const path = Array.isArray(product.categories) ? product.categories[0] : null;
+  if (!path) return null;
+  const parts = String(path).split('/').filter(Boolean);
+  return parts[0] || null;
+}
+
+/** Qué tan concentrados están los primeros resultados en una sola categoría.
+ * null si no hay muestra suficiente para opinar (ver DISPERSION_MIN_SAMPLE). */
+function categoryDispersion(products) {
+  const cats = products.map(topLevelCategory).filter(Boolean);
+  if (cats.length < DISPERSION_MIN_SAMPLE) return null;
+  const counts = {};
+  for (const c of cats) counts[c] = (counts[c] || 0) + 1;
+  const [dominant, dominantCount] = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+  return { consistency: dominantCount / cats.length, dominant, categories: [...new Set(cats)] };
+}
+
 async function searchProductCount(term) {
   const url = `${baseUrl()}/api/catalog_system/pub/products/search?ft=${encodeURIComponent(term)}&_from=0&_to=9`;
   const res = await fetch(url, { headers: { Accept: 'application/json' } });
@@ -137,7 +180,21 @@ async function searchProductCount(term) {
     total: Number.isFinite(total) ? total : count,
     capped: capped && count >= 10,
     sample: (products || []).slice(0, 3).map((p) => p.productName).filter(Boolean),
+    dispersion: categoryDispersion(products || []),
   };
+}
+
+/**
+ * Punto de extensión para sumar IA generativa más adelante — hoy no hay
+ * ninguna API key configurada (SEARCH_AI_API_KEY), así que esto no hace
+ * nada y no se llama en ningún lado. Cuando exista una key, acá es donde
+ * iría el juicio de relevancia semántica real ("¿estos productos tienen
+ * que ver con lo que la persona escribió?"), más fino que medir solo
+ * consistencia de categoría.
+ */
+async function assessRelevanceWithAI(term, sampleProducts) {
+  if (!process.env.SEARCH_AI_API_KEY) return null;
+  return null; // TODO: sumar la llamada real cuando haya una key configurada.
 }
 
 async function forEachLimit(items, limit, fn) {
@@ -167,6 +224,9 @@ function recommendation(t) {
   if (t.status === 'ok') return null;
   if (t.status === 'error_consulta') return 'No se pudo consultar VTEX para este término — reintentar en la próxima corrida.';
   const vol = `${t.searchCount.toLocaleString('es-AR')} búsquedas/mes`;
+  if (t.status === 'resultados_dispersos') {
+    return `Trae ${Math.round(t.categoryConsistency * 100)}% de resultados de "${t.dominantCategory}" y el resto de categorías sin relación (${(t.resultCategories || []).filter((c) => c !== t.dominantCategory).join(', ')}) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (${vol}).`;
+  }
   if (t.suggestion) {
     return t.status === 'sin_resultados'
       ? `Alta prioridad: agregar "${t.term}" como sinónimo de "${t.suggestion.term}" en VTEX (búsqueda real que sí tiene stock) — ${vol} van hoy a una página vacía.`
@@ -201,7 +261,20 @@ async function main() {
       t.vtexResults = r.total;
       t.vtexResultsCapped = r.capped; // true: "vtexResults o más" (no se pidió el total real, se cortó en la página)
       t.sampleProducts = r.sample;
-      t.status = r.total === 0 ? 'sin_resultados' : r.total < 5 ? 'pocos_resultados' : 'ok';
+      if (r.total === 0) t.status = 'sin_resultados';
+      else if (r.total < 5) t.status = 'pocos_resultados';
+      else if (r.dispersion && r.dispersion.consistency < DISPERSION_THRESHOLD) {
+        t.status = 'resultados_dispersos';
+        t.categoryConsistency = r.dispersion.consistency;
+        t.dominantCategory = r.dispersion.dominant;
+        t.resultCategories = r.dispersion.categories;
+      } else {
+        t.status = 'ok';
+      }
+      // Sin efecto hoy (no hay SEARCH_AI_API_KEY configurada) — ver el
+      // comentario de assessRelevanceWithAI.
+      const aiVerdict = await assessRelevanceWithAI(t.term, r.sample);
+      if (aiVerdict) t.aiRelevance = aiVerdict;
     } catch (e) {
       t.error = e.message;
       t.status = 'error_consulta';
@@ -217,29 +290,41 @@ async function main() {
   for (const t of terms) t.recommendation = recommendation(t);
 
   terms.sort((a, b) => {
-    const rank = { sin_resultados: 0, error_consulta: 1, pocos_resultados: 2, ok: 3 };
+    const rank = { sin_resultados: 0, error_consulta: 1, pocos_resultados: 2, resultados_dispersos: 3, ok: 4 };
     return (rank[a.status] ?? 9) - (rank[b.status] ?? 9) || b.searchCount - a.searchCount;
   });
 
   for (const t of terms) {
-    const tag = { sin_resultados: '✗ SIN RESULTADOS', pocos_resultados: '⚠ pocos resultados', error_consulta: '? error', ok: '✓' }[t.status];
+    const tag = {
+      sin_resultados: '✗ SIN RESULTADOS', pocos_resultados: '⚠ pocos resultados',
+      resultados_dispersos: '⚠ resultados dispersos', error_consulta: '? error', ok: '✓',
+    }[t.status];
     const productsTxt = t.vtexResults == null ? '—' : `${t.vtexResults}${t.vtexResultsCapped ? '+' : ''}`;
     const sugTxt = t.suggestion ? ` → probá "${t.suggestion.term}" (${t.suggestion.vtexResults} productos)` : '';
-    console.log(`  ${tag.padEnd(20)} "${t.term}" — ${t.searchCount} búsquedas · ${productsTxt} productos${sugTxt}`);
+    const dispTxt = t.status === 'resultados_dispersos' ? ` (${Math.round(t.categoryConsistency * 100)}% "${t.dominantCategory}")` : '';
+    console.log(`  ${tag.padEnd(24)} "${t.term}" — ${t.searchCount} búsquedas · ${productsTxt} productos${dispTxt}${sugTxt}`);
   }
 
   const sinResultados = terms.filter((t) => t.status === 'sin_resultados');
   const pocosResultados = terms.filter((t) => t.status === 'pocos_resultados');
+  const resultadosDispersos = terms.filter((t) => t.status === 'resultados_dispersos');
   console.log(`\n${sinResultados.length} de ${terms.length} términos NO traen ningún resultado.`);
   console.log(`${pocosResultados.length} de ${terms.length} traen menos de 5 resultados.`);
+  console.log(`${resultadosDispersos.length} de ${terms.length} traen ≥5 resultados pero dispersos en categorías sin relación.`);
 
   const totalSearches = terms.reduce((s, t) => s + t.searchCount, 0);
-  const lostSearches = [...sinResultados, ...pocosResultados].reduce((s, t) => s + t.searchCount, 0);
+  // "Búsquedas perdidas" pesa por volumen real de búsqueda, no por cantidad
+  // de términos — un solo término de altísimo volumen roto pesa lo que tiene
+  // que pesar, en vez de licuarse como "1 de 200". Los resultados dispersos
+  // cuentan acá también: no son "sin resultados", pero es la misma frustración
+  // real para quien busca algo puntual y encuentra productos que no tienen que ver.
+  const lostSearches = [...sinResultados, ...pocosResultados, ...resultadosDispersos].reduce((s, t) => s + t.searchCount, 0);
 
   const summary = {
     sinResultados: sinResultados.length,
     pocosResultados: pocosResultados.length,
-    ok: terms.length - sinResultados.length - pocosResultados.length,
+    resultadosDispersos: resultadosDispersos.length,
+    ok: terms.length - sinResultados.length - pocosResultados.length - resultadosDispersos.length,
     totalSearches,
     lostSearches,
   };
@@ -272,6 +357,9 @@ function globalRecommendations(summary) {
   if (summary.pocosResultados > 0) {
     recs.push(`${summary.pocosResultados} término(s) traen menos de 5 productos — revisar stock/variantes o sumar sinónimos amplía el catálogo visible sin cambiar nada del lado de marketing.`);
   }
+  if (summary.resultadosDispersos > 0) {
+    recs.push(`${summary.resultadosDispersos} término(s) traen suficientes productos pero de categorías sin relación entre sí — el buscador probablemente está completando con coincidencias débiles en vez de lo que la gente realmente busca.`);
+  }
   if (!recs.length) {
     recs.push('No se detectaron términos de alto volumen sin resultados en esta corrida — seguir ampliando la muestra hacia la cola larga para encontrar casos menos frecuentes.');
   }
@@ -295,6 +383,9 @@ function writeClientReport(report) {
       vtexResultsCapped: !!t.vtexResultsCapped,
       sampleProducts: t.sampleProducts || [],
       suggestion: t.suggestion || null,
+      categoryConsistency: t.categoryConsistency ?? null,
+      dominantCategory: t.dominantCategory || null,
+      resultCategories: t.resultCategories || null,
       recommendation: t.recommendation,
     }));
 

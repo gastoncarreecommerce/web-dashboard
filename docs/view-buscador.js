@@ -20,8 +20,11 @@
 (function () {
   const W = (window.W = window.W || {});
 
-  const STATUS_LABEL = { sin_resultados: 'Sin resultados', pocos_resultados: 'Pocos resultados', error_consulta: 'Error de consulta', ok: 'OK' };
-  const STATUS_PILL = { sin_resultados: 'no', pocos_resultados: 'w', error_consulta: 'n', ok: 'ok' };
+  const STATUS_LABEL = {
+    sin_resultados: 'Sin resultados', pocos_resultados: 'Pocos resultados',
+    resultados_dispersos: 'Resultados dispersos', error_consulta: 'Error de consulta', ok: 'OK',
+  };
+  const STATUS_PILL = { sin_resultados: 'no', pocos_resultados: 'w', resultados_dispersos: 'w', error_consulta: 'n', ok: 'ok' };
 
   function pill(status) {
     return `<span class="pill ${STATUS_PILL[status] || 'n'}">${W.esc(STATUS_LABEL[status] || status)}</span>`;
@@ -46,8 +49,12 @@
     history = await W.load('search-diagnosis-history').catch(() => []);
 
     const { summary, topTerms = [], problems = [], recommendations = [] } = report;
-    const healthPct = report.termsAnalyzed ? summary.ok / report.termsAnalyzed : 0;
     const lostPct = summary.totalSearches ? summary.lostSearches / summary.totalSearches : 0;
+    // Ponderado por VOLUMEN de búsqueda, no por cantidad de términos: un solo
+    // término de altísimo volumen roto tiene que pesar lo que pesa de verdad,
+    // en vez de licuarse como "1 de 200 términos" (99,5% "sano" con el NPS
+    // del buscador por el piso era exactamente ese problema).
+    const healthPct = summary.totalSearches ? 1 - lostPct : (report.termsAnalyzed ? summary.ok / report.termsAnalyzed : 0);
     const healthColor = healthPct >= 0.95 ? '#1baf7a' : healthPct >= 0.85 ? '#eda100' : '#e34948';
 
     ctx.exports.buscadorTop = {
@@ -75,10 +82,10 @@
       <div class="kpis">
         <div class="kpi"><div class="kpi-t"><span class="kpi-ic" style="background:${healthColor}38;color:${healthColor}">${W.icon('search', 18)}</span></div>
           <div class="kpi-v">${W.fmtPct(healthPct, 0)}</div><div class="kpi-l">Salud del buscador</div>
-          <div class="kpi-s">${W.fmtNum(summary.ok)} de ${W.fmtNum(report.termsAnalyzed)} términos con resultados OK</div></div>
+          <div class="kpi-s">ponderado por volumen de búsqueda · ${W.fmtNum(summary.ok)} de ${W.fmtNum(report.termsAnalyzed)} términos sin problemas detectados</div></div>
         <div class="kpi"><div class="kpi-t"><span class="kpi-ic" style="background:#e3494838;color:#e34948">${W.icon('ban', 18)}</span></div>
           <div class="kpi-v">${W.fmtNum(summary.sinResultados)}</div><div class="kpi-l">Términos sin resultados</div>
-          <div class="kpi-s">${summary.pocosResultados} más con menos de 5 productos</div></div>
+          <div class="kpi-s">${summary.pocosResultados} con menos de 5 productos · ${summary.resultadosDispersos || 0} con resultados dispersos</div></div>
         <div class="kpi"><div class="kpi-t"><span class="kpi-ic" style="background:#eda10038;color:#eda100">${W.icon('trendDown', 18)}</span></div>
           <div class="kpi-v">${W.fmtNumC(summary.lostSearches)}</div><div class="kpi-l">Búsquedas potencialmente perdidas</div>
           <div class="kpi-s">${W.fmtPct(lostPct)} de las búsquedas analizadas, últimos 30 días</div></div>
