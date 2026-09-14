@@ -1,0 +1,183 @@
+{
+  "generatedAt": "2026-09-14T18:02:39.934Z",
+  "termsAnalyzed": 200,
+  "summary": {
+    "sinResultados": 1,
+    "pocosResultados": 0,
+    "ok": 199,
+    "totalSearches": 1151714,
+    "lostSearches": 2436
+  },
+  "recommendations": [
+    "1 término(s) no traen ningún resultado — priorizalos por volumen, son los que más gente frustra.",
+    "Se estima que 2.436 búsquedas del último mes (0.2% de las analizadas) terminaron en 0 o muy pocos resultados."
+  ],
+  "topTerms": [
+    {
+      "term": "leche",
+      "searchCount": 50227,
+      "status": "ok"
+    },
+    {
+      "term": "papel higienico",
+      "searchCount": 27023,
+      "status": "ok"
+    },
+    {
+      "term": "dulce de leche",
+      "searchCount": 25475,
+      "status": "ok"
+    },
+    {
+      "term": "aceite",
+      "searchCount": 25000,
+      "status": "ok"
+    },
+    {
+      "term": "queso crema",
+      "searchCount": 24317,
+      "status": "ok"
+    },
+    {
+      "term": "manteca",
+      "searchCount": 21848,
+      "status": "ok"
+    },
+    {
+      "term": "coca cola",
+      "searchCount": 20575,
+      "status": "ok"
+    },
+    {
+      "term": "azucar",
+      "searchCount": 18956,
+      "status": "ok"
+    },
+    {
+      "term": "crema de leche",
+      "searchCount": 18785,
+      "status": "ok"
+    },
+    {
+      "term": "yerba",
+      "searchCount": 18091,
+      "status": "ok"
+    },
+    {
+      "term": "fideos",
+      "searchCount": 17704,
+      "status": "ok"
+    },
+    {
+      "term": "cafe",
+      "searchCount": 16517,
+      "status": "ok"
+    },
+    {
+      "term": "arroz",
+      "searchCount": 16342,
+      "status": "ok"
+    },
+    {
+      "term": "atun",
+      "searchCount": 15038,
+      "status": "ok"
+    },
+    {
+      "term": "queso cremoso",
+      "searchCount": 14847,
+      "status": "ok"
+    },
+    {
+      "term": "rollo de cocina",
+      "searchCount": 14711,
+      "status": "ok"
+    },
+    {
+      "term": "cerveza",
+      "searchCount": 12538,
+      "status": "ok"
+    },
+    {
+      "term": "harina",
+      "searchCount": 12197,
+      "status": "ok"
+    },
+    {
+      "term": "papel higiénico",
+      "searchCount": 12139,
+      "status": "ok"
+    },
+    {
+      "term": "queso rallado",
+      "searchCount": 11862,
+      "status": "ok"
+    },
+    {
+      "term": "pan lactal",
+      "searchCount": 11805,
+      "status": "ok"
+    },
+    {
+      "term": "pañales",
+      "searchCount": 10860,
+      "status": "ok"
+    },
+    {
+      "term": "mayonesa",
+      "searchCount": 10813,
+      "status": "ok"
+    },
+    {
+      "term": "carne",
+      "searchCount": 10653,
+      "status": "ok"
+    },
+    {
+      "term": "rollo cocina",
+      "searchCount": 9820,
+      "status": "ok"
+    },
+    {
+      "term": "fernet",
+      "searchCount": 9636,
+      "status": "ok"
+    },
+    {
+      "term": "pollo",
+      "searchCount": 9632,
+      "status": "ok"
+    },
+    {
+      "term": "papas fritas",
+      "searchCount": 9515,
+      "status": "ok"
+    },
+    {
+      "term": "queso",
+      "searchCount": 9511,
+      "status": "ok"
+    },
+    {
+      "term": "galletitas",
+      "searchCount": 9492,
+      "status": "ok"
+    }
+  ],
+  "problems": [
+    {
+      "term": "queso rayado",
+      "searchCount": 2436,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "queso rallado",
+        "vtexResults": 10,
+        "vtexResultsCapped": true
+      },
+      "recommendation": "Alta prioridad: agregar \"queso rayado\" como sinónimo de \"queso rallado\" en VTEX (búsqueda real que sí tiene stock) — 2.436 búsquedas/mes van hoy a una página vacía."
+    }
+  ]
+}
