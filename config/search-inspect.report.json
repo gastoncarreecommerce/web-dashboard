@@ -1,272 +1,272 @@
 {
   "propertyId": "295860202",
   "days": 30,
-  "generatedAt": "2026-09-11T21:11:53.317Z",
+  "generatedAt": "2026-09-14T15:37:43.060Z",
   "events": [
     {
       "event": "Click",
-      "count": 90362040,
-      "users": 1962758
+      "count": 87759675,
+      "users": 1944173
     },
     {
       "event": "page_view",
-      "count": 23107490,
-      "users": 3057298
+      "count": 22425907,
+      "users": 3041814
     },
     {
       "event": "view_promotion",
-      "count": 15238138,
-      "users": 1174839
+      "count": 14307771,
+      "users": 1158566
     },
     {
       "event": "view_item_list",
-      "count": 8559995,
-      "users": 885486
+      "count": 8213114,
+      "users": 850789
     },
     {
       "event": "click",
-      "count": 6219554,
-      "users": 722301
+      "count": 5981446,
+      "users": 711170
     },
     {
       "event": "scroll",
-      "count": 5828378,
-      "users": 1773372
+      "count": 5672170,
+      "users": 1755716
     },
     {
       "event": "session_start",
-      "count": 4930713,
-      "users": 2995617
+      "count": 4849743,
+      "users": 2979531
     },
     {
       "event": "add_to_cart",
-      "count": 4534097,
-      "users": 121430
+      "count": 4246438,
+      "users": 118495
     },
     {
       "event": "user_engagement",
-      "count": 4199712,
-      "users": 1223235
+      "count": 4116622,
+      "users": 1211964
     },
     {
       "event": "search",
-      "count": 4122394,
-      "users": 544918
+      "count": 4016040,
+      "users": 534731
     },
     {
       "event": "view_cart",
-      "count": 4113720,
-      "users": 154188
+      "count": 3986948,
+      "users": 150997
     },
     {
       "event": "view_item",
-      "count": 2340570,
-      "users": 824400
+      "count": 2271272,
+      "users": 808304
     },
     {
       "event": "seleccion_header",
-      "count": 2284308,
-      "users": 509827
-    },
-    {
-      "event": "first_visit",
-      "count": 2159424,
-      "users": 2087325
+      "count": 2212269,
+      "users": 495137
     },
     {
       "event": "PosibleComprador",
-      "count": 1982695,
-      "users": 1888229
+      "count": 2208135,
+      "users": 2113276
+    },
+    {
+      "event": "first_visit",
+      "count": 2141886,
+      "users": 2079162
     },
     {
       "event": "remove_from_cart",
-      "count": 1268531,
-      "users": 100443
+      "count": 1227300,
+      "users": 98647
     },
     {
       "event": "select_item",
-      "count": 1127390,
-      "users": 373816
+      "count": 1090374,
+      "users": 366143
     },
     {
       "event": "seleccion_subcategoria_2",
-      "count": 699646,
-      "users": 175762
+      "count": 682254,
+      "users": 173246
     },
     {
       "event": "banner_cookies",
-      "count": 650220,
-      "users": 592585
+      "count": 638545,
+      "users": 580754
     },
     {
       "event": "seleccion_login",
-      "count": 556195,
-      "users": 183006
+      "count": 533828,
+      "users": 176372
     },
     {
       "event": "begin_checkout",
-      "count": 503710,
-      "users": 86723
+      "count": 486323,
+      "users": 85258
     },
     {
       "event": "seleccion_subcategoria",
-      "count": 438645,
-      "users": 135207
+      "count": 427629,
+      "users": 132461
     },
     {
       "event": "open_folletos",
-      "count": 356072,
-      "users": 142815
+      "count": 345888,
+      "users": 141251
     },
     {
       "event": "event_click",
-      "count": 319643,
-      "users": 75891
+      "count": 305700,
+      "users": 74391
     },
     {
       "event": "login",
-      "count": 315154,
-      "users": 154608
-    },
-    {
-      "event": "select_service",
-      "count": 291714,
-      "users": 225208
+      "count": 303049,
+      "users": 149988
     },
     {
       "event": "select_payment_info",
-      "count": 235033,
-      "users": 89373
+      "count": 228942,
+      "users": 88390
+    },
+    {
+      "event": "select_service",
+      "count": 221653,
+      "users": 174201
     },
     {
       "event": "add_payment_info",
-      "count": 226510,
-      "users": 86650
+      "count": 220503,
+      "users": 85713
     },
     {
       "event": "select_promotion",
-      "count": 200388,
-      "users": 126501
+      "count": 186220,
+      "users": 118512
     },
     {
       "event": "add_shipping_info",
-      "count": 187856,
-      "users": 79921
+      "count": 180913,
+      "users": 78685
     },
     {
       "event": "notview_promo_bsf",
-      "count": 181324,
-      "users": 66602
+      "count": 174984,
+      "users": 65488
     },
     {
       "event": "seleccion_entrega",
-      "count": 155926,
-      "users": 80824
+      "count": 153312,
+      "users": 79055
     },
     {
       "event": "purchase",
-      "count": 113696,
-      "users": 67571
+      "count": 109582,
+      "users": 66442
     },
     {
       "event": "seleccion_categoria",
-      "count": 111467,
-      "users": 53231
+      "count": 107794,
+      "users": 51877
     },
     {
       "event": "view_search_results",
-      "count": 88326,
-      "users": 51010
-    },
-    {
-      "event": "sucursal_retiro",
-      "count": 48495,
-      "users": 34533
+      "count": 86009,
+      "users": 50184
     },
     {
       "event": "envio_domicilio",
-      "count": 47933,
-      "users": 37933
+      "count": 47599,
+      "users": 37610
+    },
+    {
+      "event": "sucursal_retiro",
+      "count": 46180,
+      "users": 32936
     },
     {
       "event": "guardar_direccion",
-      "count": 33109,
-      "users": 29209
+      "count": 33003,
+      "users": 28968
     },
     {
       "event": "add_to_wishlist",
-      "count": 29953,
-      "users": 6904
+      "count": 29230,
+      "users": 6753
     },
     {
       "event": "disponibilidad_entrega",
-      "count": 28850,
-      "users": 10640
+      "count": 28433,
+      "users": 10450
     },
     {
       "event": "mi_carrefour",
-      "count": 26948,
-      "users": 22010
+      "count": 26566,
+      "users": 21624
     },
     {
       "event": "entrega_inmediata",
-      "count": 17961,
-      "users": 11195
+      "count": 18287,
+      "users": 11353
     },
     {
       "event": "file_download",
-      "count": 7426,
-      "users": 4301
+      "count": 7112,
+      "users": 4192
     },
     {
       "event": "probar_direccion",
-      "count": 5671,
-      "users": 5264
+      "count": 5604,
+      "users": 5218
     },
     {
       "event": "carrefour_checkout_fields_retry",
-      "count": 1528,
-      "users": 1437
+      "count": 1540,
+      "users": 1450
     },
     {
       "event": "view_promo_bsf",
-      "count": 1286,
-      "users": 1082
+      "count": 1173,
+      "users": 994
     },
     {
       "event": "carrefour_checkout_fields_fail",
-      "count": 273,
-      "users": 211
+      "count": 269,
+      "users": 213
     },
     {
       "event": "video_progress",
-      "count": 68,
-      "users": 16
+      "count": 72,
+      "users": 17
+    },
+    {
+      "event": "(other)",
+      "count": 57,
+      "users": 42
     },
     {
       "event": "shipping_too_many_requests",
-      "count": 36,
-      "users": 30
+      "count": 30,
+      "users": 24
     },
     {
       "event": "video_start",
-      "count": 19,
-      "users": 16
-    },
-    {
-      "event": "click_cta_bsf",
-      "count": 14,
-      "users": 14
+      "count": 20,
+      "users": 17
     },
     {
       "event": "video_complete",
-      "count": 14,
-      "users": 12
+      "count": 15,
+      "users": 13
     },
     {
-      "event": "view_minicart_segment",
-      "count": 14,
-      "users": 5
+      "event": "click_cta_bsf",
+      "count": 13,
+      "users": 13
     },
     {
       "event": "busqueda",
@@ -275,6 +275,11 @@
     },
     {
       "event": "view_minicart",
+      "count": 1,
+      "users": 1
+    },
+    {
+      "event": "view_minicart_segment",
       "count": 1,
       "users": 1
     }
@@ -291,123 +296,4003 @@
       "sample": [
         {
           "term": "Leche",
-          "count": 28045
+          "count": 27247
         },
         {
           "term": "",
-          "count": 22904
+          "count": 22173
         },
         {
           "term": "leche",
-          "count": 22078
+          "count": 21499
         },
         {
           "term": "Aceite",
-          "count": 14116
+          "count": 14005
         },
         {
           "term": "manteca",
-          "count": 11533
+          "count": 11192
         },
         {
           "term": "azucar",
-          "count": 10516
+          "count": 10191
         },
         {
           "term": "aceite",
-          "count": 10298
+          "count": 10174
         },
         {
           "term": "Manteca",
-          "count": 10127
+          "count": 10018
         },
         {
           "term": "papel higienico",
-          "count": 9665
+          "count": 9545
         },
         {
           "term": "papel%20higienico",
-          "count": 9629
+          "count": 9504
         },
         {
           "term": "yerba",
-          "count": 9364
+          "count": 9065
         },
         {
           "term": "Fideos",
-          "count": 9175
+          "count": 8919
         },
         {
           "term": "atun",
-          "count": 8629
-        },
-        {
-          "term": "arroz",
-          "count": 8433
-        },
-        {
-          "term": "Azucar",
-          "count": 8404
+          "count": 8599
         },
         {
           "term": "Yerba",
-          "count": 8387
+          "count": 8391
+        },
+        {
+          "term": "arroz",
+          "count": 8291
         },
         {
           "term": "fideos",
-          "count": 8372
+          "count": 8250
+        },
+        {
+          "term": "Azucar",
+          "count": 8005
         },
         {
           "term": "cafe",
-          "count": 8299
+          "count": 7990
         },
         {
           "term": "Cafe",
-          "count": 8059
-        },
-        {
-          "term": "Arroz",
-          "count": 7674
+          "count": 7912
         },
         {
           "term": "Cerveza",
-          "count": 7672
+          "count": 7756
+        },
+        {
+          "term": "Arroz",
+          "count": 7514
         },
         {
           "term": "Dulce de leche",
-          "count": 7276
+          "count": 7072
         },
         {
           "term": "Dulce%20de%20leche",
-          "count": 7186
+          "count": 6992
         },
         {
           "term": "Harina",
-          "count": 7124
+          "count": 6877
         },
         {
           "term": "Carne",
-          "count": 6544
+          "count": 6561
         },
         {
-          "term": "queso crema",
-          "count": 6237
-        },
-        {
-          "term": "queso%20crema",
-          "count": 6197
-        },
-        {
-          "term": "mayonesa",
-          "count": 6095
+          "term": "Fernet",
+          "count": 6303
         },
         {
           "term": "Queso crema",
-          "count": 6088
+          "count": 6110
+        },
+        {
+          "term": "queso crema",
+          "count": 6106
+        },
+        {
+          "term": "queso%20crema",
+          "count": 6067
+        },
+        {
+          "term": "Queso%20crema",
+          "count": 6034
+        },
+        {
+          "term": "mayonesa",
+          "count": 5987
+        },
+        {
+          "term": "Atun",
+          "count": 5904
+        },
+        {
+          "term": "Coca cola",
+          "count": 5736
         },
         {
           "term": "dulce de leche",
-          "count": 6034
+          "count": 5725
+        },
+        {
+          "term": "dulce%20de%20leche",
+          "count": 5686
+        },
+        {
+          "term": "Coca%20cola",
+          "count": 5573
+        },
+        {
+          "term": "Papel higiénico",
+          "count": 5512
+        },
+        {
+          "term": "Papel%20higi%C3%A9nico",
+          "count": 5406
+        },
+        {
+          "term": "detergente",
+          "count": 5356
+        },
+        {
+          "term": "harina",
+          "count": 5320
+        },
+        {
+          "term": "Pollo",
+          "count": 5084
+        },
+        {
+          "term": "Crema de leche",
+          "count": 5053
+        },
+        {
+          "term": "Galletitas",
+          "count": 5032
+        },
+        {
+          "term": "Crema%20de%20leche",
+          "count": 4964
+        },
+        {
+          "term": "Shampoo",
+          "count": 4962
+        },
+        {
+          "term": "Yogurt",
+          "count": 4932
+        },
+        {
+          "term": "queso",
+          "count": 4919
+        },
+        {
+          "term": "Mayonesa",
+          "count": 4826
+        },
+        {
+          "term": "cerveza",
+          "count": 4782
+        },
+        {
+          "term": "Coca",
+          "count": 4776
+        },
+        {
+          "term": "Oreo",
+          "count": 4689
+        },
+        {
+          "term": "coca cola",
+          "count": 4666
+        },
+        {
+          "term": "Pañales",
+          "count": 4616
+        },
+        {
+          "term": "coca%20cola",
+          "count": 4600
+        },
+        {
+          "term": "Queso",
+          "count": 4592
+        },
+        {
+          "term": "pollo",
+          "count": 4548
+        },
+        {
+          "term": "galletitas",
+          "count": 4460
+        },
+        {
+          "term": "lavandina",
+          "count": 4453
+        },
+        {
+          "term": "Pa%C3%B1ales",
+          "count": 4451
+        },
+        {
+          "term": "crema de leche",
+          "count": 4399
+        },
+        {
+          "term": "yogurt",
+          "count": 4375
+        },
+        {
+          "term": "crema%20de%20leche",
+          "count": 4369
+        },
+        {
+          "term": "rollo de cocina",
+          "count": 4349
+        },
+        {
+          "term": "rollo%20de%20cocina",
+          "count": 4334
+        },
+        {
+          "term": "shampoo",
+          "count": 4314
+        },
+        {
+          "term": "Skip",
+          "count": 4104
+        },
+        {
+          "term": "carne",
+          "count": 4092
+        },
+        {
+          "term": "Detergente",
+          "count": 4085
+        },
+        {
+          "term": "Lavarropas",
+          "count": 4037
+        },
+        {
+          "term": "yogur",
+          "count": 3855
+        },
+        {
+          "term": "queso cremoso",
+          "count": 3762
+        },
+        {
+          "term": "queso%20cremoso",
+          "count": 3749
+        },
+        {
+          "term": "Chocolinas",
+          "count": 3734
+        },
+        {
+          "term": "Queso cremoso",
+          "count": 3684
+        },
+        {
+          "term": "Queso%20cremoso",
+          "count": 3652
+        },
+        {
+          "term": "pan lactal",
+          "count": 3533
+        },
+        {
+          "term": "tomate",
+          "count": 3533
+        },
+        {
+          "term": "pan%20lactal",
+          "count": 3518
+        },
+        {
+          "term": "Dove",
+          "count": 3504
+        },
+        {
+          "term": "queso%20rallado",
+          "count": 3448
+        },
+        {
+          "term": "queso rallado",
+          "count": 3437
+        },
+        {
+          "term": "crema",
+          "count": 3403
+        },
+        {
+          "term": "Heladera",
+          "count": 3381
+        },
+        {
+          "term": "huevos",
+          "count": 3368
+        },
+        {
+          "term": "Papel higienico",
+          "count": 3359
+        },
+        {
+          "term": "fernet",
+          "count": 3333
+        },
+        {
+          "term": "Papel%20higienico",
+          "count": 3329
+        },
+        {
+          "term": "coca",
+          "count": 3323
+        },
+        {
+          "term": "skip",
+          "count": 3322
+        },
+        {
+          "term": "mermelada",
+          "count": 3303
+        },
+        {
+          "term": "Yogur",
+          "count": 3201
+        },
+        {
+          "term": "Hamburguesas",
+          "count": 3147
+        },
+        {
+          "term": "rollo cocina",
+          "count": 3121
+        },
+        {
+          "term": "rollo%20cocina",
+          "count": 3117
+        },
+        {
+          "term": "Hamburguesa",
+          "count": 3078
+        },
+        {
+          "term": "pure de tomate",
+          "count": 3047
+        },
+        {
+          "term": "pure%20de%20tomate",
+          "count": 3037
+        },
+        {
+          "term": "Rollo de cocina",
+          "count": 3017
+        },
+        {
+          "term": "Rollo%20de%20cocina",
+          "count": 3011
+        },
+        {
+          "term": "esponja",
+          "count": 3009
+        },
+        {
+          "term": "agua",
+          "count": 2982
+        },
+        {
+          "term": "oreo",
+          "count": 2963
+        },
+        {
+          "term": "Lavandina",
+          "count": 2952
+        },
+        {
+          "term": "jabon liquido",
+          "count": 2922
+        },
+        {
+          "term": "dove",
+          "count": 2917
+        },
+        {
+          "term": "jabon%20liquido",
+          "count": 2907
+        },
+        {
+          "term": "banana",
+          "count": 2883
+        },
+        {
+          "term": "Pepsi",
+          "count": 2855
+        },
+        {
+          "term": "Crema",
+          "count": 2846
+        },
+        {
+          "term": "Mermelada",
+          "count": 2748
+        },
+        {
+          "term": "Chocolate",
+          "count": 2731
+        },
+        {
+          "term": "Salchichas",
+          "count": 2684
+        },
+        {
+          "term": "papa",
+          "count": 2658
+        },
+        {
+          "term": "te",
+          "count": 2645
+        },
+        {
+          "term": "pan",
+          "count": 2642
+        },
+        {
+          "term": "salchichas",
+          "count": 2616
+        },
+        {
+          "term": "Agua",
+          "count": 2591
+        },
+        {
+          "term": "Bondiola",
+          "count": 2575
+        },
+        {
+          "term": "cebolla",
+          "count": 2569
+        },
+        {
+          "term": "Huevos",
+          "count": 2554
+        },
+        {
+          "term": "Papas fritas",
+          "count": 2547
+        },
+        {
+          "term": "cif",
+          "count": 2547
+        },
+        {
+          "term": "Leche en polvo",
+          "count": 2525
+        },
+        {
+          "term": "aceite de oliva",
+          "count": 2525
+        },
+        {
+          "term": "Vino",
+          "count": 2521
+        },
+        {
+          "term": "Azúcar",
+          "count": 2510
+        },
+        {
+          "term": "Papas%20fritas",
+          "count": 2506
+        },
+        {
+          "term": "aceite%20de%20oliva",
+          "count": 2504
+        },
+        {
+          "term": "Queso rallado",
+          "count": 2495
+        },
+        {
+          "term": "Leche%20en%20polvo",
+          "count": 2493
+        },
+        {
+          "term": "Az%C3%BAcar",
+          "count": 2491
+        },
+        {
+          "term": "Microondas",
+          "count": 2487
+        },
+        {
+          "term": "jamon",
+          "count": 2486
+        },
+        {
+          "term": "Queso%20rallado",
+          "count": 2482
+        },
+        {
+          "term": "casancrem",
+          "count": 2482
+        },
+        {
+          "term": "sal",
+          "count": 2454
+        },
+        {
+          "term": "vinagre",
+          "count": 2426
+        },
+        {
+          "term": "suavizante",
+          "count": 2396
+        },
+        {
+          "term": "Pan lactal",
+          "count": 2391
+        },
+        {
+          "term": "levadura",
+          "count": 2376
+        },
+        {
+          "term": "Banana",
+          "count": 2369
+        },
+        {
+          "term": "Pan%20lactal",
+          "count": 2363
+        },
+        {
+          "term": "Papa",
+          "count": 2356
+        },
+        {
+          "term": "Casancrem",
+          "count": 2315
+        },
+        {
+          "term": "chocolinas",
+          "count": 2289
+        },
+        {
+          "term": "Levadura",
+          "count": 2281
+        },
+        {
+          "term": "Cocina",
+          "count": 2278
+        },
+        {
+          "term": "Sal",
+          "count": 2272
+        },
+        {
+          "term": "desodorante",
+          "count": 2263
+        },
+        {
+          "term": "choclo",
+          "count": 2257
+        },
+        {
+          "term": "jabon",
+          "count": 2253
+        },
+        {
+          "term": "papas fritas",
+          "count": 2237
+        },
+        {
+          "term": "papas%20fritas",
+          "count": 2225
+        },
+        {
+          "term": "Tomate",
+          "count": 2220
+        },
+        {
+          "term": "Ravioles",
+          "count": 2209
+        },
+        {
+          "term": "Asado",
+          "count": 2203
+        },
+        {
+          "term": "Suavizante",
+          "count": 2201
+        },
+        {
+          "term": "Carne picada",
+          "count": 2190
+        },
+        {
+          "term": "avena",
+          "count": 2186
+        },
+        {
+          "term": "Carne%20picada",
+          "count": 2170
+        },
+        {
+          "term": "Te",
+          "count": 2127
+        },
+        {
+          "term": "Gaseosa",
+          "count": 2116
+        },
+        {
+          "term": "chocolate",
+          "count": 2107
+        },
+        {
+          "term": "palta",
+          "count": 2103
+        },
+        {
+          "term": "leche en polvo",
+          "count": 2082
+        },
+        {
+          "term": "leche%20en%20polvo",
+          "count": 2064
+        },
+        {
+          "term": "pepsi",
+          "count": 2064
+        },
+        {
+          "term": "Suprema",
+          "count": 2060
+        },
+        {
+          "term": "Elvive",
+          "count": 2058
+        },
+        {
+          "term": "pan rallado",
+          "count": 2056
+        },
+        {
+          "term": "pan%20rallado",
+          "count": 2047
+        },
+        {
+          "term": "carne picada",
+          "count": 2016
+        },
+        {
+          "term": "Pan",
+          "count": 2004
+        },
+        {
+          "term": "carne%20picada",
+          "count": 1999
+        },
+        {
+          "term": "Aceite de oliva",
+          "count": 1988
+        },
+        {
+          "term": "Papas",
+          "count": 1978
+        },
+        {
+          "term": "ketchup",
+          "count": 1973
+        },
+        {
+          "term": "queso untable",
+          "count": 1973
+        },
+        {
+          "term": "Cif",
+          "count": 1969
+        },
+        {
+          "term": "queso%20untable",
+          "count": 1967
+        },
+        {
+          "term": "Puré de tomate",
+          "count": 1962
+        },
+        {
+          "term": "Aceite%20de%20oliva",
+          "count": 1947
+        },
+        {
+          "term": "Pur%C3%A9%20de%20tomate",
+          "count": 1939
+        },
+        {
+          "term": "vino",
+          "count": 1926
+        },
+        {
+          "term": "Alfajor",
+          "count": 1923
+        },
+        {
+          "term": "edulcorante",
+          "count": 1913
+        },
+        {
+          "term": "papas",
+          "count": 1897
+        },
+        {
+          "term": "Whisky",
+          "count": 1889
+        },
+        {
+          "term": "Cebolla",
+          "count": 1884
+        },
+        {
+          "term": "Sprite",
+          "count": 1880
+        },
+        {
+          "term": "Paty",
+          "count": 1843
+        },
+        {
+          "term": "Salchicha",
+          "count": 1843
+        },
+        {
+          "term": "soda",
+          "count": 1843
+        },
+        {
+          "term": "lentejas",
+          "count": 1835
+        },
+        {
+          "term": "acondicionador",
+          "count": 1822
+        },
+        {
+          "term": "Harina leudante",
+          "count": 1819
+        },
+        {
+          "term": "Avena",
+          "count": 1806
+        },
+        {
+          "term": "Harina%20leudante",
+          "count": 1796
+        },
+        {
+          "term": "Rollo cocina",
+          "count": 1793
+        },
+        {
+          "term": "granola",
+          "count": 1793
+        },
+        {
+          "term": "Rollo%20cocina",
+          "count": 1789
+        },
+        {
+          "term": "9 de oro",
+          "count": 1783
+        },
+        {
+          "term": "servilletas",
+          "count": 1776
+        },
+        {
+          "term": "Acondicionador",
+          "count": 1770
+        },
+        {
+          "term": "Palta",
+          "count": 1770
+        },
+        {
+          "term": "9%20de%20oro",
+          "count": 1759
+        },
+        {
+          "term": "hamburguesa",
+          "count": 1752
+        },
+        {
+          "term": "jabon dove",
+          "count": 1744
+        },
+        {
+          "term": "leche%20descremada",
+          "count": 1744
+        },
+        {
+          "term": "jabon%20dove",
+          "count": 1741
+        },
+        {
+          "term": "leche descremada",
+          "count": 1741
+        },
+        {
+          "term": "Desodorante",
+          "count": 1728
+        },
+        {
+          "term": "mostaza",
+          "count": 1722
+        },
+        {
+          "term": "finlandia",
+          "count": 1720
+        },
+        {
+          "term": "Cafetera",
+          "count": 1700
+        },
+        {
+          "term": "harina leudante",
+          "count": 1672
+        },
+        {
+          "term": "harina%20leudante",
+          "count": 1664
+        },
+        {
+          "term": "hamburguesas",
+          "count": 1661
+        },
+        {
+          "term": "Leche larga vida",
+          "count": 1657
+        },
+        {
+          "term": "pasta dental",
+          "count": 1642
+        },
+        {
+          "term": "pasta%20dental",
+          "count": 1637
+        },
+        {
+          "term": "Celulares",
+          "count": 1631
+        },
+        {
+          "term": "integra",
+          "count": 1627
+        },
+        {
+          "term": "Leche%20larga%20vida",
+          "count": 1620
+        },
+        {
+          "term": "Leche condensada",
+          "count": 1618
+        },
+        {
+          "term": "zanahoria",
+          "count": 1611
+        },
+        {
+          "term": "Cerdo",
+          "count": 1605
+        },
+        {
+          "term": "Queso untable",
+          "count": 1592
+        },
+        {
+          "term": "Valija",
+          "count": 1575
+        },
+        {
+          "term": "Leche%20condensada",
+          "count": 1573
+        },
+        {
+          "term": "Queso%20untable",
+          "count": 1573
+        },
+        {
+          "term": "Aire acondicionado",
+          "count": 1572
+        },
+        {
+          "term": "Vino colon",
+          "count": 1570
+        },
+        {
+          "term": "ravioles",
+          "count": 1570
+        },
+        {
+          "term": "Colon",
+          "count": 1564
+        },
+        {
+          "term": "Esponja",
+          "count": 1559
+        },
+        {
+          "term": "Higienol",
+          "count": 1547
+        },
+        {
+          "term": "Vinos",
+          "count": 1546
+        },
+        {
+          "term": "suprema",
+          "count": 1536
+        },
+        {
+          "term": "Bicicleta",
+          "count": 1534
+        },
+        {
+          "term": "alfajor",
+          "count": 1525
+        },
+        {
+          "term": "Vino%20colon",
+          "count": 1523
+        },
+        {
+          "term": "sprite",
+          "count": 1521
+        },
+        {
+          "term": "leche larga vida",
+          "count": 1518
+        },
+        {
+          "term": "Aire%20acondicionado",
+          "count": 1512
+        },
+        {
+          "term": "Aspiradora",
+          "count": 1510
+        },
+        {
+          "term": "Heladeras",
+          "count": 1508
+        },
+        {
+          "term": "Juguetes",
+          "count": 1507
+        },
+        {
+          "term": "Vinagre",
+          "count": 1507
+        },
+        {
+          "term": "polenta",
+          "count": 1507
+        },
+        {
+          "term": "rapiditas",
+          "count": 1507
+        },
+        {
+          "term": "leche%20larga%20vida",
+          "count": 1492
+        },
+        {
+          "term": "Carnes",
+          "count": 1490
+        },
+        {
+          "term": "Jamon",
+          "count": 1484
+        },
+        {
+          "term": "LECHE",
+          "count": 1482
+        },
+        {
+          "term": "Café",
+          "count": 1471
+        },
+        {
+          "term": "arvejas",
+          "count": 1469
+        },
+        {
+          "term": "ricota",
+          "count": 1468
+        },
+        {
+          "term": "Pure de tomate",
+          "count": 1466
+        },
+        {
+          "term": "Pure%20de%20tomate",
+          "count": 1466
+        },
+        {
+          "term": "Pasta dental",
+          "count": 1462
+        },
+        {
+          "term": "Ricota",
+          "count": 1462
+        },
+        {
+          "term": "Pasta%20dental",
+          "count": 1458
+        },
+        {
+          "term": "Jabon",
+          "count": 1453
+        },
+        {
+          "term": "Pan rallado",
+          "count": 1453
+        },
+        {
+          "term": "Choclo",
+          "count": 1449
+        },
+        {
+          "term": "Caf%C3%A9",
+          "count": 1447
+        },
+        {
+          "term": "Yogurtera",
+          "count": 1442
+        },
+        {
+          "term": "mate cocido",
+          "count": 1442
+        },
+        {
+          "term": "Pan%20rallado",
+          "count": 1440
+        },
+        {
+          "term": "mate%20cocido",
+          "count": 1440
+        },
+        {
+          "term": "Edulcorante",
+          "count": 1438
+        },
+        {
+          "term": "bondiola",
+          "count": 1438
+        },
+        {
+          "term": "Downy",
+          "count": 1419
+        },
+        {
+          "term": "Finlandia",
+          "count": 1417
+        },
+        {
+          "term": "Aguila",
+          "count": 1399
+        },
+        {
+          "term": "Freidora de aire",
+          "count": 1399
+        },
+        {
+          "term": "nescafe",
+          "count": 1397
+        },
+        {
+          "term": "Tv",
+          "count": 1390
+        },
+        {
+          "term": "Aceite natura",
+          "count": 1380
+        },
+        {
+          "term": "Nescafe",
+          "count": 1378
+        },
+        {
+          "term": "Ariel",
+          "count": 1375
+        },
+        {
+          "term": "Freidora%20de%20aire",
+          "count": 1365
+        },
+        {
+          "term": "Aceite%20natura",
+          "count": 1360
+        },
+        {
+          "term": "salchicha",
+          "count": 1360
+        },
+        {
+          "term": "Leche entera",
+          "count": 1341
+        },
+        {
+          "term": "higienol",
+          "count": 1338
+        },
+        {
+          "term": "Tostadora",
+          "count": 1336
+        },
+        {
+          "term": "Levite",
+          "count": 1330
+        },
+        {
+          "term": "Sedal",
+          "count": 1326
+        },
+        {
+          "term": "Alfajores",
+          "count": 1323
+        },
+        {
+          "term": "Leche%20entera",
+          "count": 1321
+        },
+        {
+          "term": "pascualina",
+          "count": 1319
+        },
+        {
+          "term": "Leche descremada",
+          "count": 1312
+        },
+        {
+          "term": "Ketchup",
+          "count": 1304
+        },
+        {
+          "term": "Nesquik",
+          "count": 1304
+        },
+        {
+          "term": "huevo",
+          "count": 1302
+        },
+        {
+          "term": "Leche%20descremada",
+          "count": 1299
+        },
+        {
+          "term": "Notebook",
+          "count": 1297
+        },
+        {
+          "term": "Polenta",
+          "count": 1293
+        },
+        {
+          "term": "pasta de mani",
+          "count": 1291
+        },
+        {
+          "term": "Integra",
+          "count": 1284
+        },
+        {
+          "term": "Fideo",
+          "count": 1282
+        },
+        {
+          "term": "Helado",
+          "count": 1282
+        },
+        {
+          "term": "pasta%20de%20mani",
+          "count": 1274
+        },
+        {
+          "term": "Pepitos",
+          "count": 1273
+        },
+        {
+          "term": "harina integral",
+          "count": 1273
+        },
+        {
+          "term": "gaseosa",
+          "count": 1271
+        },
+        {
+          "term": "miel",
+          "count": 1271
+        },
+        {
+          "term": "Ala",
+          "count": 1263
+        },
+        {
+          "term": "Huevo",
+          "count": 1263
+        },
+        {
+          "term": "playadito",
+          "count": 1260
+        },
+        {
+          "term": "harina 0000",
+          "count": 1258
+        },
+        {
+          "term": "harina%20integral",
+          "count": 1258
+        },
+        {
+          "term": "harina%200000",
+          "count": 1254
+        },
+        {
+          "term": "Vacio",
+          "count": 1252
+        },
+        {
+          "term": "Vodka",
+          "count": 1248
+        },
+        {
+          "term": "Campera",
+          "count": 1246
+        },
+        {
+          "term": "Harina 0000",
+          "count": 1246
+        },
+        {
+          "term": "Granola",
+          "count": 1245
+        },
+        {
+          "term": "Soda",
+          "count": 1245
+        },
+        {
+          "term": "aceitunas",
+          "count": 1245
+        },
+        {
+          "term": "sal fina",
+          "count": 1237
+        },
+        {
+          "term": "Nutella",
+          "count": 1235
+        },
+        {
+          "term": "sal%20fina",
+          "count": 1235
+        },
+        {
+          "term": "Harina%200000",
+          "count": 1233
+        },
+        {
+          "term": "mani",
+          "count": 1232
+        },
+        {
+          "term": "Vainillas",
+          "count": 1230
+        },
+        {
+          "term": "morron",
+          "count": 1230
+        },
+        {
+          "term": "Platos",
+          "count": 1217
+        },
+        {
+          "term": "espinaca",
+          "count": 1211
+        },
+        {
+          "term": "Tablet",
+          "count": 1206
+        },
+        {
+          "term": "aceite natura",
+          "count": 1202
+        },
+        {
+          "term": "Magistral",
+          "count": 1200
+        },
+        {
+          "term": "aceite%20natura",
+          "count": 1198
+        },
+        {
+          "term": "Cocinas",
+          "count": 1194
+        },
+        {
+          "term": "aguila",
+          "count": 1193
+        },
+        {
+          "term": "Termotanque",
+          "count": 1189
+        },
+        {
+          "term": "Jabon liquido",
+          "count": 1178
+        },
+        {
+          "term": "Harina integral",
+          "count": 1176
+        },
+        {
+          "term": "cerdo",
+          "count": 1176
+        },
+        {
+          "term": "Cervezas",
+          "count": 1174
+        },
+        {
+          "term": "leche entera",
+          "count": 1168
+        },
+        {
+          "term": "Harina%20integral",
+          "count": 1167
+        },
+        {
+          "term": "Jabon%20liquido",
+          "count": 1161
+        },
+        {
+          "term": "leche%20entera",
+          "count": 1159
+        },
+        {
+          "term": "manzana",
+          "count": 1157
+        },
+        {
+          "term": "Chocolina",
+          "count": 1152
+        },
+        {
+          "term": "vainillas",
+          "count": 1152
+        },
+        {
+          "term": "nesquik",
+          "count": 1141
+        },
+        {
+          "term": "Pedigree",
+          "count": 1137
+        },
+        {
+          "term": "Gaseosas",
+          "count": 1135
+        },
+        {
+          "term": "Jabón líquido",
+          "count": 1131
+        },
+        {
+          "term": "paty",
+          "count": 1122
+        },
+        {
+          "term": "Galletas",
+          "count": 1120
+        },
+        {
+          "term": "Quilmes",
+          "count": 1120
+        },
+        {
+          "term": "elvive",
+          "count": 1116
+        },
+        {
+          "term": "Jab%C3%B3n%20l%C3%ADquido",
+          "count": 1113
+        },
+        {
+          "term": "Colgate",
+          "count": 1107
+        },
+        {
+          "term": "Heineken",
+          "count": 1107
+        },
+        {
+          "term": "Freidora",
+          "count": 1105
+        },
+        {
+          "term": "tregar",
+          "count": 1105
+        },
+        {
+          "term": "Cacao",
+          "count": 1103
+        },
+        {
+          "term": "Pechuga",
+          "count": 1100
+        },
+        {
+          "term": "Gancia",
+          "count": 1098
+        },
+        {
+          "term": "Gin",
+          "count": 1096
+        },
+        {
+          "term": "limon",
+          "count": 1094
+        },
+        {
+          "term": "Sin tacc",
+          "count": 1089
+        },
+        {
+          "term": "heladera",
+          "count": 1089
+        },
+        {
+          "term": "leche la serenisima",
+          "count": 1087
+        },
+        {
+          "term": "sin tacc",
+          "count": 1087
+        },
+        {
+          "term": "Doritos",
+          "count": 1079
+        },
+        {
+          "term": "jamon cocido",
+          "count": 1079
+        },
+        {
+          "term": "Auriculares",
+          "count": 1077
+        },
+        {
+          "term": "Mate cocido",
+          "count": 1077
+        },
+        {
+          "term": "jamon%20cocido",
+          "count": 1077
+        },
+        {
+          "term": "leche%20la%20serenisima",
+          "count": 1077
+        },
+        {
+          "term": "Huggies",
+          "count": 1074
+        },
+        {
+          "term": "Mate%20cocido",
+          "count": 1072
+        },
+        {
+          "term": "sin%20tacc",
+          "count": 1072
+        },
+        {
+          "term": "Sin%20tacc",
+          "count": 1070
+        },
+        {
+          "term": "Pantene",
+          "count": 1063
+        },
+        {
+          "term": "aceite girasol",
+          "count": 1063
+        },
+        {
+          "term": "Atún",
+          "count": 1061
+        },
+        {
+          "term": "ayudin",
+          "count": 1057
+        },
+        {
+          "term": "ariel",
+          "count": 1055
+        },
+        {
+          "term": "blem",
+          "count": 1053
+        },
+        {
+          "term": "milanesa",
+          "count": 1053
+        },
+        {
+          "term": "aceite%20girasol",
+          "count": 1050
+        },
+        {
+          "term": "pepas",
+          "count": 1046
+        },
+        {
+          "term": "At%C3%BAn",
+          "count": 1044
+        },
+        {
+          "term": "cacao",
+          "count": 1038
+        },
+        {
+          "term": "Milanesa",
+          "count": 1035
+        },
+        {
+          "term": "toallitas",
+          "count": 1035
+        },
+        {
+          "term": "Valijas",
+          "count": 1031
+        },
+        {
+          "term": "Celular",
+          "count": 1027
+        },
+        {
+          "term": "Cubiertas",
+          "count": 1025
+        },
+        {
+          "term": "jabon tocador",
+          "count": 1022
+        },
+        {
+          "term": "agua mineral",
+          "count": 1020
+        },
+        {
+          "term": "lechuga",
+          "count": 1020
+        },
+        {
+          "term": "Jugo",
+          "count": 1018
+        },
+        {
+          "term": "alfajores",
+          "count": 1016
+        },
+        {
+          "term": "jabon%20tocador",
+          "count": 1014
+        },
+        {
+          "term": "procenex",
+          "count": 1014
+        },
+        {
+          "term": "agua%20mineral",
+          "count": 1012
+        },
+        {
+          "term": "Licuadora",
+          "count": 1011
+        },
+        {
+          "term": "Traviata",
+          "count": 1011
+        },
+        {
+          "term": "Batidora",
+          "count": 1009
+        },
+        {
+          "term": "Lentejas",
+          "count": 1009
+        },
+        {
+          "term": "aceite oliva",
+          "count": 1009
+        },
+        {
+          "term": "Ps5",
+          "count": 1007
+        },
+        {
+          "term": "Tregar",
+          "count": 1005
+        },
+        {
+          "term": "aceite%20oliva",
+          "count": 1001
+        },
+        {
+          "term": "citric",
+          "count": 1001
+        },
+        {
+          "term": "jabon%20de%20tocador",
+          "count": 1001
+        },
+        {
+          "term": "jabon de tocador",
+          "count": 999
+        },
+        {
+          "term": "Rapiditas",
+          "count": 994
+        },
+        {
+          "term": "downy",
+          "count": 994
+        },
+        {
+          "term": "Mostaza",
+          "count": 986
+        },
+        {
+          "term": "Corona",
+          "count": 983
+        },
+        {
+          "term": "Zanahoria",
+          "count": 983
+        },
+        {
+          "term": "Tender",
+          "count": 979
+        },
+        {
+          "term": "brocoli",
+          "count": 979
+        },
+        {
+          "term": "tostadas",
+          "count": 979
+        },
+        {
+          "term": "Stella",
+          "count": 977
+        },
+        {
+          "term": "Vajilla",
+          "count": 977
+        },
+        {
+          "term": "galletas de arroz",
+          "count": 975
+        },
+        {
+          "term": "galletas%20de%20arroz",
+          "count": 973
+        },
+        {
+          "term": "asado",
+          "count": 972
+        },
+        {
+          "term": "lavarropas",
+          "count": 972
+        },
+        {
+          "term": "Aquarius",
+          "count": 970
+        },
+        {
+          "term": "Pasta de mani",
+          "count": 968
+        },
+        {
+          "term": "guantes",
+          "count": 968
+        },
+        {
+          "term": "colgate",
+          "count": 966
+        },
+        {
+          "term": "Skyy",
+          "count": 964
+        },
+        {
+          "term": "pepitos",
+          "count": 962
+        },
+        {
+          "term": "poett",
+          "count": 962
+        },
+        {
+          "term": "Vasos",
+          "count": 959
+        },
+        {
+          "term": "Miel",
+          "count": 957
+        },
+        {
+          "term": "Toallitas",
+          "count": 957
+        },
+        {
+          "term": "Pasta%20de%20mani",
+          "count": 951
+        },
+        {
+          "term": "magistral",
+          "count": 951
+        },
+        {
+          "term": "cereales",
+          "count": 944
+        },
+        {
+          "term": "whisky",
+          "count": 944
+        },
+        {
+          "term": "Lavarropa",
+          "count": 942
+        },
+        {
+          "term": "Ramen",
+          "count": 942
+        },
+        {
+          "term": "cerealitas",
+          "count": 942
+        },
+        {
+          "term": "jabon ropa",
+          "count": 942
+        },
+        {
+          "term": "hileret",
+          "count": 938
+        },
+        {
+          "term": "oregano",
+          "count": 938
+        },
+        {
+          "term": "jabon%20ropa",
+          "count": 936
+        },
+        {
+          "term": "Caballa",
+          "count": 934
+        },
+        {
+          "term": "coca zero",
+          "count": 931
+        },
+        {
+          "term": "salsa",
+          "count": 927
+        },
+        {
+          "term": "Folletos",
+          "count": 925
+        },
+        {
+          "term": "yogurisimo",
+          "count": 925
+        },
+        {
+          "term": "Bizcochuelo",
+          "count": 923
+        },
+        {
+          "term": "capsulas",
+          "count": 923
+        },
+        {
+          "term": "antigrasa",
+          "count": 921
+        },
+        {
+          "term": "coca%20zero",
+          "count": 921
+        },
+        {
+          "term": "leche condensada",
+          "count": 918
+        },
+        {
+          "term": "sal gruesa",
+          "count": 916
+        },
+        {
+          "term": "sal%20gruesa",
+          "count": 916
+        },
+        {
+          "term": "Aceite girasol",
+          "count": 910
+        },
+        {
+          "term": "Capsulas",
+          "count": 910
+        },
+        {
+          "term": "Rexona",
+          "count": 910
+        },
+        {
+          "term": "Playadito",
+          "count": 908
+        },
+        {
+          "term": "yogur griego",
+          "count": 908
+        },
+        {
+          "term": "Yogurisimo",
+          "count": 907
+        },
+        {
+          "term": "Aceite%20girasol",
+          "count": 905
+        },
+        {
+          "term": "pañales",
+          "count": 903
+        },
+        {
+          "term": "yogur%20griego",
+          "count": 903
+        },
+        {
+          "term": "leche%20condensada",
+          "count": 899
+        },
+        {
+          "term": "Impresora",
+          "count": 894
+        },
+        {
+          "term": "Pava electrica",
+          "count": 894
+        },
+        {
+          "term": "traviata",
+          "count": 894
+        },
+        {
+          "term": "Zapatillas",
+          "count": 892
+        },
+        {
+          "term": "algodon",
+          "count": 892
+        },
+        {
+          "term": "don satur",
+          "count": 892
+        },
+        {
+          "term": "pa%C3%B1ales",
+          "count": 890
+        },
+        {
+          "term": "yogur%20natural",
+          "count": 890
+        },
+        {
+          "term": "Speed",
+          "count": 888
+        },
+        {
+          "term": "yogur natural",
+          "count": 888
+        },
+        {
+          "term": "zapallo",
+          "count": 886
+        },
+        {
+          "term": "don%20satur",
+          "count": 884
+        },
+        {
+          "term": "jabon liquido ropa",
+          "count": 884
+        },
+        {
+          "term": "Leche la serenisima",
+          "count": 881
+        },
+        {
+          "term": "Yogurt griego",
+          "count": 881
+        },
+        {
+          "term": "jabon%20liquido%20ropa",
+          "count": 881
+        },
+        {
+          "term": "salsa de tomate",
+          "count": 877
+        },
+        {
+          "term": "Cereales",
+          "count": 875
+        },
+        {
+          "term": "salsa%20de%20tomate",
+          "count": 873
+        },
+        {
+          "term": "Dulce de leche repostero",
+          "count": 871
+        },
+        {
+          "term": "Mopa",
+          "count": 869
+        },
+        {
+          "term": "Smart tv",
+          "count": 869
+        },
+        {
+          "term": "mandarina",
+          "count": 869
+        },
+        {
+          "term": "Arvejas",
+          "count": 866
+        },
+        {
+          "term": "Exquisita",
+          "count": 866
+        },
+        {
+          "term": "cachafaz",
+          "count": 864
+        },
+        {
+          "term": "Smart%20tv",
+          "count": 862
+        },
+        {
+          "term": "cheddar",
+          "count": 860
+        },
+        {
+          "term": "Servilletas",
+          "count": 858
+        },
+        {
+          "term": "Leche%20la%20serenisima",
+          "count": 856
+        },
+        {
+          "term": "cafe instantaneo",
+          "count": 856
+        },
+        {
+          "term": "cafe tostado",
+          "count": 856
+        },
+        {
+          "term": "cafe%20instantaneo",
+          "count": 856
+        },
+        {
+          "term": "Dulce%20de%20leche%20repostero",
+          "count": 855
+        },
+        {
+          "term": "Freezer",
+          "count": 855
+        },
+        {
+          "term": "cafe%20tostado",
+          "count": 855
+        },
+        {
+          "term": "Agua mineral",
+          "count": 853
+        },
+        {
+          "term": "glade",
+          "count": 853
+        },
+        {
+          "term": "Cepita",
+          "count": 851
+        },
+        {
+          "term": "nutella",
+          "count": 851
+        },
+        {
+          "term": "Cerealitas",
+          "count": 849
+        },
+        {
+          "term": "Leche deslactosada",
+          "count": 849
+        },
+        {
+          "term": "Raid",
+          "count": 849
+        },
+        {
+          "term": "lomo",
+          "count": 849
+        },
+        {
+          "term": "Pava%20electrica",
+          "count": 845
+        },
+        {
+          "term": "Peceto",
+          "count": 845
+        },
+        {
+          "term": "jugo",
+          "count": 845
+        },
+        {
+          "term": "Yogurt%20griego",
+          "count": 843
+        },
+        {
+          "term": "Galletitas de agua",
+          "count": 842
+        },
+        {
+          "term": "Galletitas%20de%20agua",
+          "count": 840
+        },
+        {
+          "term": "alcohol",
+          "count": 840
+        },
+        {
+          "term": "terma",
+          "count": 840
+        },
+        {
+          "term": "levite",
+          "count": 838
+        },
+        {
+          "term": "matarazzo",
+          "count": 838
+        },
+        {
+          "term": "Agua%20mineral",
+          "count": 836
+        },
+        {
+          "term": "Sal%20fina",
+          "count": 836
+        },
+        {
+          "term": "Aceitunas",
+          "count": 832
+        },
+        {
+          "term": "Pepas",
+          "count": 832
+        },
+        {
+          "term": "Sal fina",
+          "count": 832
+        },
+        {
+          "term": "pechuga",
+          "count": 830
+        },
+        {
+          "term": "Pascualina",
+          "count": 829
+        },
+        {
+          "term": "nuggets",
+          "count": 829
+        },
+        {
+          "term": "vinos",
+          "count": 829
+        },
+        {
+          "term": "Pampers",
+          "count": 825
+        },
+        {
+          "term": "Talco",
+          "count": 825
+        },
+        {
+          "term": "Kinder",
+          "count": 823
+        },
+        {
+          "term": "ACEITE",
+          "count": 821
+        },
+        {
+          "term": "Alcohol",
+          "count": 821
+        },
+        {
+          "term": "Franui",
+          "count": 819
+        },
+        {
+          "term": "Leche%20deslactosada",
+          "count": 819
+        },
+        {
+          "term": "ajo",
+          "count": 819
+        },
+        {
+          "term": "pan integral",
+          "count": 819
+        },
+        {
+          "term": "pan%20integral",
+          "count": 819
+        },
+        {
+          "term": "pimenton",
+          "count": 819
+        },
+        {
+          "term": "Jabón dove",
+          "count": 817
+        },
+        {
+          "term": "batata",
+          "count": 812
+        },
+        {
+          "term": "gin",
+          "count": 812
+        },
+        {
+          "term": "galletas",
+          "count": 810
+        },
+        {
+          "term": "Nalga",
+          "count": 808
+        },
+        {
+          "term": "Nuggets",
+          "count": 808
+        },
+        {
+          "term": "Ayudin",
+          "count": 803
+        },
+        {
+          "term": "leche deslactosada",
+          "count": 803
+        },
+        {
+          "term": "ramen",
+          "count": 803
+        },
+        {
+          "term": "rexona",
+          "count": 803
+        },
+        {
+          "term": "poet",
+          "count": 801
+        },
+        {
+          "term": "Jab%C3%B3n%20dove",
+          "count": 799
+        },
+        {
+          "term": "Yogurt natural",
+          "count": 797
+        },
+        {
+          "term": "aquarius",
+          "count": 797
+        },
+        {
+          "term": "leche%20deslactosada",
+          "count": 797
+        },
+        {
+          "term": "Matarazzo",
+          "count": 795
+        },
+        {
+          "term": "vodka",
+          "count": 795
+        },
+        {
+          "term": "yogurt griego",
+          "count": 795
+        },
+        {
+          "term": "Actimel",
+          "count": 793
+        },
+        {
+          "term": "Glade",
+          "count": 793
+        },
+        {
+          "term": "proteina",
+          "count": 790
+        },
+        {
+          "term": "Citric",
+          "count": 788
+        },
+        {
+          "term": "Manzana",
+          "count": 788
+        },
+        {
+          "term": "Almohada",
+          "count": 786
+        },
+        {
+          "term": "Yogurt%20natural",
+          "count": 784
+        },
+        {
+          "term": "yogurt%20griego",
+          "count": 784
+        },
+        {
+          "term": "Cheddar",
+          "count": 782
+        },
+        {
+          "term": "Everlast",
+          "count": 782
+        },
+        {
+          "term": "Gelatina",
+          "count": 782
+        },
+        {
+          "term": "pilas",
+          "count": 782
+        },
+        {
+          "term": "Chorizo",
+          "count": 780
+        },
+        {
+          "term": "Yogur griego",
+          "count": 780
+        },
+        {
+          "term": "peceto",
+          "count": 780
+        },
+        {
+          "term": "Matambre",
+          "count": 777
+        },
+        {
+          "term": "Tostadas",
+          "count": 777
+        },
+        {
+          "term": "pizza",
+          "count": 775
+        },
+        {
+          "term": "virulana",
+          "count": 775
+        },
+        {
+          "term": "Durazno",
+          "count": 773
+        },
+        {
+          "term": "Monster",
+          "count": 773
+        },
+        {
+          "term": "servilleta",
+          "count": 773
+        },
+        {
+          "term": "Hidrolavadora",
+          "count": 771
+        },
+        {
+          "term": "Golosinas",
+          "count": 769
+        },
+        {
+          "term": "Milka",
+          "count": 769
+        },
+        {
+          "term": "hummus",
+          "count": 769
+        },
+        {
+          "term": "lysoform",
+          "count": 767
+        },
+        {
+          "term": "savora",
+          "count": 767
+        },
+        {
+          "term": "Yogur%20griego",
+          "count": 765
+        },
+        {
+          "term": "Bon o bon",
+          "count": 762
+        },
+        {
+          "term": "Hileret",
+          "count": 762
+        },
+        {
+          "term": "Sabanas",
+          "count": 762
+        },
+        {
+          "term": "AZUCAR",
+          "count": 760
+        },
+        {
+          "term": "actimel",
+          "count": 760
+        },
+        {
+          "term": "Aceite oliva",
+          "count": 758
+        },
+        {
+          "term": "Babysec",
+          "count": 758
+        },
+        {
+          "term": "Brownie",
+          "count": 758
+        },
+        {
+          "term": "garbanzos",
+          "count": 758
+        },
+        {
+          "term": "7up",
+          "count": 754
+        },
+        {
+          "term": "Picada",
+          "count": 752
+        },
+        {
+          "term": "galletitas de agua",
+          "count": 752
+        },
+        {
+          "term": "gelatina",
+          "count": 752
+        },
+        {
+          "term": "yogurt natural",
+          "count": 752
+        },
+        {
+          "term": "microondas",
+          "count": 751
+        },
+        {
+          "term": "yogurt%20natural",
+          "count": 751
+        },
+        {
+          "term": "Bon%20o%20bon",
+          "count": 749
+        },
+        {
+          "term": "Takis",
+          "count": 749
+        },
+        {
+          "term": "caldo",
+          "count": 749
+        },
+        {
+          "term": "Aceite%20oliva",
+          "count": 747
+        },
+        {
+          "term": "Patitas",
+          "count": 747
+        },
+        {
+          "term": "galletitas%20de%20agua",
+          "count": 747
+        },
+        {
+          "term": "dentifrico",
+          "count": 743
+        },
+        {
+          "term": "talco",
+          "count": 743
+        },
+        {
+          "term": "Natura",
+          "count": 741
+        },
+        {
+          "term": "Pizza",
+          "count": 741
+        },
+        {
+          "term": "desodorante dove",
+          "count": 737
+        },
+        {
+          "term": "Leches",
+          "count": 736
+        },
+        {
+          "term": "fideo",
+          "count": 736
+        },
+        {
+          "term": "merluza",
+          "count": 736
+        },
+        {
+          "term": "yogurtera",
+          "count": 734
+        },
+        {
+          "term": "desodorante%20dove",
+          "count": 732
+        },
+        {
+          "term": "cepillo de dientes",
+          "count": 730
+        },
+        {
+          "term": "Gatorade",
+          "count": 728
+        },
+        {
+          "term": "Lomo",
+          "count": 726
+        },
+        {
+          "term": "Pava eléctrica",
+          "count": 726
+        },
+        {
+          "term": "Bombones",
+          "count": 724
+        },
+        {
+          "term": "cremon",
+          "count": 724
+        },
+        {
+          "term": "naranja",
+          "count": 724
+        },
+        {
+          "term": "Secarropas",
+          "count": 723
+        },
+        {
+          "term": "arroz integral",
+          "count": 723
+        },
+        {
+          "term": "arroz%20integral",
+          "count": 721
+        },
+        {
+          "term": "galletitas dulces",
+          "count": 719
+        },
+        {
+          "term": "papel higenico",
+          "count": 719
+        },
+        {
+          "term": "nalga",
+          "count": 717
+        },
+        {
+          "term": "Baggio",
+          "count": 715
+        },
+        {
+          "term": "Pintura",
+          "count": 715
+        },
+        {
+          "term": "natura",
+          "count": 715
+        },
+        {
+          "term": "papel%20higenico",
+          "count": 715
+        },
+        {
+          "term": "Cachafaz",
+          "count": 713
+        },
+        {
+          "term": "galletitas%20dulces",
+          "count": 713
+        },
+        {
+          "term": "Brahma",
+          "count": 711
+        },
+        {
+          "term": "Poett",
+          "count": 711
+        },
+        {
+          "term": "cepillo%20de%20dientes",
+          "count": 711
+        },
+        {
+          "term": "leche proteina",
+          "count": 711
+        },
+        {
+          "term": "papel de cocina",
+          "count": 710
+        },
+        {
+          "term": "Espinaca",
+          "count": 708
+        },
+        {
+          "term": "sedal",
+          "count": 708
+        },
+        {
+          "term": "leche%20proteina",
+          "count": 706
+        },
+        {
+          "term": "papel%20de%20cocina",
+          "count": 704
+        },
+        {
+          "term": "ala",
+          "count": 702
+        },
+        {
+          "term": "queso rayado",
+          "count": 702
+        },
+        {
+          "term": "Jbl",
+          "count": 700
+        },
+        {
+          "term": "Caldo",
+          "count": 698
+        },
+        {
+          "term": "Jabón liquido",
+          "count": 698
+        },
+        {
+          "term": "Morron",
+          "count": 698
+        },
+        {
+          "term": "cepita",
+          "count": 698
+        },
+        {
+          "term": "queso%20rayado",
+          "count": 698
+        },
+        {
+          "term": "Gomitas",
+          "count": 697
+        },
+        {
+          "term": "Jabon dove",
+          "count": 697
+        },
+        {
+          "term": "corona",
+          "count": 697
+        },
+        {
+          "term": "Pava%20el%C3%A9ctrica",
+          "count": 695
+        },
+        {
+          "term": "Peluche",
+          "count": 693
+        },
+        {
+          "term": "Jabon%20dove",
+          "count": 691
+        },
+        {
+          "term": "pantene",
+          "count": 691
+        },
+        {
+          "term": "barbacoa",
+          "count": 689
+        },
+        {
+          "term": "Jab%C3%B3n%20liquido",
+          "count": 687
+        },
+        {
+          "term": "Pava",
+          "count": 687
+        },
+        {
+          "term": "Protein",
+          "count": 682
+        },
+        {
+          "term": "Torta",
+          "count": 682
+        },
+        {
+          "term": "oliva",
+          "count": 682
+        },
+        {
+          "term": "Yogur natural",
+          "count": 678
+        },
+        {
+          "term": "Blem",
+          "count": 676
+        },
+        {
+          "term": "Campari",
+          "count": 676
+        },
+        {
+          "term": "Cat chow",
+          "count": 676
+        },
+        {
+          "term": "Acolchado",
+          "count": 674
+        },
+        {
+          "term": "harina 000",
+          "count": 674
+        },
+        {
+          "term": "harina%20000",
+          "count": 674
+        },
+        {
+          "term": "Nivea",
+          "count": 672
+        },
+        {
+          "term": "cafetera",
+          "count": 672
+        },
+        {
+          "term": "vacio",
+          "count": 671
+        },
+        {
+          "term": "Garnier",
+          "count": 667
+        },
+        {
+          "term": "Sardinas",
+          "count": 667
+        },
+        {
+          "term": "bizcochuelo",
+          "count": 667
+        },
+        {
+          "term": "harpic",
+          "count": 665
+        },
+        {
+          "term": "Secador de pelo",
+          "count": 663
+        },
+        {
+          "term": "Yogur%20natural",
+          "count": 663
+        },
+        {
+          "term": "queso fresco",
+          "count": 663
+        },
+        {
+          "term": "Cat%20chow",
+          "count": 661
+        },
+        {
+          "term": "Galletitas dulces",
+          "count": 661
+        },
+        {
+          "term": "lavandina en gel",
+          "count": 661
+        },
+        {
+          "term": "Horno eléctrico",
+          "count": 659
+        },
+        {
+          "term": "Santa julia",
+          "count": 659
+        },
+        {
+          "term": "lavandina%20en%20gel",
+          "count": 659
+        },
+        {
+          "term": "queso%20fresco",
+          "count": 659
+        },
+        {
+          "term": "Camperas",
+          "count": 658
+        },
+        {
+          "term": "Galletitas%20dulces",
+          "count": 658
+        },
+        {
+          "term": "raid",
+          "count": 656
+        },
+        {
+          "term": "rumba",
+          "count": 656
+        },
+        {
+          "term": "Coca zero",
+          "count": 654
+        },
+        {
+          "term": "provenzal",
+          "count": 652
+        },
+        {
+          "term": "milka",
+          "count": 650
+        },
+        {
+          "term": "Don satur",
+          "count": 648
+        },
+        {
+          "term": "Horno%20el%C3%A9ctrico",
+          "count": 648
+        },
+        {
+          "term": "Margarina",
+          "count": 648
+        },
+        {
+          "term": "Televisor",
+          "count": 648
+        },
+        {
+          "term": "tapa de tarta",
+          "count": 648
+        },
+        {
+          "term": "Carrefour",
+          "count": 646
+        },
+        {
+          "term": "Lechuga",
+          "count": 646
+        },
+        {
+          "term": "Secador%20de%20pelo",
+          "count": 646
+        },
+        {
+          "term": "pasta de dientes",
+          "count": 646
+        },
+        {
+          "term": "don vicente",
+          "count": 645
+        },
+        {
+          "term": "pasta%20de%20dientes",
+          "count": 645
+        },
+        {
+          "term": "tapa%20de%20tarta",
+          "count": 645
+        },
+        {
+          "term": "PAPEL HIGIENICO",
+          "count": 643
+        },
+        {
+          "term": "PAPEL%20HIGIENICO",
+          "count": 643
+        },
+        {
+          "term": "Queso fresco",
+          "count": 643
+        },
+        {
+          "term": "Guantes",
+          "count": 641
+        },
+        {
+          "term": "don%20vicente",
+          "count": 641
+        },
+        {
+          "term": "Jab%C3%B3n%20tocador",
+          "count": 639
+        },
+        {
+          "term": "Queso%20fresco",
+          "count": 639
+        },
+        {
+          "term": "Jabón tocador",
+          "count": 637
+        },
+        {
+          "term": "Papel",
+          "count": 637
+        },
+        {
+          "term": "Ser",
+          "count": 637
+        },
+        {
+          "term": "leche protein",
+          "count": 637
+        },
+        {
+          "term": "stella",
+          "count": 637
+        },
+        {
+          "term": "Frutos rojos",
+          "count": 635
+        },
+        {
+          "term": "Galletas de arroz",
+          "count": 635
+        },
+        {
+          "term": "Lays",
+          "count": 635
+        },
+        {
+          "term": "YERBA",
+          "count": 635
+        },
+        {
+          "term": "Algodon",
+          "count": 633
+        },
+        {
+          "term": "Don%20satur",
+          "count": 633
+        },
+        {
+          "term": "Folleto",
+          "count": 633
+        },
+        {
+          "term": "Mani",
+          "count": 633
+        },
+        {
+          "term": "Zapallo",
+          "count": 633
+        },
+        {
+          "term": "picada",
+          "count": 633
+        },
+        {
+          "term": "MANTECA",
+          "count": 632
+        },
+        {
+          "term": "Galletas%20de%20arroz",
+          "count": 630
+        },
+        {
+          "term": "Santa%20julia",
+          "count": 630
+        },
+        {
+          "term": "Tintura",
+          "count": 630
+        },
+        {
+          "term": "Vino blanco",
+          "count": 628
+        },
+        {
+          "term": "gaseosas",
+          "count": 628
+        },
+        {
+          "term": "gatorade",
+          "count": 628
+        },
+        {
+          "term": "Monitor",
+          "count": 626
+        },
+        {
+          "term": "Paleta",
+          "count": 626
+        },
+        {
+          "term": "leche%20protein",
+          "count": 624
+        },
+        {
+          "term": "esencia de vainilla",
+          "count": 620
+        },
+        {
+          "term": "pimienta",
+          "count": 620
+        },
+        {
+          "term": "Coca%20zero",
+          "count": 619
+        },
+        {
+          "term": "esencia%20de%20vainilla",
+          "count": 619
+        },
+        {
+          "term": "hisopos",
+          "count": 619
+        },
+        {
+          "term": "Frutos%20rojos",
+          "count": 617
+        },
+        {
+          "term": "Pistacho",
+          "count": 617
+        },
+        {
+          "term": "papel higiénico",
+          "count": 617
+        },
+        {
+          "term": "CAFE",
+          "count": 615
+        },
+        {
+          "term": "chocolate aguila",
+          "count": 615
+        },
+        {
+          "term": "dentrifico",
+          "count": 615
+        },
+        {
+          "term": "papel",
+          "count": 615
+        },
+        {
+          "term": "Proteina",
+          "count": 613
+        },
+        {
+          "term": "caballa",
+          "count": 613
+        },
+        {
+          "term": "Harina 000",
+          "count": 611
+        },
+        {
+          "term": "Pilas",
+          "count": 611
+        },
+        {
+          "term": "aspiradora",
+          "count": 611
+        },
+        {
+          "term": "pure tomate",
+          "count": 611
+        },
+        {
+          "term": "Chocolate aguila",
+          "count": 609
+        },
+        {
+          "term": "chocolate%20aguila",
+          "count": 609
+        },
+        {
+          "term": "patitas",
+          "count": 609
+        },
+        {
+          "term": "pure%20tomate",
+          "count": 609
+        },
+        {
+          "term": "Batata",
+          "count": 607
+        },
+        {
+          "term": "verduras",
+          "count": 607
+        },
+        {
+          "term": "Vino%20blanco",
+          "count": 606
+        },
+        {
+          "term": "Agua saborizada",
+          "count": 604
+        },
+        {
+          "term": "Harina%20000",
+          "count": 604
+        },
+        {
+          "term": "papel%20higi%C3%A9nico",
+          "count": 604
+        },
+        {
+          "term": "quilmes",
+          "count": 604
+        },
+        {
+          "term": "Bicicletas",
+          "count": 602
+        },
+        {
+          "term": "chorizo",
+          "count": 602
+        },
+        {
+          "term": "leche proteica",
+          "count": 602
+        },
+        {
+          "term": "protein",
+          "count": 602
+        },
+        {
+          "term": "Mascarpone",
+          "count": 600
+        },
+        {
+          "term": "Dog chow",
+          "count": 598
+        },
+        {
+          "term": "cocina",
+          "count": 598
+        },
+        {
+          "term": "helado",
+          "count": 598
+        },
+        {
+          "term": "Plusbelle",
+          "count": 596
+        },
+        {
+          "term": "brownie",
+          "count": 596
+        },
+        {
+          "term": "Pan integral",
+          "count": 594
+        },
+        {
+          "term": "cereal",
+          "count": 594
+        },
+        {
+          "term": "Agua%20saborizada",
+          "count": 593
+        },
+        {
+          "term": "Cepillo de dientes",
+          "count": 593
+        },
+        {
+          "term": "Salsa",
+          "count": 593
+        },
+        {
+          "term": "frutos rojos",
+          "count": 593
+        },
+        {
+          "term": "santa julia",
+          "count": 593
+        },
+        {
+          "term": "vino tinto",
+          "count": 593
+        },
+        {
+          "term": "Aceite de girasol",
+          "count": 591
+        },
+        {
+          "term": "Chocolate%20aguila",
+          "count": 591
+        },
+        {
+          "term": "leche%20proteica",
+          "count": 591
+        },
+        {
+          "term": "Aceite%20de%20girasol",
+          "count": 589
+        },
+        {
+          "term": "Chocolatada",
+          "count": 589
+        },
+        {
+          "term": "Pan%20integral",
+          "count": 589
+        },
+        {
+          "term": "Procenex",
+          "count": 589
+        },
+        {
+          "term": "frutos%20rojos",
+          "count": 589
+        },
+        {
+          "term": "Cepillo%20de%20dientes",
+          "count": 587
+        },
+        {
+          "term": "vino%20tinto",
+          "count": 587
+        },
+        {
+          "term": "Alimento para perros",
+          "count": 585
+        },
+        {
+          "term": "cif crema",
+          "count": 585
+        },
+        {
+          "term": "heineken",
+          "count": 585
+        },
+        {
+          "term": "Ferrero",
+          "count": 581
+        },
+        {
+          "term": "cif%20crema",
+          "count": 581
+        },
+        {
+          "term": "lisoform",
+          "count": 581
+        },
+        {
+          "term": "muzzarella",
+          "count": 581
+        },
+        {
+          "term": "pan hamburguesa",
+          "count": 581
+        },
+        {
+          "term": "pan%20hamburguesa",
+          "count": 580
+        },
+        {
+          "term": "tostadora",
+          "count": 580
+        },
+        {
+          "term": "Dog%20chow",
+          "count": 578
+        },
+        {
+          "term": "Sky",
+          "count": 578
+        },
+        {
+          "term": "aceto",
+          "count": 578
+        },
+        {
+          "term": "Alimento%20para%20perros",
+          "count": 576
+        },
+        {
+          "term": "Manaos",
+          "count": 576
+        },
+        {
+          "term": "aceite de girasol",
+          "count": 576
+        },
+        {
+          "term": "protectores diarios",
+          "count": 576
+        },
+        {
+          "term": "Comfort",
+          "count": 574
+        },
+        {
+          "term": "Sal gruesa",
+          "count": 574
+        },
+        {
+          "term": "Sussex",
+          "count": 574
+        },
+        {
+          "term": "vainilla",
+          "count": 574
+        },
+        {
+          "term": "Fanta",
+          "count": 572
+        },
+        {
+          "term": "Lavasecarropas",
+          "count": 572
+        },
+        {
+          "term": "Leche protein",
+          "count": 572
+        },
+        {
+          "term": "vivere",
+          "count": 572
+        },
+        {
+          "term": "protectores%20diarios",
+          "count": 570
+        },
+        {
+          "term": "sardinas",
+          "count": 570
+        },
+        {
+          "term": "Chocolates",
+          "count": 568
+        },
+        {
+          "term": "Sal%20gruesa",
+          "count": 568
+        },
+        {
+          "term": "jabon blanco",
+          "count": 568
+        },
+        {
+          "term": "jabon%20blanco",
+          "count": 568
+        },
+        {
+          "term": "lays",
+          "count": 568
+        },
+        {
+          "term": "santa%20julia",
+          "count": 568
+        },
+        {
+          "term": "tarta",
+          "count": 568
+        },
+        {
+          "term": "Caramelos",
+          "count": 567
+        },
+        {
+          "term": "Shampoo dove",
+          "count": 567
+        },
+        {
+          "term": "doritos",
+          "count": 567
+        },
+        {
+          "term": "granix",
+          "count": 567
+        },
+        {
+          "term": "notebook",
+          "count": 567
+        },
+        {
+          "term": "Leche proteina",
+          "count": 565
+        },
+        {
+          "term": "Plato",
+          "count": 565
+        },
+        {
+          "term": "Tapas de empanadas",
+          "count": 565
+        },
+        {
+          "term": "aceite%20de%20girasol",
+          "count": 565
+        },
+        {
+          "term": "vino blanco",
+          "count": 565
+        },
+        {
+          "term": "flan",
+          "count": 563
+        },
+        {
+          "term": "membrillo",
+          "count": 563
+        },
+        {
+          "term": "Cremon",
+          "count": 561
+        },
+        {
+          "term": "Vino tinto",
+          "count": 561
+        },
+        {
+          "term": "Colchon",
+          "count": 559
+        },
+        {
+          "term": "Desodorante dove",
+          "count": 559
+        },
+        {
+          "term": "franui",
+          "count": 559
+        },
+        {
+          "term": "Jugos",
+          "count": 557
+        },
+        {
+          "term": "Shampoo%20dove",
+          "count": 557
+        },
+        {
+          "term": "cafe molido",
+          "count": 557
+        },
+        {
+          "term": "salsa de soja",
+          "count": 557
+        },
+        {
+          "term": "Papas congeladas",
+          "count": 554
+        },
+        {
+          "term": "salsa%20de%20soja",
+          "count": 554
+        },
+        {
+          "term": "Tapas%20de%20empanadas",
+          "count": 552
+        },
+        {
+          "term": "cafe%20molido",
+          "count": 552
+        },
+        {
+          "term": "speed",
+          "count": 552
+        },
+        {
+          "term": "Pañal",
+          "count": 550
+        },
+        {
+          "term": "Ropa",
+          "count": 550
+        },
+        {
+          "term": "Vino%20tinto",
+          "count": 550
+        },
+        {
+          "term": "acelga",
+          "count": 550
+        },
+        {
+          "term": "dulce de leche repostero",
+          "count": 550
+        },
+        {
+          "term": "Jabón de tocador",
+          "count": 548
+        },
+        {
+          "term": "Mandarina",
+          "count": 548
+        },
+        {
+          "term": "arandanos",
+          "count": 548
+        },
+        {
+          "term": "salmon",
+          "count": 548
+        },
+        {
+          "term": "vino%20blanco",
+          "count": 548
+        },
+        {
+          "term": "Desodorante%20dove",
+          "count": 546
+        },
+        {
+          "term": "Jab%C3%B3n%20de%20tocador",
+          "count": 546
+        },
+        {
+          "term": "Leche%20proteina",
+          "count": 546
+        },
+        {
+          "term": "Lysoform",
+          "count": 546
+        },
+        {
+          "term": "Sin gluten",
+          "count": 546
+        },
+        {
+          "term": "queso port salut",
+          "count": 546
+        },
+        {
+          "term": "Almohadas",
+          "count": 544
+        },
+        {
+          "term": "Flan",
+          "count": 544
+        },
+        {
+          "term": "cunnington",
+          "count": 544
+        },
+        {
+          "term": "kinder",
+          "count": 544
+        },
+        {
+          "term": "monster",
+          "count": 544
+        },
+        {
+          "term": "tapa tarta",
+          "count": 544
+        },
+        {
+          "term": "Cereal",
+          "count": 542
+        },
+        {
+          "term": "Frutilla",
+          "count": 542
+        },
+        {
+          "term": "Limon",
+          "count": 542
+        },
+        {
+          "term": "Papas%20congeladas",
+          "count": 542
+        },
+        {
+          "term": "bicarbonato",
+          "count": 542
+        },
+        {
+          "term": "dulce%20de%20leche%20repostero",
+          "count": 542
+        },
+        {
+          "term": "paleta",
+          "count": 542
+        },
+        {
+          "term": "tapa%20tarta",
+          "count": 542
+        },
+        {
+          "term": "Rumba",
+          "count": 541
+        },
+        {
+          "term": "Vivere",
+          "count": 541
+        },
+        {
+          "term": "congelados",
+          "count": 541
+        },
+        {
+          "term": "dolca",
+          "count": 541
+        },
+        {
+          "term": "Jabón líquido ropa",
+          "count": 539
+        },
+        {
+          "term": "Oliva",
+          "count": 539
+        },
+        {
+          "term": "ARROZ",
+          "count": 537
+        },
+        {
+          "term": "Horno electrico",
+          "count": 537
+        },
+        {
+          "term": "Pa%C3%B1al",
+          "count": 537
+        },
+        {
+          "term": "Toallitas humedas",
+          "count": 537
+        },
+        {
+          "term": "Toallitas%20humedas",
+          "count": 537
+        },
+        {
+          "term": "Whiskas",
+          "count": 537
+        },
+        {
+          "term": "ser",
+          "count": 537
+        },
+        {
+          "term": "ATUN",
+          "count": 535
+        },
+        {
+          "term": "Esencia de vainilla",
+          "count": 535
+        },
+        {
+          "term": "Esencia%20de%20vainilla",
+          "count": 535
+        },
+        {
+          "term": "FIDEOS",
+          "count": 535
+        },
+        {
+          "term": "Leche%20protein",
+          "count": 535
+        },
+        {
+          "term": "pure",
+          "count": 535
+        },
+        {
+          "term": "queso%20port%20salut",
+          "count": 535
+        },
+        {
+          "term": "Jab%C3%B3n%20l%C3%ADquido%20ropa",
+          "count": 533
+        },
+        {
+          "term": "Jabon tocador",
+          "count": 533
+        },
+        {
+          "term": "Termo",
+          "count": 533
+        },
+        {
+          "term": "Cocacola",
+          "count": 531
+        },
+        {
+          "term": "Dentrifico",
+          "count": 531
+        },
+        {
+          "term": "Dolca",
+          "count": 531
+        },
+        {
+          "term": "Jabon%20tocador",
+          "count": 531
+        },
+        {
+          "term": "griego",
+          "count": 531
+        },
+        {
+          "term": "pañuelos",
+          "count": 529
+        },
+        {
+          "term": "Casamcrem",
+          "count": 528
+        },
+        {
+          "term": "pava electrica",
+          "count": 528
+        },
+        {
+          "term": "Sin%20gluten",
+          "count": 526
+        },
+        {
+          "term": "pa%C3%B1uelos",
+          "count": 526
+        },
+        {
+          "term": "sussex",
+          "count": 526
+        },
+        {
+          "term": "Krachitos",
+          "count": 524
+        },
+        {
+          "term": "Oreos",
+          "count": 522
+        },
+        {
+          "term": "Terma",
+          "count": 522
+        },
+        {
+          "term": "exquisita",
+          "count": 522
+        },
+        {
+          "term": "gancia",
+          "count": 522
+        },
+        {
+          "term": "Horno%20electrico",
+          "count": 520
+        },
+        {
+          "term": "Queso rayado",
+          "count": 520
+        },
+        {
+          "term": "Snack",
+          "count": 520
+        },
+        {
+          "term": "nueces",
+          "count": 520
+        },
+        {
+          "term": "Poet",
+          "count": 518
+        },
+        {
+          "term": "salame",
+          "count": 518
+        },
+        {
+          "term": "tomate triturado",
+          "count": 518
+        },
+        {
+          "term": "Chacabuco",
+          "count": 516
+        },
+        {
+          "term": "Griego",
+          "count": 516
+        },
+        {
+          "term": "Queso%20rayado",
+          "count": 516
+        },
+        {
+          "term": "pava%20electrica",
+          "count": 516
+        },
+        {
+          "term": "tomate%20triturado",
+          "count": 516
+        },
+        {
+          "term": "Vainilla",
+          "count": 515
+        },
+        {
+          "term": "mascarpone",
+          "count": 515
+        },
+        {
+          "term": "Parlante",
+          "count": 513
+        },
+        {
+          "term": "shampoo dove",
+          "count": 513
+        },
+        {
+          "term": "shampoo%20dove",
+          "count": 513
+        },
+        {
+          "term": "Plancha",
+          "count": 511
+        },
+        {
+          "term": "chipa",
+          "count": 511
+        },
+        {
+          "term": "fosforos",
+          "count": 511
+        },
+        {
+          "term": "freidora de aire",
+          "count": 511
+        },
+        {
+          "term": "Grasa",
+          "count": 509
+        },
+        {
+          "term": "chocolatada",
+          "count": 507
+        },
+        {
+          "term": "snack",
+          "count": 507
+        },
+        {
+          "term": "trapo de piso",
+          "count": 507
+        },
+        {
+          "term": "trapo%20de%20piso",
+          "count": 507
+        },
+        {
+          "term": "Matecocido",
+          "count": 505
+        },
+        {
+          "term": "gomitas",
+          "count": 505
+        },
+        {
+          "term": "lenteja",
+          "count": 503
+        },
+        {
+          "term": "milkaut",
+          "count": 503
+        },
+        {
+          "term": "Calefon",
+          "count": 502
+        },
+        {
+          "term": "Snacks",
+          "count": 502
+        },
+        {
+          "term": "snacks",
+          "count": 502
+        },
+        {
+          "term": "toallitas%20humedas",
+          "count": 502
+        },
+        {
+          "term": "toallitas humedas",
+          "count": 500
+        },
+        {
+          "term": "villavicencio",
+          "count": 500
+        },
+        {
+          "term": "Jabón",
+          "count": 498
+        },
+        {
+          "term": "Mogul",
+          "count": 498
+        },
+        {
+          "term": "Savora",
+          "count": 498
+        },
+        {
+          "term": "Smirnoff",
+          "count": 498
+        },
+        {
+          "term": "bon o bon",
+          "count": 498
+        },
+        {
+          "term": "campari",
+          "count": 498
+        },
+        {
+          "term": "Jab%C3%B3n",
+          "count": 496
+        },
+        {
+          "term": "freidora%20de%20aire",
+          "count": 496
+        },
+        {
+          "term": "jabon en polvo",
+          "count": 496
+        },
+        {
+          "term": "jabon%20en%20polvo",
+          "count": 496
+        },
+        {
+          "term": "papel%20cocina",
+          "count": 496
+        },
+        {
+          "term": "Aperol",
+          "count": 494
+        },
+        {
+          "term": "Café instantáneo",
+          "count": 494
+        },
+        {
+          "term": "Salmon",
+          "count": 494
+        },
+        {
+          "term": "mopa",
+          "count": 494
+        },
+        {
+          "term": "papel cocina",
+          "count": 494
+        },
+        {
+          "term": "soja",
+          "count": 494
+        },
+        {
+          "term": "krachitos",
+          "count": 492
+        },
+        {
+          "term": "valija",
+          "count": 492
+        },
+        {
+          "term": "bon%20o%20bon",
+          "count": 489
+        },
+        {
+          "term": "agua saborizada",
+          "count": 487
+        },
+        {
+          "term": "pato",
+          "count": 487
+        },
+        {
+          "term": "tonadita",
+          "count": 487
+        },
+        {
+          "term": "Cabrales",
+          "count": 485
+        },
+        {
+          "term": "Burago",
+          "count": 483
+        },
+        {
+          "term": "agua%20saborizada",
+          "count": 483
+        },
+        {
+          "term": "milanesas",
+          "count": 483
+        },
+        {
+          "term": "stevia",
+          "count": 483
         }
       ]
     },
@@ -418,377 +4303,4003 @@
       "sample": [
         {
           "term": "Leche",
-          "count": 28052
+          "count": 27221
         },
         {
           "term": "",
-          "count": 23018
+          "count": 22313
         },
         {
           "term": "leche",
-          "count": 22331
+          "count": 21462
         },
         {
           "term": "Aceite",
-          "count": 14242
+          "count": 14096
         },
         {
           "term": "manteca",
-          "count": 11736
+          "count": 11355
         },
         {
           "term": "azucar",
-          "count": 10735
+          "count": 10304
         },
         {
           "term": "aceite",
-          "count": 10420
+          "count": 10188
         },
         {
           "term": "Manteca",
-          "count": 10104
+          "count": 9985
         },
         {
           "term": "papel higienico",
-          "count": 9741
+          "count": 9466
         },
         {
           "term": "papel%20higienico",
-          "count": 9710
-        },
-        {
-          "term": "yerba",
-          "count": 9408
+          "count": 9433
         },
         {
           "term": "Fideos",
-          "count": 9226
+          "count": 9103
+        },
+        {
+          "term": "yerba",
+          "count": 9033
         },
         {
           "term": "atun",
-          "count": 8820
-        },
-        {
-          "term": "fideos",
-          "count": 8592
+          "count": 8633
         },
         {
           "term": "Yerba",
-          "count": 8541
+          "count": 8493
+        },
+        {
+          "term": "fideos",
+          "count": 8383
         },
         {
           "term": "arroz",
-          "count": 8491
+          "count": 8304
         },
         {
           "term": "Azucar",
-          "count": 8362
+          "count": 8084
         },
         {
           "term": "cafe",
-          "count": 8211
-        },
-        {
-          "term": "Cafe",
-          "count": 7798
-        },
-        {
-          "term": "Arroz",
-          "count": 7687
+          "count": 7885
         },
         {
           "term": "Cerveza",
-          "count": 7639
+          "count": 7790
+        },
+        {
+          "term": "Cafe",
+          "count": 7664
+        },
+        {
+          "term": "Arroz",
+          "count": 7533
         },
         {
           "term": "Harina",
-          "count": 7248
+          "count": 7014
         },
         {
           "term": "Dulce de leche",
-          "count": 7207
+          "count": 7007
         },
         {
           "term": "Dulce%20de%20leche",
-          "count": 7123
+          "count": 6927
         },
         {
           "term": "Carne",
-          "count": 6715
-        },
-        {
-          "term": "queso crema",
-          "count": 6286
-        },
-        {
-          "term": "dulce de leche",
-          "count": 6277
-        },
-        {
-          "term": "queso%20crema",
-          "count": 6244
-        },
-        {
-          "term": "dulce%20de%20leche",
-          "count": 6235
+          "count": 6782
         },
         {
           "term": "Queso crema",
-          "count": 6219
-        }
-      ]
-    },
-    {
-      "eventName": "view_search_results",
-      "dim": "searchTerm",
-      "ok": true,
-      "sample": [
-        {
-          "term": "/bebidas/gaseosas/gaseosas-cola/coca-cola",
-          "count": 4746
+          "count": 6134
         },
         {
-          "term": "/almacen/aceites-y-vinagres/aceites-comunes/aceites-de-oliva/aceites-en-aerosol/aceites-especiales",
-          "count": 4101
+          "term": "Fernet",
+          "count": 6121
         },
         {
-          "term": "/perfumeria-y-farmacia/cuidado-del-cabello/dove",
-          "count": 2905
+          "term": "queso crema",
+          "count": 6087
         },
         {
-          "term": "/lacteos-y-productos-frescos/manteca",
-          "count": 2391
+          "term": "Queso%20crema",
+          "count": 6059
         },
         {
-          "term": "/almacen/enlatados-y-conservas/conservas-de-pescado/atun-al-natural/atun-en-aceite",
-          "count": 2299
+          "term": "queso%20crema",
+          "count": 6046
         },
         {
-          "term": "/tex/zapatillas",
-          "count": 1924
+          "term": "dulce de leche",
+          "count": 6040
         },
         {
-          "term": "/limpieza/rollos-de-cocina-y-servilletas/rollo-de-cocina",
-          "count": 1715
+          "term": "dulce%20de%20leche",
+          "count": 6005
         },
         {
-          "term": "/almacen/comidas-instantaneas/arcor/gallo/knorr",
-          "count": 1479
+          "term": "mayonesa",
+          "count": 5975
         },
         {
-          "term": "/almacen/sal-aderezos-y-saborizadores/mayonesa",
-          "count": 1171
+          "term": "Atun",
+          "count": 5932
         },
         {
-          "term": "/limpieza/limpieza-de-la-ropa/jabones-para-la-ropa/detergente/jabon-liquido-para-ropa",
-          "count": 880
+          "term": "Coca cola",
+          "count": 5927
         },
         {
-          "term": "/frutas-y-verduras/verduras/papa/papa-blanca",
-          "count": 878
+          "term": "Coca%20cola",
+          "count": 5750
         },
         {
-          "term": "/jugueteria-y-libreria/jugueteria/munecos-y-munecas",
-          "count": 717
+          "term": "harina",
+          "count": 5374
         },
         {
-          "term": "/mascotas/alimentos-para-perros",
-          "count": 694
+          "term": "Papel higiénico",
+          "count": 5309
         },
         {
-          "term": "/lacteos-y-productos-frescos/mantecas-margarinas-y-levaduras/levadura-fresca/levadura-seca",
-          "count": 665
+          "term": "detergente",
+          "count": 5301
         },
         {
-          "term": "/carnes-y-pescados/carne-vacuna/carne-picada",
-          "count": 609
+          "term": "Papel%20higi%C3%A9nico",
+          "count": 5227
         },
         {
-          "term": "/jugueteria-y-libreria/jugueteria/autos-y-pistas-de-juguete",
-          "count": 592
+          "term": "Pollo",
+          "count": 5180
         },
         {
-          "term": "/carnes-y-pescados/carne-vacuna/asado/tapa-de-asado",
-          "count": 537
+          "term": "Crema de leche",
+          "count": 5059
         },
         {
-          "term": "/bebidas/vinos/vinos-tintos",
-          "count": 498
+          "term": "queso",
+          "count": 5017
         },
         {
-          "term": "/almacen/harinas/avena/salvado-de-avena",
-          "count": 491
+          "term": "Crema%20de%20leche",
+          "count": 4976
         },
         {
-          "term": "/electro-y-tecnologia/informatica-y-gaming/notebooks-y-pc/notebook",
-          "count": 481
+          "term": "Yogurt",
+          "count": 4953
         },
         {
-          "term": "/lacteos-y-productos-frescos/fiambres/jamon-cocido/jamon-crudo",
-          "count": 469
+          "term": "Mayonesa",
+          "count": 4937
         },
         {
-          "term": "/electro-y-tecnologia/climatizacion/calefaccion-a-gas/calefaccion-a-lena/calefaccion-electrica",
-          "count": 466
+          "term": "Shampoo",
+          "count": 4865
         },
         {
-          "term": "/hogar/cocina-y-comedor/vajilla/plato/plato-de-madera/plato-fuente/plato-playo/plato-postre",
-          "count": 466
+          "term": "Galletitas",
+          "count": 4864
         },
         {
-          "term": "/almacen/aceites-y-vinagres/aceites-comunes/aceite-de-girasol",
-          "count": 464
+          "term": "cerveza",
+          "count": 4844
         },
         {
-          "term": "/almacen/aceites-y-vinagres/vinagres-acetos-y-limon/vinagre-de-alcohol/vinagre-de-arroz/vinagre-de-manzana/vinagre-de-uva/vinagre-de-vino",
-          "count": 460
+          "term": "Coca",
+          "count": 4838
         },
         {
-          "term": "/electro-y-tecnologia/pequeños-electrodomesticos/tostadoras-y-sandwicheras/tostadora/tostadora-electrica",
-          "count": 433
+          "term": "coca cola",
+          "count": 4810
         },
         {
-          "term": "/almacen/harinas/harinas-comunes-y-leudantes/harina-leudante",
-          "count": 431
+          "term": "coca%20cola",
+          "count": 4750
         },
         {
-          "term": "/frutas-y-verduras/palta",
-          "count": 425
+          "term": "Oreo",
+          "count": 4665
         },
         {
-          "term": "/lacteos-y-productos-frescos/leches-descremadas/leches-en-polvo/leches-enteras/leches-saborizadas/leches-vegetales/yogures-descremados/yogures-enteros",
-          "count": 425
+          "term": "Queso",
+          "count": 4543
         },
         {
-          "term": "/indumentaria/campera",
-          "count": 400
-        }
-      ]
-    },
-    {
-      "eventName": "view_search_results",
-      "dim": "customEvent:search_term",
-      "ok": true,
-      "sample": [
-        {
-          "term": "/bebidas/gaseosas/gaseosas-cola/coca-cola",
-          "count": 4827
+          "term": "galletitas",
+          "count": 4464
         },
         {
-          "term": "/almacen/aceites-y-vinagres/aceites-comunes/aceites-de-oliva/aceites-en-aerosol/aceites-especiales",
-          "count": 4001
+          "term": "lavandina",
+          "count": 4455
         },
         {
-          "term": "/perfumeria-y-farmacia/cuidado-del-cabello/dove",
-          "count": 2997
+          "term": "pollo",
+          "count": 4447
         },
         {
-          "term": "/lacteos-y-productos-frescos/manteca",
-          "count": 2355
+          "term": "rollo de cocina",
+          "count": 4437
         },
         {
-          "term": "/almacen/enlatados-y-conservas/conservas-de-pescado/atun-al-natural/atun-en-aceite",
-          "count": 2353
+          "term": "rollo%20de%20cocina",
+          "count": 4423
         },
         {
-          "term": "/tex/zapatillas",
-          "count": 1935
+          "term": "Pañales",
+          "count": 4413
         },
         {
-          "term": "/limpieza/rollos-de-cocina-y-servilletas/rollo-de-cocina",
-          "count": 1615
+          "term": "crema de leche",
+          "count": 4380
         },
         {
-          "term": "/almacen/comidas-instantaneas/arcor/gallo/knorr",
-          "count": 1418
+          "term": "yogurt",
+          "count": 4359
         },
         {
-          "term": "/almacen/sal-aderezos-y-saborizadores/mayonesa",
+          "term": "crema%20de%20leche",
+          "count": 4358
+        },
+        {
+          "term": "shampoo",
+          "count": 4330
+        },
+        {
+          "term": "Pa%C3%B1ales",
+          "count": 4272
+        },
+        {
+          "term": "carne",
+          "count": 4185
+        },
+        {
+          "term": "Detergente",
+          "count": 4077
+        },
+        {
+          "term": "Skip",
+          "count": 4005
+        },
+        {
+          "term": "Lavarropas",
+          "count": 3931
+        },
+        {
+          "term": "queso cremoso",
+          "count": 3768
+        },
+        {
+          "term": "queso%20cremoso",
+          "count": 3752
+        },
+        {
+          "term": "Queso cremoso",
+          "count": 3725
+        },
+        {
+          "term": "yogur",
+          "count": 3692
+        },
+        {
+          "term": "Queso%20cremoso",
+          "count": 3683
+        },
+        {
+          "term": "pan lactal",
+          "count": 3641
+        },
+        {
+          "term": "pan%20lactal",
+          "count": 3627
+        },
+        {
+          "term": "Chocolinas",
+          "count": 3617
+        },
+        {
+          "term": "Dove",
+          "count": 3546
+        },
+        {
+          "term": "queso%20rallado",
+          "count": 3535
+        },
+        {
+          "term": "queso rallado",
+          "count": 3496
+        },
+        {
+          "term": "crema",
+          "count": 3494
+        },
+        {
+          "term": "huevos",
+          "count": 3485
+        },
+        {
+          "term": "tomate",
+          "count": 3482
+        },
+        {
+          "term": "Papel higienico",
+          "count": 3388
+        },
+        {
+          "term": "skip",
+          "count": 3386
+        },
+        {
+          "term": "Heladera",
+          "count": 3380
+        },
+        {
+          "term": "mermelada",
+          "count": 3375
+        },
+        {
+          "term": "Papel%20higienico",
+          "count": 3358
+        },
+        {
+          "term": "coca",
+          "count": 3286
+        },
+        {
+          "term": "fernet",
+          "count": 3229
+        },
+        {
+          "term": "rollo cocina",
+          "count": 3193
+        },
+        {
+          "term": "rollo%20cocina",
+          "count": 3189
+        },
+        {
+          "term": "Yogur",
+          "count": 3178
+        },
+        {
+          "term": "Hamburguesas",
+          "count": 3176
+        },
+        {
+          "term": "pure de tomate",
+          "count": 3167
+        },
+        {
+          "term": "pure%20de%20tomate",
+          "count": 3158
+        },
+        {
+          "term": "dove",
+          "count": 3016
+        },
+        {
+          "term": "esponja",
+          "count": 3016
+        },
+        {
+          "term": "Rollo de cocina",
+          "count": 3000
+        },
+        {
+          "term": "Lavandina",
+          "count": 2998
+        },
+        {
+          "term": "Rollo%20de%20cocina",
+          "count": 2985
+        },
+        {
+          "term": "Hamburguesa",
+          "count": 2980
+        },
+        {
+          "term": "oreo",
+          "count": 2958
+        },
+        {
+          "term": "agua",
+          "count": 2957
+        },
+        {
+          "term": "jabon liquido",
+          "count": 2908
+        },
+        {
+          "term": "jabon%20liquido",
+          "count": 2900
+        },
+        {
+          "term": "Pepsi",
+          "count": 2899
+        },
+        {
+          "term": "banana",
+          "count": 2831
+        },
+        {
+          "term": "Crema",
+          "count": 2821
+        },
+        {
+          "term": "Mermelada",
+          "count": 2803
+        },
+        {
+          "term": "te",
+          "count": 2733
+        },
+        {
+          "term": "papa",
+          "count": 2727
+        },
+        {
+          "term": "Salchichas",
+          "count": 2685
+        },
+        {
+          "term": "Bondiola",
+          "count": 2661
+        },
+        {
+          "term": "sal",
+          "count": 2622
+        },
+        {
+          "term": "Chocolate",
+          "count": 2613
+        },
+        {
+          "term": "pan",
+          "count": 2609
+        },
+        {
+          "term": "Azúcar",
+          "count": 2606
+        },
+        {
+          "term": "cif",
+          "count": 2594
+        },
+        {
+          "term": "Az%C3%BAcar",
+          "count": 2582
+        },
+        {
+          "term": "salchichas",
+          "count": 2581
+        },
+        {
+          "term": "Huevos",
+          "count": 2550
+        },
+        {
+          "term": "Microondas",
+          "count": 2549
+        },
+        {
+          "term": "Papas fritas",
+          "count": 2546
+        },
+        {
+          "term": "Agua",
+          "count": 2529
+        },
+        {
+          "term": "cebolla",
+          "count": 2529
+        },
+        {
+          "term": "aceite de oliva",
+          "count": 2517
+        },
+        {
+          "term": "Leche en polvo",
+          "count": 2509
+        },
+        {
+          "term": "Papas%20fritas",
+          "count": 2508
+        },
+        {
+          "term": "Vino",
+          "count": 2507
+        },
+        {
+          "term": "aceite%20de%20oliva",
+          "count": 2495
+        },
+        {
+          "term": "jamon",
+          "count": 2471
+        },
+        {
+          "term": "Leche%20en%20polvo",
+          "count": 2466
+        },
+        {
+          "term": "Queso rallado",
+          "count": 2433
+        },
+        {
+          "term": "vinagre",
+          "count": 2419
+        },
+        {
+          "term": "Queso%20rallado",
+          "count": 2417
+        },
+        {
+          "term": "casancrem",
+          "count": 2417
+        },
+        {
+          "term": "Pan lactal",
+          "count": 2396
+        },
+        {
+          "term": "levadura",
+          "count": 2386
+        },
+        {
+          "term": "Pan%20lactal",
+          "count": 2362
+        },
+        {
+          "term": "Papa",
+          "count": 2330
+        },
+        {
+          "term": "Sal",
+          "count": 2318
+        },
+        {
+          "term": "papas fritas",
+          "count": 2305
+        },
+        {
+          "term": "Casancrem",
+          "count": 2300
+        },
+        {
+          "term": "Levadura",
+          "count": 2298
+        },
+        {
+          "term": "papas%20fritas",
+          "count": 2298
+        },
+        {
+          "term": "suavizante",
+          "count": 2297
+        },
+        {
+          "term": "Tomate",
+          "count": 2265
+        },
+        {
+          "term": "chocolinas",
+          "count": 2260
+        },
+        {
+          "term": "Cocina",
+          "count": 2254
+        },
+        {
+          "term": "Ravioles",
+          "count": 2253
+        },
+        {
+          "term": "Banana",
+          "count": 2242
+        },
+        {
+          "term": "desodorante",
+          "count": 2241
+        },
+        {
+          "term": "choclo",
+          "count": 2220
+        },
+        {
+          "term": "avena",
+          "count": 2209
+        },
+        {
+          "term": "chocolate",
+          "count": 2209
+        },
+        {
+          "term": "jabon",
+          "count": 2188
+        },
+        {
+          "term": "Asado",
+          "count": 2186
+        },
+        {
+          "term": "Suavizante",
+          "count": 2176
+        },
+        {
+          "term": "Suprema",
+          "count": 2167
+        },
+        {
+          "term": "Te",
+          "count": 2146
+        },
+        {
+          "term": "Elvive",
+          "count": 2138
+        },
+        {
+          "term": "Carne picada",
+          "count": 2132
+        },
+        {
+          "term": "leche en polvo",
+          "count": 2116
+        },
+        {
+          "term": "Carne%20picada",
+          "count": 2110
+        },
+        {
+          "term": "leche%20en%20polvo",
+          "count": 2098
+        },
+        {
+          "term": "pan rallado",
+          "count": 2082
+        },
+        {
+          "term": "pan%20rallado",
+          "count": 2076
+        },
+        {
+          "term": "ketchup",
+          "count": 2070
+        },
+        {
+          "term": "Aceite de oliva",
+          "count": 2062
+        },
+        {
+          "term": "Gaseosa",
+          "count": 2055
+        },
+        {
+          "term": "palta",
+          "count": 2046
+        },
+        {
+          "term": "carne picada",
+          "count": 2043
+        },
+        {
+          "term": "queso untable",
+          "count": 2039
+        },
+        {
+          "term": "queso%20untable",
+          "count": 2033
+        },
+        {
+          "term": "Cif",
+          "count": 2030
+        },
+        {
+          "term": "pepsi",
+          "count": 2027
+        },
+        {
+          "term": "carne%20picada",
+          "count": 2026
+        },
+        {
+          "term": "Aceite%20de%20oliva",
+          "count": 2018
+        },
+        {
+          "term": "Puré de tomate",
+          "count": 2001
+        },
+        {
+          "term": "Pur%C3%A9%20de%20tomate",
+          "count": 1986
+        },
+        {
+          "term": "vino",
+          "count": 1965
+        },
+        {
+          "term": "Papas",
+          "count": 1958
+        },
+        {
+          "term": "Pan",
+          "count": 1954
+        },
+        {
+          "term": "Whisky",
+          "count": 1936
+        },
+        {
+          "term": "Paty",
+          "count": 1914
+        },
+        {
+          "term": "Cebolla",
+          "count": 1909
+        },
+        {
+          "term": "edulcorante",
+          "count": 1895
+        },
+        {
+          "term": "Alfajor",
+          "count": 1876
+        },
+        {
+          "term": "Palta",
+          "count": 1876
+        },
+        {
+          "term": "Avena",
+          "count": 1842
+        },
+        {
+          "term": "papas",
+          "count": 1836
+        },
+        {
+          "term": "Sprite",
+          "count": 1835
+        },
+        {
+          "term": "granola",
+          "count": 1833
+        },
+        {
+          "term": "Salchicha",
+          "count": 1818
+        },
+        {
+          "term": "Harina leudante",
+          "count": 1816
+        },
+        {
+          "term": "jabon dove",
+          "count": 1812
+        },
+        {
+          "term": "soda",
+          "count": 1811
+        },
+        {
+          "term": "Acondicionador",
+          "count": 1810
+        },
+        {
+          "term": "9 de oro",
+          "count": 1805
+        },
+        {
+          "term": "jabon%20dove",
+          "count": 1805
+        },
+        {
+          "term": "Harina%20leudante",
+          "count": 1801
+        },
+        {
+          "term": "acondicionador",
+          "count": 1801
+        },
+        {
+          "term": "lentejas",
+          "count": 1794
+        },
+        {
+          "term": "leche descremada",
+          "count": 1788
+        },
+        {
+          "term": "9%20de%20oro",
+          "count": 1787
+        },
+        {
+          "term": "leche%20descremada",
+          "count": 1785
+        },
+        {
+          "term": "harina leudante",
+          "count": 1768
+        },
+        {
+          "term": "hamburguesa",
+          "count": 1758
+        },
+        {
+          "term": "harina%20leudante",
+          "count": 1755
+        },
+        {
+          "term": "Rollo cocina",
+          "count": 1753
+        },
+        {
+          "term": "Rollo%20cocina",
+          "count": 1742
+        },
+        {
+          "term": "servilletas",
+          "count": 1733
+        },
+        {
+          "term": "Desodorante",
+          "count": 1731
+        },
+        {
+          "term": "finlandia",
+          "count": 1720
+        },
+        {
+          "term": "mostaza",
+          "count": 1687
+        },
+        {
+          "term": "integra",
+          "count": 1680
+        },
+        {
+          "term": "Cafetera",
+          "count": 1677
+        },
+        {
+          "term": "Leche condensada",
+          "count": 1654
+        },
+        {
+          "term": "hamburguesas",
+          "count": 1641
+        },
+        {
+          "term": "ravioles",
+          "count": 1639
+        },
+        {
+          "term": "Queso untable",
+          "count": 1621
+        },
+        {
+          "term": "suprema",
+          "count": 1619
+        },
+        {
+          "term": "Leche%20condensada",
+          "count": 1613
+        },
+        {
+          "term": "Celulares",
+          "count": 1612
+        },
+        {
+          "term": "pasta dental",
+          "count": 1609
+        },
+        {
+          "term": "Valija",
+          "count": 1608
+        },
+        {
+          "term": "zanahoria",
+          "count": 1608
+        },
+        {
+          "term": "Queso%20untable",
+          "count": 1606
+        },
+        {
+          "term": "Leche larga vida",
+          "count": 1605
+        },
+        {
+          "term": "pasta%20dental",
+          "count": 1604
+        },
+        {
+          "term": "Vino colon",
+          "count": 1598
+        },
+        {
+          "term": "Cerdo",
+          "count": 1596
+        },
+        {
+          "term": "Higienol",
+          "count": 1588
+        },
+        {
+          "term": "Pan rallado",
+          "count": 1584
+        },
+        {
+          "term": "Vinos",
+          "count": 1578
+        },
+        {
+          "term": "Leche%20larga%20vida",
+          "count": 1569
+        },
+        {
+          "term": "Esponja",
+          "count": 1564
+        },
+        {
+          "term": "Pan%20rallado",
+          "count": 1557
+        },
+        {
+          "term": "leche larga vida",
+          "count": 1555
+        },
+        {
+          "term": "Juguetes",
+          "count": 1554
+        },
+        {
+          "term": "Vino%20colon",
+          "count": 1552
+        },
+        {
+          "term": "sprite",
+          "count": 1536
+        },
+        {
+          "term": "leche%20larga%20vida",
+          "count": 1534
+        },
+        {
+          "term": "Jabon",
+          "count": 1533
+        },
+        {
+          "term": "rapiditas",
+          "count": 1518
+        },
+        {
+          "term": "Aire acondicionado",
+          "count": 1517
+        },
+        {
+          "term": "Vinagre",
+          "count": 1513
+        },
+        {
+          "term": "ricota",
+          "count": 1513
+        },
+        {
+          "term": "bondiola",
+          "count": 1510
+        },
+        {
+          "term": "Colon",
+          "count": 1509
+        },
+        {
+          "term": "alfajor",
+          "count": 1507
+        },
+        {
+          "term": "Yogurtera",
+          "count": 1497
+        },
+        {
+          "term": "Pure de tomate",
+          "count": 1496
+        },
+        {
+          "term": "Ricota",
+          "count": 1491
+        },
+        {
+          "term": "Pure%20de%20tomate",
+          "count": 1488
+        },
+        {
+          "term": "Pasta dental",
+          "count": 1487
+        },
+        {
+          "term": "Pasta%20dental",
+          "count": 1482
+        },
+        {
+          "term": "Heladeras",
+          "count": 1477
+        },
+        {
+          "term": "Aspiradora",
+          "count": 1475
+        },
+        {
+          "term": "arvejas",
+          "count": 1471
+        },
+        {
+          "term": "Aire%20acondicionado",
+          "count": 1467
+        },
+        {
+          "term": "Bicicleta",
+          "count": 1466
+        },
+        {
+          "term": "polenta",
+          "count": 1457
+        },
+        {
+          "term": "Jamon",
+          "count": 1453
+        },
+        {
+          "term": "Choclo",
+          "count": 1451
+        },
+        {
+          "term": "Nescafe",
+          "count": 1447
+        },
+        {
+          "term": "Carnes",
+          "count": 1446
+        },
+        {
+          "term": "Edulcorante",
+          "count": 1438
+        },
+        {
+          "term": "Finlandia",
+          "count": 1426
+        },
+        {
+          "term": "Café",
+          "count": 1424
+        },
+        {
+          "term": "Freidora de aire",
+          "count": 1417
+        },
+        {
+          "term": "LECHE",
+          "count": 1414
+        },
+        {
+          "term": "Downy",
+          "count": 1411
+        },
+        {
+          "term": "salchicha",
+          "count": 1407
+        },
+        {
+          "term": "Tv",
+          "count": 1399
+        },
+        {
+          "term": "higienol",
+          "count": 1393
+        },
+        {
+          "term": "Caf%C3%A9",
+          "count": 1391
+        },
+        {
+          "term": "Freidora%20de%20aire",
+          "count": 1385
+        },
+        {
+          "term": "Aceite natura",
+          "count": 1382
+        },
+        {
+          "term": "mate cocido",
+          "count": 1376
+        },
+        {
+          "term": "mate%20cocido",
+          "count": 1373
+        },
+        {
+          "term": "Aguila",
+          "count": 1366
+        },
+        {
+          "term": "nescafe",
+          "count": 1365
+        },
+        {
+          "term": "Aceite%20natura",
+          "count": 1360
+        },
+        {
+          "term": "Alfajores",
+          "count": 1357
+        },
+        {
+          "term": "Leche entera",
+          "count": 1355
+        },
+        {
+          "term": "Sedal",
+          "count": 1338
+        },
+        {
+          "term": "Leche%20entera",
+          "count": 1333
+        },
+        {
+          "term": "Helado",
+          "count": 1331
+        },
+        {
+          "term": "Nesquik",
+          "count": 1327
+        },
+        {
+          "term": "Integra",
+          "count": 1321
+        },
+        {
+          "term": "Fideo",
+          "count": 1308
+        },
+        {
+          "term": "Tostadora",
+          "count": 1306
+        },
+        {
+          "term": "Levite",
+          "count": 1304
+        },
+        {
+          "term": "Ariel",
+          "count": 1301
+        },
+        {
+          "term": "cerdo",
+          "count": 1299
+        },
+        {
+          "term": "miel",
+          "count": 1297
+        },
+        {
+          "term": "harina integral",
+          "count": 1293
+        },
+        {
+          "term": "Ketchup",
+          "count": 1292
+        },
+        {
+          "term": "Notebook",
+          "count": 1292
+        },
+        {
+          "term": "pasta de mani",
+          "count": 1288
+        },
+        {
+          "term": "harina%20integral",
+          "count": 1282
+        },
+        {
+          "term": "pasta%20de%20mani",
+          "count": 1272
+        },
+        {
+          "term": "aceitunas",
+          "count": 1271
+        },
+        {
+          "term": "Polenta",
+          "count": 1269
+        },
+        {
+          "term": "playadito",
+          "count": 1268
+        },
+        {
+          "term": "Nutella",
+          "count": 1266
+        },
+        {
+          "term": "huevo",
+          "count": 1266
+        },
+        {
+          "term": "Harina 0000",
+          "count": 1259
+        },
+        {
+          "term": "Tablet",
+          "count": 1258
+        },
+        {
+          "term": "gaseosa",
+          "count": 1258
+        },
+        {
+          "term": "pascualina",
+          "count": 1256
+        },
+        {
+          "term": "Leche descremada",
+          "count": 1251
+        },
+        {
+          "term": "Granola",
+          "count": 1250
+        },
+        {
+          "term": "Campera",
+          "count": 1249
+        },
+        {
+          "term": "mani",
+          "count": 1249
+        },
+        {
+          "term": "Harina%200000",
+          "count": 1243
+        },
+        {
+          "term": "Leche%20descremada",
+          "count": 1237
+        },
+        {
+          "term": "espinaca",
+          "count": 1235
+        },
+        {
+          "term": "leche entera",
+          "count": 1224
+        },
+        {
+          "term": "aceite natura",
+          "count": 1220
+        },
+        {
+          "term": "Huevo",
+          "count": 1219
+        },
+        {
+          "term": "Pepitos",
+          "count": 1219
+        },
+        {
+          "term": "harina 0000",
+          "count": 1216
+        },
+        {
+          "term": "leche%20entera",
+          "count": 1216
+        },
+        {
+          "term": "Harina integral",
+          "count": 1215
+        },
+        {
+          "term": "aceite%20natura",
+          "count": 1215
+        },
+        {
+          "term": "Vacio",
+          "count": 1213
+        },
+        {
+          "term": "harina%200000",
+          "count": 1212
+        },
+        {
+          "term": "Ala",
+          "count": 1209
+        },
+        {
+          "term": "Soda",
+          "count": 1205
+        },
+        {
+          "term": "Jabon liquido",
+          "count": 1204
+        },
+        {
+          "term": "morron",
+          "count": 1204
+        },
+        {
+          "term": "Harina%20integral",
+          "count": 1203
+        },
+        {
+          "term": "Platos",
+          "count": 1200
+        },
+        {
+          "term": "Vodka",
+          "count": 1191
+        },
+        {
+          "term": "Jabon%20liquido",
+          "count": 1187
+        },
+        {
+          "term": "Colgate",
+          "count": 1185
+        },
+        {
+          "term": "Magistral",
+          "count": 1182
+        },
+        {
+          "term": "sal fina",
+          "count": 1180
+        },
+        {
+          "term": "aguila",
+          "count": 1179
+        },
+        {
+          "term": "sal%20fina",
+          "count": 1177
+        },
+        {
+          "term": "elvive",
+          "count": 1176
+        },
+        {
+          "term": "Vainillas",
+          "count": 1173
+        },
+        {
+          "term": "Cervezas",
+          "count": 1163
+        },
+        {
+          "term": "jamon cocido",
+          "count": 1161
+        },
+        {
+          "term": "jamon%20cocido",
+          "count": 1161
+        },
+        {
+          "term": "nesquik",
+          "count": 1157
+        },
+        {
+          "term": "Cocinas",
+          "count": 1156
+        },
+        {
+          "term": "vainillas",
+          "count": 1154
+        },
+        {
+          "term": "Termotanque",
+          "count": 1152
+        },
+        {
+          "term": "paty",
+          "count": 1152
+        },
+        {
+          "term": "Quilmes",
+          "count": 1149
+        },
+        {
+          "term": "pepas",
+          "count": 1146
+        },
+        {
+          "term": "tregar",
+          "count": 1145
+        },
+        {
+          "term": "heladera",
+          "count": 1138
+        },
+        {
+          "term": "Galletas",
+          "count": 1133
+        },
+        {
+          "term": "Gaseosas",
+          "count": 1133
+        },
+        {
+          "term": "Jabón líquido",
+          "count": 1128
+        },
+        {
+          "term": "manzana",
+          "count": 1126
+        },
+        {
+          "term": "Pedigree",
+          "count": 1114
+        },
+        {
+          "term": "Valijas",
+          "count": 1114
+        },
+        {
+          "term": "Jab%C3%B3n%20l%C3%ADquido",
+          "count": 1111
+        },
+        {
+          "term": "Freidora",
+          "count": 1103
+        },
+        {
+          "term": "Cacao",
+          "count": 1086
+        },
+        {
+          "term": "Cubiertas",
           "count": 1085
         },
         {
-          "term": "/frutas-y-verduras/verduras/papa/papa-blanca",
+          "term": "Milanesa",
+          "count": 1080
+        },
+        {
+          "term": "Sin tacc",
+          "count": 1079
+        },
+        {
+          "term": "Doritos",
+          "count": 1076
+        },
+        {
+          "term": "Gin",
+          "count": 1073
+        },
+        {
+          "term": "Lentejas",
+          "count": 1072
+        },
+        {
+          "term": "Atún",
+          "count": 1069
+        },
+        {
+          "term": "Pantene",
+          "count": 1067
+        },
+        {
+          "term": "Chocolina",
+          "count": 1065
+        },
+        {
+          "term": "aceite girasol",
+          "count": 1065
+        },
+        {
+          "term": "Huggies",
+          "count": 1064
+        },
+        {
+          "term": "limon",
+          "count": 1063
+        },
+        {
+          "term": "Mate cocido",
+          "count": 1062
+        },
+        {
+          "term": "colgate",
+          "count": 1061
+        },
+        {
+          "term": "Gancia",
+          "count": 1060
+        },
+        {
+          "term": "Heineken",
+          "count": 1059
+        },
+        {
+          "term": "Sin%20tacc",
+          "count": 1059
+        },
+        {
+          "term": "aceite%20girasol",
+          "count": 1058
+        },
+        {
+          "term": "Mate%20cocido",
+          "count": 1054
+        },
+        {
+          "term": "jabon tocador",
+          "count": 1054
+        },
+        {
+          "term": "Pechuga",
+          "count": 1052
+        },
+        {
+          "term": "leche la serenisima",
+          "count": 1051
+        },
+        {
+          "term": "At%C3%BAn",
+          "count": 1050
+        },
+        {
+          "term": "tostadas",
+          "count": 1048
+        },
+        {
+          "term": "alfajores",
+          "count": 1046
+        },
+        {
+          "term": "blem",
+          "count": 1045
+        },
+        {
+          "term": "jabon%20tocador",
+          "count": 1045
+        },
+        {
+          "term": "Licuadora",
+          "count": 1044
+        },
+        {
+          "term": "agua mineral",
+          "count": 1043
+        },
+        {
+          "term": "ariel",
+          "count": 1043
+        },
+        {
+          "term": "leche%20la%20serenisima",
+          "count": 1041
+        },
+        {
+          "term": "agua%20mineral",
+          "count": 1039
+        },
+        {
+          "term": "sin tacc",
+          "count": 1038
+        },
+        {
+          "term": "Traviata",
+          "count": 1033
+        },
+        {
+          "term": "Rapiditas",
+          "count": 1030
+        },
+        {
+          "term": "Auriculares",
+          "count": 1029
+        },
+        {
+          "term": "sin%20tacc",
+          "count": 1028
+        },
+        {
+          "term": "toallitas",
+          "count": 1024
+        },
+        {
+          "term": "lechuga",
+          "count": 1022
+        },
+        {
+          "term": "Lavarropa",
+          "count": 1016
+        },
+        {
+          "term": "whisky",
+          "count": 1015
+        },
+        {
+          "term": "Mostaza",
+          "count": 1013
+        },
+        {
+          "term": "aceite oliva",
+          "count": 1011
+        },
+        {
+          "term": "jabon de tocador",
+          "count": 1011
+        },
+        {
+          "term": "jabon%20de%20tocador",
+          "count": 1011
+        },
+        {
+          "term": "procenex",
+          "count": 1011
+        },
+        {
+          "term": "Celular",
+          "count": 1009
+        },
+        {
+          "term": "aceite%20oliva",
+          "count": 1006
+        },
+        {
+          "term": "Jugo",
+          "count": 1002
+        },
+        {
+          "term": "cereales",
+          "count": 999
+        },
+        {
+          "term": "ayudin",
+          "count": 997
+        },
+        {
+          "term": "Aquarius",
+          "count": 993
+        },
+        {
+          "term": "Tregar",
+          "count": 992
+        },
+        {
+          "term": "traviata",
+          "count": 992
+        },
+        {
+          "term": "downy",
+          "count": 991
+        },
+        {
+          "term": "milanesa",
+          "count": 988
+        },
+        {
+          "term": "cerealitas",
           "count": 987
         },
         {
-          "term": "/limpieza/limpieza-de-la-ropa/jabones-para-la-ropa/detergente/jabon-liquido-para-ropa",
-          "count": 959
+          "term": "pepitos",
+          "count": 986
         },
         {
-          "term": "/jugueteria-y-libreria/jugueteria/munecos-y-munecas",
+          "term": "lavarropas",
+          "count": 984
+        },
+        {
+          "term": "guantes",
+          "count": 983
+        },
+        {
+          "term": "Corona",
+          "count": 981
+        },
+        {
+          "term": "cacao",
+          "count": 980
+        },
+        {
+          "term": "citric",
+          "count": 978
+        },
+        {
+          "term": "poett",
+          "count": 977
+        },
+        {
+          "term": "Skyy",
+          "count": 973
+        },
+        {
+          "term": "Ramen",
+          "count": 971
+        },
+        {
+          "term": "brocoli",
+          "count": 971
+        },
+        {
+          "term": "Playadito",
+          "count": 969
+        },
+        {
+          "term": "leche condensada",
+          "count": 969
+        },
+        {
+          "term": "yogur griego",
+          "count": 968
+        },
+        {
+          "term": "hileret",
+          "count": 966
+        },
+        {
+          "term": "Tender",
+          "count": 963
+        },
+        {
+          "term": "Bizcochuelo",
+          "count": 962
+        },
+        {
+          "term": "salsa",
+          "count": 962
+        },
+        {
+          "term": "yogur%20griego",
+          "count": 958
+        },
+        {
+          "term": "Toallitas",
+          "count": 957
+        },
+        {
+          "term": "jabon ropa",
+          "count": 955
+        },
+        {
+          "term": "leche%20condensada",
+          "count": 952
+        },
+        {
+          "term": "jabon%20ropa",
+          "count": 951
+        },
+        {
+          "term": "Ps5",
+          "count": 950
+        },
+        {
+          "term": "algodon",
+          "count": 950
+        },
+        {
+          "term": "galletas de arroz",
+          "count": 950
+        },
+        {
+          "term": "galletas%20de%20arroz",
+          "count": 950
+        },
+        {
+          "term": "oregano",
+          "count": 949
+        },
+        {
+          "term": "Pasta de mani",
+          "count": 945
+        },
+        {
+          "term": "magistral",
+          "count": 945
+        },
+        {
+          "term": "Batidora",
+          "count": 941
+        },
+        {
+          "term": "Zanahoria",
+          "count": 939
+        },
+        {
+          "term": "asado",
+          "count": 931
+        },
+        {
+          "term": "Vajilla",
+          "count": 930
+        },
+        {
+          "term": "yogurisimo",
+          "count": 928
+        },
+        {
+          "term": "Miel",
+          "count": 927
+        },
+        {
+          "term": "Agua mineral",
+          "count": 925
+        },
+        {
+          "term": "Pasta%20de%20mani",
+          "count": 925
+        },
+        {
+          "term": "Aceite girasol",
+          "count": 924
+        },
+        {
+          "term": "coca zero",
+          "count": 922
+        },
+        {
+          "term": "Yogurt griego",
+          "count": 920
+        },
+        {
+          "term": "Capsulas",
+          "count": 919
+        },
+        {
+          "term": "Rexona",
+          "count": 919
+        },
+        {
+          "term": "Pava electrica",
+          "count": 918
+        },
+        {
+          "term": "Aceite%20girasol",
+          "count": 917
+        },
+        {
+          "term": "coca%20zero",
+          "count": 912
+        },
+        {
+          "term": "don satur",
+          "count": 906
+        },
+        {
+          "term": "lomo",
+          "count": 904
+        },
+        {
+          "term": "sal gruesa",
+          "count": 904
+        },
+        {
+          "term": "sal%20gruesa",
+          "count": 904
+        },
+        {
+          "term": "Agua%20mineral",
+          "count": 901
+        },
+        {
+          "term": "Servilletas",
+          "count": 900
+        },
+        {
+          "term": "Yogurisimo",
+          "count": 900
+        },
+        {
+          "term": "don%20satur",
+          "count": 899
+        },
+        {
+          "term": "Pascualina",
+          "count": 896
+        },
+        {
+          "term": "zapallo",
+          "count": 895
+        },
+        {
+          "term": "nutella",
+          "count": 894
+        },
+        {
+          "term": "Yogurt%20griego",
+          "count": 889
+        },
+        {
+          "term": "pañales",
+          "count": 889
+        },
+        {
+          "term": "Arvejas",
+          "count": 888
+        },
+        {
+          "term": "yogur natural",
+          "count": 887
+        },
+        {
+          "term": "yogur%20natural",
+          "count": 886
+        },
+        {
+          "term": "Pava%20electrica",
+          "count": 885
+        },
+        {
+          "term": "salsa de tomate",
+          "count": 885
+        },
+        {
+          "term": "Impresora",
+          "count": 883
+        },
+        {
+          "term": "antigrasa",
+          "count": 882
+        },
+        {
+          "term": "Takis",
+          "count": 881
+        },
+        {
+          "term": "salsa%20de%20tomate",
+          "count": 881
+        },
+        {
+          "term": "cachafaz",
+          "count": 879
+        },
+        {
+          "term": "pa%C3%B1ales",
+          "count": 876
+        },
+        {
+          "term": "Sal%20fina",
+          "count": 873
+        },
+        {
+          "term": "capsulas",
+          "count": 873
+        },
+        {
+          "term": "rexona",
+          "count": 873
+        },
+        {
+          "term": "Sal fina",
+          "count": 871
+        },
+        {
+          "term": "Speed",
+          "count": 871
+        },
+        {
+          "term": "levite",
+          "count": 870
+        },
+        {
+          "term": "Smart tv",
+          "count": 868
+        },
+        {
+          "term": "jugo",
+          "count": 866
+        },
+        {
+          "term": "Freezer",
+          "count": 865
+        },
+        {
+          "term": "Caballa",
+          "count": 864
+        },
+        {
+          "term": "pimenton",
+          "count": 864
+        },
+        {
+          "term": "jabon liquido ropa",
+          "count": 862
+        },
+        {
+          "term": "jabon%20liquido%20ropa",
+          "count": 861
+        },
+        {
+          "term": "cheddar",
+          "count": 859
+        },
+        {
+          "term": "glade",
+          "count": 855
+        },
+        {
+          "term": "Zapatillas",
+          "count": 854
+        },
+        {
+          "term": "leche deslactosada",
+          "count": 854
+        },
+        {
+          "term": "Vasos",
+          "count": 853
+        },
+        {
+          "term": "Talco",
+          "count": 851
+        },
+        {
+          "term": "Smart%20tv",
+          "count": 849
+        },
+        {
+          "term": "alcohol",
+          "count": 849
+        },
+        {
+          "term": "leche%20deslactosada",
+          "count": 849
+        },
+        {
+          "term": "galletas",
+          "count": 847
+        },
+        {
+          "term": "Cereales",
+          "count": 846
+        },
+        {
+          "term": "Stella",
+          "count": 846
+        },
+        {
+          "term": "Pampers",
+          "count": 844
+        },
+        {
+          "term": "Yogurt natural",
+          "count": 844
+        },
+        {
+          "term": "Mopa",
+          "count": 843
+        },
+        {
+          "term": "pan integral",
+          "count": 840
+        },
+        {
+          "term": "Jabón dove",
+          "count": 837
+        },
+        {
+          "term": "Leche la serenisima",
+          "count": 837
+        },
+        {
+          "term": "pan%20integral",
+          "count": 837
+        },
+        {
+          "term": "vinos",
+          "count": 836
+        },
+        {
+          "term": "matarazzo",
+          "count": 835
+        },
+        {
+          "term": "nuggets",
+          "count": 835
+        },
+        {
+          "term": "vodka",
+          "count": 835
+        },
+        {
+          "term": "Folletos",
+          "count": 831
+        },
+        {
+          "term": "Exquisita",
+          "count": 830
+        },
+        {
+          "term": "terma",
+          "count": 827
+        },
+        {
+          "term": "Golosinas",
+          "count": 826
+        },
+        {
+          "term": "Yogurt%20natural",
+          "count": 824
+        },
+        {
+          "term": "mandarina",
+          "count": 822
+        },
+        {
+          "term": "Galletitas de agua",
+          "count": 820
+        },
+        {
+          "term": "Ayudin",
+          "count": 819
+        },
+        {
+          "term": "Cepita",
+          "count": 819
+        },
+        {
+          "term": "Cerealitas",
+          "count": 819
+        },
+        {
+          "term": "Galletitas%20de%20agua",
+          "count": 819
+        },
+        {
+          "term": "batata",
+          "count": 819
+        },
+        {
+          "term": "Dulce de leche repostero",
+          "count": 818
+        },
+        {
+          "term": "Hidrolavadora",
+          "count": 817
+        },
+        {
+          "term": "Jab%C3%B3n%20dove",
+          "count": 814
+        },
+        {
+          "term": "Leche%20la%20serenisima",
+          "count": 814
+        },
+        {
+          "term": "ramen",
+          "count": 810
+        },
+        {
+          "term": "Cheddar",
+          "count": 809
+        },
+        {
+          "term": "Nuggets",
+          "count": 809
+        },
+        {
+          "term": "yogurt griego",
+          "count": 809
+        },
+        {
+          "term": "Everlast",
+          "count": 808
+        },
+        {
+          "term": "Leche deslactosada",
+          "count": 806
+        },
+        {
+          "term": "cafe instantaneo",
+          "count": 805
+        },
+        {
+          "term": "Dulce%20de%20leche%20repostero",
+          "count": 804
+        },
+        {
+          "term": "Peceto",
+          "count": 804
+        },
+        {
+          "term": "dentifrico",
+          "count": 804
+        },
+        {
+          "term": "cafe%20instantaneo",
+          "count": 803
+        },
+        {
+          "term": "pechuga",
+          "count": 803
+        },
+        {
+          "term": "Aceitunas",
+          "count": 802
+        },
+        {
+          "term": "Manzana",
+          "count": 800
+        },
+        {
+          "term": "hummus",
+          "count": 800
+        },
+        {
+          "term": "yogurt%20griego",
+          "count": 800
+        },
+        {
+          "term": "galletitas de agua",
+          "count": 799
+        },
+        {
+          "term": "garbanzos",
+          "count": 797
+        },
+        {
+          "term": "Chorizo",
+          "count": 795
+        },
+        {
+          "term": "galletitas%20de%20agua",
+          "count": 795
+        },
+        {
+          "term": "Alcohol",
+          "count": 794
+        },
+        {
+          "term": "microondas",
+          "count": 794
+        },
+        {
+          "term": "natura",
+          "count": 790
+        },
+        {
+          "term": "Sabanas",
+          "count": 789
+        },
+        {
+          "term": "cafe tostado",
+          "count": 788
+        },
+        {
+          "term": "Milka",
+          "count": 787
+        },
+        {
+          "term": "ACEITE",
+          "count": 786
+        },
+        {
+          "term": "cafe%20tostado",
+          "count": 786
+        },
+        {
+          "term": "Pepas",
+          "count": 785
+        },
+        {
+          "term": "aquarius",
+          "count": 784
+        },
+        {
+          "term": "Leche%20deslactosada",
+          "count": 782
+        },
+        {
+          "term": "Jabón liquido",
+          "count": 781
+        },
+        {
+          "term": "pilas",
+          "count": 781
+        },
+        {
+          "term": "Gelatina",
+          "count": 778
+        },
+        {
+          "term": "Espinaca",
+          "count": 777
+        },
+        {
+          "term": "Kinder",
+          "count": 777
+        },
+        {
+          "term": "Matarazzo",
+          "count": 777
+        },
+        {
+          "term": "Yogur griego",
+          "count": 777
+        },
+        {
+          "term": "virulana",
+          "count": 777
+        },
+        {
+          "term": "Monster",
+          "count": 775
+        },
+        {
+          "term": "ajo",
+          "count": 774
+        },
+        {
+          "term": "Actimel",
+          "count": 771
+        },
+        {
+          "term": "gin",
+          "count": 770
+        },
+        {
+          "term": "talco",
+          "count": 770
+        },
+        {
+          "term": "Jab%C3%B3n%20liquido",
+          "count": 768
+        },
+        {
+          "term": "AZUCAR",
+          "count": 766
+        },
+        {
+          "term": "gelatina",
+          "count": 766
+        },
+        {
+          "term": "Durazno",
+          "count": 765
+        },
+        {
+          "term": "Hileret",
+          "count": 765
+        },
+        {
+          "term": "caldo",
+          "count": 764
+        },
+        {
+          "term": "lysoform",
+          "count": 763
+        },
+        {
+          "term": "peceto",
+          "count": 763
+        },
+        {
+          "term": "Nalga",
+          "count": 762
+        },
+        {
+          "term": "Leches",
+          "count": 761
+        },
+        {
+          "term": "Raid",
+          "count": 761
+        },
+        {
+          "term": "Tostadas",
+          "count": 761
+        },
+        {
+          "term": "Aceite oliva",
+          "count": 760
+        },
+        {
+          "term": "Bombones",
+          "count": 760
+        },
+        {
+          "term": "Pintura",
+          "count": 760
+        },
+        {
+          "term": "queso rayado",
+          "count": 760
+        },
+        {
+          "term": "Yogur%20griego",
+          "count": 758
+        },
+        {
+          "term": "proteina",
+          "count": 758
+        },
+        {
+          "term": "queso%20rayado",
+          "count": 758
+        },
+        {
+          "term": "Franui",
+          "count": 757
+        },
+        {
+          "term": "ala",
+          "count": 756
+        },
+        {
+          "term": "desodorante dove",
+          "count": 755
+        },
+        {
+          "term": "fideo",
+          "count": 755
+        },
+        {
+          "term": "pizza",
+          "count": 753
+        },
+        {
+          "term": "Matambre",
+          "count": 752
+        },
+        {
+          "term": "Pizza",
+          "count": 752
+        },
+        {
+          "term": "yogurt natural",
+          "count": 751
+        },
+        {
+          "term": "poet",
+          "count": 750
+        },
+        {
+          "term": "cepillo de dientes",
+          "count": 749
+        },
+        {
+          "term": "Gatorade",
+          "count": 748
+        },
+        {
+          "term": "yogurt%20natural",
+          "count": 748
+        },
+        {
+          "term": "Aceite%20oliva",
+          "count": 746
+        },
+        {
+          "term": "Brownie",
+          "count": 746
+        },
+        {
+          "term": "Secarropas",
+          "count": 746
+        },
+        {
+          "term": "7up",
+          "count": 745
+        },
+        {
+          "term": "Citric",
+          "count": 745
+        },
+        {
+          "term": "Picada",
+          "count": 744
+        },
+        {
+          "term": "cremon",
+          "count": 744
+        },
+        {
+          "term": "desodorante%20dove",
+          "count": 744
+        },
+        {
+          "term": "yogurtera",
+          "count": 742
+        },
+        {
+          "term": "Babysec",
+          "count": 741
+        },
+        {
+          "term": "Pava eléctrica",
+          "count": 740
+        },
+        {
+          "term": "Torta",
+          "count": 738
+        },
+        {
+          "term": "cepillo%20de%20dientes",
+          "count": 738
+        },
+        {
+          "term": "papel higenico",
+          "count": 738
+        },
+        {
+          "term": "vacio",
+          "count": 737
+        },
+        {
+          "term": "servilleta",
+          "count": 736
+        },
+        {
+          "term": "Acolchado",
+          "count": 734
+        },
+        {
+          "term": "Yogur natural",
+          "count": 734
+        },
+        {
+          "term": "papel%20higenico",
+          "count": 734
+        },
+        {
+          "term": "Almohada",
+          "count": 733
+        },
+        {
+          "term": "Santa julia",
+          "count": 732
+        },
+        {
+          "term": "Bon o bon",
+          "count": 731
+        },
+        {
+          "term": "actimel",
+          "count": 730
+        },
+        {
+          "term": "sedal",
+          "count": 729
+        },
+        {
+          "term": "papel de cocina",
+          "count": 728
+        },
+        {
+          "term": "Glade",
+          "count": 726
+        },
+        {
+          "term": "Morron",
+          "count": 726
+        },
+        {
+          "term": "savora",
+          "count": 726
+        },
+        {
+          "term": "corona",
+          "count": 725
+        },
+        {
+          "term": "papel%20de%20cocina",
+          "count": 725
+        },
+        {
+          "term": "Yogur%20natural",
+          "count": 719
+        },
+        {
+          "term": "Patitas",
+          "count": 717
+        },
+        {
+          "term": "arroz integral",
+          "count": 714
+        },
+        {
+          "term": "Mani",
+          "count": 713
+        },
+        {
+          "term": "Pava%20el%C3%A9ctrica",
+          "count": 712
+        },
+        {
+          "term": "pantene",
+          "count": 712
+        },
+        {
+          "term": "arroz%20integral",
           "count": 711
         },
         {
-          "term": "/mascotas/alimentos-para-perros",
+          "term": "Bon%20o%20bon",
+          "count": 710
+        },
+        {
+          "term": "Gomitas",
+          "count": 709
+        },
+        {
+          "term": "Caldo",
+          "count": 708
+        },
+        {
+          "term": "Poett",
+          "count": 707
+        },
+        {
+          "term": "Lomo",
+          "count": 706
+        },
+        {
+          "term": "galletitas dulces",
+          "count": 706
+        },
+        {
+          "term": "Lays",
+          "count": 701
+        },
+        {
+          "term": "galletitas%20dulces",
+          "count": 700
+        },
+        {
+          "term": "milka",
+          "count": 699
+        },
+        {
+          "term": "Santa%20julia",
+          "count": 698
+        },
+        {
+          "term": "Baggio",
+          "count": 693
+        },
+        {
+          "term": "Pava",
+          "count": 693
+        },
+        {
+          "term": "nalga",
+          "count": 691
+        },
+        {
+          "term": "don vicente",
           "count": 690
         },
         {
-          "term": "/jugueteria-y-libreria/jugueteria/autos-y-pistas-de-juguete",
+          "term": "Jabon dove",
+          "count": 689
+        },
+        {
+          "term": "Cat chow",
+          "count": 688
+        },
+        {
+          "term": "bizcochuelo",
+          "count": 688
+        },
+        {
+          "term": "Horno eléctrico",
+          "count": 687
+        },
+        {
+          "term": "Jabon%20dove",
+          "count": 686
+        },
+        {
+          "term": "don%20vicente",
+          "count": 686
+        },
+        {
+          "term": "Pilas",
+          "count": 681
+        },
+        {
+          "term": "Don satur",
+          "count": 680
+        },
+        {
+          "term": "naranja",
+          "count": 680
+        },
+        {
+          "term": "barbacoa",
+          "count": 679
+        },
+        {
+          "term": "Jbl",
+          "count": 678
+        },
+        {
+          "term": "Natura",
+          "count": 678
+        },
+        {
+          "term": "Brahma",
+          "count": 676
+        },
+        {
+          "term": "Secador de pelo",
+          "count": 676
+        },
+        {
+          "term": "Cachafaz",
+          "count": 675
+        },
+        {
+          "term": "Horno%20el%C3%A9ctrico",
+          "count": 674
+        },
+        {
+          "term": "Cat%20chow",
+          "count": 673
+        },
+        {
+          "term": "tapa de tarta",
+          "count": 672
+        },
+        {
+          "term": "Sardinas",
+          "count": 671
+        },
+        {
+          "term": "tapa%20de%20tarta",
+          "count": 670
+        },
+        {
+          "term": "Camperas",
+          "count": 666
+        },
+        {
+          "term": "Papel",
+          "count": 666
+        },
+        {
+          "term": "Don%20satur",
+          "count": 665
+        },
+        {
+          "term": "leche proteina",
+          "count": 665
+        },
+        {
+          "term": "merluza",
+          "count": 665
+        },
+        {
+          "term": "Harina 000",
+          "count": 664
+        },
+        {
+          "term": "lavandina en gel",
+          "count": 664
+        },
+        {
+          "term": "Nivea",
+          "count": 663
+        },
+        {
+          "term": "Blem",
+          "count": 662
+        },
+        {
+          "term": "Frutos rojos",
+          "count": 662
+        },
+        {
+          "term": "cafetera",
+          "count": 660
+        },
+        {
+          "term": "gatorade",
+          "count": 660
+        },
+        {
+          "term": "Harina%20000",
+          "count": 659
+        },
+        {
+          "term": "lavandina%20en%20gel",
+          "count": 659
+        },
+        {
+          "term": "leche%20proteina",
+          "count": 659
+        },
+        {
+          "term": "Secador%20de%20pelo",
+          "count": 656
+        },
+        {
+          "term": "Carrefour",
+          "count": 655
+        },
+        {
+          "term": "provenzal",
+          "count": 655
+        },
+        {
+          "term": "cepita",
+          "count": 653
+        },
+        {
+          "term": "queso fresco",
+          "count": 649
+        },
+        {
+          "term": "Peluche",
+          "count": 648
+        },
+        {
+          "term": "queso%20fresco",
+          "count": 647
+        },
+        {
+          "term": "Frutos%20rojos",
+          "count": 645
+        },
+        {
+          "term": "rumba",
+          "count": 645
+        },
+        {
+          "term": "harpic",
+          "count": 644
+        },
+        {
+          "term": "oliva",
+          "count": 643
+        },
+        {
+          "term": "MANTECA",
+          "count": 642
+        },
+        {
+          "term": "leche protein",
+          "count": 642
+        },
+        {
+          "term": "picada",
+          "count": 642
+        },
+        {
+          "term": "Aceite de girasol",
+          "count": 641
+        },
+        {
+          "term": "Galletas de arroz",
+          "count": 639
+        },
+        {
+          "term": "Monitor",
+          "count": 639
+        },
+        {
+          "term": "pasta de dientes",
+          "count": 639
+        },
+        {
+          "term": "YERBA",
+          "count": 638
+        },
+        {
+          "term": "Bicicletas",
+          "count": 637
+        },
+        {
+          "term": "Tintura",
+          "count": 637
+        },
+        {
+          "term": "pasta%20de%20dientes",
+          "count": 637
+        },
+        {
+          "term": "Coca zero",
+          "count": 636
+        },
+        {
+          "term": "Galletitas dulces",
+          "count": 636
+        },
+        {
+          "term": "Guantes",
+          "count": 636
+        },
+        {
+          "term": "aceto",
+          "count": 636
+        },
+        {
+          "term": "harina 000",
+          "count": 636
+        },
+        {
+          "term": "raid",
+          "count": 636
+        },
+        {
+          "term": "Aceite%20de%20girasol",
+          "count": 635
+        },
+        {
+          "term": "Ser",
+          "count": 635
+        },
+        {
+          "term": "chorizo",
+          "count": 635
+        },
+        {
+          "term": "harina%20000",
+          "count": 635
+        },
+        {
+          "term": "Pistacho",
+          "count": 634
+        },
+        {
+          "term": "Campari",
+          "count": 633
+        },
+        {
+          "term": "chocolate aguila",
+          "count": 633
+        },
+        {
+          "term": "Galletitas%20dulces",
+          "count": 632
+        },
+        {
+          "term": "leche%20protein",
+          "count": 632
+        },
+        {
+          "term": "Galletas%20de%20arroz",
+          "count": 631
+        },
+        {
+          "term": "Queso fresco",
+          "count": 631
+        },
+        {
+          "term": "papel higiénico",
+          "count": 629
+        },
+        {
+          "term": "chocolate%20aguila",
+          "count": 627
+        },
+        {
+          "term": "tarta",
+          "count": 626
+        },
+        {
+          "term": "Queso%20fresco",
+          "count": 625
+        },
+        {
+          "term": "Mascarpone",
+          "count": 624
+        },
+        {
+          "term": "Garnier",
+          "count": 622
+        },
+        {
+          "term": "caballa",
+          "count": 619
+        },
+        {
+          "term": "gaseosas",
+          "count": 619
+        },
+        {
+          "term": "Algodon",
           "count": 618
         },
         {
-          "term": "/carnes-y-pescados/carne-vacuna/carne-picada",
+          "term": "Vino blanco",
+          "count": 616
+        },
+        {
+          "term": "pimienta",
+          "count": 616
+        },
+        {
+          "term": "verduras",
+          "count": 616
+        },
+        {
+          "term": "Jugos",
+          "count": 615
+        },
+        {
+          "term": "muzzarella",
+          "count": 615
+        },
+        {
+          "term": "Jab%C3%B3n%20tocador",
+          "count": 614
+        },
+        {
+          "term": "papel%20higi%C3%A9nico",
+          "count": 614
+        },
+        {
+          "term": "Zapallo",
+          "count": 613
+        },
+        {
+          "term": "Colchon",
+          "count": 612
+        },
+        {
+          "term": "Jabón tocador",
+          "count": 612
+        },
+        {
+          "term": "Sky",
+          "count": 612
+        },
+        {
+          "term": "brownie",
+          "count": 610
+        },
+        {
+          "term": "granix",
+          "count": 610
+        },
+        {
+          "term": "Dog chow",
+          "count": 609
+        },
+        {
+          "term": "hisopos",
+          "count": 609
+        },
+        {
+          "term": "pure%20tomate",
+          "count": 609
+        },
+        {
+          "term": "Folleto",
+          "count": 608
+        },
+        {
+          "term": "esencia de vainilla",
+          "count": 608
+        },
+        {
+          "term": "pure tomate",
+          "count": 608
+        },
+        {
+          "term": "Lechuga",
           "count": 607
         },
         {
-          "term": "/almacen/aceites-y-vinagres/vinagres-acetos-y-limon/vinagre-de-alcohol/vinagre-de-arroz/vinagre-de-manzana/vinagre-de-uva/vinagre-de-vino",
+          "term": "exquisita",
+          "count": 607
+        },
+        {
+          "term": "vivere",
+          "count": 606
+        },
+        {
+          "term": "PAPEL HIGIENICO",
+          "count": 605
+        },
+        {
+          "term": "PAPEL%20HIGIENICO",
+          "count": 605
+        },
+        {
+          "term": "aceite de girasol",
+          "count": 605
+        },
+        {
+          "term": "esencia%20de%20vainilla",
+          "count": 605
+        },
+        {
+          "term": "Plusbelle",
+          "count": 604
+        },
+        {
+          "term": "patitas",
+          "count": 604
+        },
+        {
+          "term": "Coca%20zero",
+          "count": 603
+        },
+        {
+          "term": "CAFE",
+          "count": 601
+        },
+        {
+          "term": "Margarina",
+          "count": 601
+        },
+        {
+          "term": "Salsa",
+          "count": 600
+        },
+        {
+          "term": "Chocolatada",
+          "count": 598
+        },
+        {
+          "term": "Fanta",
+          "count": 598
+        },
+        {
+          "term": "Proteina",
+          "count": 598
+        },
+        {
+          "term": "aceite%20de%20girasol",
+          "count": 598
+        },
+        {
+          "term": "cif crema",
+          "count": 597
+        },
+        {
+          "term": "cocina",
+          "count": 597
+        },
+        {
+          "term": "flan",
+          "count": 596
+        },
+        {
+          "term": "pañuelos",
+          "count": 596
+        },
+        {
+          "term": "Grasa",
           "count": 595
         },
         {
-          "term": "/lacteos-y-productos-frescos/mantecas-margarinas-y-levaduras/levadura-fresca/levadura-seca",
+          "term": "helado",
+          "count": 595
+        },
+        {
+          "term": "Pan integral",
+          "count": 594
+        },
+        {
+          "term": "Vino%20blanco",
+          "count": 594
+        },
+        {
+          "term": "vino tinto",
+          "count": 594
+        },
+        {
+          "term": "cif%20crema",
+          "count": 593
+        },
+        {
+          "term": "Pan%20integral",
+          "count": 592
+        },
+        {
+          "term": "pa%C3%B1uelos",
+          "count": 592
+        },
+        {
+          "term": "Agua saborizada",
+          "count": 590
+        },
+        {
+          "term": "Paleta",
+          "count": 590
+        },
+        {
+          "term": "Chocolates",
+          "count": 588
+        },
+        {
+          "term": "Cepillo de dientes",
+          "count": 587
+        },
+        {
+          "term": "Dog%20chow",
+          "count": 587
+        },
+        {
+          "term": "Chocolate aguila",
+          "count": 586
+        },
+        {
+          "term": "Protein",
+          "count": 586
+        },
+        {
+          "term": "Leche protein",
+          "count": 585
+        },
+        {
+          "term": "papel",
+          "count": 585
+        },
+        {
+          "term": "salsa de soja",
+          "count": 585
+        },
+        {
+          "term": "vino%20tinto",
+          "count": 585
+        },
+        {
+          "term": "aspiradora",
+          "count": 583
+        },
+        {
+          "term": "salsa%20de%20soja",
+          "count": 583
+        },
+        {
+          "term": "jabon blanco",
+          "count": 582
+        },
+        {
+          "term": "jabon%20blanco",
+          "count": 582
+        },
+        {
+          "term": "tostadora",
+          "count": 582
+        },
+        {
+          "term": "Agua%20saborizada",
+          "count": 581
+        },
+        {
+          "term": "Cepillo%20de%20dientes",
+          "count": 581
+        },
+        {
+          "term": "griego",
+          "count": 581
+        },
+        {
+          "term": "Shampoo dove",
+          "count": 580
+        },
+        {
+          "term": "Televisor",
+          "count": 580
+        },
+        {
+          "term": "doritos",
+          "count": 580
+        },
+        {
+          "term": "Cremon",
+          "count": 579
+        },
+        {
+          "term": "Lavasecarropas",
+          "count": 579
+        },
+        {
+          "term": "Batata",
+          "count": 578
+        },
+        {
+          "term": "Chocolate%20aguila",
+          "count": 574
+        },
+        {
+          "term": "Plato",
+          "count": 574
+        },
+        {
+          "term": "Sal gruesa",
           "count": 573
         },
         {
-          "term": "/lacteos-y-productos-frescos/fiambres/jamon-cocido/jamon-crudo",
+          "term": "Shampoo%20dove",
+          "count": 573
+        },
+        {
+          "term": "Alimento para perros",
+          "count": 572
+        },
+        {
+          "term": "Cofler",
+          "count": 572
+        },
+        {
+          "term": "cafe molido",
+          "count": 570
+        },
+        {
+          "term": "pan hamburguesa",
+          "count": 570
+        },
+        {
+          "term": "Lysoform",
+          "count": 569
+        },
+        {
+          "term": "Pañal",
+          "count": 569
+        },
+        {
+          "term": "Vino tinto",
+          "count": 569
+        },
+        {
+          "term": "frutos rojos",
+          "count": 569
+        },
+        {
+          "term": "Caramelos",
+          "count": 568
+        },
+        {
+          "term": "Desodorante dove",
+          "count": 568
+        },
+        {
+          "term": "pan%20hamburguesa",
+          "count": 568
+        },
+        {
+          "term": "protein",
+          "count": 567
+        },
+        {
+          "term": "Leche proteina",
+          "count": 566
+        },
+        {
+          "term": "Sal%20gruesa",
+          "count": 566
+        },
+        {
+          "term": "cafe%20molido",
+          "count": 565
+        },
+        {
+          "term": "Alimento%20para%20perros",
+          "count": 564
+        },
+        {
+          "term": "speed",
+          "count": 563
+        },
+        {
+          "term": "Mogul",
+          "count": 562
+        },
+        {
+          "term": "lays",
+          "count": 562
+        },
+        {
+          "term": "sardinas",
+          "count": 562
+        },
+        {
+          "term": "Procenex",
+          "count": 561
+        },
+        {
+          "term": "frutos%20rojos",
+          "count": 561
+        },
+        {
+          "term": "lisoform",
+          "count": 561
+        },
+        {
+          "term": "Vino%20tinto",
+          "count": 560
+        },
+        {
+          "term": "Jabón líquido ropa",
+          "count": 559
+        },
+        {
+          "term": "arandanos",
+          "count": 559
+        },
+        {
+          "term": "Desodorante%20dove",
+          "count": 558
+        },
+        {
+          "term": "Manaos",
+          "count": 558
+        },
+        {
+          "term": "dentrifico",
+          "count": 558
+        },
+        {
+          "term": "heineken",
+          "count": 556
+        },
+        {
+          "term": "vainilla",
+          "count": 556
+        },
+        {
+          "term": "Ferrero",
+          "count": 555
+        },
+        {
+          "term": "Jabón de tocador",
+          "count": 555
+        },
+        {
+          "term": "Vivere",
+          "count": 555
+        },
+        {
+          "term": "gancia",
+          "count": 554
+        },
+        {
+          "term": "Pa%C3%B1al",
+          "count": 553
+        },
+        {
+          "term": "leche proteica",
+          "count": 553
+        },
+        {
+          "term": "milkaut",
+          "count": 553
+        },
+        {
+          "term": "salmon",
+          "count": 553
+        },
+        {
+          "term": "Dentrifico",
+          "count": 552
+        },
+        {
+          "term": "Jab%C3%B3n%20de%20tocador",
+          "count": 552
+        },
+        {
+          "term": "dolca",
+          "count": 552
+        },
+        {
+          "term": "nueces",
+          "count": 552
+        },
+        {
+          "term": "quilmes",
+          "count": 552
+        },
+        {
+          "term": "Leche%20protein",
+          "count": 551
+        },
+        {
+          "term": "Oliva",
+          "count": 550
+        },
+        {
+          "term": "Whiskas",
+          "count": 550
+        },
+        {
+          "term": "vino blanco",
+          "count": 550
+        },
+        {
+          "term": "Leche%20proteina",
+          "count": 549
+        },
+        {
+          "term": "cereal",
+          "count": 549
+        },
+        {
+          "term": "ser",
+          "count": 549
+        },
+        {
+          "term": "Jab%C3%B3n%20l%C3%ADquido%20ropa",
+          "count": 548
+        },
+        {
+          "term": "bicarbonato",
+          "count": 548
+        },
+        {
+          "term": "membrillo",
+          "count": 548
+        },
+        {
+          "term": "santa julia",
+          "count": 548
+        },
+        {
+          "term": "Flan",
+          "count": 547
+        },
+        {
+          "term": "sussex",
+          "count": 547
+        },
+        {
+          "term": "ATUN",
+          "count": 546
+        },
+        {
+          "term": "Jabon%20tocador",
+          "count": 546
+        },
+        {
+          "term": "kinder",
+          "count": 546
+        },
+        {
+          "term": "leche%20proteica",
+          "count": 546
+        },
+        {
+          "term": "Jabon tocador",
+          "count": 545
+        },
+        {
+          "term": "Limon",
+          "count": 544
+        },
+        {
+          "term": "Frutilla",
+          "count": 543
+        },
+        {
+          "term": "Tapas de empanadas",
+          "count": 543
+        },
+        {
+          "term": "dulce de leche repostero",
+          "count": 543
+        },
+        {
+          "term": "Griego",
+          "count": 542
+        },
+        {
+          "term": "congelados",
+          "count": 542
+        },
+        {
+          "term": "Sussex",
+          "count": 541
+        },
+        {
+          "term": "protectores diarios",
+          "count": 541
+        },
+        {
+          "term": "Comfort",
+          "count": 540
+        },
+        {
+          "term": "shampoo dove",
+          "count": 540
+        },
+        {
+          "term": "trapo de piso",
+          "count": 540
+        },
+        {
+          "term": "trapo%20de%20piso",
+          "count": 540
+        },
+        {
+          "term": "Rumba",
+          "count": 539
+        },
+        {
+          "term": "mascarpone",
+          "count": 539
+        },
+        {
+          "term": "pava electrica",
+          "count": 539
+        },
+        {
+          "term": "shampoo%20dove",
+          "count": 539
+        },
+        {
+          "term": "papel cocina",
+          "count": 536
+        },
+        {
+          "term": "papel%20cocina",
+          "count": 536
+        },
+        {
+          "term": "protectores%20diarios",
+          "count": 536
+        },
+        {
+          "term": "villavicencio",
+          "count": 536
+        },
+        {
+          "term": "Casamcrem",
+          "count": 534
+        },
+        {
+          "term": "Cereal",
+          "count": 534
+        },
+        {
+          "term": "dulce%20de%20leche%20repostero",
+          "count": 534
+        },
+        {
+          "term": "Plancha",
+          "count": 533
+        },
+        {
+          "term": "Terma",
+          "count": 533
+        },
+        {
+          "term": "vino%20blanco",
+          "count": 533
+        },
+        {
+          "term": "Tapas%20de%20empanadas",
+          "count": 532
+        },
+        {
+          "term": "stella",
+          "count": 532
+        },
+        {
+          "term": "cunnington",
+          "count": 531
+        },
+        {
+          "term": "pure",
+          "count": 531
+        },
+        {
+          "term": "santa%20julia",
+          "count": 530
+        },
+        {
+          "term": "monster",
+          "count": 528
+        },
+        {
+          "term": "pava%20electrica",
+          "count": 528
+        },
+        {
+          "term": "snacks",
           "count": 527
         },
         {
-          "term": "/carnes-y-pescados/carne-vacuna/asado/tapa-de-asado",
+          "term": "Dolca",
+          "count": 526
+        },
+        {
+          "term": "franui",
+          "count": 526
+        },
+        {
+          "term": "Termo",
+          "count": 525
+        },
+        {
+          "term": "queso port salut",
+          "count": 525
+        },
+        {
+          "term": "toallitas humedas",
+          "count": 524
+        },
+        {
+          "term": "Mandarina",
+          "count": 523
+        },
+        {
+          "term": "tapa tarta",
+          "count": 523
+        },
+        {
+          "term": "toallitas%20humedas",
+          "count": 523
+        },
+        {
+          "term": "ARROZ",
+          "count": 522
+        },
+        {
+          "term": "tomate triturado",
+          "count": 522
+        },
+        {
+          "term": "tapa%20tarta",
+          "count": 521
+        },
+        {
+          "term": "Vainilla",
+          "count": 520
+        },
+        {
+          "term": "tomate%20triturado",
+          "count": 520
+        },
+        {
+          "term": "Queso rayado",
           "count": 518
         },
         {
-          "term": "/bebidas/vinos/vinos-tintos",
+          "term": "queso%20port%20salut",
+          "count": 518
+        },
+        {
+          "term": "tonadita",
+          "count": 517
+        },
+        {
+          "term": "mopa",
+          "count": 516
+        },
+        {
+          "term": "Queso%20rayado",
+          "count": 515
+        },
+        {
+          "term": "Horno electrico",
+          "count": 514
+        },
+        {
+          "term": "Jabón",
+          "count": 514
+        },
+        {
+          "term": "Poet",
+          "count": 514
+        },
+        {
+          "term": "Ropa",
+          "count": 514
+        },
+        {
+          "term": "campari",
+          "count": 514
+        },
+        {
+          "term": "Krachitos",
+          "count": 513
+        },
+        {
+          "term": "Almohadas",
+          "count": 512
+        },
+        {
+          "term": "Cabrales",
+          "count": 511
+        },
+        {
+          "term": "acelga",
+          "count": 511
+        },
+        {
+          "term": "Parlante",
+          "count": 510
+        },
+        {
+          "term": "Smirnoff",
+          "count": 510
+        },
+        {
+          "term": "bananas",
+          "count": 509
+        },
+        {
+          "term": "bon o bon",
+          "count": 509
+        },
+        {
+          "term": "FIDEOS",
+          "count": 508
+        },
+        {
+          "term": "Oreos",
+          "count": 508
+        },
+        {
+          "term": "Jab%C3%B3n",
+          "count": 507
+        },
+        {
+          "term": "Horno%20electrico",
+          "count": 505
+        },
+        {
+          "term": "Papas congeladas",
+          "count": 505
+        },
+        {
+          "term": "caramelos",
+          "count": 505
+        },
+        {
+          "term": "notebook",
+          "count": 505
+        },
+        {
+          "term": "Verduras",
+          "count": 504
+        },
+        {
+          "term": "fosforos",
+          "count": 503
+        },
+        {
+          "term": "pescado",
+          "count": 503
+        },
+        {
+          "term": "Bateria",
+          "count": 501
+        },
+        {
+          "term": "valija",
+          "count": 500
+        },
+        {
+          "term": "Toallitas humedas",
+          "count": 499
+        },
+        {
+          "term": "Papas%20congeladas",
           "count": 498
         },
         {
-          "term": "/almacen/harinas/avena/salvado-de-avena",
+          "term": "bon%20o%20bon",
+          "count": 498
+        },
+        {
+          "term": "salame",
+          "count": 498
+        },
+        {
+          "term": "Chacabuco",
+          "count": 497
+        },
+        {
+          "term": "Snack",
+          "count": 497
+        },
+        {
+          "term": "Toallitas%20humedas",
+          "count": 495
+        },
+        {
+          "term": "Jabón ropa",
           "count": 493
         },
         {
-          "term": "/electro-y-tecnologia/pequeños-electrodomesticos/tostadoras-y-sandwicheras/tostadora/tostadora-electrica",
-          "count": 464
+          "term": "axe",
+          "count": 493
         },
         {
-          "term": "/lacteos-y-productos-frescos/leches-descremadas/leches-en-polvo/leches-enteras/leches-saborizadas/leches-vegetales/yogures-descremados/yogures-enteros",
-          "count": 456
+          "term": "milanesas",
+          "count": 493
         },
         {
-          "term": "/almacen/aceites-y-vinagres/aceites-comunes/aceite-de-girasol",
-          "count": 448
+          "term": "paleta",
+          "count": 493
         },
         {
-          "term": "/hogar/cocina-y-comedor/vajilla/plato/plato-de-madera/plato-fuente/plato-playo/plato-postre",
-          "count": 442
+          "term": "Maicena",
+          "count": 492
         },
         {
-          "term": "/almacen/harinas/harinas-comunes-y-leudantes/harina-leudante",
-          "count": 419
+          "term": "Matecocido",
+          "count": 492
         },
         {
-          "term": "/indumentaria/campera",
-          "count": 416
+          "term": "krachitos",
+          "count": 492
         },
         {
-          "term": "/perfumes/23839/23839",
-          "count": 409
+          "term": "Calefon",
+          "count": 491
         },
         {
-          "term": "/frutas-y-verduras/palta",
-          "count": 397
+          "term": "Muzzarella",
+          "count": 491
         },
         {
-          "term": "/electro-y-tecnologia/informatica-y-gaming/notebooks-y-pc/notebook",
-          "count": 390
+          "term": "nescafe gold",
+          "count": 491
+        },
+        {
+          "term": "stevia",
+          "count": 491
+        },
+        {
+          "term": "Milkaut",
+          "count": 490
+        },
+        {
+          "term": "Sin gluten",
+          "count": 490
+        },
+        {
+          "term": "nescafe%20gold",
+          "count": 490
+        },
+        {
+          "term": "Multimax",
+          "count": 487
+        },
+        {
+          "term": "Naranja",
+          "count": 485
+        },
+        {
+          "term": "freidora de aire",
+          "count": 485
+        },
+        {
+          "term": "Salmon",
+          "count": 484
+        },
+        {
+          "term": "Snacks",
+          "count": 484
+        },
+        {
+          "term": "jabon en polvo",
+          "count": 484
+        },
+        {
+          "term": "jabon%20en%20polvo",
+          "count": 484
+        },
+        {
+          "term": "Burago",
+          "count": 483
+        },
+        {
+          "term": "Cocacola",
+          "count": 483
+        },
+        {
+          "term": "Pan hamburguesa",
+          "count": 483
         }
       ]
     }
