@@ -3,6 +3,14 @@
 (function () {
   const W = (window.W = window.W || {});
 
+  // Antes se apilaban 4 tarjetas grandes (evolución, insights, proyección,
+  // mix, heatmap) una debajo de la otra — mucha info y todas compitiendo por
+  // atención al mismo tiempo. Los KPIs de arriba siempre quedan visibles;
+  // el resto se agrupa en dos pestañas: "Evolución" (lo que responde "cómo
+  // venimos") queda abierta por default, "Proyección y mix" (lo más
+  // consultivo/puntual) un clic más allá.
+  let dashTab = 'evolucion'; // 'evolucion' | 'detalle'
+
   function kpi({ id, icon, label, value, sub, delta, spark, color, tip }) {
     return `<div class="kpi"${id ? ` id="${id}"` : ''}${tip ? ` ${W.chart.tip(tip)}` : ''}>
       <div class="kpi-t">
@@ -277,11 +285,7 @@
 
     const insights = compare ? buildInsights(cur, prev, range, daily, catalog, bucket) : [];
 
-    el.innerHTML = `
-      <div class="kpis">${tiles.join('')}</div>
-
-      ${segTiles.length ? `<div class="kpis kpis-seg">${segTiles.join('')}</div>` : ''}
-
+    const evolucionTab = `
       <div class="card">
         <div class="card-h">
           <div><h3>Pedidos por día</h3><p>${W.fmtDayLong(range.from)} → ${W.fmtDayLong(range.to)} · ${bucket === 'all' ? 'todos los segmentos' : W.SEGMENT_LABEL[bucket]}</p></div>
@@ -294,8 +298,9 @@
         <div class="ins-h"><h3>Qué está pasando</h3><span>lectura automática del período vs. el anterior</span></div>
         <div class="ins-g">${insights
           .map((i) => `<div class="ins ${i.kind}">${W.icon(i.kind === 'good' ? 'trend' : i.kind === 'bad' ? 'trendDown' : i.kind === 'warn' ? 'warn' : 'info', 16)}<div><h4>${W.esc(i.title)}</h4><p>${W.esc(i.text)}</p></div></div>`)
-          .join('')}</div></div>` : ''}
+          .join('')}</div></div>` : ''}`;
 
+    const detalleTab = `
       <div class="g2">
         <div class="card">
           <div class="card-h"><div><h3>Proyección de cierre de mes</h3><p>al ritmo de los primeros ${elapsed} de ${dim} días</p></div></div>
@@ -331,5 +336,20 @@
           tipFmt: (r, c, v) => `<strong>${r} ${c}:00</strong><span class="tip-row"><b>${W.fmtNum(v)}</b> pedidos</span>`,
         })}
       </div>` : ''}`;
+
+    el.innerHTML = `
+      <div class="kpis">${tiles.join('')}</div>
+
+      ${segTiles.length ? `<div class="kpis kpis-seg">${segTiles.join('')}</div>` : ''}
+
+      <div class="seg-ctl" style="margin-bottom:.9rem">
+        <button data-dashtab="evolucion" class="${dashTab === 'evolucion' ? 'on' : ''}">Evolución</button>
+        <button data-dashtab="detalle" class="${dashTab === 'detalle' ? 'on' : ''}">Proyección y mix</button>
+      </div>
+
+      ${dashTab === 'evolucion' ? evolucionTab : detalleTab}`;
+
+    document.querySelectorAll('[data-dashtab]').forEach((b) =>
+      b.addEventListener('click', () => { dashTab = b.dataset.dashtab; W.render(); }));
   };
 })();

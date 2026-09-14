@@ -29,6 +29,22 @@
   W.SEGMENT_ICON_NAME = { food: 'basket', 'non-food': 'home', marketplace: 'store', quickcommerce: 'bolt' };
   W.SERIES = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#4a3aa7', '#e34948'];
 
+  /**
+   * Toggle GMV/Pedidos reusable — mismo control que ya usaba el mapa de
+   * provincias, ahora compartido por todos los rankings (tiendas, segmentos,
+   * productos, categorías, medios de pago, marketing, cupones) para poder
+   * mirar "qué mueve más plata" o "qué genera más pedidos" sin tener que
+   * armar el mismo par de botones siete veces.
+   */
+  W.METRIC_LABEL = { gmv: 'GMV', orders: 'Pedidos' };
+  W.metricToggle = function (current, attr) {
+    return `<div class="seg-ctl">
+      <button data-${attr}="gmv" class="${current === 'gmv' ? 'on' : ''}">GMV</button>
+      <button data-${attr}="orders" class="${current === 'orders' ? 'on' : ''}">Pedidos</button>
+    </div>`;
+  };
+  W.metricFmt = (metric) => (metric === 'orders' ? W.fmtNumC : W.fmtMoneyC);
+
   // ── Formato ───────────────────────────────────────────────────────────────
   const nf = (opts) => new Intl.NumberFormat('es-AR', opts);
   W.fmtMoney = (n) => nf({ style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0);

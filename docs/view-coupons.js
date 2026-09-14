@@ -19,6 +19,7 @@
   const COUPONS_ALL_CAP = 300;
   let couponQuery = '';
   let showAllCoupons = false;
+  let couponMetric = 'gmv'; // 'gmv' | 'orders'
   let openCoupon = null; // código del cupón con el detalle de pedidos abierto
   let couponDetail = null; // { loading, rows, months } del cupón abierto
 
@@ -52,11 +53,12 @@
     const prev = W.sumRange(daily, bucket, prevRange);
     const scopeTxt = `${W.fmtDayLong(range.from)} → ${W.fmtDayLong(range.to)} · ${bucket === SEG_ALL ? 'todos los segmentos' : W.SEGMENT_LABEL[bucket]}`;
 
-    const allCoupons = Object.entries(cur.coupons).map(([code, v]) => ({ code, ...v })).sort((a, b) => b.gmv - a.gmv);
+    const allCoupons = Object.entries(cur.coupons).map(([code, v]) => ({ code, ...v })).sort((a, b) => b[couponMetric] - a[couponMetric]);
     const prevCoupons = Object.entries(prev.coupons).map(([code, v]) => ({ code, ...v }));
     const prevByCode = Object.fromEntries(prevCoupons.map((c) => [c.code, c]));
     const totalCouponGmv = allCoupons.reduce((s, c) => s + c.gmv, 0);
     const totalCouponOrders = allCoupons.reduce((s, c) => s + c.orders, 0);
+    const totalCouponByMetric = couponMetric === 'gmv' ? totalCouponGmv : totalCouponOrders;
 
     const filteredCoupons = couponQuery
       ? allCoupons.filter((c) => c.code.toLowerCase().includes(couponQuery.toLowerCase()))
@@ -124,12 +126,13 @@
             <span class="scope" ${W.chart.tip('Un pedido puede traer más de un cupón a la vez (VTEX los guarda separados por coma) — cada cupón se cuenta acá individualmente, así que la suma de pedidos puede superar el total de pedidos del período.')}>${W.icon('info', 11)} un pedido puede sumar a varios cupones</span></p></div>
           <div class="card-a">
             <input class="inp inp-search" id="coupon-search" type="search" placeholder="Buscar cupón…" value="${W.esc(couponQuery)}" />
+            ${W.metricToggle(couponMetric, 'couponmetric')}
             ${!couponQuery ? `<button class="btn" id="coupons-toggle-all">${showAllCoupons ? 'Ver top 10' : 'Ver todos'}</button>` : ''}
             <button class="btn" data-export="coupons">${W.icon('download', 14)}XLSX (todos)</button>
           </div>
         </div>
         <div class="tbl-wrap"><table class="tbl">
-          <thead><tr><th>#</th><th>Cupón</th><th class="num">Pedidos</th><th class="num">GMV</th><th class="num">Ticket</th><th class="num">vs. período anterior</th><th style="width:16%">% del GMV con cupón</th><th></th></tr></thead>
+          <thead><tr><th>#</th><th>Cupón</th><th class="num">Pedidos</th><th class="num">GMV</th><th class="num">Ticket</th><th class="num">vs. período anterior</th><th style="width:16%">% del ${W.METRIC_LABEL[couponMetric]} con cupón</th><th></th></tr></thead>
           <tbody>${coupons.length ? coupons.map((c, i) => {
             const p = prevByCode[c.code];
             const dOrders = p ? W.delta(c.orders, p.orders) : undefined;
@@ -141,7 +144,7 @@
               <td class="num">${W.fmtMoney(c.gmv)}</td>
               <td class="num">${W.fmtMoney(W.ticket(c.gmv, c.orders))}</td>
               <td class="num">${dOrders !== undefined ? W.deltaBadge(dOrders) : '<span class="muted">—</span>'}</td>
-              <td><div class="barcell"><span class="bartrack"><span class="barfill" style="width:${(c.gmv / (totalCouponGmv || 1)) * 100}%"></span></span><b>${W.fmtPct(c.gmv / (totalCouponGmv || 1))}</b></div></td>
+              <td><div class="barcell"><span class="bartrack"><span class="barfill" style="width:${(c[couponMetric] / (totalCouponByMetric || 1)) * 100}%"></span></span><b>${W.fmtPct(c[couponMetric] / (totalCouponByMetric || 1))}</b></div></td>
               <td><button class="btn-s" data-coupon-detail="${W.esc(c.code)}">${open ? 'Cerrar' : 'Ver detalle'}</button></td>
             </tr>`;
           }).join('') : `<tr><td colspan="8" class="muted">${couponQuery ? 'Ningún cupón coincide con la búsqueda' : 'Sin cupones en este rango'}</td></tr>`}</tbody>
@@ -190,6 +193,8 @@
       });
     }
     $('#coupons-toggle-all')?.addEventListener('click', () => { showAllCoupons = !showAllCoupons; W.render(); });
+    document.querySelectorAll('[data-couponmetric]').forEach((b) =>
+      b.addEventListener('click', () => { couponMetric = b.dataset.couponmetric; W.render(); }));
     document.querySelectorAll('[data-coupon-detail]').forEach((b) =>
       b.addEventListener('click', () => {
         const code = b.dataset.couponDetail;

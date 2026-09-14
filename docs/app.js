@@ -68,8 +68,8 @@
     return Date.now() - new Date(meta.generatedAt).getTime() < 90 * 60 * 1000;
   }
 
-  const NAV_ICON = { dashboard: 'dashboard', analytics: 'analytics', coupons: 'tag', marketing: 'megaphone', buscador: 'search', audiences: 'audience' };
-  const TITLES = { dashboard: 'Dashboard', analytics: 'Analítica', coupons: 'Cupones', marketing: 'Marketing', buscador: 'Buscador', audiences: 'Audiencias' };
+  const NAV_ICON = { dashboard: 'dashboard', analytics: 'analytics', tiendas: 'store', coupons: 'tag', marketing: 'megaphone', buscador: 'search', audiences: 'audience' };
+  const TITLES = { dashboard: 'Dashboard', analytics: 'Analítica', tiendas: 'Tiendas', coupons: 'Cupones', marketing: 'Marketing', buscador: 'Buscador', audiences: 'Audiencias' };
 
   function paintChrome() {
     document.querySelectorAll('.nav-item').forEach((n) => {
@@ -127,10 +127,10 @@
     $('view-title').textContent = TITLES[state.view];
     $('preset-today').classList.toggle('is-live', liveFresh());
 
-    // Dashboard, Analítica, Cupones y Marketing se filtran por segmento;
-    // Audiencias mira la base completa y Buscador mira GA4 (no pedidos de
-    // VTEX), así que en esas dos la fila no aplica.
-    const hasSeg = ['dashboard', 'analytics', 'coupons', 'marketing'].includes(state.view);
+    // Dashboard, Analítica, Tiendas, Cupones y Marketing se filtran por
+    // segmento; Audiencias mira la base completa y Buscador mira GA4 (no
+    // pedidos de VTEX), así que en esas dos la fila no aplica.
+    const hasSeg = ['dashboard', 'analytics', 'tiendas', 'coupons', 'marketing'].includes(state.view);
     $('row2').style.display = hasSeg ? '' : 'none';
     $('cmp-wrap').style.display = state.view === 'dashboard' ? '' : 'none';
     // Audiencias mira toda la base histórica y Buscador tiene su propia
@@ -177,6 +177,7 @@
     try {
       if (state.view === 'dashboard') await W.viewDashboard(ctx);
       else if (state.view === 'analytics') await W.viewAnalytics(ctx);
+      else if (state.view === 'tiendas') await W.viewTiendas(ctx);
       else if (state.view === 'coupons') await W.viewCoupons(ctx);
       else if (state.view === 'marketing') await W.viewMarketing(ctx);
       else if (state.view === 'buscador') await W.viewBuscador(ctx);

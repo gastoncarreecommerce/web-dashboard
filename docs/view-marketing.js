@@ -13,6 +13,8 @@
 (function () {
   const W = (window.W = window.W || {});
 
+  let sourceMetric = 'gmv'; // 'gmv' | 'orders'
+
   W.viewMarketing = async function (ctx) {
     const { range, bucket, el } = ctx;
     const daily = await W.load('daily-summary');
@@ -27,7 +29,7 @@
     const prev = W.sumRange(daily, bucket, prevRange);
     const scopeTxt = `${W.fmtDayLong(range.from)} → ${W.fmtDayLong(range.to)} · ${bucket === 'all' ? 'todos los segmentos' : W.SEGMENT_LABEL[bucket]}`;
 
-    const allRows = Object.entries(cur.marketing).map(([source, v]) => ({ source, ...v })).sort((a, b) => b.gmv - a.gmv);
+    const allRows = Object.entries(cur.marketing).map(([source, v]) => ({ source, ...v })).sort((a, b) => b[sourceMetric] - a[sourceMetric]);
     const prevBySource = Object.fromEntries(Object.entries(prev.marketing).map(([k, v]) => [k, v]));
     const direct = allRows.find((r) => /^(sin_atribucion|direct|none|\(none\))$/i.test(r.source));
     // "sin_atribucion" es tráfico SIN utm — no es una fuente de marketing, es
@@ -37,6 +39,7 @@
     const total = rows.reduce((s, r) => s + r.gmv, 0);
     const totalOrders = rows.reduce((s, r) => s + r.orders, 0);
     const grandOrders = allRows.reduce((s, r) => s + r.orders, 0);
+    const totalByMetric = sourceMetric === 'gmv' ? total : totalOrders;
 
     ctx.exports.marketingDetail = {
       filename: `webdash-marketing-${range.from}_${range.to}.csv`,
@@ -60,10 +63,11 @@
       </div>
 
       <div class="card">
-        <div class="card-h"><div><h3>Top 5 fuentes</h3><p>${scopeTxt} · solo tráfico con UTM identificado</p></div></div>
+        <div class="card-h"><div><h3>Top 5 fuentes</h3><p>${scopeTxt} · solo tráfico con UTM identificado</p></div>
+          <div class="card-a">${W.metricToggle(sourceMetric, 'sourcemetric')}</div></div>
         ${top5.length ? W.chart.barsH({
-          items: top5.map((r, i) => ({ label: r.source, value: r.gmv, sub: `${W.fmtNum(r.orders)} pedidos`, color: W.SERIES[i % W.SERIES.length] })),
-          valueFmt: W.fmtMoneyC,
+          items: top5.map((r, i) => ({ label: r.source, value: r[sourceMetric], sub: `${W.fmtNum(r.orders)} pedidos`, color: W.SERIES[i % W.SERIES.length] })),
+          valueFmt: W.metricFmt(sourceMetric),
         }) : '<div class="chart-empty">Sin datos de marketing para este filtro.</div>'}
       </div>
 
@@ -73,7 +77,7 @@
           <button class="btn" data-export="marketingDetail">${W.icon('download', 14)}XLSX</button>
         </div>
         <div class="tbl-wrap"><table class="tbl">
-          <thead><tr><th>Fuente</th><th class="num">Pedidos</th><th class="num">GMV</th><th class="num">Ticket</th><th class="num">vs. período anterior</th><th style="width:22%">% GMV atribuido</th></tr></thead>
+          <thead><tr><th>Fuente</th><th class="num">Pedidos</th><th class="num">GMV</th><th class="num">Ticket</th><th class="num">vs. período anterior</th><th style="width:22%">% ${W.METRIC_LABEL[sourceMetric]} atribuido</th></tr></thead>
           <tbody>${rows.length ? rows.map((r) => {
             const p = prevBySource[r.source];
             const dGmv = p ? W.delta(r.gmv, p.gmv) : undefined;
@@ -83,7 +87,7 @@
               <td class="num">${W.fmtMoney(r.gmv)}</td>
               <td class="num">${W.fmtMoney(W.ticket(r.gmv, r.orders))}</td>
               <td class="num">${dGmv !== undefined ? W.deltaBadge(dGmv) : '<span class="muted">—</span>'}</td>
-              <td><div class="barcell"><span class="bartrack"><span class="barfill" style="width:${(r.gmv / (total || 1)) * 100}%"></span></span><b>${W.fmtPct(r.gmv / (total || 1))}</b></div></td>
+              <td><div class="barcell"><span class="bartrack"><span class="barfill" style="width:${(r[sourceMetric] / (totalByMetric || 1)) * 100}%"></span></span><b>${W.fmtPct(r[sourceMetric] / (totalByMetric || 1))}</b></div></td>
             </tr>`;
           }).join('') : '<tr><td colspan="6" class="muted">Sin datos en este rango</td></tr>'}</tbody>
           ${direct ? `<tfoot><tr class="muted" ${W.chart.tip('No es una fuente de marketing: son pedidos que llegaron sin ningún parámetro UTM (tráfico directo, o VTEX no pudo identificar el origen). Se muestra aparte para no inflar el % de atribución.')}>
@@ -102,5 +106,8 @@
           <p>todavía no conectado — cuando se sume, acá va a verse inversión, clics y CPA por campaña junto al GMV que ya se atribuye por UTM</p></div></div>
         <div class="chart-empty">Sin conexión configurada todavía.</div>
       </div>`;
+
+    document.querySelectorAll('[data-sourcemetric]').forEach((b) =>
+      b.addEventListener('click', () => { sourceMetric = b.dataset.sourcemetric; W.render(); }));
   };
 })();
