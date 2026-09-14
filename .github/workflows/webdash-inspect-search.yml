@@ -14,8 +14,18 @@ jobs:
   inspect:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      # Este workflow no toca el historial de pedidos (docs/data/web/orders/),
+      # que es ~1GB y es lo que hace tardar TANTO el checkout normal (varios
+      # minutos solo bajando y escribiendo archivos que ni se usan acá).
+      # Con sparse-checkout se trae todo MENOS esa carpeta — probado a mano
+      # que deja intacto src/, config/ y el resto de docs/data/web/.
+      - name: Checkout (sin el historial de pedidos, no hace falta acá)
         uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            /*
+            !/docs/data/web/orders/
+          sparse-checkout-cone-mode: false
 
       - name: Setup Node
         uses: actions/setup-node@v4
