@@ -53,15 +53,29 @@
   W.fmtNumC = (n) => nf({ notation: 'compact', maximumFractionDigits: 1 }).format(n || 0);
   W.fmtDec = (n, d = 2) => nf({ minimumFractionDigits: d, maximumFractionDigits: d }).format(n || 0);
   W.fmtPct = (n, d = 1) => `${((n || 0) * 100).toFixed(d)}%`;
-  W.fmtDay = (d) => new Date(`${d}T00:00:00Z`).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
-  W.fmtDayLong = (d) => new Date(`${d}T00:00:00Z`).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' });
+  // timeZone:'UTC' NO es un detalle: sin eso, un "2026-09-07" se construye como
+  // medianoche UTC y se formatea en el huso del navegador — en Argentina
+  // (UTC-3) eso cae a las 21:00 del día ANTERIOR y toda fecha del dashboard
+  // salía corrida un día para atrás (el "vs. 6/9" cuando el día comparado era
+  // el 7/9, los ejes de los gráficos, las cohortes, todo). Acá la fecha ya es
+  // un día calendario, no un instante: se formatea tal cual está escrita.
+  const dayFmt = (opts) => (d) => new Date(`${d}T00:00:00Z`).toLocaleDateString('es-AR', { timeZone: 'UTC', ...opts });
+  W.fmtDay = dayFmt({ day: '2-digit', month: '2-digit' });
+  W.fmtDayLong = dayFmt({ day: '2-digit', month: 'short', year: 'numeric' });
+  /** "lun 7 sept" — el día de la semana es lo que hace entendible una
+   * comparación contra "el mismo día de la semana pasada". Sin la coma que
+   * mete es-AR ("lun, 7 sept"), que en una etiqueta corta sobra. */
+  const fmtDayWeekRaw = dayFmt({ weekday: 'short', day: 'numeric', month: 'short' });
+  W.fmtDayWeek = (d) => fmtDayWeekRaw(d).replace(',', '');
+  /** "7 sep" — para los extremos de un rango, sin repetir el año. */
+  W.fmtDayShort = dayFmt({ day: 'numeric', month: 'short' });
   W.timeAgo = (iso) => {
     const min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
     if (min < 1) return 'recién';
     if (min < 60) return `hace ${min} min`;
     return `hace ${Math.round(min / 60)} h`;
   };
-  W.fmtMonth = (m) => new Date(`${m}-01T00:00:00Z`).toLocaleDateString('es-AR', { month: 'short', year: '2-digit' });
+  W.fmtMonth = (m) => new Date(`${m}-01T00:00:00Z`).toLocaleDateString('es-AR', { timeZone: 'UTC', month: 'short', year: '2-digit' });
   W.esc = (s) =>
     String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -78,6 +92,15 @@
   // Fecha de "hoy" en el huso horario de la operación (AR), no el del navegador
   // de quien mira el dashboard — el pipeline cierra los días en ese huso.
   W.arToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }).format(new Date());
+
+  // Hora AR actual, 0-23. Es lo que permite comparar un día en curso contra
+  // otro día A LA MISMA HORA en vez de contra su total cerrado (comparar
+  // medio día contra un día completo daba -74% en todo, que no es una caída:
+  // es que el día todavía no terminó). hourCycle h23 para que medianoche sea
+  // 0 y no 24.
+  W.arHour = () => Number(new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Argentina/Buenos_Aires', hour: '2-digit', hourCycle: 'h23',
+  }).format(new Date()));
 
   // Día calendario (YYYY-MM-DD) en huso AR de un timestamp ISO cualquiera —
   // AR es UTC-3 fijo, sin horario de verano, así que restar 3h y leer la
@@ -118,6 +141,42 @@
     const n = W.daysBetween(range.from, range.to);
     const shift = n <= 7 ? 7 : n;
     return { from: W.addDays(range.from, -shift), to: W.addDays(range.to, -shift) };
+  };
+
+  /** Rango en texto corto: "7 sep" un día · "1 – 7 sep" mismo mes · "28 ago – 3 sep" si cruza. */
+  W.rangeText = function (range) {
+    if (range.from === range.to) return W.fmtDayShort(range.from);
+    const sameMonth = range.from.slice(0, 7) === range.to.slice(0, 7);
+    return sameMonth
+      ? `${Number(range.from.slice(8, 10))} – ${W.fmtDayShort(range.to)}`
+      : `${W.fmtDayShort(range.from)} – ${W.fmtDayShort(range.to)}`;
+  };
+
+  /**
+   * Contra qué se compara, dicho en criollo. Antes la barra decía
+   * "vs. 6/9 – 6/9": la misma fecha repetida dos veces, encima corrida un día
+   * por el bug de huso de arriba, y sin decir en ningún lado POR QUÉ ese día.
+   * Ahora nombra el período y el tooltip explica el criterio.
+   */
+  W.compareText = function (range) {
+    const prev = W.previousRange(range);
+    const n = W.daysBetween(range.from, range.to);
+    if (range.from === range.to) {
+      return {
+        text: `vs. ${W.fmtDayWeek(prev.from)}`,
+        tip: 'Se compara contra el MISMO día de la semana pasada, no contra ayer: un lunes contra un domingo da variaciones que no significan nada.',
+      };
+    }
+    if (n <= 7) {
+      return {
+        text: `vs. semana anterior · ${W.rangeText(prev)}`,
+        tip: 'Mismo largo de período corrido 7 días para atrás, así caen los mismos días de la semana.',
+      };
+    }
+    return {
+      text: `vs. período anterior · ${W.rangeText(prev)}`,
+      tip: `Los ${n} días inmediatamente anteriores al rango elegido.`,
+    };
   };
 
   // ── Carga de datasets (cacheada) ──────────────────────────────────────────

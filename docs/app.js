@@ -60,12 +60,20 @@
     liveTimer = setInterval(pollLiveToday, 15000);
   }
 
-  // El punto de "en vivo" se prende con el poll de arriba (actualiza cada
-  // 15s) o, a falta de eso, si el pipeline de 30 min todavía está fresco.
-  function liveFresh() {
-    if (liveQueriedAt && Date.now() - new Date(liveQueriedAt).getTime() < 45000) return true;
-    if (!meta?.generatedAt || !days.includes(W.arToday())) return false;
-    return Date.now() - new Date(meta.generatedAt).getTime() < 90 * 60 * 1000;
+  /**
+   * En qué estado está el día de hoy. Son TRES estados distintos y antes se
+   * mezclaban dos: con datos guardados pero de hace más de 90 minutos, el
+   * cartel decía "todavía sin datos de hoy" aunque la pantalla estuviera
+   * mostrando, justo al lado, los 1,7 K pedidos de hoy. No es lo mismo "no
+   * hay datos" que "hay datos y son de hace un rato".
+   *   none   → hoy no existe en la serie: no hay NADA que mostrar.
+   *   live   → el sondeo a /api/today-live respondió hace segundos.
+   *   stored → hay datos de hoy, guardados por el pipeline, con su hora real.
+   */
+  function todayState() {
+    if (!days.includes(W.arToday())) return { kind: 'none', at: null };
+    if (liveQueriedAt && Date.now() - new Date(liveQueriedAt).getTime() < 45000) return { kind: 'live', at: liveQueriedAt };
+    return { kind: 'stored', at: meta?.generatedAt || null };
   }
 
   const NAV_ICON = { dashboard: 'dashboard', analytics: 'analytics', tiendas: 'store', coupons: 'tag', marketing: 'megaphone', buscador: 'search', audiences: 'audience' };
@@ -125,7 +133,11 @@
     paintChrome();
     document.querySelectorAll('#presets button').forEach((b) => b.classList.toggle('on', b.dataset.preset === state.preset));
     $('view-title').textContent = TITLES[state.view];
-    $('preset-today').classList.toggle('is-live', liveFresh());
+    // El punto verde significa UNA cosa: el sondeo en vivo está respondiendo
+    // ahora. Datos guardados de hace 80 minutos no son "en vivo" — eso se
+    // dice con la hora real al lado, no con un punto que promete tiempo real.
+    const today = todayState();
+    $('preset-today').classList.toggle('is-live', today.kind === 'live');
 
     // Dashboard, Analítica, Tiendas, Cupones y Marketing se filtran por
     // segmento; Audiencias mira la base completa y Buscador mira GA4 (no
@@ -140,18 +152,21 @@
     $('range-label').style.display = noRange ? 'none' : '';
 
     if (state.range) {
-      const isToday = state.preset === 'today' && state.range.from === W.arToday();
+      const isToday = state.range.from === state.range.to && state.range.from === W.arToday();
       $('range-label').textContent = isToday
-        // Con el poll de /api/today-live esto sí es en vivo de verdad (cada
-        // 15s) — ya no depende de esperar la corrida de 30 min ni un deploy.
-        ? `Hoy ${liveFresh() ? '· en vivo · actualizado ' + W.timeAgo(liveQueriedAt || meta?.generatedAt) : '· todavía sin datos de hoy'}`
+        ? (today.kind === 'none' ? 'Hoy · todavía sin datos'
+          : today.kind === 'live' ? `Hoy · en vivo, ${W.timeAgo(today.at)}`
+          : today.at ? `Hoy · actualizado ${W.timeAgo(today.at)}` : 'Hoy')
         : state.range.from === state.range.to
-          ? W.fmtDayLong(state.range.from)
-          : `${W.fmtDayLong(state.range.from)} → ${W.fmtDayLong(state.range.to)}`;
+          ? W.fmtDayWeek(state.range.from)
+          : `${W.rangeText(state.range)} · ${W.daysBetween(state.range.from, state.range.to)} días`;
       $('date-from').value = state.range.from;
       $('date-to').value = state.range.to;
-      const pr = W.previousRange(state.range);
-      $('cmp-label').textContent = state.compare ? `vs. ${W.fmtDay(pr.from)} – ${W.fmtDay(pr.to)}` : '';
+      const cmp = W.compareText(state.range);
+      const cmpLabel = $('cmp-label');
+      cmpLabel.textContent = state.compare ? cmp.text : '';
+      if (state.compare) cmpLabel.setAttribute('data-tip', cmp.tip);
+      else cmpLabel.removeAttribute('data-tip');
     }
   }
 

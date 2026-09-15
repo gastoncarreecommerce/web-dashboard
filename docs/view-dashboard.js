@@ -1,27 +1,133 @@
 /* global window, document */
-/** Vista "Dashboard": resumen ejecutivo del canal web con proyección e insights. */
+/**
+ * Vista "Dashboard": la pantalla que responde "¿cómo venimos?" de un vistazo.
+ *
+ * Tres decisiones que definen esta vista:
+ *
+ * 1. JERARQUÍA. Antes había 12 tiles del mismo tamaño y el mismo blanco: nada
+ *    decía qué mirar primero. Ahora hay UN número protagonista (el GMV), una
+ *    fila de métricas primarias, los 4 segmentos con su color y su
+ *    participación, y las métricas de apoyo en una tira recesiva.
+ *
+ * 2. UN DÍA EN CURSO NO SE COMPARA CONTRA UN DÍA CERRADO. Mirando "Hoy" al
+ *    mediodía, comparar contra el total del martes pasado daba -74% en TODAS
+ *    las métricas: no es una caída, es que el día va por la mitad. Donde hay
+ *    dato hora a hora (pedidos) se compara a la misma hora, que es exacto;
+ *    donde no lo hay (plata, clientes) no se inventa un porcentaje: se marca
+ *    "día en curso" y se muestra en cuánto cerró el día de referencia.
+ *
+ * 3. PARA UN SOLO DÍA, LA EVOLUCIÓN ES POR HORA. Un gráfico diario con un
+ *    solo punto no es un gráfico; la curva acumulada de hoy contra la del
+ *    mismo día de la semana pasada dice en dos segundos si vamos adelante o
+ *    atrás, y las dos curvas son datos reales (no proyecciones).
+ */
 (function () {
   const W = (window.W = window.W || {});
 
-  // Antes se apilaban 4 tarjetas grandes (evolución, insights, proyección,
-  // mix, heatmap) una debajo de la otra — mucha info y todas compitiendo por
-  // atención al mismo tiempo. Los KPIs de arriba siempre quedan visibles;
-  // el resto se agrupa en dos pestañas: "Evolución" (lo que responde "cómo
-  // venimos") queda abierta por default, "Proyección y mix" (lo más
-  // consultivo/puntual) un clic más allá.
+  // Pestañas internas: los KPIs de arriba quedan siempre visibles y el resto
+  // se reparte, para no apilar cinco tarjetas grandes una abajo de la otra.
   let dashTab = 'evolucion'; // 'evolucion' | 'detalle'
 
-  function kpi({ id, icon, label, value, sub, delta, spark, color, tip }) {
-    return `<div class="kpi"${id ? ` id="${id}"` : ''}${tip ? ` ${W.chart.tip(tip)}` : ''}>
-      <div class="kpi-t">
-        <span class="kpi-ic" style="background:${color}38;color:${color}">${W.icon(icon, 18)}</span>
-        ${delta !== undefined ? W.deltaBadge(delta) : ''}
+  // Color por métrica, tomado de la paleta de series ya validada
+  // (--s1..--s8). El hero no está acá: usa el degradé de marca, que es
+  // superficie, no color de dato.
+  const MC = {
+    orders: '#2a78d6',  // s1
+    ticket: '#eb6834',  // s2
+    units: '#4a3aa7',   // s7
+    clients: '#e87ba4', // s5
+    fresh: '#eda100',   // s4
+    discount: '#008300',// s6
+  };
+  const REF_GRAY = '#898781'; // serie de referencia (día anterior): de-énfasis
+
+  // ── Piezas de UI ─────────────────────────────────────────────────────────
+  /** El único número protagonista de la vista (uno solo, por diseño). */
+  function hero({ label, value, exact, delta, deltaNote, chip, sub, spark, pace }) {
+    return `<div class="hero">
+      <div class="hero-t">
+        <span class="hero-l">${W.esc(label)}</span>
+        ${delta !== undefined && delta !== null ? W.deltaBadge(delta) : ''}
+        ${chip ? `<span class="hero-chip">${chip}</span>` : ''}
       </div>
-      <div class="kpi-v">${value}</div>
-      <div class="kpi-l">${W.esc(label)}</div>
-      ${sub ? `<div class="kpi-s">${sub}</div>` : ''}
-      ${spark ? `<div class="kpi-spark">${spark}</div>` : ''}
+      <div class="hero-v"${exact ? ` ${W.chart.tip(exact)}` : ''}>${value}</div>
+      ${deltaNote ? `<div class="hero-s">${deltaNote}</div>` : ''}
+      ${sub ? `<div class="hero-s">${sub}</div>` : ''}
+      ${pace ? `<div class="pace">
+        <div class="pace-track"><div class="pace-fill" style="width:${pace.pct}%"></div></div>
+        <span class="pace-l">${pace.label}</span>
+      </div>` : ''}
+      ${spark ? `<div class="hero-spark">${spark}</div>` : ''}
     </div>`;
+  }
+
+  /** Métrica primaria: valor grande, color pleno de la métrica como acento. */
+  function tile({ rail, icon, label, value, sub, delta, chip, spark, tip }) {
+    return `<div class="tile" style="--rail:${rail}"${tip ? ` ${W.chart.tip(tip)}` : ''}>
+      <div class="tile-t">
+        <span class="tile-ic">${W.icon(icon, 16)}</span>
+        ${delta !== undefined && delta !== null ? W.deltaBadge(delta) : chip ? `<span class="delta flat">${chip}</span>` : ''}
+      </div>
+      <div class="tile-v">${value}</div>
+      <div class="tile-l">${W.esc(label)}</div>
+      ${sub ? `<div class="tile-s">${sub}</div>` : ''}
+      ${spark ? `<div class="tile-spark">${spark}</div>` : ''}
+    </div>`;
+  }
+
+  /** Un segmento con SU color, su volumen y cuánto pesa del total. */
+  function segCard({ seg, orders, gmv, share, delta }) {
+    const color = W.SEGMENT_COLOR[seg];
+    return `<div class="segc" style="--rail:${color};--track:${color}22"
+      ${W.chart.tip(`<strong>${W.esc(W.SEGMENT_LABEL[seg])}</strong><span class="tip-row">${W.fmtNum(orders)} pedidos</span><span class="tip-row">${W.fmtMoney(gmv)}</span><span class="tip-row">${W.fmtPct(share)} de los pedidos del período</span>`)}>
+      <div class="segc-t">${W.icon(W.SEGMENT_ICON_NAME[seg], 13)}${W.esc(W.SEGMENT_LABEL[seg])}</div>
+      <div class="segc-row">
+        <span class="segc-v">${W.fmtNumC(orders)}</span>
+        ${delta !== undefined && delta !== null ? W.deltaBadge(delta) : ''}
+      </div>
+      <div class="segc-s">${W.fmtMoneyC(gmv)} · ${W.fmtPct(share)} de los pedidos</div>
+      <div class="segc-bar"><div class="segc-fill" style="width:${Math.min(100, share * 100)}%"></div></div>
+    </div>`;
+  }
+
+  /** Métrica de apoyo: chica, gris, para consultar — no compite con el hero. */
+  function mitem({ rail, label, value, sub, delta, tip }) {
+    return `<div class="mitem"${tip ? ` ${W.chart.tip(tip)}` : ''}>
+      <div class="mitem-l"><span class="mitem-dot" style="background:${rail}"></span>${W.esc(label)}</div>
+      <div class="mitem-v">${value}${delta !== undefined && delta !== null ? W.deltaBadge(delta) : ''}</div>
+      ${sub ? `<div class="mitem-s">${sub}</div>` : ''}
+    </div>`;
+  }
+
+  // ── Datos por hora ───────────────────────────────────────────────────────
+  /**
+   * Las 24 horas de un día, respetando el segmento elegido. En schema 2 el
+   * horario vive por segmento; los días viejos lo traen a nivel día. Se
+   * soportan los dos porque el historial tiene de las dos clases.
+   */
+  function dayHourly(day, bucket) {
+    if (!day) return null;
+    if (bucket !== 'all') return day.segments?.[bucket]?.hourly || null;
+    const perSeg = W.SEGMENTS.some((s) => day.segments?.[s]?.hourly);
+    if (perSeg) {
+      const out = new Array(24).fill(0);
+      for (const s of W.SEGMENTS) (day.segments[s]?.hourly || []).forEach((n, h) => { out[h] += n; });
+      return out;
+    }
+    return day.hourly || null;
+  }
+
+  const sumTo = (arr, upto) => (arr || []).slice(0, upto).reduce((a, b) => a + b, 0);
+
+  /** Acumulado hora a hora. `upto` corta la serie (el día en curso no llega
+   * a las 23: dibujarlo plano hasta el final parecería que se cayó a cero). */
+  function cumulative(arr, upto) {
+    let acc = 0;
+    return (arr || []).map((n, h) => {
+      if (upto != null && h >= upto) return null;
+      acc += n;
+      return acc;
+    });
   }
 
   /** Observaciones automáticas: qué mirar / qué mejorar, sin tener que leer los gráficos. */
@@ -41,7 +147,7 @@
       } else if (dGmv > 0.02 && dOrders > 0.02) {
         out.push({ kind: 'good', title: 'Crecimiento sano', text: `Pedidos ${W.fmtPct(dOrders)} y GMV ${W.fmtPct(dGmv)} crecen juntos: el volumen manda, no el precio.` });
       } else if (dGmv < -0.03) {
-        out.push({ kind: 'bad', title: 'Caída de GMV', text: `GMV ${W.fmtPct(dGmv)} vs. el período anterior. Mirá el mix por segmento y el detalle de fuentes de marketing para aislar de dónde viene.` });
+        out.push({ kind: 'bad', title: 'Caída de GMV', text: `GMV ${W.fmtPct(dGmv)} vs. el período de comparación. Mirá el mix por segmento y el detalle de fuentes de marketing para aislar de dónde viene.` });
       }
     }
 
@@ -152,7 +258,40 @@
     const cur = W.sumRange(daily, bucket, range);
     const prevRange = W.previousRange(range);
     const prev = W.sumRange(daily, bucket, prevRange);
-    const showDelta = compare ? undefined : null;
+    const cmp = W.compareText(range);
+
+    // ── ¿Es un día en curso? ───────────────────────────────────────────────
+    // Todo lo que sigue depende de esto: un día a mitad de camino no se
+    // compara contra un día cerrado.
+    const arToday = W.arToday();
+    const isSingleDay = range.from === range.to;
+    const isToday = isSingleDay && range.from === arToday;
+    const hoursElapsed = isToday ? Math.min(24, W.arHour() + 1) : 24;
+
+    const cmpDayDate = prevRange.from;
+    const cmpDay = daily.days.find((d) => d.date === cmpDayDate) || null;
+    // La curva de referencia sirve para cualquier día suelto (hoy o "ayer"),
+    // no solo para hoy.
+    const cmpHourly = isSingleDay ? dayHourly(cmpDay, bucket) : null;
+    const cmpHasHours = !!cmpHourly && cmpHourly.some((n) => n > 0);
+    // Base exacta para comparar pedidos: el mismo día de la semana pasada,
+    // contado SOLO hasta la hora que ya transcurrió hoy.
+    const cmpOrdersToHour = isToday && cmpHasHours ? sumTo(cmpHourly, hoursElapsed) : null;
+    const cmpName = W.fmtDayWeek(cmpDayDate);
+
+    const showDelta = compare;
+    // Dos clases de métrica se comportan distinto en un día a medio terminar:
+    //   · ACUMULADAS (GMV, pedidos, clientes, descuentos): medio día contra un
+    //     día entero no se puede comparar → d() devuelve null y la UI pone el
+    //     chip "día en curso" en vez de un porcentaje inventado.
+    //   · PROMEDIOS (ticket, unidades por pedido): son razones, no sumas, así
+    //     que sí se pueden comparar contra el promedio del día de referencia
+    //     — se compara y se aclara en el subtítulo que la base es el día
+    //     completo (puede haber sesgo de mix horario, pero es un dato real y
+    //     mucho más útil que no mostrar nada).
+    const d = (a, b) => (showDelta && !isToday ? W.delta(a, b) : null);
+    const dRatio = (a, b) => (showDelta ? W.delta(a, b) : null);
+    const partialChip = isToday ? 'día en curso' : null;
 
     const labels = cur.series.map((s) => s.date);
     const orders = cur.series.map((s) => s.orders);
@@ -172,79 +311,164 @@
     const prevMonthStart = prevMonthEnd.slice(0, 8) + '01';
     const prevMonth = W.sumRange(daily, bucket, { from: prevMonthStart, to: prevMonthEnd });
 
-    const cmp = compare ? prev : null;
-    const d = (a, b) => (cmp ? W.delta(a, b) : undefined);
+    const scopeTxt = bucket === 'all' ? 'todos los segmentos' : W.SEGMENT_LABEL[bucket];
+    const rangeTxt = isToday ? 'hoy' : isSingleDay ? W.fmtDayWeek(range.from) : W.rangeText(range);
 
-    const color = bucket === 'all' ? '#2a78d6' : W.SEGMENT_COLOR[bucket];
-    const icon = bucket === 'all' ? 'globe' : W.SEGMENT_ICON_NAME[bucket];
+    // ── Hero: el GMV ────────────────────────────────────────────────────────
+    const heroSpark = gmvs.length > 1 ? W.chart.sparkline(gmvs, 'rgba(255,255,255,.9)', 240, 46) : '';
+    const cmpDayTotals = cmpDay ? W.sumRange(daily, bucket, { from: cmpDayDate, to: cmpDayDate }) : null;
+    const heroBlock = hero({
+      label: `GMV · ${rangeTxt}`,
+      value: W.fmtMoneyC(cur.gmv),
+      exact: `<strong>GMV exacto</strong><span class="tip-row">${W.fmtMoney(cur.gmv)}</span>`,
+      delta: showDelta && !isToday ? W.delta(cur.gmv, prev.gmv) : null,
+      chip: isToday ? partialChip : null,
+      // Sin repetir las fechas del período de comparación: ya están arriba,
+      // al lado del check de "Comparar".
+      deltaNote: showDelta && !isToday ? `período anterior: <b>${W.fmtMoneyC(prev.gmv)}</b>` : '',
+      sub: isToday && cmpDayTotals
+        ? `${W.esc(cmpName)} cerró en <b>${W.fmtMoneyC(cmpDayTotals.gmv)}</b>`
+        : `${W.fmtNumC(cur.orders)} pedidos · ticket ${W.fmtMoney(W.ticket(cur.gmv, cur.orders))}`,
+      pace: isToday ? {
+        pct: (hoursElapsed / 24) * 100,
+        label: `${hoursElapsed} de 24 horas del día transcurridas`,
+      } : null,
+      spark: isToday ? '' : heroSpark,
+    });
 
-    const sparkOrders = W.chart.sparkline(orders, color);
-    const sparkGmv = W.chart.sparkline(gmvs, '#1baf7a');
+    // ── Métricas primarias ─────────────────────────────────────────────────
+    const ordersDelta = isToday
+      ? (showDelta && cmpOrdersToHour != null ? W.delta(cur.orders, cmpOrdersToHour) : null)
+      : d(cur.orders, prev.orders);
+    const ordersSub = isToday
+      ? (cmpOrdersToHour != null
+        ? `${W.esc(cmpName)} a esta hora: <b>${W.fmtNumC(cmpOrdersToHour)}</b>`
+        : `sin dato horario de ${W.esc(cmpName)} para comparar`)
+      : (showDelta ? `período anterior: <b>${W.fmtNumC(prev.orders)}</b>` : '');
+
+    // Sparklines de las métricas de razón: se calculan día por día del rango.
+    const ticketSeries = cur.series.map((s) => W.ticket(s.gmv, s.orders));
+    const upoSeries = cur.series.map((s) => W.unitsPerOrder(s.units, s.orders));
+    const curTicket = W.ticket(cur.gmv, cur.orders);
+    const curUpo = W.unitsPerOrder(cur.units, cur.orders);
+    const cmpTicket = cmpDayTotals ? W.ticket(cmpDayTotals.gmv, cmpDayTotals.orders) : null;
+    const cmpUpo = cmpDayTotals ? W.unitsPerOrder(cmpDayTotals.units, cmpDayTotals.orders) : null;
 
     const tiles = [
-      kpi({ id: 'kpi-orders', icon, label: 'Pedidos', value: W.fmtNumC(cur.orders), delta: d(cur.orders, prev.orders), color,
-        spark: sparkOrders, tip: `<strong>Pedidos</strong><span class="tip-row">${W.fmtNum(cur.orders)} en el período</span>` }),
-      kpi({ id: 'kpi-gmv', icon: 'money', label: 'GMV', value: W.fmtMoneyC(cur.gmv), delta: d(cur.gmv, prev.gmv), color: '#1baf7a',
-        spark: sparkGmv, tip: `<strong>GMV</strong><span class="tip-row">${W.fmtMoney(cur.gmv)}</span>` }),
-      kpi({ id: 'kpi-ticket', icon: 'ticket', label: 'Ticket promedio', value: W.fmtMoney(W.ticket(cur.gmv, cur.orders)),
-        delta: d(W.ticket(cur.gmv, cur.orders), W.ticket(prev.gmv, prev.orders)), color: '#eb6834', sub: 'GMV / pedidos' }),
-      kpi({ icon: 'box', label: 'Unidades por pedido', value: W.fmtDec(W.unitsPerOrder(cur.units, cur.orders), 1),
-        delta: d(W.unitsPerOrder(cur.units, cur.orders), W.unitsPerOrder(prev.units, prev.orders)), color: '#4a3aa7', sub: 'tamaño de canasta' }),
+      tile({
+        rail: MC.orders, icon: 'orders', label: 'Pedidos', value: W.fmtNumC(cur.orders),
+        delta: ordersDelta, chip: isToday && ordersDelta == null ? partialChip : null,
+        sub: ordersSub,
+        spark: orders.length > 1 ? W.chart.sparkline(orders, MC.orders) : '',
+        tip: `<strong>Pedidos</strong><span class="tip-row">${W.fmtNum(cur.orders)} en el período</span>${
+          isToday && cmpOrdersToHour != null ? `<span class="tip-row">Comparado contra ${W.esc(cmpName)} hasta las ${String(hoursElapsed - 1).padStart(2, '0')}:59, no contra su total del día</span>` : ''}`,
+      }),
+      tile({
+        rail: MC.ticket, icon: 'ticket', label: 'Ticket promedio', value: W.fmtMoney(curTicket),
+        delta: isToday ? dRatio(curTicket, cmpTicket) : d(curTicket, W.ticket(prev.gmv, prev.orders)),
+        sub: isToday && cmpTicket
+          ? `${W.esc(cmpName)}, día completo: <b>${W.fmtMoney(cmpTicket)}</b>`
+          : 'GMV ÷ pedidos',
+        spark: ticketSeries.length > 1 ? W.chart.sparkline(ticketSeries, MC.ticket) : '',
+        tip: `<strong>Ticket promedio</strong><span class="tip-row">GMV dividido la cantidad de pedidos</span>${
+          isToday ? '<span class="tip-row">Es un promedio, no un acumulado: se puede comparar contra el día de referencia aunque hoy no haya terminado.</span>' : ''}`,
+      }),
+      tile({
+        rail: MC.units, icon: 'box', label: 'Unidades por pedido', value: W.fmtDec(curUpo, 1),
+        delta: isToday ? dRatio(curUpo, cmpUpo) : d(curUpo, W.unitsPerOrder(prev.units, prev.orders)),
+        sub: isToday && cmpUpo
+          ? `${W.esc(cmpName)}, día completo: <b>${W.fmtDec(cmpUpo, 1)}</b>`
+          : `${W.fmtNumC(cur.units)} unidades en total`,
+        spark: upoSeries.length > 1 ? W.chart.sparkline(upoSeries, MC.units) : '',
+        tip: '<strong>Tamaño de canasta</strong><span class="tip-row">Unidades totales dividido la cantidad de pedidos</span>',
+      }),
     ];
 
-    // Un tile por segmento, siempre visibles juntos cuando se mira "Todos" —
-    // antes había que apretar cada chip (Food/Non Food/Marketplace/Quick) uno
-    // por uno para ver sus números; ahora se ven los 4 de una sola vez, como
-    // en el dashboard de la app.
-    const segTiles = bucket === 'all'
+    // ── Segmentos ──────────────────────────────────────────────────────────
+    const segCards = bucket === 'all'
       ? W.SEGMENTS.map((s) => {
           const c = cur.bySegment[s], p = prev.bySegment[s] || { gmv: 0, orders: 0 };
-          return kpi({
-            icon: W.SEGMENT_ICON_NAME[s], label: W.SEGMENT_LABEL[s], value: W.fmtNumC(c.orders),
-            delta: d(c.orders, p.orders), color: W.SEGMENT_COLOR[s],
-            sub: W.fmtMoneyC(c.gmv),
-            tip: `<strong>${W.esc(W.SEGMENT_LABEL[s])}</strong><span class="tip-row">${W.fmtNum(c.orders)} pedidos</span><span class="tip-row">${W.fmtMoney(c.gmv)}</span>`,
+          return segCard({
+            seg: s, orders: c.orders, gmv: c.gmv,
+            share: cur.orders ? c.orders / cur.orders : 0,
+            delta: d(c.orders, p.orders),
           });
         })
       : [];
 
-    if (bucket === 'all') {
-      tiles.push(
-        kpi({ icon: 'users', label: 'Clientes activos', value: W.fmtNumC(cur.activeCustomers),
-          delta: d(cur.activeCustomers, prev.activeCustomers), color: '#e87ba4', sub: 'suma de activos por día' }),
-        kpi({ icon: 'sparkles', label: 'Clientes nuevos', value: W.fmtNumC(cur.newCustomers),
-          delta: d(cur.newCustomers, prev.newCustomers), color: '#eda100',
-          spark: W.chart.sparkline(cur.series.map((s) => s.newCustomers), '#eda100'),
-          sub: cur.activeCustomers ? `${W.fmtPct(cur.newCustomers / cur.activeCustomers)} de los activos` : '' }),
-        kpi({ icon: 'tag', label: 'Descuentos', value: W.fmtMoneyC(cur.discount), delta: d(cur.discount, prev.discount),
-          color: '#e34948', sub: cur.gmv ? `${W.fmtPct(cur.discount / (cur.gmv + cur.discount))} del valor bruto` : '' })
-      );
+    // ── Métricas de apoyo ──────────────────────────────────────────────────
+    const canc = W.cancellations(cur.statusStats);
+    const cancPrev = showDelta && !isToday ? W.cancellations(prev.statusStats) : null;
+    const support = bucket === 'all' ? [
+      mitem({
+        rail: MC.clients, label: 'Clientes activos', value: W.fmtNumC(cur.activeCustomers),
+        delta: d(cur.activeCustomers, prev.activeCustomers),
+        sub: isSingleDay ? 'compraron en el día' : 'suma de activos por día',
+        tip: '<strong>Clientes activos</strong><span class="tip-row">Se suman los activos de cada día del rango: un cliente que compró dos días cuenta dos veces.</span>',
+      }),
+      mitem({
+        rail: MC.fresh, label: 'Clientes nuevos', value: W.fmtNumC(cur.newCustomers),
+        delta: d(cur.newCustomers, prev.newCustomers),
+        sub: cur.activeCustomers ? `${W.fmtPct(cur.newCustomers / cur.activeCustomers)} de los activos` : '',
+        tip: isToday
+          ? '<strong>Clientes nuevos</strong><span class="tip-row">En el día en curso este número lo completa la corrida del pipeline: el dato en vivo no cruza contra todo el historial de clientes.</span>'
+          : '<strong>Clientes nuevos</strong><span class="tip-row">Primera compra registrada dentro del período.</span>',
+      }),
+      mitem({
+        rail: MC.discount, label: 'Descuentos', value: W.fmtMoneyC(cur.discount),
+        delta: d(cur.discount, prev.discount),
+        sub: cur.gmv ? `${W.fmtPct(cur.discount / (cur.gmv + cur.discount))} del valor bruto` : '',
+        tip: '<strong>Descuentos</strong><span class="tip-row">Total descontado (cupones y promociones) sobre el valor bruto del período.</span>',
+      }),
+      ...(canc.totalOrders ? [mitem({
+        rail: canc.rate > 0.05 ? 'var(--neg)' : 'var(--ink-4)',
+        label: 'Cancelaciones', value: W.fmtPct(canc.rate),
+        delta: cancPrev ? W.delta(canc.rate, cancPrev.rate) : null,
+        sub: `${W.fmtNumC(canc.cancelledOrders)} pedidos · ${W.fmtMoneyC(canc.cancelledGmv)}`,
+        tip: `<strong>Cancelaciones</strong><span class="tip-row">${W.fmtNum(canc.cancelledOrders)} de ${W.fmtNum(canc.totalOrders)} pedidos del período</span><span class="tip-row">No se cuentan en GMV ni en pedidos</span>`,
+      })] : []),
+    ] : [];
 
-      // Las cancelaciones NO entran en las métricas de negocio, pero se miden
-      // igual: salen del listado de VTEX, sin costo extra de llamadas.
-      const canc = W.cancellations(cur.statusStats);
-      const cancPrev = cmp ? W.cancellations(prev.statusStats) : null;
-      if (canc.totalOrders) {
-        tiles.push(kpi({
-          icon: 'ban', label: 'Cancelaciones', value: W.fmtPct(canc.rate),
-          delta: cmp ? W.delta(canc.rate, cancPrev.rate) : undefined,
-          color: '#e34948',
-          sub: `${W.fmtNumC(canc.cancelledOrders)} pedidos · ${W.fmtMoneyC(canc.cancelledGmv)} no facturados`,
-          tip: `<strong>Cancelaciones</strong><span class="tip-row">${W.fmtNum(canc.cancelledOrders)} de ${W.fmtNum(canc.totalOrders)} pedidos del período</span><span class="tip-row">No se cuentan en GMV ni pedidos</span>`,
-        }));
+    // ── Evolución ──────────────────────────────────────────────────────────
+    // Un solo día: curva acumulada hora a hora, hoy contra el mismo día de la
+    // semana pasada. Las dos series son pedidos reales por hora.
+    const hourLabels = Array.from({ length: 24 }, (_, h) => String(h).padStart(2, '0'));
+    const curHourly = cur.hourly || [];
+    const hasCurHours = curHourly.some((n) => n > 0);
+    const hourChart = () => {
+      if (!hasCurHours) {
+        return '<div class="chart-empty">Todavía no hay pedidos con hora registrada en este día.</div>';
       }
-    }
+      // La serie de referencia va PRIMERO: se dibuja abajo y la curva del día
+      // elegido queda encima. Al revés (como estaba) el gris tapaba al azul
+      // justo cuando las dos curvas van parejas, que es el caso interesante.
+      const series = [];
+      if (cmpHasHours) {
+        series.push({ name: cmpName, color: REF_GRAY, values: cumulative(cmpHourly, null) });
+      }
+      series.push({
+        name: isToday ? 'Hoy' : W.fmtDayWeek(range.from), color: MC.orders, fill: true,
+        values: cumulative(curHourly, isToday ? hoursElapsed : null),
+      });
+      return W.chart.line({
+        labels: hourLabels, series, height: 260, yFmt: W.fmtNumC,
+        xFmt: (h) => `${h}h`, tipTitle: (h) => `${h}:00`,
+        id: 'hour-line',
+      });
+    };
 
-    // ── Serie principal: pedidos + media móvil + proyección ─────────────────
-    const ma = W.movingAvg(orders, 7);
-    const reg = W.linreg(orders);
-    const trend = orders.map((_, i) => Math.max(0, reg.at(i)));
-
-    const mainSeries = [
-      { name: 'Pedidos', color, values: orders, fill: true },
-      { name: 'Media móvil 7d', color: '#eb6834', values: ma },
-      { name: 'Tendencia', color: '#898781', values: trend, dashed: true },
-    ];
+    const dayChart = () => {
+      const reg = W.linreg(orders); // una sola vez, no por punto
+      return W.chart.line({
+        labels,
+        series: [
+          { name: 'Pedidos', color: MC.orders, values: orders, fill: true },
+          { name: 'Media móvil 7d', color: MC.ticket, values: W.movingAvg(orders, 7) },
+          { name: 'Tendencia', color: REF_GRAY, values: orders.map((_, i) => Math.max(0, reg.at(i))), dashed: true },
+        ],
+        height: 260,
+      });
+    };
 
     // ── Mix por segmento en el tiempo ───────────────────────────────────────
     const mixSeries = W.SEGMENTS.map((s) => ({
@@ -257,45 +481,45 @@
     }));
 
     // ── Heatmap día de semana × hora ────────────────────────────────────────
-    // A propósito NO usa el rango de fechas elegido arriba (7d/30d/mes/etc):
-    // si alguien mira "7 días" hay como mucho UN martes ahí adentro, y si ese
-    // martes es justo hoy (que queda afuera por estar a medio terminar) la
-    // fila entera de "martes" queda en cero — parece un bug pero es que no
-    // había NINGÚN martes con el que sumar. Por eso el heatmap siempre mira
-    // una ventana fija más larga (últimos 90 días), sin importar qué rango
-    // esté seleccionado para el resto del dashboard: así cada día de la
-    // semana siempre tiene ~12-13 muestras reales para promediar.
-    const today = W.arToday();
-    const hmFrom = W.addDays(today, -90);
+    // A propósito NO usa el rango elegido arriba: con rangos cortos podía
+    // tocar un solo martes (o ninguno) y la fila quedaba vacía sin estarlo.
+    const hmFrom = W.addDays(arToday, -90);
     const dowHour = Array.from({ length: 7 }, () => new Array(24).fill(0));
     let hasHourly = false;
     for (const day of daily.days) {
-      if (day.date < hmFrom || day.date >= today || !day.hourly) continue;
+      if (day.date < hmFrom || day.date >= arToday) continue;
+      const hrs = dayHourly(day, bucket);
+      if (!hrs) continue;
       hasHourly = true;
       const dow = new Date(`${day.date}T12:00:00Z`).getUTCDay();
-      day.hourly.forEach((n, h) => (dowHour[dow][h] += n));
+      hrs.forEach((n, h) => (dowHour[dow][h] += n));
     }
 
-    // La atribución por utmSource tiene su propia página (Marketing) ahora.
     ctx.exports.daily = {
       filename: `webdash-diario-${bucket}-${range.from}_${range.to}.csv`,
       headers: ['fecha', 'pedidos', 'gmv', 'unidades', 'ticket'],
       rows: cur.series.map((s) => [s.date, s.orders, Math.round(s.gmv), Math.round(s.units), Math.round(W.ticket(s.gmv, s.orders))]),
     };
 
-    const insights = compare ? buildInsights(cur, prev, range, daily, catalog, bucket) : [];
+    // Las observaciones automáticas se apoyan en variaciones período contra
+    // período: en un día en curso comparan medio día contra un día entero y
+    // dicen "caída de GMV -73%", que es falso. Se omiten ahí.
+    const insights = showDelta && !isToday ? buildInsights(cur, prev, range, daily, catalog, bucket) : [];
 
     const evolucionTab = `
       <div class="card">
         <div class="card-h">
-          <div><h3>Pedidos por día</h3><p>${W.fmtDayLong(range.from)} → ${W.fmtDayLong(range.to)} · ${bucket === 'all' ? 'todos los segmentos' : W.SEGMENT_LABEL[bucket]}</p></div>
-          <button class="btn" data-export="daily">${W.icon("download",14)}XLSX</button>
+          <div><h3>${isSingleDay ? 'Pedidos acumulados por hora' : 'Pedidos por día'}</h3>
+            <p>${isSingleDay
+              ? `${W.esc(rangeTxt)} · ${W.esc(scopeTxt)}${cmpHasHours ? ` · contra ${W.esc(cmpName)}, hora por hora` : ''}`
+              : `${W.fmtDayLong(range.from)} → ${W.fmtDayLong(range.to)} · ${W.esc(scopeTxt)}`}</p></div>
+          <button class="btn" data-export="daily">${W.icon('download', 14)}XLSX</button>
         </div>
-        ${W.chart.line({ labels, series: mainSeries, height: 260 })}
+        ${isSingleDay ? hourChart() : dayChart()}
       </div>
 
       ${insights.length ? `<div>
-        <div class="ins-h"><h3>Qué está pasando</h3><span>lectura automática del período vs. el anterior</span></div>
+        <div class="sec-h"><h3>Qué está pasando</h3><span>lectura automática del período vs. el anterior</span></div>
         <div class="ins-g">${insights
           .map((i) => `<div class="ins ${i.kind}">${W.icon(i.kind === 'good' ? 'trend' : i.kind === 'bad' ? 'trendDown' : i.kind === 'warn' ? 'warn' : 'info', 16)}<div><h4>${W.esc(i.title)}</h4><p>${W.esc(i.text)}</p></div></div>`)
           .join('')}</div></div>` : ''}`;
@@ -323,8 +547,8 @@
         </div>
       </div>
 
-      ${hasHourly && bucket === 'all' ? `<div class="card">
-        <div class="card-h"><div><h3>Heatmap de horarios pico</h3><p>volumen de pedidos por día de la semana y hora (AR) · últimos 90 días — dónde conviene disparar campañas
+      ${hasHourly ? `<div class="card">
+        <div class="card-h"><div><h3>Horarios pico</h3><p>pedidos por día de la semana y hora (AR) · ${W.esc(scopeTxt)} — dónde conviene disparar campañas
           <span class="scope" ${W.chart.tip('Usa siempre los últimos 90 días completos, sin importar el rango elegido arriba: con rangos cortos podía tocarte un solo martes (o ninguno, si era justo hoy) y la fila de "martes" parecía vacía sin estarlo. Hoy queda afuera por ser un día a medio terminar.')}>${W.icon('info', 11)} últimos 90 días, sin hoy</span></p></div></div>
         ${W.chart.heatmap({
           rows: W.DOW_LABELS,
@@ -338,11 +562,14 @@
       </div>` : ''}`;
 
     el.innerHTML = `
-      <div class="kpis">${tiles.join('')}</div>
+      <div class="dash-hero">${heroBlock}${tiles.join('')}</div>
 
-      ${segTiles.length ? `<div class="kpis kpis-seg">${segTiles.join('')}</div>` : ''}
+      ${segCards.length ? `<div class="sec-h"><h3>Por segmento</h3><span>${W.esc(rangeTxt)} · participación sobre los pedidos del período</span></div>
+        <div class="segs">${segCards.join('')}</div>` : ''}
 
-      <div class="seg-ctl" style="margin-bottom:.9rem">
+      ${support.length ? `<div class="mstrip">${support.join('')}</div>` : ''}
+
+      <div class="seg-ctl" style="margin-bottom:.9rem;width:max-content">
         <button data-dashtab="evolucion" class="${dashTab === 'evolucion' ? 'on' : ''}">Evolución</button>
         <button data-dashtab="detalle" class="${dashTab === 'detalle' ? 'on' : ''}">Proyección y mix</button>
       </div>

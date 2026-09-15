@@ -157,12 +157,17 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
 .seg-ctl button:hover { color: var(--ink); }
 .seg-ctl button.on { background: var(--surface); color: var(--brand); font-weight: 650; box-shadow: var(--sh-1); }
 
-/* Botón "Hoy": el punto se prende solo cuando hay datos frescos de hoy — si
-   no, queda apagado a propósito. Antes pulsaba como si fuera streaming en
-   tiempo real, pero el pipeline actualiza cada ~30 min: se saca la animación
-   para no sugerir algo más instantáneo de lo que realmente es. */
+/* Botón "Hoy": el punto se prende SOLO cuando el sondeo en vivo está
+   respondiendo (cada 15s contra /api/today-live). Ahí el latido sí dice la
+   verdad — antes se había sacado porque el dato venía del pipeline de 30
+   min y prometía algo instantáneo que no era. Datos guardados pero viejos
+   dejan el punto apagado y la hora real se muestra al lado, en texto. */
 .live-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-left: .35rem; background: var(--ink-4); vertical-align: middle; }
-#preset-today.is-live .live-dot { background: var(--pos, #1baf7a); }
+#preset-today.is-live .live-dot { background: var(--pos, #1baf7a); animation: live-pulse 2s var(--ease) infinite; }
+@keyframes live-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(13,156,95,.5); }
+  70% { box-shadow: 0 0 0 5px rgba(13,156,95,0); }
+}
 
 .date-ctl { display: flex; align-items: center; gap: .3rem; font-size: .78rem; color: var(--ink-3); }
 .date-ctl input {
@@ -186,7 +191,10 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
 .chip.on .ico { color: #fff; }
 
 .cmp { display: flex; align-items: center; gap: .4rem; font-size: .78rem; color: var(--ink-2); cursor: pointer; user-select: none; }
+/* El texto de comparación explica CONTRA QUÉ se compara y por qué (tooltip):
+   el subrayado punteado avisa que hay una explicación abajo del mouse. */
 .cmp em { font-style: normal; color: var(--ink-3); }
+.cmp em[data-tip] { border-bottom: 1px dotted var(--ink-4); cursor: help; }
 
 .body { padding: 1.15rem clamp(1rem,2.2vw,1.75rem) 2.5rem; flex: 1; }
 
@@ -213,10 +221,138 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
 .kpi-spark { margin-top: .5rem; height: 26px; }
 .spark { width: 100%; height: 26px; display: block; }
 
-.d { display: inline-flex; align-items: center; gap: .15rem; font-size: .7rem; font-weight: 700; padding: .12rem .38rem; border-radius: 14px; white-space: nowrap; }
-.d.up { color: var(--pos); background: var(--pos-soft); }
-.d.down { color: var(--neg); background: var(--neg-soft); }
-.d.flat { color: var(--ink-3); background: var(--surface-3); }
+/* Ojo con el nombre de la clase: W.deltaBadge() emite class="delta up|down|
+   flat". Estas reglas vivían como `.d` y por eso NO aplicaban a nada — todas
+   las variaciones del dashboard se venían dibujando como texto gris plano en
+   vez de pills verde/rojo, que es justo el dato que más rápido hay que leer. */
+.delta { display: inline-flex; align-items: center; gap: .18rem; font-size: .705rem; font-weight: 700; padding: .14rem .42rem; border-radius: 14px; white-space: nowrap; }
+.delta.up { color: var(--pos); background: var(--pos-soft); }
+.delta.down { color: var(--neg); background: var(--neg-soft); }
+.delta.flat { color: var(--ink-3); background: var(--surface-3); }
+
+/* ── Dashboard: jerarquía de tres niveles ─────────────────────────────────
+   El problema que resuelve: había 12 tiles del mismo tamaño, el mismo peso
+   visual y el mismo blanco — nada decía qué mirar primero, y el conjunto se
+   leía apagado. Ahora hay un solo número protagonista (hero, el GMV), una
+   fila de métricas primarias con el color pleno de cada una como acento, los
+   4 segmentos con SU color y su participación, y las métricas de apoyo en una
+   tira deliberadamente recesiva. Los colores de serie salen de la paleta ya
+   validada (--s1..--s8): el hero usa el degradé de marca, que no es color de
+   dato sino superficie. */
+.dash-hero { display: grid; gap: .8rem; margin-bottom: .8rem; grid-template-columns: 1fr; }
+@media (min-width: 720px) {
+  .dash-hero { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .hero { grid-column: span 2; }
+}
+@media (min-width: 1120px) {
+  .dash-hero { grid-template-columns: 1.55fr repeat(3, minmax(0,1fr)); }
+  .hero { grid-column: span 1; }
+}
+
+.hero {
+  position: relative; overflow: hidden; border-radius: var(--r-lg); padding: 1.1rem 1.2rem 1rem;
+  background: linear-gradient(135deg, var(--brand), #7c3aed);
+  color: #fff; box-shadow: 0 10px 26px var(--brand-glow);
+  display: flex; flex-direction: column; gap: .55rem;
+}
+/* Brillo suave arriba a la derecha: le da profundidad a la tarjeta sin
+   sumar un segundo color de marca. */
+.hero::after {
+  content: ''; position: absolute; top: -60%; right: -18%; width: 62%; height: 190%;
+  background: radial-gradient(circle at center, rgba(255,255,255,.22), transparent 62%);
+  pointer-events: none;
+}
+.hero-t { display: flex; align-items: center; justify-content: space-between; gap: .6rem; position: relative; }
+.hero-l { font-size: .755rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.82); }
+/* Figuras proporcionales a propósito (sin tabular-nums): a este tamaño los
+   dígitos de ancho fijo se ven flojos y desalineados. */
+.hero-v { font-size: clamp(2.5rem, 5.4vw, 3.3rem); font-weight: 750; letter-spacing: -.035em; line-height: 1; position: relative; }
+.hero-s { font-size: .8rem; color: rgba(255,255,255,.88); font-weight: 550; position: relative; }
+.hero-s b { font-weight: 750; }
+.hero-spark { height: 46px; margin-top: .1rem; position: relative; }
+.hero-spark .spark { height: 46px; }
+/* Sobre el degradé de marca, un pill verde o rojo no tiene contraste: la
+   dirección la dice la flecha del propio badge y el pill se vuelve un vidrio
+   blanco translúcido, que sí se lee. */
+.hero .delta, .hero-chip {
+  display: inline-flex; align-items: center; gap: .22rem; font-size: .715rem; font-weight: 700;
+  padding: .2rem .5rem; border-radius: 14px; background: rgba(255,255,255,.2); color: #fff; white-space: nowrap;
+}
+.hero .delta.up, .hero .delta.down, .hero .delta.flat { background: rgba(255,255,255,.2); color: #fff; }
+
+/* Avance del día: explica de un vistazo por qué "hoy" todavía es más chico
+   que un día cerrado. La pista es un paso más claro del mismo blanco. */
+.pace { position: relative; }
+.pace-track { height: 5px; border-radius: 4px; background: rgba(255,255,255,.24); overflow: hidden; }
+.pace-fill { height: 5px; border-radius: 4px; background: #fff; }
+.pace-l { display: block; font-size: .715rem; color: rgba(255,255,255,.85); margin-top: .3rem; font-weight: 600; }
+
+/* Nivel 2: métricas primarias. El acento es el color pleno de la métrica
+   (franja superior + chip de ícono sólido), no un lavado al 22%. */
+/* Columna flex + margin-top:auto en el pie: los tiles de esta fila se estiran
+   a la altura del hero, y sin esto el sobrante quedaba como un hueco blanco
+   abajo. Así el número va arriba y el contexto se apoya en la base — la
+   altura extra se usa a propósito en vez de quedar vacía. */
+.tile {
+  position: relative; overflow: hidden; background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r); padding: .95rem 1rem .8rem; box-shadow: var(--sh-1);
+  transition: box-shadow .14s, border-color .14s, transform .14s;
+  display: flex; flex-direction: column;
+}
+.tile::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 3px; background: var(--rail, var(--brand)); }
+.tile:hover { box-shadow: var(--sh-2); border-color: var(--line-2); transform: translateY(-1px); }
+.tile-t { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-bottom: .5rem; }
+.tile-ic {
+  width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
+  background: var(--rail, var(--brand)); color: #fff;
+}
+.tile-v { font-size: 1.62rem; font-weight: 750; letter-spacing: -.03em; line-height: 1.08; overflow-wrap: break-word; }
+.tile-l { font-size: .785rem; color: var(--ink-2); font-weight: 650; margin-top: .16rem; }
+/* margin-top:auto en el PIE (no en la etiqueta): el número y su etiqueta
+   quedan pegados, y el alto sobrante — estos tiles se estiran a la altura del
+   hero — se lo come el contexto, que se apoya en la base. Sin espacio libre
+   `auto` se comporta como 0, así que el padding-top da el aire mínimo. */
+.tile-s { font-size: .715rem; color: var(--ink-3); font-weight: 600; margin-top: auto; padding-top: .18rem; }
+.tile-spark { margin-top: .45rem; height: 26px; }
+
+/* Nivel 2b: los 4 segmentos, cada uno con SU color y su participación. */
+.segs { display: grid; gap: .8rem; grid-template-columns: repeat(auto-fit,minmax(196px,1fr)); margin-bottom: 1rem; }
+.segc {
+  position: relative; overflow: hidden; background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r); padding: .8rem .9rem .75rem .95rem; box-shadow: var(--sh-1);
+  transition: box-shadow .14s, border-color .14s, transform .14s;
+}
+.segc::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--rail); }
+.segc:hover { box-shadow: var(--sh-2); border-color: var(--line-2); transform: translateY(-1px); }
+.segc-t { display: flex; align-items: center; gap: .4rem; font-size: .755rem; font-weight: 700; color: var(--ink-2); }
+.segc-t .ico { color: var(--rail); }
+.segc-v { font-size: 1.34rem; font-weight: 750; letter-spacing: -.025em; margin-top: .3rem; line-height: 1.1; }
+.segc-s { font-size: .715rem; color: var(--ink-3); font-weight: 600; margin-top: .1rem; }
+/* La pista del medidor es un paso más claro del MISMO color de la barra (se
+   pasa por --track como hex+alpha desde el render), así el estado se lee a lo
+   largo de toda la barra y no como dos colores sin relación. */
+.segc-bar { margin-top: .5rem; height: 5px; border-radius: 4px; background: var(--track, var(--surface-3)); overflow: hidden; }
+.segc-fill { height: 5px; border-radius: 4px; background: var(--rail); }
+.segc-row { display: flex; align-items: baseline; justify-content: space-between; gap: .4rem; }
+
+/* Nivel 3: métricas de apoyo. Recesivas a propósito — están para consultar,
+   no para competir con el hero. */
+.mstrip {
+  display: grid; gap: .1rem; grid-template-columns: repeat(auto-fit,minmax(178px,1fr));
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+  box-shadow: var(--sh-1); overflow: hidden; margin-bottom: 1.1rem;
+}
+.mitem { padding: .7rem .9rem; display: flex; flex-direction: column; gap: .12rem; background: var(--surface); }
+.mitem + .mitem { box-shadow: -1px 0 0 var(--line); }
+.mitem-l { display: flex; align-items: center; gap: .35rem; font-size: .715rem; color: var(--ink-3); font-weight: 650; }
+.mitem-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--rail, var(--ink-4)); flex: none; }
+.mitem-v { display: flex; align-items: baseline; gap: .4rem; font-size: 1.04rem; font-weight: 700; letter-spacing: -.015em; }
+.mitem-s { font-size: .69rem; color: var(--ink-4); font-weight: 600; }
+
+/* Encabezado de sección: ordena la lectura sin gastar una tarjeta entera. */
+.sec-h { display: flex; align-items: baseline; gap: .5rem; margin: .2rem 0 .55rem; }
+.sec-h h3 { font-size: .82rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+.sec-h span { font-size: .735rem; color: var(--ink-4); }
 
 /* ── Panels ──────────────────────────────────────────────────────────────── */
 .card {
@@ -517,9 +653,12 @@ details.more[open] summary { margin-bottom: .45rem; }
 
 @media (max-width: 820px) {
   :root { --nav-w: 58px; }
-  .nav-brand-txt, .nav-sec, .nav-foot-org, .nav-foot-sub, .nav-item span { display: none; }
+  /* .nav-logout span faltaba en esta lista: el texto "Cerrar sesión" seguía
+     ahí y se desbordaba del riel de 58px, partido en dos líneas. */
+  .nav-brand-txt, .nav-sec, .nav-foot-org, .nav-foot-sub, .nav-item span, .nav-logout span { display: none; }
   .nav-item { justify-content: center; }
   .nav-brand { justify-content: center; padding: 1rem .5rem; }
+  .nav-logout { justify-content: center; }
 }
 
 .pre:disabled { opacity: .45; cursor: not-allowed; }

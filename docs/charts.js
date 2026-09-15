@@ -68,9 +68,12 @@
    * Gráfico de líneas con grilla, etiquetas y crosshair al pasar el mouse.
    * series: [{ name, color, values: number[], dashed?: bool }]
    */
-  C.line = function ({ labels, series, height = 240, yFmt = W.fmtNumC, id = 'line' }) {
-    if (!labels.length) return '<div class="chart-empty">Sin datos en este rango.</div>';
-    if (labels.length < 2) return '<div class="chart-empty">Seleccioná un rango de más de un día para ver la evolución.</div>';
+  // xFmt / tipTitle: el eje X no siempre son días — la curva "hoy hora a hora"
+  // rotula horas. Por default siguen siendo fechas, así que las llamadas de
+  // antes no cambian.
+  C.line = function ({ labels, series, height = 240, yFmt = W.fmtNumC, id = 'line', xFmt = W.fmtDay, tipTitle = W.fmtDayLong, empty }) {
+    if (!labels.length) return `<div class="chart-empty">${empty || 'Sin datos en este rango.'}</div>`;
+    if (labels.length < 2) return `<div class="chart-empty">${empty || 'Seleccioná un rango de más de un día para ver la evolución.'}</div>`;
 
     const w = 900, h = height, padL = 52, padR = 14, padT = 12, padB = 30;
     const maxV = niceMax(Math.max(1, ...series.flatMap((s) => s.values.filter((v) => v != null))));
@@ -88,14 +91,19 @@
     const step = Math.max(1, Math.ceil(labels.length / 8));
     const xLabels = labels
       .map((l, i) => (i % step === 0 || i === labels.length - 1
-        ? `<text x="${x(i)}" y="${h - 9}" text-anchor="middle" fill="${AXIS}" font-size="10">${W.fmtDay(l)}</text>` : ''))
+        ? `<text x="${x(i)}" y="${h - 9}" text-anchor="middle" fill="${AXIS}" font-size="10">${xFmt(l)}</text>` : ''))
       .join('');
 
     const paths = series
       .map((s) => {
         const pts = s.values.map((v, i) => (v == null ? null : `${x(i).toFixed(1)},${y(v).toFixed(1)}`)).filter(Boolean).join(' ');
+        // El relleno tiene que cerrar en el último punto REAL, no en el ancho
+        // total: una serie que termina antes (la curva de hoy corta en la
+        // hora actual) arrastraba el área hasta el borde derecho y dibujaba
+        // una caída a cero que no existe.
+        const lastIdx = s.values.reduce((acc, v, i) => (v == null ? acc : i), 0);
         const area = s.fill
-          ? `<polygon points="${padL},${y(0)} ${pts} ${x(s.values.length - 1)},${y(0)}" fill="${s.color}" opacity="0.08"/>`
+          ? `<polygon points="${padL},${y(0)} ${pts} ${x(lastIdx)},${y(0)}" fill="${s.color}" opacity="0.08"/>`
           : '';
         return `${area}<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="2"
                   stroke-linejoin="round" stroke-linecap="round"${s.dashed ? ' stroke-dasharray="5 4"' : ''}/>`;
@@ -116,7 +124,7 @@
           .join('');
         return `<g class="lc-band">
             <rect x="${x(i) - bandW / 2}" y="${padT}" width="${bandW}" height="${h - padT - padB}" fill="transparent"
-              ${C.tip(`<strong>${W.fmtDayLong(l)}</strong>${rows}`)}/>
+              ${C.tip(`<strong>${tipTitle(l)}</strong>${rows}`)}/>
             <g class="lc-hover"><line x1="${x(i)}" x2="${x(i)}" y1="${padT}" y2="${h - padB}" stroke="${AXIS}" stroke-width="1" stroke-dasharray="3 3"/>${dots}</g>
           </g>`;
       })
