@@ -7,5 +7,15 @@
     "ok": 199,
     "totalSearches": 1151714,
     "lostSearches": 2436
+  },
+  {
+    "date": "2026-09-15",
+    "termsAnalyzed": 200,
+    "sinResultados": 1,
+    "pocosResultados": 0,
+    "resultadosDispersos": 28,
+    "ok": 171,
+    "totalSearches": 1153801,
+    "lostSearches": 206210
   }
 ]

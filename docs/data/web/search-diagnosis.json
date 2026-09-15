@@ -1,173 +1,175 @@
 {
-  "generatedAt": "2026-09-14T18:02:39.934Z",
+  "generatedAt": "2026-09-15T14:18:28.966Z",
   "termsAnalyzed": 200,
   "summary": {
     "sinResultados": 1,
     "pocosResultados": 0,
-    "ok": 199,
-    "totalSearches": 1151714,
-    "lostSearches": 2436
+    "resultadosDispersos": 28,
+    "ok": 171,
+    "totalSearches": 1153801,
+    "lostSearches": 206210
   },
   "recommendations": [
     "1 término(s) no traen ningún resultado — priorizalos por volumen, son los que más gente frustra.",
-    "Se estima que 2.436 búsquedas del último mes (0.2% de las analizadas) terminaron en 0 o muy pocos resultados."
+    "Se estima que 206.210 búsquedas del último mes (17.9% de las analizadas) terminaron en 0 o muy pocos resultados.",
+    "28 término(s) traen suficientes productos pero de categorías sin relación entre sí — el buscador probablemente está completando con coincidencias débiles en vez de lo que la gente realmente busca."
   ],
   "topTerms": [
     {
       "term": "leche",
-      "searchCount": 50227,
-      "status": "ok"
+      "searchCount": 50243,
+      "status": "resultados_dispersos"
     },
     {
       "term": "papel higienico",
-      "searchCount": 27023,
+      "searchCount": 27156,
       "status": "ok"
     },
     {
       "term": "dulce de leche",
-      "searchCount": 25475,
-      "status": "ok"
+      "searchCount": 25550,
+      "status": "resultados_dispersos"
     },
     {
       "term": "aceite",
-      "searchCount": 25000,
+      "searchCount": 24882,
       "status": "ok"
     },
     {
       "term": "queso crema",
-      "searchCount": 24317,
+      "searchCount": 24362,
       "status": "ok"
     },
     {
       "term": "manteca",
-      "searchCount": 21848,
-      "status": "ok"
+      "searchCount": 21809,
+      "status": "resultados_dispersos"
     },
     {
       "term": "coca cola",
-      "searchCount": 20575,
+      "searchCount": 20459,
       "status": "ok"
     },
     {
       "term": "azucar",
-      "searchCount": 18956,
+      "searchCount": 19080,
       "status": "ok"
     },
     {
       "term": "crema de leche",
-      "searchCount": 18785,
+      "searchCount": 18854,
       "status": "ok"
     },
     {
       "term": "yerba",
-      "searchCount": 18091,
+      "searchCount": 18166,
       "status": "ok"
     },
     {
       "term": "fideos",
-      "searchCount": 17704,
+      "searchCount": 17796,
       "status": "ok"
     },
     {
       "term": "cafe",
-      "searchCount": 16517,
+      "searchCount": 16620,
       "status": "ok"
     },
     {
       "term": "arroz",
-      "searchCount": 16342,
+      "searchCount": 16426,
       "status": "ok"
     },
     {
       "term": "atun",
-      "searchCount": 15038,
+      "searchCount": 15156,
       "status": "ok"
     },
     {
       "term": "queso cremoso",
-      "searchCount": 14847,
+      "searchCount": 14728,
       "status": "ok"
     },
     {
       "term": "rollo de cocina",
-      "searchCount": 14711,
+      "searchCount": 14720,
       "status": "ok"
     },
     {
       "term": "cerveza",
-      "searchCount": 12538,
+      "searchCount": 12481,
       "status": "ok"
     },
     {
       "term": "harina",
-      "searchCount": 12197,
+      "searchCount": 12185,
       "status": "ok"
     },
     {
       "term": "papel higiénico",
-      "searchCount": 12139,
+      "searchCount": 12035,
       "status": "ok"
     },
     {
       "term": "queso rallado",
-      "searchCount": 11862,
+      "searchCount": 11838,
       "status": "ok"
     },
     {
       "term": "pan lactal",
-      "searchCount": 11805,
+      "searchCount": 11833,
       "status": "ok"
     },
     {
       "term": "pañales",
-      "searchCount": 10860,
+      "searchCount": 11044,
       "status": "ok"
     },
     {
       "term": "mayonesa",
-      "searchCount": 10813,
+      "searchCount": 10806,
       "status": "ok"
     },
     {
       "term": "carne",
-      "searchCount": 10653,
-      "status": "ok"
+      "searchCount": 10602,
+      "status": "resultados_dispersos"
     },
     {
       "term": "rollo cocina",
-      "searchCount": 9820,
-      "status": "ok"
-    },
-    {
-      "term": "fernet",
-      "searchCount": 9636,
+      "searchCount": 9784,
       "status": "ok"
     },
     {
       "term": "pollo",
-      "searchCount": 9632,
-      "status": "ok"
+      "searchCount": 9693,
+      "status": "resultados_dispersos"
     },
     {
       "term": "papas fritas",
-      "searchCount": 9515,
+      "searchCount": 9640,
       "status": "ok"
     },
     {
-      "term": "queso",
-      "searchCount": 9511,
+      "term": "fernet",
+      "searchCount": 9539,
       "status": "ok"
     },
     {
       "term": "galletitas",
-      "searchCount": 9492,
+      "searchCount": 9537,
+      "status": "ok"
+    },
+    {
+      "term": "queso",
+      "searchCount": 9481,
       "status": "ok"
     }
   ],
   "problems": [
     {
       "term": "queso rayado",
-      "searchCount": 2436,
+      "searchCount": 2383,
       "status": "sin_resultados",
       "vtexResults": 0,
       "vtexResultsCapped": false,
@@ -177,7 +179,611 @@
         "vtexResults": 10,
         "vtexResultsCapped": true
       },
-      "recommendation": "Alta prioridad: agregar \"queso rayado\" como sinónimo de \"queso rallado\" en VTEX (búsqueda real que sí tiene stock) — 2.436 búsquedas/mes van hoy a una página vacía."
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"queso rayado\" como sinónimo de \"queso rallado\" en VTEX (búsqueda real que sí tiene stock) — 2.383 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "leche",
+      "searchCount": 50243,
+      "status": "resultados_dispersos",
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Cápsulas de café latte Carrefour Extra x 16 uni",
+        "Pepitas artesanales dulce de leche",
+        "Leche chocolatada ​Cindor 1 lt"
+      ],
+      "suggestion": null,
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Lácteos y productos frescos",
+      "resultCategories": [
+        "Desayuno y merienda",
+        "Panadería",
+        "Lácteos y productos frescos",
+        "Bebidas",
+        "Electro y tecnología"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Lácteos y productos frescos\" y el resto de categorías sin relación (Desayuno y merienda, Panadería, Bebidas, Electro y tecnología) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (50.243 búsquedas/mes)."
+    },
+    {
+      "term": "dulce de leche",
+      "searchCount": 25550,
+      "status": "resultados_dispersos",
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Pepitas artesanales dulce de leche",
+        "Licor Cusenier dulce de leche700 cc",
+        "Yogur entero Tregar dulce de leche"
+      ],
+      "suggestion": null,
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Desayuno y merienda",
+      "resultCategories": [
+        "Panadería",
+        "Bebidas",
+        "Lácteos y productos frescos",
+        "Desayuno y merienda",
+        "Almacén"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Desayuno y merienda\" y el resto de categorías sin relación (Panadería, Bebidas, Lácteos y productos frescos, Almacén) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (25.550 búsquedas/mes)."
+    },
+    {
+      "term": "manteca",
+      "searchCount": 21809,
+      "status": "resultados_dispersos",
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Manteca Primer Premio 100 g.",
+        "Medialunas de manteca x 6 u.",
+        "Medialuna de manteca x 3 uni"
+      ],
+      "suggestion": null,
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Lácteos y productos frescos",
+      "resultCategories": [
+        "Lácteos y productos frescos",
+        "Panadería",
+        "Desayuno y merienda"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Lácteos y productos frescos\" y el resto de categorías sin relación (Panadería, Desayuno y merienda) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (21.809 búsquedas/mes)."
+    },
+    {
+      "term": "carne",
+      "searchCount": 10602,
+      "status": "resultados_dispersos",
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Empanada de carne 6 u.",
+        "Empanada de carne 2 u.",
+        "Milanesa de carne x kg"
+      ],
+      "suggestion": null,
+      "categoryConsistency": 0.4,
+      "dominantCategory": "Panadería",
+      "resultCategories": [
+        "Panadería",
+        "Almacén",
+        "Congelados"
+      ],
+      "recommendation": "Trae 40% de resultados de \"Panadería\" y el resto de categorías sin relación (Almacén, Congelados) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (10.602 búsquedas/mes)."
+    },
+    {
+      "term": "pollo",
+      "searchCount": 9693,
+      "status": "resultados_dispersos",
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Empanada de pollo 6 u.",
+        "Empanada de pollo 2 u.",
+        "Pollo entero congelado x kg"
+      ],
+      "suggestion": null,
+      "categoryConsistency": 0.3,
+      "dominantCategory": "Panadería",
+      "resultCategories": [
+        "Panadería",
+        "Carnes y pescados",
+        "Almacén",
+        "Congelados"
+      ],
+      "recommendation": "Trae 30% de resultados de \"Panadería\" y el resto de categorías sin relación (Carnes y pescados, Almacén, Congelados) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (9.693 búsquedas/mes)."
+    },
+    {
+      "term": "carne picada",
+      "searchCount": 8418,
+      "status": "resultados_dispersos",
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Carne picada Swift congelada 500 grs",
+        "Picadillo de carne Carrefour Classic 90 g.",
+        "Carne picada Novillo x kg"
+      ],
+      "suggestion": null,
+      "categoryConsistency": 0.4,
+      "dominantCategory": "Carnes y pescados",
+      "resultCategories": [
+        "Carnes y pescados",
+        "Almacén",
+        "Congelados"
+      ],
+      "recommendation": "Trae 40% de resultados de \"Carnes y pescados\" y el resto de categorías sin relación (Almacén, Congelados) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (8.418 búsquedas/mes)."
+    },
+    {
+      "term": "crema",
+      "searchCount": 6238,
+      "status": "resultados_dispersos",
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Crema chantilly Tonadita 250 g.",
+        "Crema chantilly Royal 50 g.",
+        "Crema Goicoechea Reafirmante 400 ml"
+      ],
+      "suggestion": null,
+      "categoryConsistency": 0.4,
+      "dominantCategory": "Almacén",
+      "resultCategories": [
+        "Almacén",
+        "Perfumería y farmacia",
+        "Lácteos y productos frescos"
+      ],
+      "recommendation": "Trae 40% de resultados de \"Almacén\" y el resto de categorías sin relación (Perfumería y farmacia, Lácteos y productos frescos) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (6.238 búsquedas/mes)."
+    },
+    {
+      "term": "tomate",
+      "searchCount": 5825,
+      "status": "resultados_dispersos",
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Tomate perita x kg.",
+        "Tomate deshidratado 100 grs",
+        "Puré de tomate Salsati 520 g."
+      ],
+      "suggestion": null,
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Almacén",
+      "resultCategories": [
+        "Frutas y verduras",
+        "Almacén",
+        "Panadería"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Almacén\" y el resto de categorías sin relación (Frutas y verduras, Panadería) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (5.825 búsquedas/mes)."
+    },
+    {
+      "term": "agua",
+      "searchCount": 5572,
+      "status": "resultados_dispersos",
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Agua mineral sin gas Carrefour Classic 2 lts",
+        "Agua saborizada de pera Aquarius 2,25 lts",
+        "Dispenser de agua dino"
+      ],
+      "suggestion": null,
+      "categoryConsistency": 0.4,
+      "dominantCategory": "Juguetería y Librería",
+      "resultCategories": [
+        "Bebidas",
+        "Juguetería y Librería",
+        "Hogar",
+        "Frutas y verduras"
+      ],
+      "recommendation": "Trae 40% de resultados de \"Juguetería y Librería\" y el resto de categorías sin relación (Bebidas, Hogar, Frutas y verduras) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (5.572 búsquedas/mes)."
+    },
+    {
+      "term": "papa",
+      "searchCount": 4975,
+      "status": "resultados_dispersos",
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Libro bluey: papa (cartone)",
+        "Papa negra x kg.",
+        "Papa fraccionada x kg"
+      ],
+      "suggestion": null,
+      "categoryConsistency": 0.3,
+      "dominantCategory": "Lácteos y productos frescos",
+      "resultCategories": [
+        "Juguetería y Librería",
+        "Frutas y verduras",
+        "Lácteos y productos frescos",
+        "Panadería",
+        "Almacén",
+        "Congelados"
+      ],
+      "recommendation": "Trae 30% de resultados de \"Lácteos y productos frescos\" y el resto de categorías sin relación (Juguetería y Librería, Frutas y verduras, Panadería, Almacén, Congelados) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (4.975 búsquedas/mes)."
+    },
+    {
+      "term": "cebolla",
+      "searchCount": 4423,
+      "status": "resultados_dispersos",
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Cebolla x kg.",
+        "Cebolla de verdeo x atado",
+        "Cebolla deshidratada Alicante 50 g."
+      ],
+      "suggestion": null,
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Almacén",
+      "resultCategories": [
+        "Frutas y verduras",
+        "Almacén",
+        "Panadería"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Almacén\" y el resto de categorías sin relación (Frutas y verduras, Panadería) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (4.423 búsquedas/mes)."
+    },
+    {
+      "term": "vino",
+      "searchCount": 4364,
+      "status": "resultados_dispersos",
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Vinagre de vino Menoyo 1 lt",
+        "Vino Rosé Chacabuco 750 ml",
+        "Copa de vino Luminarc 470 cc"
+      ],
+      "suggestion": null,
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Bebidas",
+      "resultCategories": [
+        "Almacén",
+        "Bebidas",
+        "Hogar"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Bebidas\" y el resto de categorías sin relación (Almacén, Hogar) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (4.364 búsquedas/mes)."
+    },
+    {
+      "term": "sin tacc",
+      "searchCount": 4292,
+      "status": "resultados_dispersos",
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Jugo Cepita del Valle Naranja Tentación 995 ml",
+        "Jugo Cepita del Valle Durazno Delicioso 995 ml",
+        "Rebozador Aglu 450 g. SIN TACC."
+      ],
+      "suggestion": null,
+      "categoryConsistency": 0.4,
+      "dominantCategory": "Almacén",
+      "resultCategories": [
+        "Bebidas",
+        "Almacén",
+        "Desayuno y merienda",
+        "Lácteos y productos frescos"
+      ],
+      "recommendation": "Trae 40% de resultados de \"Almacén\" y el resto de categorías sin relación (Bebidas, Desayuno y merienda, Lácteos y productos frescos) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (4.292 búsquedas/mes)."
+    },
+    {
+      "term": "bondiola",
+      "searchCount": 4048,
+      "status": "resultados_dispersos",
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Bondiola de cerdo x kg",
+        "Bondiola congelada x kg",
+        "Bondiola feteada Lario 150 grs"
+      ],
+      "suggestion": null,
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Lácteos y productos frescos",
+      "resultCategories": [
+        "Carnes y pescados",
+        "Lácteos y productos frescos",
+        "Congelados"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Lácteos y productos frescos\" y el resto de categorías sin relación (Carnes y pescados, Congelados) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (4.048 búsquedas/mes)."
+    },
+    {
+      "term": "papas",
+      "searchCount": 3889,
+      "status": "resultados_dispersos",
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Pela papas cross",
+        "Cortador de papas Carrefour Home",
+        "Ñoquis de papas x kg."
+      ],
+      "suggestion": null,
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Almacén",
+      "resultCategories": [
+        "Hogar",
+        "Lácteos y productos frescos",
+        "Frutas y verduras",
+        "Almacén",
+        "Congelados"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Almacén\" y el resto de categorías sin relación (Hogar, Lácteos y productos frescos, Frutas y verduras, Congelados) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (3.889 búsquedas/mes)."
+    },
+    {
+      "term": "suprema",
+      "searchCount": 3609,
+      "status": "resultados_dispersos",
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Suprema congelada x kg",
+        "Medallón de pollo Swift 4 u.",
+        "Supremas de espinaca Granja del Sol queso 400 g."
+      ],
+      "suggestion": null,
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Carnes y pescados",
+      "resultCategories": [
+        "Carnes y pescados",
+        "Congelados"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Carnes y pescados\" y el resto de categorías sin relación (Congelados) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (3.609 búsquedas/mes)."
+    },
+    {
+      "term": "asado",
+      "searchCount": 3132,
+      "status": "resultados_dispersos",
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Tapa de asado x kg",
+        "Asado Novillo x kg",
+        "Plancha de asado Novillo x kg"
+      ],
+      "suggestion": null,
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Carnes y pescados",
+      "resultCategories": [
+        "Carnes y pescados",
+        "Almacén"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Carnes y pescados\" y el resto de categorías sin relación (Almacén) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (3.132 búsquedas/mes)."
+    },
+    {
+      "term": "soda",
+      "searchCount": 3124,
+      "status": "resultados_dispersos",
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Soda Manaos sifón 2 lts",
+        "Soda Bulnez 2,25 lts",
+        "Soda Carrefour Classic sifón 2 lts"
+      ],
+      "suggestion": null,
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Bebidas",
+      "resultCategories": [
+        "Bebidas",
+        "Electro y tecnología",
+        "Hogar"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Bebidas\" y el resto de categorías sin relación (Electro y tecnología, Hogar) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (3.124 búsquedas/mes)."
+    },
+    {
+      "term": "ricota",
+      "searchCount": 2945,
+      "status": "resultados_dispersos",
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Ricota Silvia 500 g.",
+        "Ravioles de ricota La salteña 450 g.",
+        "Sorrentinos Bulnez de ricota y jamón 550 g."
+      ],
+      "suggestion": null,
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Lácteos y productos frescos",
+      "resultCategories": [
+        "Lácteos y productos frescos",
+        "Almacén",
+        "Panadería"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Lácteos y productos frescos\" y el resto de categorías sin relación (Almacén, Panadería) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (2.945 búsquedas/mes)."
+    },
+    {
+      "term": "cocina",
+      "searchCount": 2840,
+      "status": "resultados_dispersos",
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Cocina Escorial 51 cm CANDOR S2 GN blanco.",
+        "Rollo de cocina Carrefour Essential x3 40 paños",
+        "Playset cocina avión"
+      ],
+      "suggestion": null,
+      "categoryConsistency": 0.4,
+      "dominantCategory": "Juguetería y Librería",
+      "resultCategories": [
+        "Electro y tecnología",
+        "Limpieza",
+        "Juguetería y Librería",
+        "Hogar"
+      ],
+      "recommendation": "Trae 40% de resultados de \"Juguetería y Librería\" y el resto de categorías sin relación (Electro y tecnología, Limpieza, Hogar) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (2.840 búsquedas/mes)."
+    },
+    {
+      "term": "zanahoria",
+      "searchCount": 2601,
+      "status": "resultados_dispersos",
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Zanahoria Huella Natural x kg.",
+        "Zanahoria rallada Huella Natural 200 g.",
+        "Vegetales deshidratados Knorr zanahoria 100 g"
+      ],
+      "suggestion": null,
+      "categoryConsistency": 0.4,
+      "dominantCategory": "Almacén",
+      "resultCategories": [
+        "Frutas y verduras",
+        "Almacén",
+        "Congelados",
+        "Aire Libre y Ocio"
+      ],
+      "recommendation": "Trae 40% de resultados de \"Almacén\" y el resto de categorías sin relación (Frutas y verduras, Congelados, Aire Libre y Ocio) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (2.601 búsquedas/mes)."
+    },
+    {
+      "term": "huevo",
+      "searchCount": 2550,
+      "status": "resultados_dispersos",
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Tallarines finos al huevo Carrefour 500 g.",
+        "Licor Cusenier huevo 700 cc",
+        "Kinder huevo de chocolate rosa 2 uni"
+      ],
+      "suggestion": null,
+      "categoryConsistency": 0.2,
+      "dominantCategory": "Lácteos y productos frescos",
+      "resultCategories": [
+        "Lácteos y productos frescos",
+        "Bebidas",
+        "Desayuno y merienda",
+        "Panadería",
+        "Juguetería y Librería",
+        "Almacén"
+      ],
+      "recommendation": "Trae 20% de resultados de \"Lácteos y productos frescos\" y el resto de categorías sin relación (Bebidas, Desayuno y merienda, Panadería, Juguetería y Librería, Almacén) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (2.550 búsquedas/mes)."
+    },
+    {
+      "term": "ariel",
+      "searchCount": 2449,
+      "status": "resultados_dispersos",
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Jabón concentrado Ariel Platinum Botella 500 ml",
+        "Jabón líquido para ropa Ariel Platinum Doypack 3 lts",
+        "Jabón líquido para ropa Ariel Platinum Doypack 800 ml"
+      ],
+      "suggestion": null,
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Limpieza",
+      "resultCategories": [
+        "Limpieza",
+        "Juguetería y Librería"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Limpieza\" y el resto de categorías sin relación (Juguetería y Librería) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (2.449 búsquedas/mes)."
+    },
+    {
+      "term": "vinos",
+      "searchCount": 2378,
+      "status": "resultados_dispersos",
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Cava de Vinos Whirlpool para 12 Botellas Negra",
+        "Vino tinto Malbec Dv Catena 1.500 lts",
+        "Vino tinto Cabernet Sauvignon Intimo 750 ml"
+      ],
+      "suggestion": null,
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Electro y tecnología",
+      "resultCategories": [
+        "Electro y tecnología",
+        "Bebidas",
+        "Hogar"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Electro y tecnología\" y el resto de categorías sin relación (Bebidas, Hogar) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (2.378 búsquedas/mes)."
+    },
+    {
+      "term": "nutella",
+      "searchCount": 2098,
+      "status": "resultados_dispersos",
+      "vtexResults": 7,
+      "vtexResultsCapped": false,
+      "sampleProducts": [
+        "Nutella 140 grs",
+        "Nutella B-Ready 22 grs",
+        "Nutella B-Ready 132 grs"
+      ],
+      "suggestion": null,
+      "categoryConsistency": 0.5714285714285714,
+      "dominantCategory": "Desayuno y merienda",
+      "resultCategories": [
+        "Desayuno y merienda",
+        "Panadería"
+      ],
+      "recommendation": "Trae 57% de resultados de \"Desayuno y merienda\" y el resto de categorías sin relación (Panadería) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (2.098 búsquedas/mes)."
+    },
+    {
+      "term": "milanesa",
+      "searchCount": 2087,
+      "status": "resultados_dispersos",
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Milanesa de nalga x kg",
+        "Milanesa de carne x kg",
+        "Milanesa de cuadrada x kg"
+      ],
+      "suggestion": null,
+      "categoryConsistency": 0.4,
+      "dominantCategory": "Carnes y pescados",
+      "resultCategories": [
+        "Carnes y pescados",
+        "Panadería",
+        "Almacén",
+        "Congelados"
+      ],
+      "recommendation": "Trae 40% de resultados de \"Carnes y pescados\" y el resto de categorías sin relación (Panadería, Almacén, Congelados) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (2.087 búsquedas/mes)."
+    },
+    {
+      "term": "valija",
+      "searchCount": 2085,
+      "status": "resultados_dispersos",
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Valija de maquillaje grande",
+        "Juego valija club de mascotas (Modelos Surtidos)",
+        "Libro Peppa - valija para jugar y pintar"
+      ],
+      "suggestion": null,
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Juguetería y Librería",
+      "resultCategories": [
+        "Juguetería y Librería",
+        "Aire Libre y Ocio"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Juguetería y Librería\" y el resto de categorías sin relación (Aire Libre y Ocio) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (2.085 búsquedas/mes)."
+    },
+    {
+      "term": "toallitas",
+      "searchCount": 1988,
+      "status": "resultados_dispersos",
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Toallitas húmedas Carrefour Baby bebé extra suaves 70 uni",
+        "Toallitas húmedas Babysec Ultrafresh 150 uni",
+        "Toallitas Algabo micelares wipes 25 uni"
+      ],
+      "suggestion": null,
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Perfumería y farmacia",
+      "resultCategories": [
+        "Mundo Bebé",
+        "Perfumería y farmacia",
+        "Limpieza"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Perfumería y farmacia\" y el resto de categorías sin relación (Mundo Bebé, Limpieza) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (1.988 búsquedas/mes)."
     }
   ]
 }
