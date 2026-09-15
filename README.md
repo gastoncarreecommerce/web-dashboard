@@ -139,6 +139,17 @@ Ojo al agregar ramas: si una rama figura como `true`, Vercel desactiva
 automáticamente todas las que no estén listadas. Las de acá están explícitas
 igual, para que se lea de un vistazo qué deploya y qué no.
 
+**Y ojo con algo que no es obvio: Vercel lee el `vercel.json` DE LA RAMA QUE ESTÁ
+DEPLOYANDO, no el de la rama de producción.** Poner la config solo acá no frena los
+previews de `data-raw`: cuando Vercel procesa un push a `data-raw` lee el `vercel.json`
+de `data-raw`. Por eso el mismo bloque está commiteado en las dos ramas, con contenido
+idéntico para que un merge no genere conflicto. Si en el futuro se agrega otra rama de
+datos, hay que acordarse de ponerle su `vercel.json` también.
+
+Alternativa si algún preview se sigue colando: Vercel → Settings → Git → **Ignored
+Build Step**, que es una configuración a nivel proyecto y por lo tanto se aplica a todas
+las ramas sin depender de lo que tenga cada una en su árbol.
+
 ### Por qué `orders/` se parte por mes y no por semestre
 
 Un archivo semestral de una tienda grande llegaba a 57 MB, y para agregarle los pedidos de hoy
