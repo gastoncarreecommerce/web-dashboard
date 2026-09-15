@@ -1,13 +1,19 @@
+# OJO con la sintaxis: es la de .gitignore, así que un patrón SIN barra inicial
+# matchea a cualquier profundidad. Escribir `data/` acá excluyó también
+# `docs/data/` — o sea todos los datasets del dashboard — y dejó el sitio
+# cargando con 404 en cada W.load(). Los patrones de acá van anclados con `/`
+# al inicio a propósito.
+#
 # Nada de esto se sirve al browser, así que no tiene por qué viajar en el
 # deploy. Es una red de seguridad: estos paths ya salieron de esta rama (viven
 # en `data-raw`), pero si alguna vez vuelven por accidente, acá no se suben.
 #
 # El histórico pesado de pedidos lo sirve /api/archive a demanda desde
 # `data-raw`; ver api/archive.js.
-data/
-docs/data/web/orders/
-docs/data/web/order-index/
+/data/
+/docs/data/web/orders/
+/docs/data/web/order-index/
 
 # Insumos y scratch del pipeline, que corre en GitHub Actions, no en Vercel.
-private-out/
+/private-out/
 __pycache__/
