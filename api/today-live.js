@@ -245,9 +245,28 @@ export default async function handler(req, res) {
     const segments = Object.fromEntries(SEGMENTS.map((s) => [s, emptySeg()]));
     let discount = 0;
     const hashes = new Set();
+    // OJO con el tipo que devuelve Redis: el cliente de Upstash trae
+    // `automaticDeserialization` en true por defecto, así que un valor que se
+    // guardó con JSON.stringify VUELVE YA PARSEADO, como objeto. Hacerle
+    // JSON.parse a un objeto tira, y el `continue` de abajo se comía TODOS los
+    // pedidos cacheados en silencio: el endpoint reportaba solo los ~300 que
+    // acababa de traer de VTEX en esa misma llamada. Como el listado viene
+    // ordenado por creationDate desc, esos eran los 300 más nuevos → el
+    // dashboard mostraba ~180 pedidos cuando en realidad había 1.067, y el
+    // número se movía apenas entre polls en vez de crecer.
+    //
+    // Se acepta cualquiera de las dos formas para no volver a depender de esa
+    // opción del cliente.
+    let descartados = 0;
     for (const raw of Object.values(known)) {
       let rec;
-      try { rec = JSON.parse(raw); } catch { continue; }
+      try {
+        rec = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      } catch {
+        descartados += 1;
+        continue;
+      }
+      if (!rec || typeof rec !== 'object') { descartados += 1; continue; }
       if (rec.bucket && rec.seg) mergeSegInto(segments[rec.bucket], rec.seg);
       discount += rec.discount || 0;
       if (rec.hash) hashes.add(rec.hash);
@@ -271,6 +290,10 @@ export default async function handler(req, res) {
       activeCustomers: hashes.size,
       statusStats,
       scanned: allIds.length,
+      // > 0 significa que hay registros en el cache que no se pudieron leer:
+      // el total estaría subestimado. Fue justo la falla que hizo que este
+      // endpoint reportara 180 pedidos habiendo 1.067, sin dejar rastro.
+      dropped: descartados,
       pending: newIds.length - toFetch.length, // > 0: todavía hay pedidos nuevos por clasificar, se completa en el próximo poll
       queriedAt: new Date().toISOString(),
     });
