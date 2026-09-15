@@ -1,0 +1,2825 @@
+{
+  "generatedAt": "2026-09-15T14:18:28.966Z",
+  "source": "config/search-inspect.report.json (GA4, evento \"search\")",
+  "termsAnalyzed": 200,
+  "summary": {
+    "sinResultados": 1,
+    "pocosResultados": 0,
+    "resultadosDispersos": 28,
+    "ok": 171,
+    "totalSearches": 1153801,
+    "lostSearches": 206210
+  },
+  "terms": [
+    {
+      "term": "queso rayado",
+      "searchCount": 2383,
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "status": "sin_resultados",
+      "suggestion": {
+        "term": "queso rallado",
+        "vtexResults": 10,
+        "vtexResultsCapped": true
+      },
+      "recommendation": "Alta prioridad: agregar \"queso rayado\" como sinónimo de \"queso rallado\" en VTEX (búsqueda real que sí tiene stock) — 2.383 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "leche",
+      "searchCount": 50243,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Cápsulas de café latte Carrefour Extra x 16 uni",
+        "Pepitas artesanales dulce de leche",
+        "Leche chocolatada ​Cindor 1 lt"
+      ],
+      "status": "resultados_dispersos",
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Lácteos y productos frescos",
+      "resultCategories": [
+        "Desayuno y merienda",
+        "Panadería",
+        "Lácteos y productos frescos",
+        "Bebidas",
+        "Electro y tecnología"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Lácteos y productos frescos\" y el resto de categorías sin relación (Desayuno y merienda, Panadería, Bebidas, Electro y tecnología) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (50.243 búsquedas/mes)."
+    },
+    {
+      "term": "dulce de leche",
+      "searchCount": 25550,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Pepitas artesanales dulce de leche",
+        "Licor Cusenier dulce de leche700 cc",
+        "Yogur entero Tregar dulce de leche"
+      ],
+      "status": "resultados_dispersos",
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Desayuno y merienda",
+      "resultCategories": [
+        "Panadería",
+        "Bebidas",
+        "Lácteos y productos frescos",
+        "Desayuno y merienda",
+        "Almacén"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Desayuno y merienda\" y el resto de categorías sin relación (Panadería, Bebidas, Lácteos y productos frescos, Almacén) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (25.550 búsquedas/mes)."
+    },
+    {
+      "term": "manteca",
+      "searchCount": 21809,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Manteca Primer Premio 100 g.",
+        "Medialunas de manteca x 6 u.",
+        "Medialuna de manteca x 3 uni"
+      ],
+      "status": "resultados_dispersos",
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Lácteos y productos frescos",
+      "resultCategories": [
+        "Lácteos y productos frescos",
+        "Panadería",
+        "Desayuno y merienda"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Lácteos y productos frescos\" y el resto de categorías sin relación (Panadería, Desayuno y merienda) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (21.809 búsquedas/mes)."
+    },
+    {
+      "term": "carne",
+      "searchCount": 10602,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Empanada de carne 6 u.",
+        "Empanada de carne 2 u.",
+        "Milanesa de carne x kg"
+      ],
+      "status": "resultados_dispersos",
+      "categoryConsistency": 0.4,
+      "dominantCategory": "Panadería",
+      "resultCategories": [
+        "Panadería",
+        "Almacén",
+        "Congelados"
+      ],
+      "recommendation": "Trae 40% de resultados de \"Panadería\" y el resto de categorías sin relación (Almacén, Congelados) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (10.602 búsquedas/mes)."
+    },
+    {
+      "term": "pollo",
+      "searchCount": 9693,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Empanada de pollo 6 u.",
+        "Empanada de pollo 2 u.",
+        "Pollo entero congelado x kg"
+      ],
+      "status": "resultados_dispersos",
+      "categoryConsistency": 0.3,
+      "dominantCategory": "Panadería",
+      "resultCategories": [
+        "Panadería",
+        "Carnes y pescados",
+        "Almacén",
+        "Congelados"
+      ],
+      "recommendation": "Trae 30% de resultados de \"Panadería\" y el resto de categorías sin relación (Carnes y pescados, Almacén, Congelados) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (9.693 búsquedas/mes)."
+    },
+    {
+      "term": "carne picada",
+      "searchCount": 8418,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Carne picada Swift congelada 500 grs",
+        "Picadillo de carne Carrefour Classic 90 g.",
+        "Carne picada Novillo x kg"
+      ],
+      "status": "resultados_dispersos",
+      "categoryConsistency": 0.4,
+      "dominantCategory": "Carnes y pescados",
+      "resultCategories": [
+        "Carnes y pescados",
+        "Almacén",
+        "Congelados"
+      ],
+      "recommendation": "Trae 40% de resultados de \"Carnes y pescados\" y el resto de categorías sin relación (Almacén, Congelados) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (8.418 búsquedas/mes)."
+    },
+    {
+      "term": "crema",
+      "searchCount": 6238,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Crema chantilly Tonadita 250 g.",
+        "Crema chantilly Royal 50 g.",
+        "Crema Goicoechea Reafirmante 400 ml"
+      ],
+      "status": "resultados_dispersos",
+      "categoryConsistency": 0.4,
+      "dominantCategory": "Almacén",
+      "resultCategories": [
+        "Almacén",
+        "Perfumería y farmacia",
+        "Lácteos y productos frescos"
+      ],
+      "recommendation": "Trae 40% de resultados de \"Almacén\" y el resto de categorías sin relación (Perfumería y farmacia, Lácteos y productos frescos) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (6.238 búsquedas/mes)."
+    },
+    {
+      "term": "tomate",
+      "searchCount": 5825,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Tomate perita x kg.",
+        "Tomate deshidratado 100 grs",
+        "Puré de tomate Salsati 520 g."
+      ],
+      "status": "resultados_dispersos",
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Almacén",
+      "resultCategories": [
+        "Frutas y verduras",
+        "Almacén",
+        "Panadería"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Almacén\" y el resto de categorías sin relación (Frutas y verduras, Panadería) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (5.825 búsquedas/mes)."
+    },
+    {
+      "term": "agua",
+      "searchCount": 5572,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Agua mineral sin gas Carrefour Classic 2 lts",
+        "Agua saborizada de pera Aquarius 2,25 lts",
+        "Dispenser de agua dino"
+      ],
+      "status": "resultados_dispersos",
+      "categoryConsistency": 0.4,
+      "dominantCategory": "Juguetería y Librería",
+      "resultCategories": [
+        "Bebidas",
+        "Juguetería y Librería",
+        "Hogar",
+        "Frutas y verduras"
+      ],
+      "recommendation": "Trae 40% de resultados de \"Juguetería y Librería\" y el resto de categorías sin relación (Bebidas, Hogar, Frutas y verduras) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (5.572 búsquedas/mes)."
+    },
+    {
+      "term": "papa",
+      "searchCount": 4975,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Libro bluey: papa (cartone)",
+        "Papa negra x kg.",
+        "Papa fraccionada x kg"
+      ],
+      "status": "resultados_dispersos",
+      "categoryConsistency": 0.3,
+      "dominantCategory": "Lácteos y productos frescos",
+      "resultCategories": [
+        "Juguetería y Librería",
+        "Frutas y verduras",
+        "Lácteos y productos frescos",
+        "Panadería",
+        "Almacén",
+        "Congelados"
+      ],
+      "recommendation": "Trae 30% de resultados de \"Lácteos y productos frescos\" y el resto de categorías sin relación (Juguetería y Librería, Frutas y verduras, Panadería, Almacén, Congelados) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (4.975 búsquedas/mes)."
+    },
+    {
+      "term": "cebolla",
+      "searchCount": 4423,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Cebolla x kg.",
+        "Cebolla de verdeo x atado",
+        "Cebolla deshidratada Alicante 50 g."
+      ],
+      "status": "resultados_dispersos",
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Almacén",
+      "resultCategories": [
+        "Frutas y verduras",
+        "Almacén",
+        "Panadería"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Almacén\" y el resto de categorías sin relación (Frutas y verduras, Panadería) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (4.423 búsquedas/mes)."
+    },
+    {
+      "term": "vino",
+      "searchCount": 4364,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Vinagre de vino Menoyo 1 lt",
+        "Vino Rosé Chacabuco 750 ml",
+        "Copa de vino Luminarc 470 cc"
+      ],
+      "status": "resultados_dispersos",
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Bebidas",
+      "resultCategories": [
+        "Almacén",
+        "Bebidas",
+        "Hogar"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Bebidas\" y el resto de categorías sin relación (Almacén, Hogar) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (4.364 búsquedas/mes)."
+    },
+    {
+      "term": "sin tacc",
+      "searchCount": 4292,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Jugo Cepita del Valle Naranja Tentación 995 ml",
+        "Jugo Cepita del Valle Durazno Delicioso 995 ml",
+        "Rebozador Aglu 450 g. SIN TACC."
+      ],
+      "status": "resultados_dispersos",
+      "categoryConsistency": 0.4,
+      "dominantCategory": "Almacén",
+      "resultCategories": [
+        "Bebidas",
+        "Almacén",
+        "Desayuno y merienda",
+        "Lácteos y productos frescos"
+      ],
+      "recommendation": "Trae 40% de resultados de \"Almacén\" y el resto de categorías sin relación (Bebidas, Desayuno y merienda, Lácteos y productos frescos) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (4.292 búsquedas/mes)."
+    },
+    {
+      "term": "bondiola",
+      "searchCount": 4048,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Bondiola de cerdo x kg",
+        "Bondiola congelada x kg",
+        "Bondiola feteada Lario 150 grs"
+      ],
+      "status": "resultados_dispersos",
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Lácteos y productos frescos",
+      "resultCategories": [
+        "Carnes y pescados",
+        "Lácteos y productos frescos",
+        "Congelados"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Lácteos y productos frescos\" y el resto de categorías sin relación (Carnes y pescados, Congelados) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (4.048 búsquedas/mes)."
+    },
+    {
+      "term": "papas",
+      "searchCount": 3889,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Pela papas cross",
+        "Cortador de papas Carrefour Home",
+        "Ñoquis de papas x kg."
+      ],
+      "status": "resultados_dispersos",
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Almacén",
+      "resultCategories": [
+        "Hogar",
+        "Lácteos y productos frescos",
+        "Frutas y verduras",
+        "Almacén",
+        "Congelados"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Almacén\" y el resto de categorías sin relación (Hogar, Lácteos y productos frescos, Frutas y verduras, Congelados) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (3.889 búsquedas/mes)."
+    },
+    {
+      "term": "suprema",
+      "searchCount": 3609,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Suprema congelada x kg",
+        "Medallón de pollo Swift 4 u.",
+        "Supremas de espinaca Granja del Sol queso 400 g."
+      ],
+      "status": "resultados_dispersos",
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Carnes y pescados",
+      "resultCategories": [
+        "Carnes y pescados",
+        "Congelados"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Carnes y pescados\" y el resto de categorías sin relación (Congelados) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (3.609 búsquedas/mes)."
+    },
+    {
+      "term": "asado",
+      "searchCount": 3132,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Tapa de asado x kg",
+        "Asado Novillo x kg",
+        "Plancha de asado Novillo x kg"
+      ],
+      "status": "resultados_dispersos",
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Carnes y pescados",
+      "resultCategories": [
+        "Carnes y pescados",
+        "Almacén"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Carnes y pescados\" y el resto de categorías sin relación (Almacén) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (3.132 búsquedas/mes)."
+    },
+    {
+      "term": "soda",
+      "searchCount": 3124,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Soda Manaos sifón 2 lts",
+        "Soda Bulnez 2,25 lts",
+        "Soda Carrefour Classic sifón 2 lts"
+      ],
+      "status": "resultados_dispersos",
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Bebidas",
+      "resultCategories": [
+        "Bebidas",
+        "Electro y tecnología",
+        "Hogar"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Bebidas\" y el resto de categorías sin relación (Electro y tecnología, Hogar) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (3.124 búsquedas/mes)."
+    },
+    {
+      "term": "ricota",
+      "searchCount": 2945,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Ricota Silvia 500 g.",
+        "Ravioles de ricota La salteña 450 g.",
+        "Sorrentinos Bulnez de ricota y jamón 550 g."
+      ],
+      "status": "resultados_dispersos",
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Lácteos y productos frescos",
+      "resultCategories": [
+        "Lácteos y productos frescos",
+        "Almacén",
+        "Panadería"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Lácteos y productos frescos\" y el resto de categorías sin relación (Almacén, Panadería) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (2.945 búsquedas/mes)."
+    },
+    {
+      "term": "cocina",
+      "searchCount": 2840,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Cocina Escorial 51 cm CANDOR S2 GN blanco.",
+        "Rollo de cocina Carrefour Essential x3 40 paños",
+        "Playset cocina avión"
+      ],
+      "status": "resultados_dispersos",
+      "categoryConsistency": 0.4,
+      "dominantCategory": "Juguetería y Librería",
+      "resultCategories": [
+        "Electro y tecnología",
+        "Limpieza",
+        "Juguetería y Librería",
+        "Hogar"
+      ],
+      "recommendation": "Trae 40% de resultados de \"Juguetería y Librería\" y el resto de categorías sin relación (Electro y tecnología, Limpieza, Hogar) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (2.840 búsquedas/mes)."
+    },
+    {
+      "term": "zanahoria",
+      "searchCount": 2601,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Zanahoria Huella Natural x kg.",
+        "Zanahoria rallada Huella Natural 200 g.",
+        "Vegetales deshidratados Knorr zanahoria 100 g"
+      ],
+      "status": "resultados_dispersos",
+      "categoryConsistency": 0.4,
+      "dominantCategory": "Almacén",
+      "resultCategories": [
+        "Frutas y verduras",
+        "Almacén",
+        "Congelados",
+        "Aire Libre y Ocio"
+      ],
+      "recommendation": "Trae 40% de resultados de \"Almacén\" y el resto de categorías sin relación (Frutas y verduras, Congelados, Aire Libre y Ocio) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (2.601 búsquedas/mes)."
+    },
+    {
+      "term": "huevo",
+      "searchCount": 2550,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Tallarines finos al huevo Carrefour 500 g.",
+        "Licor Cusenier huevo 700 cc",
+        "Kinder huevo de chocolate rosa 2 uni"
+      ],
+      "status": "resultados_dispersos",
+      "categoryConsistency": 0.2,
+      "dominantCategory": "Lácteos y productos frescos",
+      "resultCategories": [
+        "Lácteos y productos frescos",
+        "Bebidas",
+        "Desayuno y merienda",
+        "Panadería",
+        "Juguetería y Librería",
+        "Almacén"
+      ],
+      "recommendation": "Trae 20% de resultados de \"Lácteos y productos frescos\" y el resto de categorías sin relación (Bebidas, Desayuno y merienda, Panadería, Juguetería y Librería, Almacén) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (2.550 búsquedas/mes)."
+    },
+    {
+      "term": "ariel",
+      "searchCount": 2449,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Jabón concentrado Ariel Platinum Botella 500 ml",
+        "Jabón líquido para ropa Ariel Platinum Doypack 3 lts",
+        "Jabón líquido para ropa Ariel Platinum Doypack 800 ml"
+      ],
+      "status": "resultados_dispersos",
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Limpieza",
+      "resultCategories": [
+        "Limpieza",
+        "Juguetería y Librería"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Limpieza\" y el resto de categorías sin relación (Juguetería y Librería) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (2.449 búsquedas/mes)."
+    },
+    {
+      "term": "vinos",
+      "searchCount": 2378,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Cava de Vinos Whirlpool para 12 Botellas Negra",
+        "Vino tinto Malbec Dv Catena 1.500 lts",
+        "Vino tinto Cabernet Sauvignon Intimo 750 ml"
+      ],
+      "status": "resultados_dispersos",
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Electro y tecnología",
+      "resultCategories": [
+        "Electro y tecnología",
+        "Bebidas",
+        "Hogar"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Electro y tecnología\" y el resto de categorías sin relación (Bebidas, Hogar) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (2.378 búsquedas/mes)."
+    },
+    {
+      "term": "nutella",
+      "searchCount": 2098,
+      "vtexResults": 7,
+      "vtexResultsCapped": false,
+      "sampleProducts": [
+        "Nutella 140 grs",
+        "Nutella B-Ready 22 grs",
+        "Nutella B-Ready 132 grs"
+      ],
+      "status": "resultados_dispersos",
+      "categoryConsistency": 0.5714285714285714,
+      "dominantCategory": "Desayuno y merienda",
+      "resultCategories": [
+        "Desayuno y merienda",
+        "Panadería"
+      ],
+      "recommendation": "Trae 57% de resultados de \"Desayuno y merienda\" y el resto de categorías sin relación (Panadería) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (2.098 búsquedas/mes)."
+    },
+    {
+      "term": "milanesa",
+      "searchCount": 2087,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Milanesa de nalga x kg",
+        "Milanesa de carne x kg",
+        "Milanesa de cuadrada x kg"
+      ],
+      "status": "resultados_dispersos",
+      "categoryConsistency": 0.4,
+      "dominantCategory": "Carnes y pescados",
+      "resultCategories": [
+        "Carnes y pescados",
+        "Panadería",
+        "Almacén",
+        "Congelados"
+      ],
+      "recommendation": "Trae 40% de resultados de \"Carnes y pescados\" y el resto de categorías sin relación (Panadería, Almacén, Congelados) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (2.087 búsquedas/mes)."
+    },
+    {
+      "term": "valija",
+      "searchCount": 2085,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Valija de maquillaje grande",
+        "Juego valija club de mascotas (Modelos Surtidos)",
+        "Libro Peppa - valija para jugar y pintar"
+      ],
+      "status": "resultados_dispersos",
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Juguetería y Librería",
+      "resultCategories": [
+        "Juguetería y Librería",
+        "Aire Libre y Ocio"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Juguetería y Librería\" y el resto de categorías sin relación (Aire Libre y Ocio) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (2.085 búsquedas/mes)."
+    },
+    {
+      "term": "toallitas",
+      "searchCount": 1988,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Toallitas húmedas Carrefour Baby bebé extra suaves 70 uni",
+        "Toallitas húmedas Babysec Ultrafresh 150 uni",
+        "Toallitas Algabo micelares wipes 25 uni"
+      ],
+      "status": "resultados_dispersos",
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Perfumería y farmacia",
+      "resultCategories": [
+        "Mundo Bebé",
+        "Perfumería y farmacia",
+        "Limpieza"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Perfumería y farmacia\" y el resto de categorías sin relación (Mundo Bebé, Limpieza) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (1.988 búsquedas/mes)."
+    },
+    {
+      "term": "papel higienico",
+      "searchCount": 27156,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Papel higiénico hoja simple Carrefour Essential 4 x 80 m.",
+        "Palito porta rollo Carrefour papel higienico",
+        "Papel higiénico Elegante triple hoja 4 u."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "aceite",
+      "searchCount": 24882,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Lomito de atún en aceite Carrefour Classic 170 grs",
+        "Aceite de girasol Cocinero 1.5 l.",
+        "Aceite de girasol Cañuelas 900 cc."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "queso crema",
+      "searchCount": 24362,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Queso crema Ilolay clásico 290 grs",
+        "Queso crema Tregar light 190 g.",
+        "Queso crema Tregar clásico 190 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "coca cola",
+      "searchCount": 20459,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Gaseosa cola Coca Cola sabor original 1,75 lts",
+        "Gaseosa cola Coca Cola Zero 1,75 lts",
+        "Gaseosa cola Coca Cola sabor original 2,25 lts"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "azucar",
+      "searchCount": 19080,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Azúcar Ledesma light 500 g.",
+        "Algodón de azúcar oosh (Modelos Surtidos)",
+        "Azúcar común Bulnez 1 kg"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "crema de leche",
+      "searchCount": 18854,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Crema de leche doble Ilolay 350 cc.",
+        "Crema de leche Carrefour Classic 200 ml",
+        "Crema de leche Tregar doble pote 200 g"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "yerba",
+      "searchCount": 18166,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Yerba mate Natura 500 g.",
+        "Yerba mate Amanda tradicional 1 kg.",
+        "Yerba mate La Cumbrecita 1 kg."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "fideos",
+      "searchCount": 17796,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Fideos Bellaterra 500 g.",
+        "Fideos foratini Lucchetti 500 g.",
+        "Fideos municiones Matarazzo 500 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "cafe",
+      "searchCount": 16620,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Café molido torrado Carrefour Classic 500 grs",
+        "Cápsulas de café latte Carrefour Extra x 16 uni",
+        "Cápsulas de café cortado Carrefour Extra x 16 uni"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "arroz",
+      "searchCount": 16426,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Harina de arroz sin tacc Abucel de arroz blanco 500 g.",
+        "Arroz yamaní 400 grs",
+        "Nestum Arroz 225 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "atun",
+      "searchCount": 15156,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Lomito de atún en aceite Carrefour Classic 170 grs",
+        "Lomito de atún al natural Carrefour Classic 170 grs",
+        "Ensalada de atún Carrefour Classic 160 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "queso cremoso",
+      "searchCount": 14728,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Queso cremoso Cremac x kg.",
+        "Queso cremoso Classic x kg.",
+        "Queso cremoso Bulnez 300 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "rollo de cocina",
+      "searchCount": 14720,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Rollo de cocina Carrefour Essential x3 40 paños",
+        "Rollo de cocina Elegante 360 paños",
+        "Rollo de cocina Elegante x3 50 paños"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "cerveza",
+      "searchCount": 12481,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Cerveza rubia Mecklenburger Pilsener 330 ml",
+        "Cerveza rubia Brahma 354 ml",
+        "Cerveza roja Andes 473 ml"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "harina",
+      "searchCount": 12185,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Harina leudante Chacabuco 1 kg",
+        "Harina integral Pureza 1 kg.",
+        "Harina leudante Blancaflor 1 kg."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "papel higiénico",
+      "searchCount": 12035,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Papel higiénico hoja simple Carrefour Essential 4 x 80 m.",
+        "Palito porta rollo Carrefour papel higienico",
+        "Papel higiénico Elegante triple hoja 4 u."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "queso rallado",
+      "searchCount": 11838,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Queso rallado Ilolay 120 g",
+        "Queso rallado Milkaut 40 g",
+        "Queso rallado Milkaut 120 g"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "pan lactal",
+      "searchCount": 11833,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Molde pan lactal con tapa dc",
+        "Pan Blanco Lactal 460 grs",
+        "Pan Salvado Lactal 560 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "pañales",
+      "searchCount": 11044,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Pañales Huggies Classic M 68 uni",
+        "Pañales Estrella junior hiperpack 30 u.",
+        "Pañales Estrella talle XXG 34 u."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "mayonesa",
+      "searchCount": 10806,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Mayonesa Natura 950 g.",
+        "Mayonesa Cañuelas 500 cc.",
+        "Mayonesa Cañuelas 250 cc."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "rollo cocina",
+      "searchCount": 9784,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Rollo de cocina Carrefour Essential x3 40 paños",
+        "Rollo de cocina Elegante 360 paños",
+        "Rollo cocina para cada día Felpita x3 40 paños"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "papas fritas",
+      "searchCount": 9640,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Papas fritas Pringles original 104 g",
+        "Papas fritas Pringles de queso 109 g",
+        "Papas fritas Carrefour Classic 140 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "fernet",
+      "searchCount": 9539,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Fernet Vittone 750 cc",
+        "Fernet 1882 750 cc",
+        "Fernet Branca menta 750 cc."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "galletitas",
+      "searchCount": 9537,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Galletitas Manon 182 g.",
+        "Galletitas de chocolate Macucas 110 g.",
+        "Galletitas clásicas Mediatarde 315 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "queso",
+      "searchCount": 9481,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "La Paulina queso untable queso azul 190 grs",
+        "Queso untable Tonadita sabor queso azul 180 g.",
+        "Queso untable cremoso con queso azul Adler 190 g"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "detergente",
+      "searchCount": 9468,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Detergente ultra Carrefour expert naranja 300cc.",
+        "Detergente Finish tabletas dp 80 uni",
+        "Detergente Finish tabletas dp 15 uni"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "yogurt",
+      "searchCount": 9406,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Yogur entero Tregar con cereales 164 g.",
+        "Yogur griego firme natural Yogurísimo pote 180 grs",
+        "Yogur Griego natural endulzado Yogurísimo 300 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "shampoo",
+      "searchCount": 9274,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Shampoo Pantene detox 400 cc.",
+        "Shampoo Pantene equilibrio 400 cc.",
+        "Shampoo Fructis Hydraliss 350 ml"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "leche en polvo",
+      "searchCount": 9196,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Cápsulas de café latte Carrefour Extra x 16 uni",
+        "Leche en polvo entera Purísima 400 g.",
+        "Nido Fortigrow leche en polvo 200 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "aceite de oliva",
+      "searchCount": 9067,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Mayonesa aceite de oliva Mayoliva 250 cc",
+        "Aceite de oliva Carrefour Classic virgen 1 l.",
+        "Aceite de oliva Nucete extra virgen 500 cc."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "pure de tomate",
+      "searchCount": 9065,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Puré de tomate Salsati 520 g.",
+        "Puré de tomate Carrefour classic 520 g.",
+        "Puré de tomate Arcor brik 520 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "jabon liquido",
+      "searchCount": 8163,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Jabón líquido Protex Balance 200 ml",
+        "Jabón líquido Pawpatrol Algabo 300 ml",
+        "Jabón líquido Algabo cream 300 cc."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "coca",
+      "searchCount": 8098,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Gaseosa cola Coca Cola sabor original 1,75 lts",
+        "Gaseosa cola Coca Cola Zero 1,75 lts",
+        "Gaseosa cola Coca Cola sabor original 2,25 lts"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "oreo",
+      "searchCount": 7653,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Alfajor triple Oreo 56 g.",
+        "Chocolate Milka Oreo 300 g.",
+        "Chocolate  Milka Oreo 100 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "skip",
+      "searchCount": 7529,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Jabón Liquido Skip Bio-Enzimas Doypack 3 lts",
+        "Jabón Liquido Skip Bio-Enzimas Doypack 800 ml",
+        "Jabón Liquido para Diluir Skip Bio-Enzimas 500 ml"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "lavandina",
+      "searchCount": 7420,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Lavandina Odex 1 l.",
+        "Lavandina Odex 2 l.",
+        "Lavandina original Odex 4 l."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "yogur",
+      "searchCount": 7120,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Yogur entero Tregar dulce de leche",
+        "Yogur entero Tregar frutilla 125 g.",
+        "Yogur cremoso natural Ilolay 140 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "queso untable",
+      "searchCount": 7054,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Queso untable Milkaut tradicional 190 g",
+        "Queso untable Milkaut azul 190 g",
+        "Queso untable Milkaut jamon 190 g"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "pan rallado",
+      "searchCount": 7032,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Pan rallado 900 grs",
+        "Pan rallado Morixe 500 g.",
+        "Pan Rallado Morixe 1 kg."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "harina leudante",
+      "searchCount": 7000,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Harina leudante Chacabuco 1 kg",
+        "Harina leudante Blancaflor 1 kg.",
+        "Harina leudante Bulnez 1 kg"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "dove",
+      "searchCount": 6473,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Shampoo Dove Protección Anticaspa 400 ml",
+        "Jabón de Tocador Dove Exfoliante 90 grs",
+        "Antitranspirante Dove Clinical Crema 58 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "leche larga vida",
+      "searchCount": 6317,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Leche entera larga vida Ilolay 1 l.",
+        "Leche descremada larga vida Ilolay 1 l.",
+        "Leche entera larga vida Tregar 1 l."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "pasta dental",
+      "searchCount": 6189,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Pasta dental Odol 90 g.",
+        "Pasta dental Parodontax blanqueador 124 g.",
+        "Pasta dental Sensodyne original 50 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "mermelada",
+      "searchCount": 6114,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Mermelada Arcor de durazno 454 g.",
+        "Mermelada de naranja Arcor 454 g.",
+        "Mermelada Canale de damasco 454 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "leche descremada",
+      "searchCount": 6061,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Leche descremada uat Tregar brik 1 l.",
+        "Leche descremada larga vida Ilolay 1 l.",
+        "Leche descremada larga vida Las tres niñas 1 l."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "chocolinas",
+      "searchCount": 6051,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Galletitas Chocolinas de chocolate 100 g.",
+        "Alfajor Chocolinas chocotorta 71.5 grs",
+        "Galletitas Chocolinas de chocolate 170 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "huevos",
+      "searchCount": 5900,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Huevos de pascuas sorpresa constucción",
+        "Juego didáctico huevos arcoíris",
+        "Huevos de pascuas para pintar"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "salchichas",
+      "searchCount": 5321,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Salchichas Paladini 6 u.",
+        "Salchichas Paty viena 6 uni",
+        "Salchichas Swift kids 6 u."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "banana",
+      "searchCount": 5284,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Chip de banana 100 g.",
+        "Chips de banana 100 g.",
+        "Banana selección x kg."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "aceite natura",
+      "searchCount": 5144,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Aceite mezcla Natura blend 900 cc.",
+        "Aceite mezcla Natura blend 1.5 l.",
+        "Aceite de oliva virgen Natura extra fuerte 500 cc."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "lavarropas",
+      "searchCount": 5078,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Lavarropas semiautomático Bluesky 10Kg 4055",
+        "Limpiador para lavarropas Multimax 3 tabletas",
+        "Lavarropas Eslabón de Lujo carga superior 7KG"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "mate cocido",
+      "searchCount": 5035,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Mate cocido Amanda 25 uni",
+        "Mate cocido Litoral sin sobre 25 uni",
+        "Mate cocido Bulnez en saquitos 25 uni"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "leche condensada",
+      "searchCount": 5012,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Leche condensada Carrefour tetra 395 g.",
+        "Leche condensada Nestlé tetra 395 grs",
+        "Nestlé Leche Condensada Sabor Limón 395 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "harina 0000",
+      "searchCount": 4993,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Harina 0000 Carrefour Classic 1 kg",
+        "Harina de trigo 0000 Chacabuco 1 kg.",
+        "Harina de trigo Pureza 0000 1 kg."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "azúcar",
+      "searchCount": 4990,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Azúcar Ledesma light 500 g.",
+        "Algodón de azúcar oosh (Modelos Surtidos)",
+        "Azúcar común Bulnez 1 kg"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "leche entera",
+      "searchCount": 4986,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Leche entera larga vida Tregar 1 l.",
+        "Leche entera larga vida Ilolay 1 l.",
+        "Leche entera UAT Carrefour classic tetra 1 lt."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "harina integral",
+      "searchCount": 4958,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Harina integral Pureza 1 kg.",
+        "Harina integral Blancaflor 1 kg.",
+        "Harina integral leudante Pureza 1 kg."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "jabon dove",
+      "searchCount": 4916,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Jabón Líquido Dove Piel Sensible 250 ml",
+        "Jabón de Tocador Dove Exfoliante 90 grs",
+        "Jabón de Tocador Dove Leche de Coco 90 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "pepsi",
+      "searchCount": 4851,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Gaseosa cola regular Pepsi 2 lts.",
+        "Gaseosa cola Pepsi Black pet 3 lts",
+        "Gaseosa cola Pepsi Black pet 2 lts"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "casancrem",
+      "searchCount": 4847,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Queso crema clásico Casancrem 290 grs",
+        "Queso crema Casancrem clásico 500 grs",
+        "Queso blanco balance Casancrem 290 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "hamburguesa",
+      "searchCount": 4829,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Hamburguesa Swift 20 u.",
+        "Hamburguesa Paladini 2 u.",
+        "Hamburguesa Swift clásica 12 u"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "hamburguesas",
+      "searchCount": 4823,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Molde para hamburguesas acero inoxidable",
+        "Pan para hamburguesas Veneziana 4 u.",
+        "Pan para hamburguesas Bulnez 210 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "te",
+      "searchCount": 4787,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Té en saquitos Saint Gottard té verde 20 u.",
+        "Playset hora del té",
+        "Playset Té 8 piezas"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "chocolate",
+      "searchCount": 4772,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Galleta de chocolate 9 de Oro con relleno de chocolate 160 g.",
+        "Chocolate Cofler 55 g",
+        "Alfajorcito de chocolate 6 uni"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "sal",
+      "searchCount": 4760,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Mani pelado salado Carrefour Classic 115 g.",
+        "Sal fina Dos Estrellas 500 g.",
+        "Sal gruesa Dos Estrellas 1 kg."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "levadura",
+      "searchCount": 4658,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Levadura seca instantánea Levex sobre 20 g.",
+        "Levadura fresca prensada Calsa 50 g",
+        "Levadura prensada Levex en cubito 50 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "cif",
+      "searchCount": 4598,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Detergente Cif Bioactive Lima Doypack 450 ml",
+        "Limpiador Cif Expert Antigrasa Doypack 450 ml",
+        "Detergente Cif Bioactive Limón Doypack 450 ml"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "pan",
+      "searchCount": 4594,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Pan flautita x kg.",
+        "Pan de salvado 600 grs",
+        "Pan campesino integral mediano"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "esponja",
+      "searchCount": 4573,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Esponja Virulana",
+        "Esponja Scotch Brite extrema fibra esponja 1 u.",
+        "Esponja Virulana multiuso"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "suavizante",
+      "searchCount": 4544,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Suavizante Ecovita unico 900 cc.",
+        "Suavizante Ecovita epico 900 cc.",
+        "Suavizante Comfort Secrets 48 500 ml"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "pasta de mani",
+      "searchCount": 4530,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Pasta de maní Carrefour Classic 370 g.",
+        "Nestlé Chocotrio Pasta de maní 90 grs",
+        "Pasta de maní Maní King 485 g. sin TACC"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "heladera",
+      "searchCount": 4524,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Heladera Exhibidora Inelro MT-14 370Lts",
+        "Heladera Top Mount T263 Neba",
+        "Mini heladera con accesorios 10 piezas"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "sal fina",
+      "searchCount": 4158,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Sal fina Dos Anclas 250 g.",
+        "Sal fina Dos Estrellas 500 g.",
+        "Sal fina Dos Anclas caja 500 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "avena",
+      "searchCount": 4016,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Avena instantanea Morixe 400 g.",
+        "Avena Cañuelas instantanea 400 grs",
+        "Avena instantanea Egran 350 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "desodorante",
+      "searchCount": 3999,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Polvo desodorante femenino Véritas 180 grs.",
+        "Polvo desodorante Veritas clásico 120 g",
+        "Polvo desodorante Veritas clásico 180 g"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "jamon",
+      "searchCount": 3965,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Jamón cocido Paladini 150 g.",
+        "Jamón cocido Cagnoli x kg.",
+        "Jamón cocido Lario 300 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "aceite girasol",
+      "searchCount": 3936,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Aceite de girasol Pureza 900 cc.",
+        "Aceite de girasol Pureza 1500 cc.",
+        "Aceite de girasol Cocinero 1.5 l."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "vinagre",
+      "searchCount": 3933,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Vinagre de alcohol Casalta 1 lt",
+        "Vinagre de vino Menoyo 1 lt",
+        "Ajíes en vinagre x kg."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "leche la serenisima",
+      "searchCount": 3929,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Leche La serenisima clásica 3% 1L",
+        "Leche La serenisima liviana 1% 1L",
+        "Leche La SerenÍsima barista 1L"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "palta",
+      "searchCount": 3873,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Palta x uni",
+        "Mascarilla Fructis Hair Food Palta 350 ml",
+        "Plusbelle Litro Shampoo Protección 1lt"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "puré de tomate",
+      "searchCount": 3866,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Puré de tomate Salsati 520 g.",
+        "Puré de tomate Arcor brik 520 g.",
+        "Puré de tomate Passata Pampagourmet 500 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "freidora de aire",
+      "searchCount": 3843,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Freidora de aire Disney Negro Atma  FR359DNP",
+        "Freidora De Aire Atma Negra Doble Canasta FRD248AP",
+        "Freidora de Aire y Grill Atma 6.3L Negro FR901DP"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "ravioles",
+      "searchCount": 3783,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Ravioles Carrefour classic ricotta 500 g.",
+        "Ravioles de ricota La salteña 450 g.",
+        "Ravioles de jamón y mozzarella 500 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "jabon",
+      "searchCount": 3727,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Dosificador de jabon cuadrado bio beige",
+        "Jabón de tocador Bulnez rosas 75 grs",
+        "Jabón de tocador Bulnez citrico 75 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "choclo",
+      "searchCount": 3683,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Choclo x uni",
+        "Choclo Huella Natural 500 g.",
+        "Choclo amarillo cremoso Inalpa 300 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "agua mineral",
+      "searchCount": 3676,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Agua mineral sin gas Carrefour Classic 2 lts",
+        "Agua mineral con gas Villavicencio 500 ml",
+        "Agua mineral sin gas Smartwater 591 ml"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "9 de oro",
+      "searchCount": 3600,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Bizcochos 9 de Oro azúcarados 210 g.",
+        "Galletitas pepas 9 de Oro 500 g.",
+        "Bizcochos 9 de Oro light 170 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "acondicionador",
+      "searchCount": 3571,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Acondicionador Pantene hidrata 400 cc.",
+        "Plusbelle Acondicionador Suavidad 1 lt",
+        "Plusbelle Acondicionador Brillo 1 lt"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "aceite oliva",
+      "searchCount": 3526,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Mayonesa aceite de oliva Mayoliva 250 cc",
+        "Aceite de oliva Oliovita extra virgen 500 cc.",
+        "Hummus Kyros con aceite de oliva 230 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "alfajor",
+      "searchCount": 3490,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Alfajor triple Oreo 56 g.",
+        "Alfajor Tofi negro 46 g",
+        "Alfajor Pepitos triple 57 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "sprite",
+      "searchCount": 3440,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Gaseosa Sprite Lima-Limón 600 ml",
+        "Gaseosa lima limón Sprite 354 ml",
+        "Gaseosa Sprite Lima-Limón 1,25 lts"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "edulcorante",
+      "searchCount": 3417,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Edulcorante líquido Hileret Zucra 200 cc.",
+        "Edulcorante líquido mate a Hileret 200 cc.",
+        "Edulcorante líquido mate Hileret 400 cc."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "yogur griego",
+      "searchCount": 3382,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Yogur Griego natural endulzado Yogurísimo 300 grs",
+        "Yogur Griego con Frutilla Yogurísimo 125 grs",
+        "Yogur Griego con Arándanos Yogurísimo 125 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "gaseosa",
+      "searchCount": 3353,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Gaseosa cola Coca Cola sabor original 1,75 lts",
+        "Gaseosa cola Coca Cola Zero 1,75 lts",
+        "Gaseosa cola Coca Cola sabor liviano 1,75 lts"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "yogurt griego",
+      "searchCount": 3337,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Yogur Griego con Arándanos Yogurísimo 125 grs",
+        "Yogur Griego natural endulzado Yogurísimo 300 grs",
+        "Yogur Griego con granola Yogurísimo 168 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "ketchup",
+      "searchCount": 3252,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Ketchup Natura 500 cc.",
+        "Ketchup Natura 250 cc.",
+        "Ketchup Heinz 190 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "leche deslactosada",
+      "searchCount": 3242,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Leche UAT Zero lactosa La Serenisima 1L",
+        "Leche descremada larga vida Ilolay 1 l.",
+        "Leche en Polvo La Serenisima Descremada Zero Lactosa 400 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "microondas",
+      "searchCount": 3239,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Microondas Whirlpool 20 Ltrs",
+        "Microondas LG mh6032gas",
+        "Mueble para microondas AXM060 Dielfe"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "salchicha",
+      "searchCount": 3232,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Salchicha fresca de cerdo 270 grs",
+        "Salchicha parrillera Cabaña Argentina 350 grs",
+        "Salchicha fresca La Divisa 400 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "elvive",
+      "searchCount": 3185,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Acondicionador Elvive pure 400 ml",
+        "Oleo Extraordinario Elvive 100 ml",
+        "Acondicionador Elvive Colorvive 400 ml"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "coca zero",
+      "searchCount": 3177,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Gaseosa cola Coca Cola Zero 1,75 lts",
+        "Gaseosa Coca-Cola Zero 600 ml",
+        "Gaseosa cola Coca Cola Zero 2,25 lts"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "finlandia",
+      "searchCount": 3158,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Finlandia light sin sal agregada 290 g.",
+        "Finlandia light sin sal agregada 180 g.",
+        "Queso untable Finlandia pote 180 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "galletas de arroz",
+      "searchCount": 3156,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Galletas de arroz Cerealitas 160 g.",
+        "Galletas de arroz Macrobiótica dulces 102 g.",
+        "Galletas de arroz Grandiet dulces 100 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "yogur natural",
+      "searchCount": 3151,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Yogur natural Dahi deslactosado probiotico 190 grs",
+        "Yogur natural endulzado Tregar pote 280 g.",
+        "Yogur natural Carrefour Classic en pote 300 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "aire acondicionado",
+      "searchCount": 3147,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Aire acondicionado split Philco frío/calor 3400 W PHS32HA4CN blanco",
+        "Aire acondicionado BGH 3480W BS35WCDW",
+        "Aire Acondicionado BGH Split Frio/Calor 3000F"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "galletitas de agua",
+      "searchCount": 3146,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Galletitas crackers Criollitas 100 g.",
+        "Galletitas salvado Hogareñas 200 g.",
+        "Galletitas mini crackers Carrefour classic 300 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "jabon tocador",
+      "searchCount": 3120,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Jabón tocador St tropez cremoso x3 125 g.",
+        "Jabón tocador St tropez glicerina frutal x3 90 g.",
+        "Jabón tocador St tropez hidratación int x3 125 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "granola",
+      "searchCount": 3110,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Galletitas de granola Cerealitas 243 grs",
+        "Granola con manzana Carrefour Classic 200 g.",
+        "Granola Carrefour Classic mix de cereales 1 kg"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "yogurt natural",
+      "searchCount": 3099,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Yogur entero Tregar natural 140 g.",
+        "Yogur natural Beaudroit sin azúcar sin TACC 400 g.",
+        "Yogur Griego natural endulzado Yogurísimo 300 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "don satur",
+      "searchCount": 3064,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Talitas Don Satur 140 g.",
+        "Bizcochos Don Satur dulces 200 g.",
+        "Bizcochos Don Satur negritos 200 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "vino colon",
+      "searchCount": 2993,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Vino tinto Malbec Bonarda Colón 750 ml",
+        "Vino blanco dulce fresco Colón Select en botella 750 cc.",
+        "Vino tinto Malbec Colón Selecto 750 ml"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "paty",
+      "searchCount": 2984,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Hamburguesa grande Paty 2 u.",
+        "Hamburguesa Paty finita 2 u.",
+        "Salchichas Paty viena 6 uni"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "integra",
+      "searchCount": 2983,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Arroz integral Gallo en caja 1 kg",
+        "Harina integral Blancaflor 1 kg.",
+        "Pan campesino integral mediano"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "sal gruesa",
+      "searchCount": 2952,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Sal gruesa Dos Estrellas 1 kg.",
+        "Sal gruesa Dos Anclas 5 kg.",
+        "Sal gruesa Celusal 500 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "café",
+      "searchCount": 2942,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Café molido torrado Carrefour Classic 500 grs",
+        "Cápsulas de café latte Carrefour Extra x 16 uni",
+        "Cápsulas de café cortado Carrefour Extra x 16 uni"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "higienol",
+      "searchCount": 2868,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Papel higiénico doble hoja Higienol Plus x8 30 mts",
+        "Papel higiénico doble hoja Higienol plus x4 30 mts",
+        "Papel higiénico Higienol Fresh hoja simple 30 mts 4 uni"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "pan integral",
+      "searchCount": 2854,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Pan Integral Bimbo 420 grs",
+        "Pan Integral Fargo 575 grs",
+        "Pan Integral Fargo 400 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "lentejas",
+      "searchCount": 2847,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Lentejas x kg",
+        "Lentejas 500 grs",
+        "Lentejas Carrefour Classic 400 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "dulce de leche repostero",
+      "searchCount": 2839,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Dulce de leche repostero Milkaut 1 kg",
+        "Dulce de leche repostero La Serenísima 400 g.",
+        "Dulce de leche repostero Milkaut en pote 400 g"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "pava electrica",
+      "searchCount": 2836,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Pava eléctrica matera Liliana AP165",
+        "Pava Eléctrica Electrolux Efficient 2L EEK50",
+        "Pava Eléctrica Philco 91PE0821NPP Negra 1.7Lts"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "whisky",
+      "searchCount": 2794,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Whisky Criadores petaca 195 cc",
+        "Whisky Criadores nacional 1 lt",
+        "Whisky anejo Old smuggler 750 cc"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "cerdo",
+      "searchCount": 2784,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Bondiola de cerdo x kg",
+        "Riñoncito de cerdo x kg",
+        "Carré de cerdo x kg"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "nescafe",
+      "searchCount": 2781,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Nescafé Ice100 grs",
+        "Nescafé Decaf 100 grs",
+        "Nescafé Gold 95 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "polenta",
+      "searchCount": 2762,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Polenta instantánea Molinos Ala 730 grs",
+        "Polenta instantánea Egran bolsa 500 grs",
+        "Polenta Carrefour Classic bolsa 1 kg."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "mostaza",
+      "searchCount": 2702,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Mostaza Natura 250 g.",
+        "Mostaza Natura 500 g.",
+        "Mostaza Dánica 220 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "galletitas dulces",
+      "searchCount": 2694,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Galletitas dulces bañadas Celosas 110 g.",
+        "Galletitas dulces Anillitos Terrabusi 170 g.",
+        "Galletitas dulces Anillitos Terrabusi 300 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "cepillo de dientes",
+      "searchCount": 2647,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Repuesto Cepillo de Dientes Xiaomi T700",
+        "Repuesto Cepillo de Dientes Xiaomi T700",
+        "Cepillo de dientes Colgate Kids 1 uni"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "servilletas",
+      "searchCount": 2632,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Servilletas Felpita 70 u.",
+        "Servilletas Felpita 140 u.",
+        "Servilletas Carrefour Essential 140 uni"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "desodorante dove",
+      "searchCount": 2632,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Desodorante Dove Men Comfort Protection Roll-on 50 ml",
+        "Desodorante Dove Men Comfort Protection en Aerosol 250 ml",
+        "Desodorante femenino Dove all body rapsberry 150 ml"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "harina 000",
+      "searchCount": 2620,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Harina 000 Carrefour Classic 1 kg",
+        "Harina de trigo 000 Chacabuco 1 kg.",
+        "Harina de trigo 000 Pureza 1 kg."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "aguila",
+      "searchCount": 2597,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Bizcochuelo Águila vainilla 530 g.",
+        "Bizcochuelo Águila de chocolate 530 g.",
+        "Chocolate para taza Águila 225 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "queso fresco",
+      "searchCount": 2591,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Queso cuartirolo Tremblay x kg.",
+        "Queso cuartirolo Tremblay 300 g.",
+        "Queso bocconcino Wapi 160 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "leche proteina",
+      "searchCount": 2549,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Leche Protein La Serenisima 1L",
+        "Leche en polvo Protein La Serenisima 400 grs",
+        "Leche ultra descremada La Serenísima Protein sachet 1 lt"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "rapiditas",
+      "searchCount": 2515,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Tortillas Light Rapiditas 10 uni",
+        "Tortillas Integrales Rapiditas 275 grs",
+        "Wraps Rapiditas Clásicas 470 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "bon o bon",
+      "searchCount": 2513,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Tableta Bon o Bon 160 g.",
+        "Oblea Bon O Bon 30 g.",
+        "Alfajor Bon O Bon 40 g"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "chocolate aguila",
+      "searchCount": 2449,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Almendras bañadas en chocolate Aguila Chocolatier 90 grs",
+        "Avellanas bañadas en chocolate Aguila Chocolatier 90 grs",
+        "Tableta de chocolate amargo Aguila naranja 100 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "nesquik",
+      "searchCount": 2436,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Nesquik cereal 210 grs",
+        "Nesquik cereal 400 grs",
+        "Nesquik Original Cacao en Polvo 150 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "frutos rojos",
+      "searchCount": 2434,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Mermelada Carrefour Classic de frutos rojos 454 g.",
+        "Mermelada Carrefour Classic de frutos rojos 330 g.",
+        "Mermelada de frutos rojos La Campagnola 454 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "downy",
+      "searchCount": 2428,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Suavizante concentrado Downy tropical en botella 1 lt",
+        "Suavizante concentrado Downy tropical en botella 500 ml",
+        "Suavizante concentrado Downy brisa de verano en botella 350 ml"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "santa julia",
+      "searchCount": 2397,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Vino rosado Santa Julia 750 ml",
+        "Vino tinto Ryrah Santa Julia 750 ml",
+        "Vino blanco Torrontés Santa Julia 750 ml"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "leche protein",
+      "searchCount": 2379,
+      "vtexResults": 7,
+      "vtexResultsCapped": false,
+      "sampleProducts": [
+        "Leche Protein La Serenisima 1L",
+        "Leche en polvo Protein La Serenisima 400 grs",
+        "Leche ultra descremada La Serenísima Protein sachet 1 lt"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "alfajores",
+      "searchCount": 2367,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Alfajores Cachafaz mixto 12 u.",
+        "Mini alfajores blanco Carrefour classic 6 uni",
+        "Alfajores de frutos rojos 9 de Oro blister 6 uni"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "arvejas",
+      "searchCount": 2346,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Arvejas Green life 350 g",
+        "Arvejas secas partidas 500 g.",
+        "Arvejas partidas Egran 400 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "vainillas",
+      "searchCount": 2337,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Vainillas Bimbo 36 uni",
+        "Vainillas Bimbo 12 uni",
+        "Vainillas Valente 36 uni"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "aceite de girasol",
+      "searchCount": 2316,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Aceite de girasol Cocinero 1.5 l.",
+        "Aceite de girasol Cañuelas 900 cc.",
+        "Aceite de girasol Cocinero 900 cc."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "vino blanco",
+      "searchCount": 2310,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Vino blanco Toro 750 ml",
+        "Vino blanco Termidor 2021 1 l.",
+        "Vino blanco Chardonnay Callia 750 ml"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "cafetera",
+      "searchCount": 2304,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Cafetera Espresso Oster bvstem5502",
+        "Cafetera de filtro Bluesky BCM2025- blanca",
+        "Cafetera express Philco predicta automatica"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "esencia de vainilla",
+      "searchCount": 2284,
+      "vtexResults": 9,
+      "vtexResultsCapped": false,
+      "sampleProducts": [
+        "Esencia de vainilla Alicante pet 100 cc.",
+        "Esencia de vainilla Dos Anclas pet 100 cc.",
+        "Esencia de vainilla Alicante 100 cc."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "miel",
+      "searchCount": 2267,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Miel liquida Aleluya 470 g.",
+        "Miel líquida Aleluya 250 grs",
+        "Miel untable Aleluya 500 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "vino tinto",
+      "searchCount": 2263,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Vino tinto Montchenot 750 ml",
+        "Vino tinto Termidor 2021 1 lt",
+        "Vino tinto Malbec Trumpeter 750 ml"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "jabón líquido",
+      "searchCount": 2254,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Jabón líquido Protex Balance 200 ml",
+        "Jabón líquido Pawpatrol Algabo 300 ml",
+        "Jabón líquido Algabo cream 300 cc."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "pepitos",
+      "searchCount": 2230,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Alfajor Pepitos triple 57 g.",
+        "Galletitas Pepitos con chips de chocolate 119 g.",
+        "Galletitas Mini Pepitos con chips de chocolate 50 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "playadito",
+      "searchCount": 2199,
+      "vtexResults": 8,
+      "vtexResultsCapped": false,
+      "sampleProducts": [
+        "Yerba mate Playadito sin palo 500 g.",
+        "Yerba mate Playadito con hierbas 500 g.",
+        "Yerba mate Playadito con palo 500 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "yogurtera",
+      "searchCount": 2198,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Yogurtera Bulgaricus Daihatsu YM-7350 7 Jarros Blanco 1,12Lts",
+        "Yogurtera Ranser VENETO YM-7445XL 2Lts 18watts 37 °C a 40 °C Blanca",
+        "Yogurtera Cuk Gadnic Fabrica de Yogurt 7 Vasos 200ml"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "magistral",
+      "searchCount": 2181,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Detergente Magistral Ultra Limón Botella 750 ml",
+        "Detergente Magistral Ultra Limón Botella 300 ml",
+        "Detergente Magistral Ultra Marina Botella 500 ml"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "cacao",
+      "searchCount": 2168,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Cacao en polvo Carrefour classic pouch 360 g.",
+        "Cacao en polvo Carrefour classic pouch 180 g.",
+        "Cacao en polvo choco Bulnez 180 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "agua saborizada",
+      "searchCount": 2165,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Agua saborizada de pera Aquarius 2,25 lts",
+        "Agua saborizada Aquarius pera 600 ml",
+        "Agua saborizada de naranja Levité 500 ml"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "tregar",
+      "searchCount": 2156,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Queso rallado Tregar 120 g",
+        "Queso mascarpone Tregar 200 grs",
+        "Yogur entero Tregar dulce de leche"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "jamon cocido",
+      "searchCount": 2152,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Jamón cocido Paladini 150 g.",
+        "Jamón cocido Cagnoli x kg.",
+        "Jamón cocido Lario 300 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "atún",
+      "searchCount": 2149,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Lomito de atún en aceite Carrefour Classic 170 grs",
+        "Lomito de atún al natural Carrefour Classic 170 grs",
+        "Paté de atún Carrefour Classic 80 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "pascualina",
+      "searchCount": 2132,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Tapa para pascualina criolla Bulnez 2 uni",
+        "Tapas para pascualina Mendia hojaldre 2 u.",
+        "Tapa para pascualina Mendía criolla 400 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "aspiradora",
+      "searchCount": 2130,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Aspiradora ciclonica Atma 2000w",
+        "Aspiradora Yelmo Ecociclo 16l AS-3314",
+        "Aspiradora Recargable Ultracomb AS-4114 60W"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "shampoo dove",
+      "searchCount": 2125,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Shampoo Dove Protección Anticaspa 400 ml",
+        "Shampoo Dove Reconstrucción + Aminoácido 400 ml",
+        "Shampoo Dove Reconstrucción + Aminoácido 200 ml"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "levite",
+      "searchCount": 2118,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Agua saborizada de naranja Levité 500 ml",
+        "Agua saborizada de pomelo Levité 500 ml",
+        "Agua saborizada de pomelo Levité 2,25 lts"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "colgate",
+      "searchCount": 2087,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Cepillo de dientes Colgate Kids 1 uni",
+        "Cepillo de dientes Colgate Kids 2 uni",
+        "Pasta dental Colgate triple beneficio 90 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "toallitas humedas",
+      "searchCount": 2074,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Toallitas húmedas Carrefour Baby bebé extra suaves 70 uni",
+        "Toallitas húmedas Algabo Baby 48 u.",
+        "Toallitas húmedas Babysec Ultrafresh 150 uni"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "sedal",
+      "searchCount": 2053,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Acondicionador Sedal restauración 190 cc.",
+        "Shampoo Sedal restauración 190 cc.",
+        "Acondicionador Sedal ceramidas 190 cc."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "aceitunas",
+      "searchCount": 2052,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Aceitunas verdes Nucete 180 g.",
+        "Aceitunas verdes Nucete 660 g.",
+        "Aceitunas verdes Castell 100 g."
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "fideo",
+      "searchCount": 2047,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Fideo chifferi rigate Bonalma 500 g.",
+        "Fideo spaghetti Bulnez en paquete 500 g.",
+        "Sopa familiar Carrefour Classic de fideos y vegetales 80 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "vodka",
+      "searchCount": 2045,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Vodka Smirnoff 700 cc",
+        "Vodka Sernova 700 cc.",
+        "Vodka Skyy 750 cc"
+      ],
+      "status": "ok",
+      "recommendation": null
+    },
+    {
+      "term": "jabon de tocador",
+      "searchCount": 2002,
+      "vtexResults": 10,
+      "vtexResultsCapped": true,
+      "sampleProducts": [
+        "Jabón de tocador Palmolive nutrimilk 85 g.",
+        "Jabón de tocador Bulnez marina 75 grs",
+        "Jabón de tocador Palmolive kids 85 grs"
+      ],
+      "status": "ok",
+      "recommendation": null
+    }
+  ]
+}

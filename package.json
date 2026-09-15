@@ -1,0 +1,23 @@
+{
+  "name": "carrefour-webdash",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dashboard de analytics de pedidos WEB (canal storefront) de Carrefour Argentina, contraparte de AppDash.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "fetch:day": "node src/fetch-day.js",
+    "backfill": "node src/backfill.js",
+    "aggregate": "node src/aggregate.js",
+    "inspect:channels": "node src/inspect-channels.js",
+    "inspect:search": "node src/inspect-search.js",
+    "inspect:search-diagnosis": "node src/inspect-search-diagnosis.js",
+    "test": "node --test test/"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@upstash/redis": "^1.38.3",
+    "googleapis": "^180.0.0"
+  }
+}

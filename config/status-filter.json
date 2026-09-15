@@ -1,0 +1,33 @@
+{
+  "_comment": "Qué estados de la VTEX Order API cuentan para las métricas de negocio (GMV, pedidos, recompra). Los estados observados realmente en esta cuenta durante el backfill de 2026-01 a 2026-08 están todos clasificados abajo; si aparece uno nuevo, el pipeline lo deja afuera y lo reporta en _meta/run-info.json > unknownStatuses para que se decida.",
+  "includeStatuses": [
+    "invoiced",
+    "invoice",
+    "handling",
+    "ready-for-handling",
+    "shipped",
+    "order-accepted",
+    "payment-approved"
+  ],
+  "excludeStatuses": [
+    "canceled",
+    "cancelled",
+    "cancel",
+    "request-cancel",
+    "order-created",
+    "payment-pending",
+    "on-order-completed",
+    "waiting-for-seller-decision"
+  ],
+  "cancelledStatuses": [
+    "canceled",
+    "cancelled",
+    "cancel",
+    "request-cancel"
+  ],
+  "policy": "Un pedido cuenta para las métricas si su `status` está en includeStatuses. Los de cancelledStatuses NO entran en las métricas, pero se miden aparte (cantidad y monto) para poder ver la tasa de cancelación — ese dato sale del listado de pedidos, sin pedir el detalle, así que no cuesta llamadas extra. Cualquier estado que no figure en ninguna lista se excluye y se reporta como desconocido.",
+  "notes": [
+    "'invoice' se incluye por decisión del usuario (2026-08-25): es la variante de facturado que devuelve esta cuenta.",
+    "'cancel' y 'request-cancel' aparecieron en el backfill real; se excluyen de las métricas pero se muestran en el panel de estados."
+  ]
+}

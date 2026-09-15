@@ -1,0 +1,49 @@
+{
+  "_comment": "Reemplaza a category-map.json (enfoque por categoryId, que era una suposición mía sin verificar). Esta clasificación está copiada 1:1 de la lógica real de AppDash (fetch-orders.js#categorizeOrder en gastoncarreecommerce/vtex-utm-audit, rama main), para que WebDash sea comparable con AppDash: ahí food/non-food/marketplace/quickcommerce se deciden por SELLER de VTEX (el vendedor que factura cada item), no por árbol de categorías de producto. carrefourar0899 es el seller interno de Carrefour para su catálogo non-food; todo lo que no es ni ese seller ni un marketplaceSellerId ni salesChannel=Quick Commerce, se considera food.",
+  "qcSalesChannelId": "3",
+  "nonFoodSellerId": "carrefourar0899",
+  "marketplaceSellerIds": [
+    "abaco284","aircomputers546","americanwood705","anubisdecoracion261","Autodo",
+    "awaresolutions923","awaresolutionssrl189","bangho","beautysas","Bebitos",
+    "bigstarsar","blackmusic902","brogas700","buhl040","bulonfer","bydsudamericana031",
+    "calefactorescalden943","calm328","carrelloar624","clubdigital656","codini088",
+    "colchonesysommier288","CRF","ctcgroup940","ctcproductos740","dehuka404","demelf394",
+    "derpacomar064","dielfe771","districolor768","districolor804","donacero930","dvigi943",
+    "eczanepharma170","electroluxar","emcmuebles005","emoodmarket","enasport189",
+    "estelar454","exosa541","ferreydeco793","gasei472","grupomarquez012","haustore986",
+    "hidrolit736","hispanos470","hogarisnova327","homekong441","intecnova657",
+    "internationalhomesa717","kamadoargentino563","kiluga771","kitsolar316",
+    "laplanchetta301","lilasense516","limansky653","lumina946","luxom345","magazzinoar",
+    "mantra171","mgsolucionsa519","microbell122","mueblesespeciales315","mundopino165",
+    "neba791","neoseg957","ohgiftcard537","ortopedialibertad288","outin691",
+    "pampadeacero948","phidigital143","pinataar","pinataarCRF","potenzaemarketsa179",
+    "praga278","prestigio1","Producteca225119","Producteca232302","Producteca232621",
+    "Producteca237680","Producteca238451","Producteca238567","Producteca238818",
+    "Producteca239254","Producteca241872","Producteca241968","Producteca242766",
+    "Producteca246251","Producteca246437","Producteca246519","Producteca246643",
+    "Producteca247492","Producteca247683","Producteca249023","Producteca249357",
+    "Producteca249773","Producteca251086","Producteca251428","Producteca252062",
+    "Producteca70438","puntodeportivoar","rockinroll106","rua839","sccortinasrollers240",
+    "sharecomputacion867","shopwide119","soportar561","springwall441","sungreensrl102",
+    "tecnofull391","tenacta582","tiendasdigitalesar","todotodo061","topmega421",
+    "turboblender168","tutiendaonline271","unitecsa564","universopinturerias","Vexi",
+    "vexistore751","vexistorear","vinson363","vmpsa473","whirlpoolarg","wolke303",
+    "wsabiskin470","xcientoargentino189"
+  ],
+  "priority": ["quickcommerce", "marketplace", "non-food", "food"],
+  "tabs": {
+    "_comment": "Decisión del usuario (2026-08-24): usar los 4 segmentos de AppDash como 4 pestañas directas, en vez de plegar a 2 (Food/Non Food). Cada segmento es su propia pestaña con las mismas métricas.",
+    "list": ["food", "non-food", "marketplace", "quickcommerce"],
+    "labels": {
+      "food": "Food",
+      "non-food": "Non Food",
+      "marketplace": "Marketplace",
+      "quickcommerce": "Quick Commerce"
+    }
+  },
+  "notes": [
+    "Clasificación a nivel de PEDIDO completo (no por línea de ítem): se recorre el pedido una sola vez con la prioridad de `priority` y cae en el primer segmento que matchea (mutuamente excluyentes, igual que en AppDash).",
+    "El GMV de cada pedido es `order.value / 100` (igual que fetch-orders.js), no la suma de sellingPrice*quantity de los items — puede diferir por descuentos/envío ya prorrateados en `value`.",
+    "Si la lista de marketplaceSellerIds cambia en VTEX (altas/bajas de sellers), hay que actualizarla acá a mano igual que se actualiza en AppDash — no hay un endpoint que la derive automáticamente."
+  ]
+}

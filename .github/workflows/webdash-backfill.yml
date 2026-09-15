@@ -1,0 +1,254 @@
+# Backfill del historial, PARALELIZADO.
+#
+# El costo real es el detalle de cada pedido (una llamada a VTEX por pedido,
+# ~2000 por día). Además del pool de concurrencia dentro de cada día, acá se
+# parte el rango en tramos mensuales y cada tramo corre en su PROPIO job, todos
+# a la vez. Un año que secuencialmente son ~6 horas baja a ~40 minutos.
+#
+# Cada job sube solo los días de su tramo como artifact; un job final los junta,
+# agrega y hace UN solo commit — así no hay pushes concurrentes peleándose.
+name: WebDash backfill (rango manual)
+
+# Todos los checkouts de este workflow fijan ref: claude/carrefour-webdash-
+# analytics-xojjfs a propósito. Es workflow_dispatch: quien lo corre elige una
+# rama en el desplegable de GitHub, y el checkout+commit+push sigue esa
+# elección por defecto. Como la rama que sirve Vercel es específicamente esa,
+# elegir "main" en el desplegable (el hábito natural) escribía los datos en
+# una rama que la producción nunca lee — pasó de verdad: un backfill entero
+# de 237 días quedó invisible en producción durante horas hasta notarlo.
+on:
+  workflow_dispatch:
+    inputs:
+      from:
+        description: 'Fecha inicio (YYYY-MM-DD)'
+        required: true
+      to:
+        description: 'Fecha fin (YYYY-MM-DD)'
+        required: true
+      concurrency_per_day:
+        description: 'Pedidos en paralelo por job (subir si va lento, bajar si VTEX tira 429)'
+        required: false
+        default: '30'
+      max_parallel:
+        description: 'Cuántos meses procesar a la vez'
+        required: false
+        default: '8'
+      force:
+        description: 'Rehacer días que ya existen (solo si cambió la lógica de cálculo)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: webdash-backfill
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      chunks: ${{ steps.plan.outputs.chunks }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/carrefour-webdash-analytics-xojjfs
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - id: plan
+        run: |
+          CHUNKS=$(node src/plan-chunks.js "${{ github.event.inputs.from }}" "${{ github.event.inputs.to }}")
+          echo "chunks=$CHUNKS" >> "$GITHUB_OUTPUT"
+          echo "Tramos a procesar: $CHUNKS"
+
+  fetch:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      max-parallel: ${{ fromJson(github.event.inputs.max_parallel || '8') }}
+      matrix:
+        chunk: ${{ fromJson(needs.plan.outputs.chunks) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/carrefour-webdash-analytics-xojjfs
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Backfill ${{ matrix.chunk.id }}
+        env:
+          VTEX_ACCOUNT_NAME: ${{ secrets.VTEX_ACCOUNT_NAME }}
+          VTEX_APP_KEY: ${{ secrets.VTEX_APP_KEY }}
+          VTEX_APP_TOKEN: ${{ secrets.VTEX_APP_TOKEN }}
+          VTEX_ENVIRONMENT: ${{ secrets.VTEX_ENVIRONMENT }}
+          DETAIL_CONCURRENCY: ${{ github.event.inputs.concurrency_per_day || '30' }}
+        run: node src/backfill.js "${{ matrix.chunk.from }}" "${{ matrix.chunk.to }}" ${{ github.event.inputs.force == 'true' && '--force' || '' }}
+
+      # Los pedidos que hayan fallado quedaron anotados en cada archivo diario;
+      # se reintentan solo esos, sin rehacer los días completos.
+      - name: Reintentar pedidos caídos del tramo
+        env:
+          VTEX_ACCOUNT_NAME: ${{ secrets.VTEX_ACCOUNT_NAME }}
+          VTEX_APP_KEY: ${{ secrets.VTEX_APP_KEY }}
+          VTEX_APP_TOKEN: ${{ secrets.VTEX_APP_TOKEN }}
+          VTEX_ENVIRONMENT: ${{ secrets.VTEX_ENVIRONMENT }}
+          DETAIL_CONCURRENCY: ${{ github.event.inputs.concurrency_per_day || '30' }}
+        run: node src/repair.js "${{ matrix.chunk.from }}" "${{ matrix.chunk.to }}"
+
+      # Solo los días de ESTE tramo: el checkout ya trae los días viejos y no
+      # tiene sentido volver a subirlos desde cada job.
+      - name: Subir los días del tramo
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-${{ matrix.chunk.id }}
+          path: data/daily/${{ matrix.chunk.id }}-*.json
+          retention-days: 2
+          if-no-files-found: warn
+
+      # Los mails van por separado y con retención mínima: son PII y solo
+      # existen para que el job final los consolide en el repo privado.
+      - name: Subir mails del tramo (PII)
+        uses: actions/upload-artifact@v4
+        with:
+          name: emails-${{ matrix.chunk.id }}
+          path: private-out/emails/*.csv
+          retention-days: 1
+          if-no-files-found: warn
+
+  collect:
+    needs: fetch
+    if: always()
+    runs-on: ubuntu-latest
+    # Insumo crudo y archivo de pedidos viven en la rama `data-raw`
+    # (checkout aparte); solo los agregados chicos van a la rama deployada.
+    env:
+      WEBDASH_DAILY_DIR: ${{ github.workspace }}/.data-raw/data/daily
+      WEBDASH_ARCHIVE_ROOT: ${{ github.workspace }}/.data-raw
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/carrefour-webdash-analytics-xojjfs
+
+      # El histórico pesado (volcados crudos + orders/ + order-index/) vive en
+      # `data-raw`, que Vercel no deploya.
+      - name: Checkout del archivo (rama data-raw)
+        uses: actions/checkout@v4
+        with:
+          ref: data-raw
+          path: .data-raw
+          sparse-checkout: |
+            data/daily
+            docs/data/web/orders
+            docs/data/web/order-index
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Bajar todos los tramos
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/chunks
+          pattern: daily-*
+          merge-multiple: true
+
+      - name: Bajar los mails de los tramos
+        uses: actions/download-artifact@v4
+        with:
+          path: private-out/emails
+          pattern: emails-*
+          merge-multiple: true
+
+      - name: Juntar y agregar
+        run: |
+          mkdir -p .data-raw/data/daily
+          if ls /tmp/chunks/*.json >/dev/null 2>&1; then
+            cp /tmp/chunks/*.json .data-raw/data/daily/
+            echo "Días incorporados: $(ls /tmp/chunks/*.json | wc -l)"
+          else
+            echo "::warning::Ningún tramo produjo días. Revisá los logs de los jobs de fetch."
+          fi
+          node src/aggregate.js
+
+      # Los mails salen de la misma pasada que ya pidió el detalle de cada
+      # pedido: no cuesta ninguna llamada extra a VTEX. Van SOLO al repo privado.
+      - name: Publicar mails al repo privado
+        if: always()
+        env:
+          PRIVATE_DATA_REPO: ${{ secrets.PRIVATE_DATA_REPO }}
+          PRIVATE_DATA_TOKEN: ${{ secrets.PRIVATE_DATA_TOKEN }}
+        run: |
+          if [ -z "$PRIVATE_DATA_REPO" ] || [ -z "$PRIVATE_DATA_TOKEN" ]; then
+            echo "::warning::Sin PRIVATE_DATA_REPO/PRIVATE_DATA_TOKEN: no se publican los mails."
+            exit 0
+          fi
+          VIS=$(curl -sS -H "Authorization: Bearer $PRIVATE_DATA_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$PRIVATE_DATA_REPO" | python3 -c "import sys,json; print(json.load(sys.stdin).get('private'))")
+          if [ "$VIS" != "True" ]; then
+            echo "::error::$PRIVATE_DATA_REPO no es privado (private=$VIS). No se publican mails."
+            exit 1
+          fi
+          git clone --depth 1 "https://x-access-token:$PRIVATE_DATA_TOKEN@github.com/$PRIVATE_DATA_REPO.git" /tmp/privrepo
+          # La base completa pesa ~500MB (5,1M de clientes) y vive repartida en
+          # base/ — no publicable como un solo archivo. merge-emails.js la lee,
+          # le suma los mails que salieron de este proceso, y shard-emails.js
+          # vuelve a repartir el resultado.
+          node src/merge-emails.js /tmp/privrepo/base
+          node src/shard-emails.js
+          for f in private-out/base/*.csv; do
+            sz=$(du -m "$f" | cut -f1)
+            if [ "$sz" -gt 90 ]; then echo "::error::$f pesa ${sz}MB, muy cerca del límite de GitHub. Subí BASE_SHARDS en src/shard-emails.js."; exit 1; fi
+          done
+          rm -rf /tmp/privrepo/base /tmp/privrepo/audiencias
+          cp -r private-out/base /tmp/privrepo/base
+          cp -r private-out/audiencias /tmp/privrepo/audiencias
+          rm -f /tmp/privrepo/hash-email.csv
+          cd /tmp/privrepo
+          git config user.name "webdash-bot"
+          git config user.email "webdash-bot@users.noreply.github.com"
+          git add -A base audiencias
+          git rm --cached hash-email.csv 2>/dev/null || true
+          if git diff --staged --quiet; then
+            echo "Sin mails nuevos."
+          else
+            git commit -m "emails: actualización automática del pipeline"
+            ok=0
+            for i in 1 2 3 4; do
+              git push && { ok=1; break; }
+              echo "push falló, reintento $i..."; sleep $((i*5)); git pull --rebase --autostash || true
+            done
+            [ "$ok" = "1" ] || { echo "::error::No se pudo publicar los mails en $PRIVATE_DATA_REPO tras varios intentos."; exit 1; }
+          fi
+
+      - name: Commitear
+        run: |
+          git config user.name "webdash-bot"
+          git config user.email "webdash-bot@users.noreply.github.com"
+          git add docs/data/ ':!docs/data/web/orders' ':!docs/data/web/order-index'
+          if git diff --staged --quiet; then
+            echo "Sin cambios."
+          else
+            git commit -m "chore(data): backfill ${{ github.event.inputs.from }}..${{ github.event.inputs.to }} [skip ci]"
+            for i in 1 2 3 4; do
+              git push && break
+              echo "push falló, reintento..."; sleep $((i*5)); git pull --rebase --autostash || true
+            done
+          fi
+
+      # El histórico pesado no se deploya: va a `data-raw`.
+      - name: Commitear archivo (rama data-raw)
+        working-directory: .data-raw
+        run: |
+          git config user.name "webdash-bot"
+          git config user.email "webdash-bot@users.noreply.github.com"
+          git add -f data/daily/ docs/data/web/orders/ docs/data/web/order-index/
+          if git diff --staged --quiet; then
+            echo "Archivo sin cambios."
+          else
+            git commit -m "chore(data): volcados crudos + detalle de pedidos [skip ci]"
+            for i in 1 2 3 4; do git push && break; sleep $((i*5)); git pull --rebase --autostash || true; done
+          fi

@@ -1,0 +1,505 @@
+/* global window, document */
+/**
+ * Núcleo compartido de WebDash: carga de datasets, formateo, matemática de
+ * rangos de fecha y exportación a CSV. Todo vive bajo window.W para que las
+ * vistas (dashboard / analítica / audiencias) lo compartan sin bundler.
+ */
+(function () {
+  const W = (window.W = window.W || {});
+
+  // ── Persistencia local (preferencias, audiencias guardadas) ───────────────
+  W.store = {
+    get(key, fallback) {
+      try {
+        const raw = localStorage.getItem(`webdash:${key}`);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch { return fallback; }
+    },
+    set(key, value) {
+      try { localStorage.setItem(`webdash:${key}`, JSON.stringify(value)); } catch { /* modo privado */ }
+    },
+  };
+
+  W.CHANNEL = 'web';
+  W.SEGMENTS = ['food', 'non-food', 'marketplace', 'quickcommerce'];
+  W.SEGMENT_LABEL = { food: 'Food', 'non-food': 'Non Food', marketplace: 'Marketplace', quickcommerce: 'Quick Commerce' };
+  W.SEGMENT_ICON = { food: '🥦', 'non-food': '🏠', marketplace: '🛒', quickcommerce: '⚡' };
+  // Slots de la paleta validada (ver skill dataviz): aqua, azul, violeta, amarillo.
+  W.SEGMENT_COLOR = { food: '#1baf7a', 'non-food': '#2a78d6', marketplace: '#4a3aa7', quickcommerce: '#eda100' };
+  W.SEGMENT_ICON_NAME = { food: 'basket', 'non-food': 'home', marketplace: 'store', quickcommerce: 'bolt' };
+  W.SERIES = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#4a3aa7', '#e34948'];
+
+  /**
+   * Toggle GMV/Pedidos reusable — mismo control que ya usaba el mapa de
+   * provincias, ahora compartido por todos los rankings (tiendas, segmentos,
+   * productos, categorías, medios de pago, marketing, cupones) para poder
+   * mirar "qué mueve más plata" o "qué genera más pedidos" sin tener que
+   * armar el mismo par de botones siete veces.
+   */
+  W.METRIC_LABEL = { gmv: 'GMV', orders: 'Pedidos' };
+  W.metricToggle = function (current, attr) {
+    return `<div class="seg-ctl">
+      <button data-${attr}="gmv" class="${current === 'gmv' ? 'on' : ''}">GMV</button>
+      <button data-${attr}="orders" class="${current === 'orders' ? 'on' : ''}">Pedidos</button>
+    </div>`;
+  };
+  W.metricFmt = (metric) => (metric === 'orders' ? W.fmtNumC : W.fmtMoneyC);
+
+  // ── Formato ───────────────────────────────────────────────────────────────
+  const nf = (opts) => new Intl.NumberFormat('es-AR', opts);
+  W.fmtMoney = (n) => nf({ style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0);
+  W.fmtMoneyC = (n) => nf({ style: 'currency', currency: 'ARS', notation: 'compact', maximumFractionDigits: 1 }).format(n || 0);
+  W.fmtNum = (n) => nf({ maximumFractionDigits: 0 }).format(n || 0);
+  W.fmtNumC = (n) => nf({ notation: 'compact', maximumFractionDigits: 1 }).format(n || 0);
+  W.fmtDec = (n, d = 2) => nf({ minimumFractionDigits: d, maximumFractionDigits: d }).format(n || 0);
+  W.fmtPct = (n, d = 1) => `${((n || 0) * 100).toFixed(d)}%`;
+  // timeZone:'UTC' NO es un detalle: sin eso, un "2026-09-07" se construye como
+  // medianoche UTC y se formatea en el huso del navegador — en Argentina
+  // (UTC-3) eso cae a las 21:00 del día ANTERIOR y toda fecha del dashboard
+  // salía corrida un día para atrás (el "vs. 6/9" cuando el día comparado era
+  // el 7/9, los ejes de los gráficos, las cohortes, todo). Acá la fecha ya es
+  // un día calendario, no un instante: se formatea tal cual está escrita.
+  const dayFmt = (opts) => (d) => new Date(`${d}T00:00:00Z`).toLocaleDateString('es-AR', { timeZone: 'UTC', ...opts });
+  W.fmtDay = dayFmt({ day: '2-digit', month: '2-digit' });
+  W.fmtDayLong = dayFmt({ day: '2-digit', month: 'short', year: 'numeric' });
+  /** "lun 7 sept" — el día de la semana es lo que hace entendible una
+   * comparación contra "el mismo día de la semana pasada". Sin la coma que
+   * mete es-AR ("lun, 7 sept"), que en una etiqueta corta sobra. */
+  const fmtDayWeekRaw = dayFmt({ weekday: 'short', day: 'numeric', month: 'short' });
+  W.fmtDayWeek = (d) => fmtDayWeekRaw(d).replace(',', '');
+  /** "7 sep" — para los extremos de un rango, sin repetir el año. */
+  W.fmtDayShort = dayFmt({ day: 'numeric', month: 'short' });
+  W.timeAgo = (iso) => {
+    const min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+    if (min < 1) return 'recién';
+    if (min < 60) return `hace ${min} min`;
+    return `hace ${Math.round(min / 60)} h`;
+  };
+  W.fmtMonth = (m) => new Date(`${m}-01T00:00:00Z`).toLocaleDateString('es-AR', { timeZone: 'UTC', month: 'short', year: '2-digit' });
+  W.esc = (s) =>
+    String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  W.DOW_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+  // ── Fechas ────────────────────────────────────────────────────────────────
+  W.addDays = (dateStr, n) => {
+    const d = new Date(`${dateStr}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() + n);
+    return d.toISOString().slice(0, 10);
+  };
+  W.daysBetween = (a, b) => Math.round((new Date(`${b}T00:00:00Z`) - new Date(`${a}T00:00:00Z`)) / 86400000) + 1;
+
+  // Fecha de "hoy" en el huso horario de la operación (AR), no el del navegador
+  // de quien mira el dashboard — el pipeline cierra los días en ese huso.
+  W.arToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }).format(new Date());
+
+  // Hora AR actual, 0-23. Es lo que permite comparar un día en curso contra
+  // otro día A LA MISMA HORA en vez de contra su total cerrado (comparar
+  // medio día contra un día completo daba -74% en todo, que no es una caída:
+  // es que el día todavía no terminó). hourCycle h23 para que medianoche sea
+  // 0 y no 24.
+  W.arHour = () => Number(new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Argentina/Buenos_Aires', hour: '2-digit', hourCycle: 'h23',
+  }).format(new Date()));
+
+  // Día calendario (YYYY-MM-DD) en huso AR de un timestamp ISO cualquiera —
+  // AR es UTC-3 fijo, sin horario de verano, así que restar 3h y leer la
+  // fecha en UTC da el día correcto sin importar qué offset traiga el string
+  // original. Necesario para filtrar pedidos por rango: un pedido creado a
+  // las 00:30 UTC es todavía "ayer" en AR, y compararlo con el string ISO
+  // crudo (que arranca con el día UTC) los ubicaba un día más tarde.
+  W.arDateOf = (iso) => {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return null;
+    return new Date(d.getTime() - 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  };
+
+  W.presetRange = function (preset, days, startDate) {
+    if (!days || !days.length) return null;
+    const last = days[days.length - 1];
+    switch (preset) {
+      // 'today'/'yesterday' se calculan contra el reloj real, no contra el
+      // último día del array: desde que el pipeline en vivo agrega el día de
+      // hoy, el último día YA NO es siempre "ayer".
+      case 'today': { const t = W.arToday(); return { from: t, to: t }; }
+      case 'yesterday': { const t = W.addDays(W.arToday(), -1); return { from: t, to: t }; }
+      case '7d': return { from: W.addDays(last, -6), to: last };
+      case '30d': return { from: W.addDays(last, -29), to: last };
+      case '90d': return { from: W.addDays(last, -89), to: last };
+      case 'month': return { from: last.slice(0, 8) + '01', to: last };
+      case 'all': return { from: startDate || days[0], to: last };
+      default: return null;
+    }
+  };
+  // Para rangos cortos (día, "ayer", una semana) compara contra el mismo
+  // período hace exactamente 7 días — mismo día de semana — en vez del
+  // período inmediatamente anterior: comparar un martes contra un domingo
+  // (tráfico muy distinto) daba variaciones que no significaban nada. Para
+  // rangos largos (mes, trimestre, todo) sigue comparando contra el bloque
+  // inmediatamente anterior de igual longitud, que es lo que tiene sentido ahí.
+  W.previousRange = (range) => {
+    const n = W.daysBetween(range.from, range.to);
+    const shift = n <= 7 ? 7 : n;
+    return { from: W.addDays(range.from, -shift), to: W.addDays(range.to, -shift) };
+  };
+
+  /** Rango en texto corto: "7 sep" un día · "1 – 7 sep" mismo mes · "28 ago – 3 sep" si cruza. */
+  W.rangeText = function (range) {
+    if (range.from === range.to) return W.fmtDayShort(range.from);
+    const sameMonth = range.from.slice(0, 7) === range.to.slice(0, 7);
+    return sameMonth
+      ? `${Number(range.from.slice(8, 10))} – ${W.fmtDayShort(range.to)}`
+      : `${W.fmtDayShort(range.from)} – ${W.fmtDayShort(range.to)}`;
+  };
+
+  /**
+   * Contra qué se compara, dicho en criollo. Antes la barra decía
+   * "vs. 6/9 – 6/9": la misma fecha repetida dos veces, encima corrida un día
+   * por el bug de huso de arriba, y sin decir en ningún lado POR QUÉ ese día.
+   * Ahora nombra el período y el tooltip explica el criterio.
+   */
+  W.compareText = function (range) {
+    const prev = W.previousRange(range);
+    const n = W.daysBetween(range.from, range.to);
+    if (range.from === range.to) {
+      return {
+        text: `vs. ${W.fmtDayWeek(prev.from)}`,
+        tip: 'Se compara contra el MISMO día de la semana pasada, no contra ayer: un lunes contra un domingo da variaciones que no significan nada.',
+      };
+    }
+    if (n <= 7) {
+      return {
+        text: `vs. semana anterior · ${W.rangeText(prev)}`,
+        tip: 'Mismo largo de período corrido 7 días para atrás, así caen los mismos días de la semana.',
+      };
+    }
+    return {
+      text: `vs. período anterior · ${W.rangeText(prev)}`,
+      tip: `Los ${n} días inmediatamente anteriores al rango elegido.`,
+    };
+  };
+
+  // ── Carga de datasets (cacheada) ──────────────────────────────────────────
+  const cache = {};
+
+  /**
+   * Los datasets del histórico de pedidos (`orders/…`, `order-index/…`) son
+   * el 98% del peso de los datos pero solo se piden a demanda —el detalle de
+   * una tienda, el export por estado, el drill-down de un cupón—, así que ya
+   * no viajan en el deploy: viven en la rama `data-raw` y los sirve
+   * /api/archive. Todo lo demás (daily-summary, catalog, geo, …) se sigue
+   * sirviendo estático porque sí se necesita al abrir la página.
+   */
+  const ARCHIVE = /^(?:orders|order-index)\//;
+
+  W.load = async function (name) {
+    if (cache[name]) return cache[name];
+
+    let res;
+    if (ARCHIVE.test(name)) {
+      res = await fetch(`api/archive?path=${encodeURIComponent(`${name}.json`)}`, { cache: 'default' });
+      // Si todavía no está configurado el token del archivo, se cae al
+      // estático de siempre: así la transición no rompe nada mientras los
+      // archivos sigan deployados.
+      if (res.status === 503) res = null;
+    }
+    if (!res) res = await fetch(`data/${W.CHANNEL}/${name}.json`, { cache: 'no-store' });
+
+    if (!res.ok) throw new Error(`No se pudo cargar ${name}.json (${res.status})`);
+    cache[name] = await res.json();
+    return cache[name];
+  };
+
+  // ── Agregación de la serie diaria ─────────────────────────────────────────
+  /**
+   * Suma los días de `range` para uno o todos los segmentos.
+   * bucket === 'all' suma los cuatro.
+   */
+  W.sumRange = function (daily, bucket, range) {
+    const acc = {
+      gmv: 0, orders: 0, units: 0, discount: 0, newCustomers: 0, activeCustomers: 0,
+      marketing: {}, series: [], bySegment: {}, hourly: new Array(24).fill(0), statusStats: {},
+      // Catálogo del rango, ya recortado al segmento elegido (schema 2).
+      categories: {}, categoriesN1: {}, categoriesN2: {}, coupons: {}, payments: {},
+      paymentBrands: {}, installments: {}, hasCatalog: false,
+    };
+    for (const s of W.SEGMENTS) acc.bySegment[s] = { gmv: 0, orders: 0, units: 0 };
+
+    for (const day of daily.days) {
+      if (day.date < range.from || day.date > range.to) continue;
+      const buckets = bucket === 'all' ? W.SEGMENTS : [bucket];
+      let dayGmv = 0, dayOrders = 0, dayUnits = 0;
+
+      for (const b of buckets) {
+        const seg = day.segments[b];
+        if (!seg) continue;
+        dayGmv += seg.gmv; dayOrders += seg.orders; dayUnits += seg.units || 0;
+        acc.bySegment[b].gmv += seg.gmv;
+        acc.bySegment[b].orders += seg.orders;
+        acc.bySegment[b].units += seg.units || 0;
+        for (const [name, v] of Object.entries(seg.marketing || {})) {
+          const e = (acc.marketing[name] = acc.marketing[name] || { gmv: 0, orders: 0 });
+          e.gmv += v.gmv; e.orders += v.orders;
+        }
+        for (const key of ['categories', 'categoriesN1', 'categoriesN2', 'coupons', 'payments', 'paymentBrands', 'installments']) {
+          for (const [name, v] of Object.entries(seg[key] || {})) {
+            acc.hasCatalog = true;
+            const e = (acc[key][name] = acc[key][name] || { orders: 0, gmv: 0, units: 0 });
+            e.orders += v.orders || 0; e.gmv += v.gmv || 0; e.units += v.units || 0;
+          }
+        }
+        // El horario por segmento solo existe en schema 2; si no está, el
+        // acumulado del día (más abajo) cubre únicamente la vista consolidada.
+        if (seg.hourly) seg.hourly.forEach((n, h) => (acc.hourly[h] += n));
+      }
+
+      acc.gmv += dayGmv; acc.orders += dayOrders; acc.units += dayUnits;
+      // Descuentos, nuevos y activos son a nivel día (no por segmento), así que
+      // solo se suman cuando la vista mira el canal completo.
+      if (bucket === 'all') {
+        acc.discount += day.discount || 0;
+        acc.newCustomers += day.newCustomers || 0;
+        acc.activeCustomers += day.activeCustomers || 0;
+        const segHasHourly = W.SEGMENTS.some((s2) => day.segments[s2]?.hourly);
+        if (!segHasHourly) (day.hourly || []).forEach((n, h) => (acc.hourly[h] += n));
+        // Los estados vienen del listado de VTEX (todos los pedidos del día,
+        // no solo los que cuentan), así que solo aplican a la vista del canal completo.
+        for (const [st, v] of Object.entries(day.statusStats || {})) {
+          const e = (acc.statusStats[st] = acc.statusStats[st] || { orders: 0, gmv: 0 });
+          e.orders += v.orders || 0;
+          e.gmv += v.gmv || 0;
+        }
+      }
+      acc.series.push({ date: day.date, gmv: dayGmv, orders: dayOrders, units: dayUnits, newCustomers: day.newCustomers || 0 });
+    }
+    return acc;
+  };
+
+  // Estados que cuentan como cancelación. Tiene que coincidir con
+  // config/status-filter.json > cancelledStatuses.
+  W.CANCELLED_STATUSES = ['canceled', 'cancelled', 'cancel', 'request-cancel'];
+
+  /** Resume los estados de un rango: cuánto se canceló y sobre qué total. */
+  W.cancellations = function (statusStats) {
+    let cancelledOrders = 0, cancelledGmv = 0, totalOrders = 0, totalGmv = 0;
+    for (const [st, v] of Object.entries(statusStats || {})) {
+      totalOrders += v.orders;
+      totalGmv += v.gmv;
+      if (W.CANCELLED_STATUSES.includes(st)) {
+        cancelledOrders += v.orders;
+        cancelledGmv += v.gmv;
+      }
+    }
+    return {
+      cancelledOrders, cancelledGmv, totalOrders, totalGmv,
+      rate: totalOrders ? cancelledOrders / totalOrders : 0,
+    };
+  };
+
+  // ── Ciclo de vida del cliente ─────────────────────────────────────────────
+  /**
+   * Estados de ciclo de vida. La clave es no definir churn como "hace X días
+   * que no compra" a secas: un cliente que compra cada 60 días no está perdido
+   * a los 45, y uno que compraba cada 7 sí lo está. Se compara la recencia
+   * contra el intervalo TÍPICO DE ESE CLIENTE (churnRatio).
+   */
+  W.LIFECYCLE = {
+    nuevo:      { label: 'Nuevo',      color: '#2a78d6', icon: 'sparkles', desc: 'primera compra reciente, todavía sin recompra' },
+    activo:     { label: 'Activo',     color: '#1baf7a', icon: 'check',    desc: 'compra dentro de su ritmo habitual' },
+    campeon:    { label: 'Campeón',    color: '#008300', icon: 'star',     desc: 'compra seguido, hace poco y gasta por encima del promedio' },
+    riesgo:     { label: 'En riesgo',  color: '#eda100', icon: 'alert',    desc: 'se está estirando entre compras' },
+    churn:      { label: 'Churn',      color: '#e34948', icon: 'trendDown',desc: 'dejó de comprar' },
+    perdido:    { label: 'Perdido',    color: '#8b93a5', icon: 'sleep',    desc: 'sin comprar hace mucho' },
+  };
+
+  /**
+   * Descripción de cada estado con los umbrales que están activos ahora mismo.
+   * Los textos fijos mentirían apenas el usuario mueve un parámetro.
+   */
+  W.lifecycleDesc = function (key) {
+    const C = W.CHURN;
+    const d = (n) => `${n} día${n === 1 ? '' : 's'}`;
+    const x = (n) => `${String(n).replace('.', ',')}×`;
+    switch (key) {
+      case 'nuevo':   return `primera compra hace menos de ${d(C.newDays)}, todavía sin recompra`;
+      case 'activo':  return C.mode === 'dias' ? `compró hace menos de ${d(C.riskDays)}` : 'compra dentro de su ritmo habitual';
+      case 'campeon': return 'compra seguido, hace poco y gasta por encima del promedio';
+      case 'riesgo':  return C.mode === 'dias'
+        ? `sin comprar hace ${d(C.riskDays)} o más`
+        : `lleva ${x(C.riskRatio)} su intervalo habitual sin comprar`;
+      case 'churn':   return C.mode === 'dias'
+        ? `sin comprar hace ${d(C.churnDays)} o más`
+        : `lleva ${x(C.churnRatio)} su intervalo habitual sin comprar`;
+      case 'perdido': return `sin comprar hace más de ${d(C.lostDays)}`;
+      default: return '';
+    }
+  };
+
+  /** Resumen del criterio activo, para los subtítulos. */
+  W.churnCriterion = function () {
+    const C = W.CHURN;
+    return C.mode === 'dias'
+      ? `churn a los ${C.churnDays} días sin comprar`
+      : `churn cuando pasa ${String(C.churnRatio).replace('.', ',')}× su propio intervalo entre compras`;
+  };
+  W.LIFECYCLE_ORDER = ['campeon', 'activo', 'nuevo', 'riesgo', 'churn', 'perdido'];
+
+  /**
+   * Umbrales del ciclo de vida. Son AJUSTABLES desde la vista de Audiencias y
+   * quedan guardados en el navegador: no hay una definición universal de
+   * churner, depende del negocio y de la campaña que se quiera armar.
+   *
+   * mode 'ratio'  -> churn cuando la recencia supera N veces el intervalo
+   *                  propio del cliente (se adapta a cada uno).
+   * mode 'dias'   -> churn cuando pasaron N días sin comprar, fijo para todos
+   *                  (es lo que se suele pedir: "churners de 30/60/180 días").
+   */
+  W.CHURN_DEFAULTS = { mode: 'ratio', riskRatio: 1.5, churnRatio: 3, riskDays: 45, churnDays: 90, lostDays: 180, newDays: 45, fallbackInterval: 45 };
+  W.CHURN = { ...W.CHURN_DEFAULTS, ...W.store.get('churnParams', {}) };
+  W.setChurn = function (patch) {
+    W.CHURN = { ...W.CHURN, ...patch };
+    W.store.set('churnParams', W.CHURN);
+  };
+  W.resetChurn = function () {
+    W.CHURN = { ...W.CHURN_DEFAULTS };
+    W.store.set('churnParams', {});
+  };
+
+  /**
+   * @param orders  pedidos del cliente
+   * @param recency días desde la última compra
+   * @param interval días promedio entre compras (0 si compró una sola vez)
+   * @param gmv gasto total · avgGmv gasto promedio de la base (para 'campeón')
+   */
+  W.lifecycleOf = function (orders, recency, interval, gmv, avgGmv) {
+    const C = W.CHURN;
+    if (recency > C.lostDays) return 'perdido';
+    if (orders === 1 && recency <= C.newDays) return 'nuevo';
+
+    if (C.mode === 'dias') {
+      if (recency >= C.churnDays) return 'churn';
+      if (recency >= C.riskDays) return 'riesgo';
+    } else {
+      // Sin intervalo propio (una sola compra) se usa un valor de referencia.
+      const base = interval > 0 ? interval : C.fallbackInterval;
+      const ratio = recency / base;
+      if (ratio >= C.churnRatio) return 'churn';
+      if (ratio >= C.riskRatio) return 'riesgo';
+    }
+    if (orders >= 4 && gmv >= avgGmv * 1.5) return 'campeon';
+    return 'activo';
+  };
+
+  W.churnRatio = (recency, interval) => recency / (interval > 0 ? interval : W.CHURN.fallbackInterval);
+
+  W.ticket = (gmv, orders) => (orders ? gmv / orders : 0);
+  W.unitsPerOrder = (units, orders) => (orders ? units / orders : 0);
+
+  W.delta = function (cur, prev) {
+    if (prev == null) return null;
+    if (prev === 0 && cur === 0) return 0;
+    if (prev === 0) return null;
+    return (cur - prev) / prev;
+  };
+
+  W.deltaBadge = function (d) {
+    if (d == null) return '<span class="delta flat">—</span>';
+    const pct = d * 100;
+    const cls = pct > 0.5 ? 'up' : pct < -0.5 ? 'down' : 'flat';
+    const arrow = pct > 0.5 ? '↑' : pct < -0.5 ? '↓' : '→';
+    return `<span class="delta ${cls}">${arrow} ${Math.abs(pct).toFixed(1)}%</span>`;
+  };
+
+  /** Media móvil centrada-a-izquierda de ventana `w`. */
+  W.movingAvg = function (values, w) {
+    const out = [];
+    for (let i = 0; i < values.length; i++) {
+      const from = Math.max(0, i - w + 1);
+      let s = 0;
+      for (let j = from; j <= i; j++) s += values[j];
+      out.push(s / (i - from + 1));
+    }
+    return out;
+  };
+
+  /** Regresión lineal simple sobre y[i] vs i. Devuelve {slope, intercept, at(i)}. */
+  W.linreg = function (values) {
+    const n = values.length;
+    if (!n) return { slope: 0, intercept: 0, at: () => 0 };
+    let sx = 0, sy = 0, sxy = 0, sxx = 0;
+    for (let i = 0; i < n; i++) { sx += i; sy += values[i]; sxy += i * values[i]; sxx += i * i; }
+    const d = n * sxx - sx * sx;
+    const slope = d === 0 ? 0 : (n * sxy - sx * sy) / d;
+    const intercept = (sy - slope * sx) / n;
+    return { slope, intercept, at: (i) => intercept + slope * i };
+  };
+
+  // ── Exportación CSV ───────────────────────────────────────────────────────
+  W.csvCell = function (v) {
+    const s = String(v ?? '');
+    return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+
+  W.downloadCSV = function (filename, headers, rows) {
+    const lines = [headers.map(W.csvCell).join(',')];
+    for (const r of rows) lines.push(r.map(W.csvCell).join(','));
+    // BOM para que Excel en Windows respete los acentos.
+    const blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  // ── Mails desde el repo privado ────────────────────────────────────────────
+  // Compartido por Audiencias (exportar la base) y por el detalle de pedidos
+  // de una tienda en Analítica: los dos necesitan cruzar hash -> email.
+  /** Parsea hash,email,dni (dni opcional: los archivos viejos no lo traen). */
+  W.parseHashEmailCsv = function (text) {
+    const lines = String(text).split(/\r?\n/);
+    const map = new Map();
+    const start = (lines[0] || '').toLowerCase().includes('hash') ? 1 : 0;
+    for (let i = start; i < lines.length; i++) {
+      if (!lines[i].trim()) continue;
+      const c = lines[i].split(',');
+      const h = (c[0] || '').trim();
+      const email = (c[1] || '').trim().replace(/^"|"$/g, '');
+      const dni = (c[2] || '').trim().replace(/^"|"$/g, '');
+      if (h && (email || dni)) map.set(h, { email, dni });
+    }
+    return map.size ? map : null;
+  };
+
+  // Una sola promesa compartida: si dos vistas piden el mapa a la vez (o la
+  // misma vista dos veces), solo hay UN fetch al repo privado.
+  let emailMapPromise = null;
+  /** hash -> { email, dni } | null si no hay repo privado configurado. */
+  W.loadEmailMap = function () {
+    if (!emailMapPromise) {
+      emailMapPromise = fetch('/api/audience-emails', { cache: 'no-store' })
+        .then((res) => (res.ok ? res.text() : null))
+        .then((text) => (text ? W.parseHashEmailCsv(text) : null))
+        .catch(() => null);
+    }
+    return emailMapPromise;
+  };
+
+  W.toast = function (msg, kind) {
+    let el = document.getElementById('toast');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'toast';
+      el.className = 'toast';
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.className = `toast show ${kind || ''}`;
+    clearTimeout(el._t);
+    el._t = setTimeout(() => (el.className = 'toast'), 3200);
+  };
+
+})();

@@ -1,0 +1,19 @@
+node_modules/
+config/channel-map.report.json
+config/category-map.report.json
+.env
+
+# Salida con PII del export de audiencias — NUNCA commitear
+private-out/
+__pycache__/
+
+# Checkout de la rama `data-raw` que hacen los workflows (histórico pesado).
+.data-raw/
+
+# El histórico pesado NO va en esta rama: vive en `data-raw`, que Vercel no
+# deploya, y lo sirve /api/archive a demanda. Tenerlo acá era el 98% del peso
+# del repo y la causa de los deploys de 12 minutos. Quedan ignorados para que
+# una corrida local del pipeline no los vuelva a commitear por accidente.
+/data/daily/
+/docs/data/web/orders/
+/docs/data/web/order-index/

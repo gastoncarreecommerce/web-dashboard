@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WebDash — Carrefour Argentina</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;750&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+</head>
+<body>
+  <div class="shell">
+    <aside class="nav">
+      <div class="nav-brand">
+        <div class="nav-logo"><span>C</span></div>
+        <div class="nav-brand-txt"><strong>WebDash</strong><em>Canal Web · VTEX</em></div>
+      </div>
+
+      <div class="nav-scroll">
+        <div class="nav-sec">Análisis</div>
+        <a class="nav-item active" data-view="dashboard"><span class="ni"></span><span>Dashboard</span></a>
+        <a class="nav-item" data-view="analytics"><span class="ni"></span><span>Analítica</span></a>
+        <a class="nav-item" data-view="tiendas"><span class="ni"></span><span>Tiendas</span></a>
+        <a class="nav-item" data-view="coupons"><span class="ni"></span><span>Cupones</span></a>
+        <a class="nav-item" data-view="marketing"><span class="ni"></span><span>Marketing</span></a>
+        <a class="nav-item" data-view="buscador"><span class="ni"></span><span>Buscador</span></a>
+        <div class="nav-sec">Activación</div>
+        <a class="nav-item" data-view="audiences"><span class="ni"></span><span>Audiencias</span></a>
+      </div>
+
+      <div class="nav-foot">
+        <div class="nav-foot-org">Carrefour Argentina</div>
+        <div class="nav-foot-sub">eCommerce Analytics</div>
+        <button class="nav-logout" id="logout"></button>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="top">
+        <div class="top-row">
+          <div class="top-title">
+            <h1 id="view-title">Dashboard</h1>
+            <span id="range-label" class="top-sub">—</span>
+          </div>
+          <div class="top-tools" id="date-controls">
+            <div class="seg-ctl" id="presets">
+              <button data-preset="today" id="preset-today">Hoy<span class="live-dot" aria-hidden="true"></span></button>
+              <button data-preset="yesterday">Ayer</button>
+              <button data-preset="7d">7d</button>
+              <button data-preset="30d">30d</button>
+              <button data-preset="90d">90d</button>
+              <button data-preset="month" class="on">Mes</button>
+              <button data-preset="all">Todo</button>
+            </div>
+            <div class="date-ctl">
+              <input type="date" id="date-from" aria-label="Desde" />
+              <span>–</span>
+              <input type="date" id="date-to" aria-label="Hasta" />
+            </div>
+            <button class="btn-p" id="refresh-today" title="Trae los pedidos de hoy ahora mismo, en vez de esperar la actualización automática"><span class="ri"></span><span class="rl">Actualizar</span></button>
+          </div>
+        </div>
+
+        <div class="top-row2" id="row2">
+          <div class="chips" id="segbar"></div>
+          <label class="cmp" id="cmp-wrap">
+            <input type="checkbox" id="cmp" checked />
+            <span>Comparar</span>
+            <em id="cmp-label"></em>
+          </label>
+        </div>
+      </header>
+
+      <main id="content" class="body">
+        <div class="loading">Cargando…</div>
+      </main>
+
+      <footer class="foot">
+        <div id="meta" class="meta"></div>
+      </footer>
+    </div>
+  </div>
+
+  <script src="icons.js"></script>
+  <script src="ar-map.js"></script>
+  <script src="xlsx.js"></script>
+  <script src="core.js"></script>
+  <script src="charts.js"></script>
+  <script src="view-dashboard.js"></script>
+  <script src="view-analytics.js"></script>
+  <script src="view-tiendas.js"></script>
+  <script src="view-coupons.js"></script>
+  <script src="view-marketing.js"></script>
+  <script src="view-buscador.js"></script>
+  <script src="view-audiences.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

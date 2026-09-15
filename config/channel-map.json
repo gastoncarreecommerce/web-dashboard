@@ -1,0 +1,12 @@
+{
+  "_comment": "Regla real usada por AppDash (fetch-orders.js / lib/order-attribution.js: `if (getCustomAppFrom(detail) !== 'app') continue` para descartar todo lo que no sea app). O sea: NO hay un valor explícito para 'web' — web es todo lo que no sea 'app', incluyendo pedidos que no tienen el campo (de antes de que existiera la app, o de antes de que se empezara a trackear este campo). Confirmado con el usuario (2026-08-24): antes de que existiera la app no había otro canal, así que 'sin campo' = web es correcto también para pedidos viejos (antes de 2026).",
+  "customAppsField": {
+    "appId": "from-help-info",
+    "fieldName": "from"
+  },
+  "appValue": "app",
+  "notes": [
+    "orderChannel(order) = 'app' si customData.customApps tiene el appId configurado con fields[fieldName] === appValue; en cualquier otro caso (valor distinto, o el campo no existe) es 'web'. No hay bucket 'unknown'.",
+    "Esto es intencional y esperado para pedidos anteriores a que existiera la app (no van a tener customData.customApps con ese id, y deben contarse como web)."
+  ]
+}

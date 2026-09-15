@@ -1,0 +1,216 @@
+# Sincronización RÁPIDA — no vuelve a leer los pedidos de VTEX.
+#
+# Sirve para dos cosas que antes obligaban a rehacer el backfill entero:
+#
+#  1. Recalcular las métricas derivadas (ciclo de vida, churn, intervalo entre
+#     compras, cohortes) sobre los archivos diarios que ya están en el repo.
+#     Es puro cómputo local: segundos, cero llamadas a VTEX.
+#
+#  2. Traer los mails desde la base de clientes de VTEX (Master Data, entidad
+#     CL) en vez de desde los pedidos. El hash del dashboard es SHA-256 del
+#     email, así que con la lista de emails se reconstruye el mapeo completo:
+#     ~2.300 llamadas livianas contra las ~866.000 que costaría releer pedidos.
+name: WebDash sincronizar (rápido · sin releer pedidos)
+
+# Todos los checkouts de este workflow fijan ref: claude/carrefour-webdash-
+# analytics-xojjfs a propósito. Es workflow_dispatch: quien lo corre elige una
+# rama en el desplegable de GitHub, y el checkout+commit+push sigue esa
+# elección por defecto. Como la rama que sirve Vercel es específicamente esa,
+# elegir "main" en el desplegable (el hábito natural) escribía los datos en
+# una rama que la producción nunca lee — pasó de verdad: un backfill entero
+# de 237 días quedó invisible en producción durante horas hasta notarlo.
+on:
+  workflow_dispatch:
+    inputs:
+      recalcular:
+        description: 'Recalcular métricas sobre los días ya guardados'
+        type: boolean
+        default: true
+      traer_mails:
+        description: 'Traer mails desde VTEX Master Data y publicarlos al repo privado'
+        type: boolean
+        default: true
+      releer_todo:
+        description: 'Releer la base ENTERA de clientes (~2h). Sin esto trae solo lo que cambió.'
+        type: boolean
+        default: false
+      desde:
+        description: 'Traer solo lo modificado desde esta fecha (YYYY-MM-DD). Vacío = automático.'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  group: webdash-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    # Insumo crudo y archivo de pedidos viven en la rama `data-raw`
+    # (checkout aparte); solo los agregados chicos van a la rama deployada.
+    env:
+      WEBDASH_DAILY_DIR: ${{ github.workspace }}/.data-raw/data/daily
+      WEBDASH_ARCHIVE_ROOT: ${{ github.workspace }}/.data-raw
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: claude/carrefour-webdash-analytics-xojjfs
+
+      # El histórico pesado (volcados crudos + orders/ + order-index/) vive en
+      # `data-raw`, que Vercel no deploya.
+      - name: Checkout del archivo (rama data-raw)
+        uses: actions/checkout@v4
+        with:
+          ref: data-raw
+          path: .data-raw
+          sparse-checkout: |
+            data/daily
+            docs/data/web/orders
+            docs/data/web/order-index
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Recalcular métricas
+        if: ${{ github.event.inputs.recalcular != 'false' }}
+        run: node src/aggregate.js
+
+      # Sin esto cada sync releía los 5,1M de clientes desde cero (~2h15).
+      # Con la base previa a mano, solo hace falta pedir el delta.
+      #
+      # El mapeo completo pesa ~500MB — muy por encima del límite de GitHub
+      # de 100MB por archivo — así que vive repartido en private-out/base/
+      # (email,dni; el hash se deriva) y private-out/audiencias/ (hash,email,
+      # dni: SOLO los clientes que aparecen en el índice de audiencias, que
+      # es lo único que el dashboard puede llegar a pedir).
+      - name: Bajar la base previa del repo privado
+        if: ${{ github.event.inputs.traer_mails != 'false' }}
+        env:
+          PRIVATE_DATA_REPO: ${{ secrets.PRIVATE_DATA_REPO }}
+          PRIVATE_DATA_TOKEN: ${{ secrets.PRIVATE_DATA_TOKEN }}
+        run: |
+          mkdir -p private-out
+          if [ -z "$PRIVATE_DATA_REPO" ] || [ -z "$PRIVATE_DATA_TOKEN" ]; then
+            echo "Sin repo privado configurado: se lee la base completa."
+            exit 0
+          fi
+          git clone --depth 1 "https://x-access-token:$PRIVATE_DATA_TOKEN@github.com/$PRIVATE_DATA_REPO.git" /tmp/privbase 2>/dev/null || true
+          [ -d /tmp/privbase/base ] && cp -r /tmp/privbase/base private-out/base && echo "  base/ copiada"
+          [ -f /tmp/privbase/.sync-state.json ] && cp /tmp/privbase/.sync-state.json private-out/.sync-state.json
+          rm -rf /tmp/privbase
+          [ -d private-out/base ] \
+            && echo "Base previa: $(wc -l private-out/base/*.csv | tail -1 | awk '{print $1}') filas" \
+            || echo "No hay base previa: se lee la base completa."
+
+      - name: Traer mails desde Master Data
+        if: ${{ github.event.inputs.traer_mails != 'false' }}
+        env:
+          VTEX_ACCOUNT_NAME: ${{ secrets.VTEX_ACCOUNT_NAME }}
+          VTEX_APP_KEY: ${{ secrets.VTEX_APP_KEY }}
+          VTEX_APP_TOKEN: ${{ secrets.VTEX_APP_TOKEN }}
+          VTEX_ENVIRONMENT: ${{ secrets.VTEX_ENVIRONMENT }}
+          FULL_RESYNC: ${{ github.event.inputs.releer_todo }}
+          MD_SINCE: ${{ github.event.inputs.desde }}
+        run: node src/fetch-emails.js
+
+      # Parte el hash-email.csv (~500MB, no publicable tal cual) en los dos
+      # juegos de pedazos chicos de arriba.
+      - name: Repartir en pedazos publicables
+        if: ${{ github.event.inputs.traer_mails != 'false' }}
+        run: node src/shard-emails.js
+
+      - name: Publicar al repo privado
+        if: ${{ github.event.inputs.traer_mails != 'false' }}
+        env:
+          PRIVATE_DATA_REPO: ${{ secrets.PRIVATE_DATA_REPO }}
+          PRIVATE_DATA_TOKEN: ${{ secrets.PRIVATE_DATA_TOKEN }}
+        run: |
+          if [ -z "$PRIVATE_DATA_REPO" ] || [ -z "$PRIVATE_DATA_TOKEN" ]; then
+            echo "::warning::Sin PRIVATE_DATA_REPO/PRIVATE_DATA_TOKEN: no se publican los mails."
+            exit 0
+          fi
+          VIS=$(curl -sS -H "Authorization: Bearer $PRIVATE_DATA_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$PRIVATE_DATA_REPO" | python3 -c "import sys,json; print(json.load(sys.stdin).get('private'))")
+          if [ "$VIS" != "True" ]; then
+            echo "::error::$PRIVATE_DATA_REPO no figura como privado (private=$VIS). No se publican mails."
+            exit 1
+          fi
+          for f in private-out/base/*.csv; do
+            sz=$(du -m "$f" | cut -f1)
+            if [ "$sz" -gt 90 ]; then echo "::error::$f pesa ${sz}MB, muy cerca del límite de GitHub. Subí BASE_SHARDS en src/shard-emails.js."; exit 1; fi
+          done
+          git clone --depth 1 "https://x-access-token:$PRIVATE_DATA_TOKEN@github.com/$PRIVATE_DATA_REPO.git" /tmp/privrepo
+          rm -rf /tmp/privrepo/base /tmp/privrepo/audiencias
+          cp -r private-out/base /tmp/privrepo/base
+          cp -r private-out/audiencias /tmp/privrepo/audiencias
+          [ -f private-out/.sync-state.json ] && cp private-out/.sync-state.json /tmp/privrepo/.sync-state.json
+          # Compatibilidad: si quedó un hash-email.csv viejo de antes de repartir
+          # en pedazos, se borra para no dejar dos fuentes de verdad pisándose.
+          rm -f /tmp/privrepo/hash-email.csv
+          cd /tmp/privrepo
+          git config user.name "webdash-bot"
+          git config user.email "webdash-bot@users.noreply.github.com"
+          git add -A base audiencias .sync-state.json
+          git rm --cached hash-email.csv 2>/dev/null || true
+          if git diff --staged --quiet; then
+            echo "Sin cambios en el mapeo de mails."
+          else
+            git commit -m "emails: sincronización desde Master Data"
+            # A diferencia del commit de métricas, acá NO se sigue si el push
+            # falla: son los datos que el sync existe para publicar, y un fallo
+            # silencioso deja el dashboard sirviendo mails viejos sin avisar.
+            ok=0
+            for i in 1 2 3 4; do
+              git push && { ok=1; break; }
+              echo "push falló, reintento $i..."; sleep $((i*5)); git pull --rebase --autostash || true
+            done
+            if [ "$ok" != "1" ]; then
+              echo "::error::No se pudo publicar en $PRIVATE_DATA_REPO tras varios intentos."
+              exit 1
+            fi
+            echo "Publicado en $PRIVATE_DATA_REPO"
+          fi
+
+      # Guarda: la salida con PII vive en private-out/, que está gitignorado.
+      # Si por lo que sea aparece algo para commitear fuera de docs/data, se corta.
+      - name: Verificar que no se cuele PII al repo público
+        run: |
+          if git status --porcelain | grep -v '^ M docs/data/' | grep -q .; then
+            echo "::error::Cambios inesperados fuera de docs/data — abortando por seguridad."
+            git status --porcelain
+            exit 1
+          fi
+          echo "Sin PII fuera de private-out/ ✓"
+
+      - name: Commitear métricas
+        run: |
+          git config user.name "webdash-bot"
+          git config user.email "webdash-bot@users.noreply.github.com"
+          git add docs/data/ ':!docs/data/web/orders' ':!docs/data/web/order-index'
+          if git diff --staged --quiet; then
+            echo "Sin cambios."
+          else
+            git commit -m "chore(data): recálculo de métricas [skip ci]"
+            for i in 1 2 3 4; do
+              git push && break
+              sleep $((i*5)); git pull --rebase --autostash || true
+            done
+          fi
+
+      # El histórico pesado no se deploya: va a `data-raw`.
+      - name: Commitear archivo (rama data-raw)
+        working-directory: .data-raw
+        run: |
+          git config user.name "webdash-bot"
+          git config user.email "webdash-bot@users.noreply.github.com"
+          git add -f data/daily/ docs/data/web/orders/ docs/data/web/order-index/
+          if git diff --staged --quiet; then
+            echo "Archivo sin cambios."
+          else
+            git commit -m "chore(data): volcados crudos + detalle de pedidos [skip ci]"
+            for i in 1 2 3 4; do git push && break; sleep $((i*5)); git pull --rebase --autostash || true; done
+          fi

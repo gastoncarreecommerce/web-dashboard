@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WebDash — Ingresar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;750&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="login.css" />
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+</head>
+<body>
+  <div class="stage">
+    <aside class="hero">
+      <span class="hero-blob" aria-hidden="true"></span>
+      <div class="hero-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 17 8 10 13 14 21 4" />
+        </svg>
+      </div>
+      <div class="hero-copy">
+        <h1>Todo lo que pasa en el canal web, en un solo lugar.</h1>
+        <p>Ventas, cupones, marketing y audiencias de Carrefour Argentina — sin planillas sueltas ni exports a mano.</p>
+      </div>
+      <div class="hero-stats">
+        <div><strong>4</strong><span>Segmentos de negocio</span></div>
+        <div><strong>24</strong><span>Provincias cubiertas</span></div>
+      </div>
+      <div class="hero-foot">Canal Web · VTEX</div>
+    </aside>
+
+    <main class="panel">
+      <div class="panel-head">
+        <h2>¡Hola de nuevo!</h2>
+        <p>Ingresá con tu usuario para ver el dashboard.</p>
+      </div>
+
+      <form id="login-form" autocomplete="on">
+        <label>Usuario
+          <div class="field"><input type="text" id="username" name="username" autocomplete="username" required autofocus /></div>
+        </label>
+        <label>Contraseña
+          <div class="field"><input type="password" id="password" name="password" autocomplete="current-password" required /></div>
+        </label>
+        <button type="submit" id="submit"><span class="spinner"></span><span class="btn-txt">Ingresar</span></button>
+        <p class="error" id="error" role="alert"></p>
+      </form>
+
+      <p class="panel-foot">Datos de pedidos de Carrefour Argentina. El acceso queda registrado en tu sesión por 12 horas.</p>
+    </main>
+  </div>
+
+  <script>
+    const form = document.getElementById('login-form');
+    const errorEl = document.getElementById('error');
+    const btn = document.getElementById('submit');
+    const btnTxt = btn.querySelector('.btn-txt');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorEl.textContent = '';
+      btn.disabled = true;
+      btn.classList.add('busy');
+      btnTxt.textContent = 'Verificando…';
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value,
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'No se pudo ingresar.');
+        const next = new URLSearchParams(location.search).get('next');
+        // Solo se acepta un destino interno: evita que ?next= mande a otro sitio.
+        location.href = next && next.startsWith('/') && !next.startsWith('//') ? next : '/';
+      } catch (err) {
+        errorEl.textContent = err.message;
+        btn.disabled = false;
+        btn.classList.remove('busy');
+        btnTxt.textContent = 'Ingresar';
+      }
+    });
+  </script>
+</body>
+</html>
