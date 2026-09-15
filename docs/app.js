@@ -213,12 +213,46 @@
     W.toast(`Exportadas ${W.fmtNum(spec.rows.length)} filas.`, 'good');
   });
 
+  /**
+   * Empalma recent.json sobre daily-summary.
+   *
+   * daily-summary.json se regenera una sola vez por día (pesa 20 MB, no se
+   * puede commitear cada media hora), así que por sí solo deja "Hoy" con
+   * hasta 24 horas de atraso. recent.json son los últimos dos días en el
+   * mismo formato, ~120 KB, y lo commitea el workflow de cada 30 min.
+   *
+   * Orden de frescura, de menos a más: daily-summary (1×día) → recent.json
+   * (cada 30 min) → /api/today-live (cada 15s). Cada uno pisa al anterior, y
+   * los de arriba son opcionales: si recent.json no está, o si el vivo no
+   * tiene Redis configurado, el dashboard sigue funcionando con lo que haya
+   * en vez de quedarse esperando.
+   */
+  function spliceRecent(daily, recent) {
+    if (!recent?.days?.length) return null;
+    for (const day of recent.days) {
+      const idx = daily.days.findIndex((d) => d.date === day.date);
+      if (idx >= 0) daily.days[idx] = day;
+      else daily.days.push(day);
+    }
+    daily.days.sort((a, b) => a.date.localeCompare(b.date));
+    return recent.generatedAt || null;
+  }
+
   async function main() {
     try {
       const daily = await W.load('daily-summary');
+      meta = await W.load('_meta/run-info').catch(() => null);
+
+      const recentAt = spliceRecent(daily, await W.load('recent').catch(() => null));
+      // La hora que se muestra en "actualizado hace X" tiene que ser la del
+      // dato más fresco que realmente se está viendo, no la del agregado
+      // diario.
+      if (recentAt && (!meta?.generatedAt || recentAt > meta.generatedAt)) {
+        meta = { ...(meta || {}), generatedAt: recentAt };
+      }
+
       days = daily.days.map((d) => d.date);
       startDate = daily.detailWindowStartDate;
-      meta = await W.load('_meta/run-info').catch(() => null);
     } catch (e) {
       $('content').innerHTML = `<div class="empty err"><h2>No se pudieron cargar los datos</h2>
         <p>${W.esc(e.message)}</p><p class="muted">¿Ya corrió el pipeline? Ver README.</p></div>`;

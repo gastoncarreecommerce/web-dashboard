@@ -42,17 +42,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      # Solo el código, sin datos: este workflow no escribe nada en la rama
-      # deployada, así que no hace falta traerse sus agregados.
+      # Checkout completo de la rama deployada. Son ~42 MB desde que el
+      # histórico pesado salió de acá, así que no vale la pena esparcirlo.
       - uses: actions/checkout@v4
         with:
           ref: claude/carrefour-webdash-analytics-xojjfs
-          sparse-checkout: |
-            src
-            config
-            package.json
-            package-lock.json
-          sparse-checkout-cone-mode: false
 
       # Los volcados crudos del día viven acá. Solo se necesita el directorio
       # de diarios: orders/ y order-index/ los reescribe el pipeline, no esto.
@@ -78,6 +72,30 @@ jobs:
           TODAY=$(TZ=America/Argentina/Buenos_Aires date +%Y-%m-%d)
           echo "Hoy (AR): $TODAY"
           node src/fetch-day.js "$TODAY" --incremental
+
+      # Recalcula los agregados para obtener recent.json (~120 KB) con los
+      # últimos dos días. No se commitea daily-summary (20 MB) ni
+      # audience-index (18 MB): esos los actualiza el pipeline diario. Esto es
+      # lo que mantiene "Hoy" al día sin depender de que /api/today-live tenga
+      # Redis configurado.
+      - name: Agregar
+        env:
+          WEBDASH_ARCHIVE_ROOT: ${{ github.workspace }}/.data-raw
+        run: node src/aggregate.js
+
+      # Dos archivos chicos, nada más. run-info.json además es lo que sondea
+      # el botón "Actualizar" del dashboard para saber que ya llegó el dato.
+      - name: Commitear recent.json (rama deployada)
+        run: |
+          git config user.name "webdash-bot"
+          git config user.email "webdash-bot@users.noreply.github.com"
+          git add docs/data/web/recent.json docs/data/web/_meta/run-info.json
+          if git diff --staged --quiet; then
+            echo "Sin cambios en recent.json."
+          else
+            git commit -m "chore(data): hoy al dia [skip ci]"
+            for i in 1 2 3; do git push && break; sleep $((i*5)); git pull --rebase --autostash || true; done
+          fi
 
       - name: Commitear el volcado crudo en data-raw
         working-directory: .data-raw

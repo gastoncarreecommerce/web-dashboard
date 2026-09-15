@@ -367,6 +367,30 @@ function main() {
     days: dailySeries,
   });
 
+  // ── recent.json (la cola de la serie, para el refresco de cada 30 min) ──
+  // Mismo formato que las entradas de daily-summary.json, pero SOLO los
+  // últimos días. Existe porque daily-summary pesa 20 MB y audience-index 18
+  // MB, y los dos se reescriben enteros en cuanto cambia un número de hoy:
+  // commitearlos cada 30 min era lo que hacía crecer el repo ~500 MB por día
+  // y lo que volvía lentos los deploys (Vercel clona --depth=10, así que esos
+  // commits se transferían en cada uno).
+  //
+  // Este archivo pesa ~100 KB, así que el workflow de cada 30 min puede
+  // commitearlo sin costo y el cliente lo empalma sobre daily-summary. Es lo
+  // que mantiene "Hoy" al día SIN depender de que /api/today-live tenga Redis
+  // configurado: si el vivo anda, pisa esto con datos de 15 segundos; si no
+  // anda, el dashboard igual muestra hoy con 30 min de atraso en vez de
+  // quedarse esperando hasta la corrida de las 03:00.
+  //
+  // Van los DOS últimos días, no solo hoy: entre las 00:00 y las 03:00 AR el
+  // pipeline todavía no procesó "ayer", y con un solo día ayer quedaba en
+  // blanco durante esas tres horas.
+  const RECENT_DAYS = 2;
+  const sizeRecent = writeJson('docs/data/web/recent.json', {
+    generatedAt: now.toISOString(),
+    days: dailySeries.slice(-RECENT_DAYS),
+  });
+
   // ── geo.json (mapa por provincia + tiendas) ─────────────────────────────
   const sizeGeo = writeJson('docs/data/web/geo.json', {
     generatedAt: now.toISOString(),
@@ -633,7 +657,7 @@ function main() {
 
   const mb = (n) => `${(n / 1048576).toFixed(1)}MB`;
   console.log(`Agregado OK. Días: ${days.length}. Faltantes: ${missingDays.length}. Clientes únicos: ${profiles.size}.`);
-  console.log(`  daily-summary ${mb(sizeDaily)} · catalog ${mb(sizeCatalog)} · cohorts ${mb(sizeCohorts)} · audience ${mb(sizeAudience)}`);
+  console.log(`  daily-summary ${mb(sizeDaily)} · recent ${mb(sizeRecent)} · catalog ${mb(sizeCatalog)} · cohorts ${mb(sizeCohorts)} · audience ${mb(sizeAudience)}`);
   console.log(`  geo ${mb(sizeGeo)} (${geoDays.length} días, ${Object.keys(storeMeta).length} tiendas) · products ${mb(sizeProducts)}`);
   console.log(`  orders ${mb(ordersBytesTotal)} (${ordersFilesWritten} archivos, uno por tienda y mes)`);
   console.log(`  order-index ${mb(orderIndexBytesTotal)} (${Object.keys(orderIndexByMonth).length} meses)`);

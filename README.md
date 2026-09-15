@@ -147,14 +147,34 @@ blob nuevo completo. Partido por mes, **un mes cerrado no vuelve a cambiar nunca
 una sola vez. Solo churnea el mes en curso. El formato interno sigue siendo `{ "<mes>": [pedidos] }`,
 ahora con una sola clave por archivo.
 
-### Por qué el workflow de 30 minutos ya no commitea agregados
+### Las tres capas de frescura de "Hoy"
 
-`webdash-live.yml` corre cada 30 min pero **solo guarda el volcado crudo en `data-raw`**. Los
-números de hoy en pantalla salen de `/api/today-live` (VTEX + Redis, refresco cada 15s), no de un
-commit. Antes cada corrida reescribía `daily-summary.json` (20 MB) y `audience-index.json` (18 MB)
-enteros y disparaba un deploy: 10 deploys por día, y como Vercel clona con `--depth=10` esos 10
-commits se transferían en cada uno. Ahora el agregado corre una sola vez por día
-(`webdash-pipeline.yml`) → **1 deploy por día en vez de 10**.
+De menos a más fresco, y cada una pisa a la anterior:
+
+| Capa | Quién la escribe | Cada cuánto | Peso |
+|---|---|---|---|
+| `daily-summary.json` | `webdash-pipeline.yml` | 1×día (03:00 AR) | 20 MB |
+| `recent.json` | `webdash-live.yml` | cada 30 min | ~120 KB |
+| `/api/today-live` | la función, en el momento | cada 15 s | — |
+
+`daily-summary.json` no se puede commitear cada media hora: pesa 20 MB, se reescribe entero en
+cuanto cambia un número de hoy, y como Vercel clona `--depth=10` esos commits se transferían en
+cada deploy. Eso era lo que hacía crecer el repo ~500 MB/día y los deploys de 12 minutos.
+
+`recent.json` resuelve eso: son los **últimos dos días** en el mismo formato que las entradas de
+`daily-summary`, pero ~120 KB, así que el workflow de cada 30 min lo commitea sin costo. Van dos
+días y no uno porque entre las 00:00 y las 03:00 AR el pipeline todavía no procesó "ayer".
+
+El cliente lo empalma en `spliceRecent()` (`docs/app.js`). **Las dos capas de arriba son
+opcionales**: si `recent.json` no está, o si `/api/today-live` no tiene Redis configurado, el
+dashboard sigue mostrando lo que haya en vez de quedarse esperando. Eso es a propósito — una
+versión anterior de este cambio dejó a "Hoy" dependiendo solo del endpoint en vivo, y con Redis
+sin configurar el dashboard quedaba con datos de la corrida de las 03:00 y el botón "Actualizar"
+girando para siempre.
+
+El workflow de 30 min commitea **solo** `recent.json` y `_meta/run-info.json` en la rama
+deployada (ese segundo archivo es el que sondea el botón "Actualizar" para saber que ya llegó el
+dato), y el volcado crudo en `data-raw`.
 
 ### Por qué la ventana empieza en 2026-01-01
 
