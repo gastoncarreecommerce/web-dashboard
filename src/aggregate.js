@@ -25,8 +25,26 @@ const { PROVINCES } = require('./geo');
 const pipelineConfig = require('../config/pipeline-config.json');
 
 const SEGMENTS = segmentMap.tabs.list;
-const DAILY_DIR = path.join(__dirname, '..', 'data', 'daily');
-const OUT_BASE = path.join(__dirname, '..', 'docs', 'data', 'web');
+const REPO_ROOT = path.join(__dirname, '..');
+
+/**
+ * Las tres raíces del pipeline, separadas porque cada una vive en un lugar
+ * distinto desde que los datos pesados salieron del deploy:
+ *
+ *   DAILY_DIR     los volcados crudos de VTEX (1,6 GB). Insumo del pipeline,
+ *                 el browser no los toca nunca. Viven en la rama `data-raw`.
+ *   OUT_ROOT      los agregados que el dashboard necesita al abrir la página
+ *                 (~40 MB). Van en la rama que deploya Vercel.
+ *   ARCHIVE_ROOT  orders/ y order-index/ (1,1 GB). Solo se leen a demanda vía
+ *                 /api/archive, así que también viven en `data-raw`.
+ *
+ * Por defecto las tres apuntan al repo local, así correr `node
+ * src/aggregate.js` a mano sigue funcionando igual que siempre. El workflow
+ * las apunta a los dos checkouts distintos que usa.
+ */
+const DAILY_DIR = process.env.WEBDASH_DAILY_DIR || path.join(REPO_ROOT, 'data', 'daily');
+const OUT_ROOT = process.env.WEBDASH_OUT_ROOT || REPO_ROOT;
+const ARCHIVE_ROOT = process.env.WEBDASH_ARCHIVE_ROOT || REPO_ROOT;
 
 const TOP_PRODUCTS = Number(process.env.CATALOG_TOP_PRODUCTS || 400);
 const TOP_CATEGORIES = Number(process.env.CATALOG_TOP_CATEGORIES || 60);
@@ -77,8 +95,8 @@ function listAvailableDays(startDate) {
  * vería como "sin cambios" igual (compara contenido, no mtime), pero evitar
  * la escritura innecesaria es gratis y deja el disco/los diffs más claros.
  */
-function writeJson(relPath, data) {
-  const outPath = path.join(__dirname, '..', relPath);
+function writeJson(relPath, data, root = OUT_ROOT) {
+  const outPath = path.join(root, relPath);
   const json = JSON.stringify(data);
   if (fs.existsSync(outPath) && fs.readFileSync(outPath, 'utf8') === json) {
     return fs.statSync(outPath).size;
@@ -113,7 +131,7 @@ function main() {
   // Salvaguarda: si los archivos diarios desaparecieron (un rm de más, un
   // checkout incompleto, un artifact que no bajó) NO se pisan las métricas
   // buenas con ceros. Ya pasó una vez y dejó producción en blanco.
-  const prevPath = path.join(__dirname, '..', 'docs', 'data', 'web', '_meta', 'run-info.json');
+  const prevPath = path.join(OUT_ROOT, 'docs', 'data', 'web', '_meta', 'run-info.json');
   if (!days.length && fs.existsSync(prevPath)) {
     try {
       const prev = JSON.parse(fs.readFileSync(prevPath, 'utf8'));
@@ -359,32 +377,36 @@ function main() {
     days: geoDays,
   });
 
-  // ── orders/<tienda>/<semestre>.json (detalle de pedidos, por tienda y
-  // semestre — los meses de ese semestre van adentro) ─────────────────────
-  // Antes era un archivo por tienda POR MES: con ~180 tiendas activas × 9
-  // meses eso ya eran más de 500 archivos, y seguía creciendo un mes más
-  // para siempre. Un archivo único por tienda (sin partición) se probó y se
-  // descartó enseguida: las tiendas más grandes YA superan los 50-75 MB con
-  // apenas 9 meses — a ese ritmo iban a pasar los 100 MB (el límite duro de
-  // GitHub, no una sugerencia) en un par de meses más y iban a tirar abajo
-  // la actualización automática. Partir por semestre acota cada archivo a
-  // ~6 meses de una tienda para siempre (las más grandes rondan los 50 MB
-  // por semestre, con margen), y la cantidad de archivos solo crece cada
-  // 6 meses (al abrir un semestre nuevo), no cada mes.
-  function halfYearOf(month) {
-    const [y, m] = month.split('-');
-    return `${y}-H${Number(m) <= 6 ? 1 : 2}`;
-  }
+  // ── orders/<tienda>/<mes>.json (detalle de pedidos, por tienda y mes) ───
+  // Esto ANTES se partía por semestre, para que la cantidad de archivos
+  // creciera cada 6 meses en vez de cada mes. Se revirtió a propósito, porque
+  // esa decisión optimizaba lo que ya no importa y pagaba con lo único que sí
+  // importa: la inmutabilidad.
+  //
+  // El problema medido: un archivo semestral de una tienda grande llega a
+  // 57 MB, y para agregarle los pedidos de hoy hay que reescribirlo entero.
+  // Git no guarda "la diferencia" de un JSON de una línea: guarda un blob
+  // nuevo completo. Con 91 tiendas activas eso eran 48,6 MB de crecimiento
+  // del repo POR COMMIT, unos 500 MB por día, y el semestre en curso se
+  // reescribía así durante 6 meses seguidos.
+  //
+  // Partido por mes, un mes cerrado no vuelve a cambiar nunca: git lo guarda
+  // una sola vez y listo. Solo churnea el mes en curso, y cada archivo queda
+  // ~6x más chico (lejos del límite de 100 MB de GitHub).
+  //
+  // La contra de la partición mensual —más archivos, ~180 tiendas × 12 meses
+  // al año— dejó de ser un problema cuando estos archivos salieron del
+  // deploy: ahora viven en la rama `data-raw` y los sirve /api/archive a
+  // demanda, así que la cantidad de archivos no le cuesta nada a Vercel.
+  //
+  // El formato de adentro NO cambia: sigue siendo { "<mes>": [pedidos] },
+  // ahora con una sola clave por archivo, así el cliente lo sigue leyendo y
+  // fusionando igual que antes.
   let ordersFilesWritten = 0, ordersBytesTotal = 0;
   for (const [storeCode, byMonth] of Object.entries(ordersByStoreMonth)) {
-    const byHalf = {};
     for (const [m, list] of Object.entries(byMonth)) {
       list.sort((a, b) => (a.t < b.t ? -1 : a.t > b.t ? 1 : 0));
-      const half = (byHalf[halfYearOf(m)] = byHalf[halfYearOf(m)] || {});
-      half[m] = list;
-    }
-    for (const [half, out] of Object.entries(byHalf)) {
-      ordersBytesTotal += writeJson(`docs/data/web/orders/${storeCode}/${half}.json`, out);
+      ordersBytesTotal += writeJson(`docs/data/web/orders/${storeCode}/${m}.json`, { [m]: list }, ARCHIVE_ROOT);
       ordersFilesWritten += 1;
     }
   }
@@ -396,7 +418,7 @@ function main() {
   let orderIndexBytesTotal = 0;
   for (const [m, list] of Object.entries(orderIndexByMonth)) {
     list.sort((a, b) => (a.t < b.t ? -1 : a.t > b.t ? 1 : 0));
-    orderIndexBytesTotal += writeJson(`docs/data/web/order-index/${m}.json`, list);
+    orderIndexBytesTotal += writeJson(`docs/data/web/order-index/${m}.json`, list, ARCHIVE_ROOT);
   }
 
   // ── products.json (por segmento y por mes) ──────────────────────────────
@@ -613,7 +635,7 @@ function main() {
   console.log(`Agregado OK. Días: ${days.length}. Faltantes: ${missingDays.length}. Clientes únicos: ${profiles.size}.`);
   console.log(`  daily-summary ${mb(sizeDaily)} · catalog ${mb(sizeCatalog)} · cohorts ${mb(sizeCohorts)} · audience ${mb(sizeAudience)}`);
   console.log(`  geo ${mb(sizeGeo)} (${geoDays.length} días, ${Object.keys(storeMeta).length} tiendas) · products ${mb(sizeProducts)}`);
-  console.log(`  orders ${mb(ordersBytesTotal)} (${ordersFilesWritten} archivos, uno por tienda y semestre)`);
+  console.log(`  orders ${mb(ordersBytesTotal)} (${ordersFilesWritten} archivos, uno por tienda y mes)`);
   console.log(`  order-index ${mb(orderIndexBytesTotal)} (${Object.keys(orderIndexByMonth).length} meses)`);
   if (sizeAudience > 25 * 1048576) {
     console.warn('  ⚠ audience-index.json supera 25MB: el navegador va a tardar en cargarlo. Considerar acotar la ventana.');

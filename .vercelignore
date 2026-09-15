@@ -1,0 +1,13 @@
+# Nada de esto se sirve al browser, así que no tiene por qué viajar en el
+# deploy. Es una red de seguridad: estos paths ya salieron de esta rama (viven
+# en `data-raw`), pero si alguna vez vuelven por accidente, acá no se suben.
+#
+# El histórico pesado de pedidos lo sirve /api/archive a demanda desde
+# `data-raw`; ver api/archive.js.
+data/
+docs/data/web/orders/
+docs/data/web/order-index/
+
+# Insumos y scratch del pipeline, que corre en GitHub Actions, no en Vercel.
+private-out/
+__pycache__/

@@ -30,7 +30,8 @@ const SEGMENTS = segmentMap.tabs.list;
 // Los archivos diarios son insumo del pipeline, no los lee el dashboard. Viven
 // fuera de docs/ para que Vercel no despliegue ~300MB de datos crudos en cada
 // build (y para que los hashes de cliente no queden servidos públicamente).
-const OUT_DIR = path.join(__dirname, '..', 'data', 'daily');
+const OUT_DIR = process.env.WEBDASH_DAILY_DIR
+  || path.join(__dirname, '..', 'data', 'daily');
 // Salida con PII: gitignorada, se publica solo al repositorio PRIVADO.
 const PRIVATE_DIR = path.join(__dirname, '..', 'private-out', 'emails');
 

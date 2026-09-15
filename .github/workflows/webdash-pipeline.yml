@@ -26,11 +26,31 @@ jobs:
   build-data:
     runs-on: ubuntu-latest
     timeout-minutes: 360
+    # Las tres raíces del pipeline. Desde que los datos pesados salieron del
+    # deploy, el insumo crudo y el archivo de pedidos viven en la rama
+    # `data-raw` (checkout de abajo) y solo los agregados chicos (~40 MB) van
+    # a la rama que deploya Vercel.
+    env:
+      WEBDASH_DAILY_DIR: ${{ github.workspace }}/.data-raw/data/daily
+      WEBDASH_ARCHIVE_ROOT: ${{ github.workspace }}/.data-raw
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           ref: claude/carrefour-webdash-analytics-xojjfs
+
+      # El histórico pesado: volcados crudos (1,6 GB) + orders/ y
+      # order-index/ (1,1 GB). Vercel no deploya esta rama, así que su peso no
+      # entra en ningún deploy.
+      - name: Checkout del archivo (rama data-raw)
+        uses: actions/checkout@v4
+        with:
+          ref: data-raw
+          path: .data-raw
+          sparse-checkout: |
+            data/daily
+            docs/data/web/orders
+            docs/data/web/order-index
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -141,10 +161,32 @@ jobs:
             [ "$ok" = "1" ] || { echo "::error::No se pudo publicar los mails en $PRIVATE_DATA_REPO tras varios intentos."; exit 1; }
           fi
 
-      - name: Commit updated data
+      # Los agregados que el dashboard necesita al abrir la página. Es lo
+      # único que viaja en el deploy, y es el único commit del día en esta
+      # rama: Vercel deploya una vez, no diez.
+      - name: Commitear agregados (rama deployada)
         run: |
           git config user.name "webdash-bot"
           git config user.email "webdash-bot@users.noreply.github.com"
-          git add docs/data/ data/daily/
-          git diff --cached --quiet || git commit -m "chore(data): update web daily + aggregated metrics [skip ci]"
-          git push
+          git add docs/data/ ':!docs/data/web/orders' ':!docs/data/web/order-index'
+          if git diff --staged --quiet; then
+            echo "Agregados sin cambios."
+          else
+            git commit -m "chore(data): agregados del dashboard [skip ci]"
+            for i in 1 2 3; do git push && break; sleep $((i*5)); git pull --rebase --autostash || true; done
+          fi
+
+      # El histórico pesado, que no se deploya: volcados crudos y el detalle
+      # de pedidos por tienda/mes que sirve /api/archive a demanda.
+      - name: Commitear archivo (rama data-raw)
+        working-directory: .data-raw
+        run: |
+          git config user.name "webdash-bot"
+          git config user.email "webdash-bot@users.noreply.github.com"
+          git add -f data/daily/ docs/data/web/orders/ docs/data/web/order-index/
+          if git diff --staged --quiet; then
+            echo "Archivo sin cambios."
+          else
+            git commit -m "chore(data): volcados crudos + detalle de pedidos [skip ci]"
+            for i in 1 2 3; do git push && break; sleep $((i*5)); git pull --rebase --autostash || true; done
+          fi

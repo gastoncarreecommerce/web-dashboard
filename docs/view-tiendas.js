@@ -122,24 +122,22 @@
   }
 
   /**
-   * Pedidos de una tienda en el rango elegido. Se guardan particionados por
-   * tienda Y semestre (docs/data/web/orders/<código>/<año>-H1|H2.json, con
-   * los meses de ese semestre como claves adentro): así cada archivo queda
-   * chico para siempre (las tiendas más grandes rondan los 50 MB por
-   * semestre) en vez de crecer sin límite. Un rango típico (mes, trimestre)
-   * cae en un solo semestre → un solo pedido HTTP; un rango que cruza fin
-   * de año pide como mucho 2.
+   * Pedidos de una tienda en el rango elegido, particionados por tienda Y MES
+   * (orders/<código>/<año>-<mes>.json, con el mes como única clave adentro).
+   *
+   * Antes esto era por semestre y se pedía el semestre entero para mostrar,
+   * por ejemplo, una semana: hasta 57 MB para leer unos pocos días. Por mes
+   * se piden solo los meses que toca el rango, y un mes cerrado no vuelve a
+   * cambiar nunca, así que /api/archive lo deja cacheado en el browser.
+   *
+   * No todos los meses tienen archivo (una tienda sin pedidos ese mes no
+   * genera ninguno): el 404 se trata como "sin datos", no como error.
    */
-  function halfYearOf(month) {
-    const [y, m] = month.split('-');
-    return `${y}-H${Number(m) <= 6 ? 1 : 2}`;
-  }
   async function loadStoreOrders(storeCode, months) {
-    const halves = [...new Set(months.map(halfYearOf))];
-    const perHalf = await Promise.all(
-      halves.map((h) => W.load(`orders/${storeCode}/${h}`).catch(() => ({})))
+    const perMonth = await Promise.all(
+      months.map((m) => W.load(`orders/${storeCode}/${m}`).catch(() => ({})))
     );
-    const byMonth = Object.assign({}, ...perHalf);
+    const byMonth = Object.assign({}, ...perMonth);
     return months.flatMap((m) => byMonth[m] || []);
   }
 

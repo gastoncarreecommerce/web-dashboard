@@ -82,6 +82,58 @@ AppDash, se guarda **un archivo por día** y se agrega encima:
 4. `.github/workflows/webdash-backfill.yml` es manual (`from`/`to`) para completar historial en
    tandas.
 
+### Dos ramas: qué se deploya y qué no
+
+Los datos están repartidos en **dos ramas** a propósito, y esto es lo más importante a entender
+antes de tocar el pipeline o los workflows:
+
+| Rama | Qué tiene | Peso | La deploya Vercel |
+|---|---|---|---|
+| `claude/carrefour-webdash-analytics-xojjfs` | código + los agregados que el dashboard necesita al abrir la página (`daily-summary`, `catalog`, `cohorts`, `audience-index`, `geo`, `products`, `<segmento>/metrics`) | ~42 MB | **sí** |
+| `data-raw` | `data/daily/` (volcados crudos de VTEX) + `docs/data/web/orders/` + `docs/data/web/order-index/` | ~2,7 GB | no |
+
+**Por qué.** Antes todo vivía en la rama deployada: 2,7 GB que Vercel se traía completos en cada
+deploy para servir 42 MB. El 98% del peso eran `orders/` y `order-index/`, que **no se leen nunca
+al renderizar una vista** — solo a demanda, en el detalle de una tienda (`view-tiendas`), el
+export XLSX por estado (`view-analytics`) y el drill-down de un cupón (`view-coupons`). Y encima
+se reescribían enteros 10 veces por día, sumando ~500 MB diarios al repo. Resultado: deploys de
+12 minutos que empeoraban solo.
+
+Ahora ese histórico se sirve **a demanda** con `api/archive.js`, que lo lee de `data-raw` por la
+API de GitHub. Costo cero: la API de GitHub es gratis y estas lecturas son esporádicas. El
+cliente no cambia — `W.load()` (en `docs/core.js`) rutea solo los datasets `orders/…` y
+`order-index/…` por ahí, y si el token no está configurado cae al estático de siempre.
+
+**Env vars que necesita** (en Vercel): `ARCHIVE_REPO_TOKEN`, un PAT fine-grained de GitHub con
+**solo** `Contents: read` sobre este repo. Opcionales: `ARCHIVE_REPO` (default: el repo del
+deploy) y `ARCHIVE_REF` (default: `data-raw`).
+
+**Las tres raíces del pipeline** son configurables por entorno justamente para poder escribir en
+los dos checkouts distintos (ver el `env:` de los workflows):
+
+- `WEBDASH_DAILY_DIR` — de dónde leer/escribir los volcados crudos (default: `data/daily`)
+- `WEBDASH_OUT_ROOT` — raíz de los agregados chicos (default: el repo)
+- `WEBDASH_ARCHIVE_ROOT` — raíz de `orders/` y `order-index/` (default: el repo)
+
+Sin ninguna de las tres seteadas, `node src/aggregate.js` local funciona exactamente como antes.
+
+### Por qué `orders/` se parte por mes y no por semestre
+
+Un archivo semestral de una tienda grande llegaba a 57 MB, y para agregarle los pedidos de hoy
+había que reescribirlo entero. Git no guarda "la diferencia" de un JSON de una línea: guarda un
+blob nuevo completo. Partido por mes, **un mes cerrado no vuelve a cambiar nunca** → git lo guarda
+una sola vez. Solo churnea el mes en curso. El formato interno sigue siendo `{ "<mes>": [pedidos] }`,
+ahora con una sola clave por archivo.
+
+### Por qué el workflow de 30 minutos ya no commitea agregados
+
+`webdash-live.yml` corre cada 30 min pero **solo guarda el volcado crudo en `data-raw`**. Los
+números de hoy en pantalla salen de `/api/today-live` (VTEX + Redis, refresco cada 15s), no de un
+commit. Antes cada corrida reescribía `daily-summary.json` (20 MB) y `audience-index.json` (18 MB)
+enteros y disparaba un deploy: 10 deploys por día, y como Vercel clona con `--depth=10` esos 10
+commits se transferían en cada uno. Ahora el agregado corre una sola vez por día
+(`webdash-pipeline.yml`) → **1 deploy por día en vez de 10**.
+
 ### Por qué la ventana empieza en 2026-01-01
 
 Canal, segmento, recencia y recompra necesitan el **detalle completo** de cada pedido

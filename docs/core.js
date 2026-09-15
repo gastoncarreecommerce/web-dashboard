@@ -181,9 +181,30 @@
 
   // ── Carga de datasets (cacheada) ──────────────────────────────────────────
   const cache = {};
+
+  /**
+   * Los datasets del histórico de pedidos (`orders/…`, `order-index/…`) son
+   * el 98% del peso de los datos pero solo se piden a demanda —el detalle de
+   * una tienda, el export por estado, el drill-down de un cupón—, así que ya
+   * no viajan en el deploy: viven en la rama `data-raw` y los sirve
+   * /api/archive. Todo lo demás (daily-summary, catalog, geo, …) se sigue
+   * sirviendo estático porque sí se necesita al abrir la página.
+   */
+  const ARCHIVE = /^(?:orders|order-index)\//;
+
   W.load = async function (name) {
     if (cache[name]) return cache[name];
-    const res = await fetch(`data/${W.CHANNEL}/${name}.json`, { cache: 'no-store' });
+
+    let res;
+    if (ARCHIVE.test(name)) {
+      res = await fetch(`api/archive?path=${encodeURIComponent(`${name}.json`)}`, { cache: 'default' });
+      // Si todavía no está configurado el token del archivo, se cae al
+      // estático de siempre: así la transición no rompe nada mientras los
+      // archivos sigan deployados.
+      if (res.status === 503) res = null;
+    }
+    if (!res) res = await fetch(`data/${W.CHANNEL}/${name}.json`, { cache: 'no-store' });
+
     if (!res.ok) throw new Error(`No se pudo cargar ${name}.json (${res.status})`);
     cache[name] = await res.json();
     return cache[name];

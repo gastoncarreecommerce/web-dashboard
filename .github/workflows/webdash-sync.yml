@@ -50,10 +50,27 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     timeout-minutes: 180
+    # Insumo crudo y archivo de pedidos viven en la rama `data-raw`
+    # (checkout aparte); solo los agregados chicos van a la rama deployada.
+    env:
+      WEBDASH_DAILY_DIR: ${{ github.workspace }}/.data-raw/data/daily
+      WEBDASH_ARCHIVE_ROOT: ${{ github.workspace }}/.data-raw
     steps:
       - uses: actions/checkout@v4
         with:
           ref: claude/carrefour-webdash-analytics-xojjfs
+
+      # El histórico pesado (volcados crudos + orders/ + order-index/) vive en
+      # `data-raw`, que Vercel no deploya.
+      - name: Checkout del archivo (rama data-raw)
+        uses: actions/checkout@v4
+        with:
+          ref: data-raw
+          path: .data-raw
+          sparse-checkout: |
+            data/daily
+            docs/data/web/orders
+            docs/data/web/order-index
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -173,7 +190,7 @@ jobs:
         run: |
           git config user.name "webdash-bot"
           git config user.email "webdash-bot@users.noreply.github.com"
-          git add docs/data/ data/daily/
+          git add docs/data/ ':!docs/data/web/orders' ':!docs/data/web/order-index'
           if git diff --staged --quiet; then
             echo "Sin cambios."
           else
@@ -182,4 +199,18 @@ jobs:
               git push && break
               sleep $((i*5)); git pull --rebase --autostash || true
             done
+          fi
+
+      # El histórico pesado no se deploya: va a `data-raw`.
+      - name: Commitear archivo (rama data-raw)
+        working-directory: .data-raw
+        run: |
+          git config user.name "webdash-bot"
+          git config user.email "webdash-bot@users.noreply.github.com"
+          git add -f data/daily/ docs/data/web/orders/ docs/data/web/order-index/
+          if git diff --staged --quiet; then
+            echo "Archivo sin cambios."
+          else
+            git commit -m "chore(data): volcados crudos + detalle de pedidos [skip ci]"
+            for i in 1 2 3 4; do git push && break; sleep $((i*5)); git pull --rebase --autostash || true; done
           fi
