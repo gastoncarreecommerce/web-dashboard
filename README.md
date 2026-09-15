@@ -117,6 +117,28 @@ los dos checkouts distintos (ver el `env:` de los workflows):
 
 Sin ninguna de las tres seteadas, `node src/aggregate.js` local funciona exactamente como antes.
 
+### Solo una rama deploya (y por qué importa)
+
+`vercel.json` lista explícitamente qué ramas deploya Vercel:
+
+```json
+"git": { "deploymentEnabled": {
+  "claude/carrefour-webdash-analytics-xojjfs": true,
+  "data-raw": false, "respaldo/*": false, "main": false
+}}
+```
+
+Sin esto, Vercel deploya **todas** las ramas por defecto, y eso salía caro de
+verdad: cada commit de datos en `data-raw` (uno cada 30 min) disparaba un
+preview de ~10 minutos de una rama que no tiene ningún sitio que buildear, y
+esos builds encolaban los deploys de producción. Las ramas `respaldo/*`
+además todavía tienen el árbol viejo de 2,7 GB, así que un preview de ahí
+tardaría los 12 minutos de antes.
+
+Ojo al agregar ramas: si una rama figura como `true`, Vercel desactiva
+automáticamente todas las que no estén listadas. Las de acá están explícitas
+igual, para que se lea de un vistazo qué deploya y qué no.
+
 ### Por qué `orders/` se parte por mes y no por semestre
 
 Un archivo semestral de una tienda grande llegaba a 57 MB, y para agregarle los pedidos de hoy

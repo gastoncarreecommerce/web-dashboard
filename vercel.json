@@ -1,3 +1,11 @@
 {
-  "outputDirectory": "docs"
+  "outputDirectory": "docs",
+  "git": {
+    "deploymentEnabled": {
+      "claude/carrefour-webdash-analytics-xojjfs": true,
+      "data-raw": false,
+      "respaldo/*": false,
+      "main": false
+    }
+  }
 }
