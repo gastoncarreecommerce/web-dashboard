@@ -34,10 +34,28 @@
     if (liveTimer) { clearInterval(liveTimer); liveTimer = null; }
   }
 
+  // Si el vivo no está configurado, el sondeo fallaba en silencio: el
+  // dashboard mostraba los datos committeados y nadie se enteraba de que el
+  // vivo de 15s no estaba andando ni de qué le faltaba. Se avisa una sola vez
+  // (no en cada tick, que serían 4 mensajes por minuto).
+  let liveWarned = false;
+  async function warnLiveUnavailable(res) {
+    if (liveWarned) return;
+    liveWarned = true;
+    let detalle = `HTTP ${res.status}`;
+    try {
+      const body = await res.json();
+      if (body?.faltan?.length) detalle = `faltan env vars en Vercel: ${body.faltan.join(', ')}`;
+      else if (body?.error) detalle = body.error;
+    } catch { /* respuesta sin JSON: alcanza con el status */ }
+    console.warn(`[WebDash] "Hoy en vivo" (15s) no está disponible — ${detalle}. `
+      + 'Se está usando recent.json (se actualiza cada 30 min).');
+  }
+
   async function pollLiveToday() {
     try {
       const res = await fetch('/api/today-live', { cache: 'no-store' });
-      if (!res.ok) return; // sin storage configurado (404) o error transitorio: se reintenta el próximo tick
+      if (!res.ok) { warnLiveUnavailable(res); return; } // se reintenta el próximo tick
       const live = await res.json();
       const daily = await W.load('daily-summary');
       const entry = {

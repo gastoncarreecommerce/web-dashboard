@@ -143,9 +143,38 @@ export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Método no permitido' });
   if (!verifySession(req)) return res.status(401).json({ error: 'No autenticado' });
 
-  const redis = getRedis();
-  if (!redis || !process.env.VTEX_ACCOUNT_NAME || !process.env.VTEX_APP_KEY || !process.env.VTEX_APP_TOKEN) {
-    return res.status(404).json({ error: 'not_configured' });
+  // Antes esto devolvía un `not_configured` pelado si faltaba cualquiera de
+  // las cinco variables, así que desde afuera era imposible saber cuál. Y sin
+  // saberlo, "el vivo no anda" se vuelve adivinanza: el dashboard cae a los
+  // datos committeados y nadie se entera de qué hay que configurar. Ahora
+  // dice exactamente qué falta.
+  //
+  // Van los NOMBRES de las variables, nunca sus valores, y solo después de
+  // verifySession: son los mismos nombres que están documentados en el README.
+  // getRedis() no solo puede devolver null (sin configurar): el cliente de
+  // Upstash TIRA si la URL está mal escrita (tiene que empezar con https).
+  // Sin este try/catch eso salía como un 500 pelado, que es el peor caso
+  // posible — parece un bug del endpoint cuando en realidad es un valor mal
+  // pegado en Vercel.
+  const faltan = [];
+  let redis = null;
+  try {
+    redis = getRedis();
+  } catch (e) {
+    faltan.push(`Redis está configurado pero mal: ${e.message}`);
+  }
+  if (!redis && !faltan.length) {
+    faltan.push('KV_REST_API_URL + KV_REST_API_TOKEN (o UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN)');
+  }
+  for (const v of ['VTEX_ACCOUNT_NAME', 'VTEX_APP_KEY', 'VTEX_APP_TOKEN']) {
+    if (!process.env[v]) faltan.push(v);
+  }
+  if (faltan.length) {
+    return res.status(404).json({
+      error: 'not_configured',
+      faltan,
+      ayuda: 'Estas env vars van en Vercel (Settings → Environment Variables). Sin ellas el dashboard usa los datos committeados (recent.json, cada 30 min) en vez del vivo de 15s.',
+    });
   }
 
   try {
