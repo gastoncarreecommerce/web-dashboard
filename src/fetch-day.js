@@ -567,6 +567,7 @@ if (require.main === module) {
 
 module.exports = {
   fetchDay,
+  SEGMENTS,
   arDayRange,
   itemCategoryPath,
   newDayAcc,

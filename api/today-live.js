@@ -32,13 +32,20 @@
  * Sin Redis configurado, este endpoint no funciona (404 not_configured) y el
  * dashboard sigue mostrando los datos committeados de siempre, sin vivo.
  */
-import { createRequire } from 'module';
 import { verifySession } from './_session.js';
 import { getRedis, vtexBaseUrl, vtexHeaders, vtexGetOrder, todayAR, cacheKey } from './_live-cache.js';
-import { newDayAcc, applyOrderToAcc } from '../src/fetch-day.js';
-
-const require = createRequire(import.meta.url);
-const SEGMENTS = require('../config/segment-map.json').tabs.list;
+// SEGMENTS viene de fetch-day.js, NO de un createRequire del JSON de config.
+// Esa era la única función del proyecto que usaba createRequire, y era la
+// única que devolvía 500: el bundler de Vercel rastrea los `require()` de un
+// módulo CJS, pero un createRequire dentro de un módulo ESM no siempre, así
+// que el JSON podía no quedar en el bundle y el módulo reventaba al
+// inicializar — antes de que cualquier try/catch del handler pudiera correr,
+// de ahí el 500 pelado en vez de un error entendible.
+//
+// Traerlo de fetch-day.js además garantiza que el vivo y el pipeline por
+// lotes usen exactamente la misma lista de segmentos, igual que ya pasa con
+// la clasificación.
+import { newDayAcc, applyOrderToAcc, SEGMENTS } from '../src/fetch-day.js';
 
 const MAX_PAGE = 30; // límite duro de la VTEX Order Search API
 const PER_PAGE = 100;
