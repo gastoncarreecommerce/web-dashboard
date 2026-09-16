@@ -741,7 +741,26 @@
       ecommGmv += d.totalEcommGmv || 0;
     }
 
-    return { porCanal, celdas, porSegmento, total, ecommOrders, ecommGmv };
+    // Ese total sale del agregado de AppDash, que se escribe en SU propio
+    // momento — no en el mismo que el resumen de web. Con el dia en curso los
+    // dos snapshots son de horas distintas y el total puede quedar por DEBAJO
+    // de app+web: paso en serio, 101 del agregado de las 09:48 contra 28+86
+    // del de las 11:08, y la pantalla mostraba "112,9% del ecommerce" y dos
+    // participaciones que sumaban 112,8%. Un porcentaje mayor a 100 no es un
+    // dato, es un error mostrado como dato.
+    //
+    // Regla: el ecommerce no puede tener menos pedidos que los que ya
+    // contamos. Si el total de referencia viene por debajo, esta viejo: se usa
+    // app+web como denominador y se marca `ecommDesfasado` para que la vista
+    // lo diga en vez de inventar una cobertura.
+    const ecommDesfasado = ecommOrders > 0 && ecommOrders < total.orders;
+    const baseOrders = Math.max(ecommOrders, total.orders);
+    const baseGmv = Math.max(ecommGmv, total.gmv);
+
+    return {
+      porCanal, celdas, porSegmento, total,
+      ecommOrders, ecommGmv, ecommDesfasado, baseOrders, baseGmv,
+    };
   };
 
   // Estados que cuentan como cancelación. Tiene que coincidir con

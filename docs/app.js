@@ -26,7 +26,12 @@
   // sin ningún cambio propio. Solo el Dashboard se re-renderiza solo en cada
   // poll (es la pantalla sin inputs de texto); en las demás el dato queda
   // fresco para la próxima vez que el usuario interactúe y dispare un render.
-  const LIVE_VIEWS = ['dashboard', 'analytics', 'marketing', 'coupons'];
+  // TODA vista que muestre numeros de un rango que incluya hoy tiene que
+  // sondear el vivo. Cuando se agregaron canales/mensual/productos/tiendas no
+  // se las sumo acá, asi que en "App vs. Web" el sondeo de 15s no arrancaba
+  // nunca: la pantalla mostraba el ultimo snapshot committeado y el cartel
+  // decia "actualizado hace 4 h" al lado de los numeros de hoy.
+  const LIVE_VIEWS = ['dashboard', 'canales', 'mensual', 'productos', 'analytics', 'tiendas', 'marketing', 'coupons'];
   let liveTimer = null;
   let liveQueriedAt = null;
 
@@ -49,7 +54,12 @@
       else if (body?.error) detalle = body.error;
     } catch { /* respuesta sin JSON: alcanza con el status */ }
     console.warn(`[WebDash] "Hoy en vivo" (15s) no está disponible — ${detalle}. `
-      + 'Se está usando recent.json (se actualiza cada 30 min).');
+      + 'Se están usando los datos guardados del pipeline.');
+    // Esto tiene que verse en pantalla, no solo en la consola. Con el vivo
+    // caido los numeros de hoy son del ultimo snapshot y el cartel de arriba
+    // dice "actualizado hace 4 h" sin explicar nada: parece un bug de los
+    // datos cuando en realidad es el endpoint que no responde.
+    W.toast(`Los números de hoy no están en vivo: ${detalle}. Se muestran los últimos datos guardados.`, 'bad');
   }
 
   async function pollLiveToday() {
@@ -88,7 +98,7 @@
       W.invalidateMerged();
       if (!days.includes(live.date)) { days.push(live.date); days.sort(); }
       liveQueriedAt = live.queriedAt;
-      if (state.view === 'dashboard') W.render();
+      if (LIVE_VIEWS.includes(state.view)) W.render();
     } catch { /* red intermitente: se reintenta en el próximo tick, sin romper la pantalla */ }
   }
 

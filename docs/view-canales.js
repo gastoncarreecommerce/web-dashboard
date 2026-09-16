@@ -134,6 +134,38 @@
       }
     }
 
+    // ── KPIs del ecommerce completo ────────────────────────────────────────
+    const app = m.porCanal.app, web = m.porCanal.web;
+    // `baseOrders` ya viene saneado: es el total de VTEX salvo que ese total
+    // este por debajo de app+web (snapshots de horas distintas), caso en que
+    // es app+web. Sin eso salian participaciones que sumaban 112,8%.
+    const base = m.baseOrders || 0;
+    const partApp = base ? app.orders / base : 0;
+    const partWeb = base ? web.orders / base : 0;
+    const cobertura = base ? m.total.orders / base : 0;
+    const basePrev = mPrev?.baseOrders || 0;
+
+    // Cuando la referencia de VTEX quedo atras, no se dice "X% del ecommerce":
+    // no lo sabemos todavia.
+    const refTxt = m.ecommDesfasado
+      ? 'la referencia de VTEX está más atrasada que los canales'
+      : `${W.fmtPct(cobertura, 1)} del ecommerce`;
+    const subPart = m.ecommDesfasado
+      ? 'sobre App + Web (referencia de VTEX atrasada)'
+      : `sobre ${W.fmtNumC(base)} pedidos del ecommerce`;
+
+    if (m.ecommDesfasado) {
+      avisos.push({
+        tono: 'warn',
+        t: 'El total del ecommerce que reporta VTEX está atrasado',
+        s: `Dice ${W.fmtNum(m.ecommOrders)} pedidos, menos que los ${W.fmtNum(m.total.orders)} que ya tenemos contados entre los dos canales,
+            así que es un dato más viejo (se escribe junto con el agregado de App, no con el de Web).
+            Las participaciones se calculan sobre App + Web hasta que se actualice, y por eso suman 100%.`,
+      });
+    }
+
+    // avisoHtml se arma DESPUES de los KPIs porque el chequeo de la
+    // referencia de VTEX (arriba) puede agregar un aviso.
     const avisoHtml = avisos.length
       ? `<div class="chalerts">${avisos.map((a) => `<div class="chalert ${a.tono}">
           <span class="chalert-ic">${W.icon('warn', 16)}</span>
@@ -141,21 +173,17 @@
         </div>`).join('')}</div>`
       : '';
 
-    // ── KPIs del ecommerce completo ────────────────────────────────────────
-    const app = m.porCanal.app, web = m.porCanal.web;
-    const partApp = m.ecommOrders ? app.orders / m.ecommOrders : 0;
-    const partWeb = m.ecommOrders ? web.orders / m.ecommOrders : 0;
-    const cobertura = m.ecommOrders ? m.total.orders / m.ecommOrders : 0;
-
     const tiles = [
       tile({
         rail: '#2a78d6', icon: 'orders', label: 'Pedidos App + Web', value: W.fmtNumC(m.total.orders),
         delta: d(m.total.orders, mPrev?.total.orders),
-        sub: `App <b>${W.fmtNumC(app.orders)}</b> · Web <b>${W.fmtNumC(web.orders)}</b> · ${W.fmtPct(cobertura, 1)} del ecommerce`,
+        sub: `App <b>${W.fmtNumC(app.orders)}</b> · Web <b>${W.fmtNumC(web.orders)}</b> · ${refTxt}`,
         tip: `<strong>Pedidos de los dos canales</strong>
           <span class="tip-row">${W.fmtNum(m.total.orders)} en el período</span>
           <span class="tip-row">App ${W.fmtNum(app.orders)} · Web ${W.fmtNum(web.orders)}</span>
-          <span class="tip-row">Los dos juntos explican el ${W.fmtPct(cobertura, 1)} de los ${W.fmtNum(m.ecommOrders)} pedidos que reporta VTEX. El resto no cae en ninguno de los dos canales.</span>`,
+          <span class="tip-row">${m.ecommDesfasado
+            ? `VTEX reporta ${W.fmtNum(m.ecommOrders)} pedidos, pero ese número está más atrasado que los canales, así que todavía no se puede decir qué porcentaje del ecommerce explican.`
+            : `Los dos juntos explican el ${W.fmtPct(cobertura, 1)} de los ${W.fmtNum(m.ecommOrders)} pedidos que reporta VTEX. El resto no cae en ninguno de los dos canales.`}</span>`,
       }),
       tile({
         rail: '#eb6834', icon: 'money', label: 'GMV App + Web', value: W.fmtMoneyC(m.total.gmv),
@@ -164,16 +192,16 @@
       }),
       tile({
         rail: CH_RAIL.app, icon: 'bolt', label: 'Participación App', value: W.fmtPct(partApp, 1),
-        delta: mPrev && mPrev.ecommOrders ? W.delta(partApp, mPrev.porCanal.app.orders / mPrev.ecommOrders) : null,
-        sub: `sobre ${W.fmtNumC(m.ecommOrders)} pedidos del ecommerce`,
+        delta: basePrev ? W.delta(partApp, mPrev.porCanal.app.orders / basePrev) : null,
+        sub: subPart,
         tip: `<strong>Participación de App</strong>
-          <span class="tip-row">${W.fmtNum(app.orders)} de ${W.fmtNum(m.ecommOrders)} pedidos</span>
+          <span class="tip-row">${W.fmtNum(app.orders)} de ${W.fmtNum(base)} pedidos</span>
           <span class="tip-row">El denominador es el total que reporta VTEX, no App+Web: así la cuenta no se infla hasta el 100% a la fuerza.</span>`,
       }),
       tile({
         rail: CH_RAIL.web, icon: 'store', label: 'Participación Web', value: W.fmtPct(partWeb, 1),
-        delta: mPrev && mPrev.ecommOrders ? W.delta(partWeb, mPrev.porCanal.web.orders / mPrev.ecommOrders) : null,
-        sub: `sobre ${W.fmtNumC(m.ecommOrders)} pedidos del ecommerce`,
+        delta: basePrev ? W.delta(partWeb, mPrev.porCanal.web.orders / basePrev) : null,
+        sub: subPart,
       }),
     ];
 
