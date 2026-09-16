@@ -303,6 +303,18 @@
     return cache[key];
   };
 
+  /**
+   * Tira la fusion cacheada para que el proximo W.load la reconstruya.
+   *
+   * El vivo y recent.json actualizan el dataset de WEB. La fusion App+Web se
+   * DERIVA de los dos canales, asi que no se parchea: se invalida y se rearma.
+   * Mutarla era la causa de que el total y los canales se contradijeran —
+   * dependia de cual era el filtro activo cuando llego el dato nuevo.
+   */
+  W.invalidateMerged = function () {
+    for (const k of Object.keys(cache)) if (k.startsWith('total::')) delete cache[k];
+  };
+
   /** La carga cruda de siempre, del canal web. */
   W.loadRaw = async function (name) {
     if (cache[name]) return cache[name];
@@ -608,28 +620,6 @@
 
   /** ¿Hay desglose para mostrar? (false cuando el filtro esta en un solo canal) */
   W.hasSplit = (bc) => !!bc && Object.keys(bc).length > 1;
-
-  /**
-   * Re-fusiona un dia cuando llega una version mas fresca de UN canal.
-   *
-   * recent.json y /api/today-live son del canal web y traen los ultimos dias
-   * actualizados. Con el filtro en "App + Web" ese dia no puede reemplazar al
-   * fusionado: hay que volver a sumar el dia de app (que no cambio) con la
-   * version nueva de web. Si no, el ultimo dia del dashboard muestra web sola.
-   */
-  W.refreshMergedDay = function (dataset, freshDay, ch = 'web') {
-    if (!dataset.sources) return freshDay;          // dataset de un solo canal
-    const d = W.emptyMergedDay(freshDay.date);
-    for (const otro of Object.keys(dataset.sources)) {
-      if (otro === ch) continue;
-      const day = dataset.sources[otro].get(freshDay.date);
-      if (day) W.mergeDayInto(d, day, otro);
-    }
-    W.mergeDayInto(d, freshDay, ch);
-    // El dia fresco de web manda para lo que solo web mide.
-    dataset.sources[ch].set(freshDay.date, freshDay);
-    return d;
-  };
 
   // ── Agregación de la serie diaria ─────────────────────────────────────────
   /**

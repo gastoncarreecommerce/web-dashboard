@@ -57,18 +57,18 @@
       const res = await fetch('/api/today-live', { cache: 'no-store' });
       if (!res.ok) { warnLiveUnavailable(res); return; } // se reintenta el próximo tick
       const live = await res.json();
-      const daily = await W.load('daily-summary');
+      // Al dataset de WEB, que es de donde viene el vivo (api/today-live filtra
+      // orderChannel !== 'web'). Nunca al dataset del canal activo.
+      const web = await W.loadRaw('daily-summary');
       const entry = {
         date: live.date, segments: live.segments, hourly: null,
         discount: live.discount || 0, newCustomers: live.newCustomers || 0,
         activeCustomers: live.activeCustomers || 0, statusStats: live.statusStats || {},
       };
-      // Mismo caso que recent.json: el vivo es del canal web y no puede pisar
-      // el dia fusionado, o el total de hoy queda sin la app.
-      const fusionado = W.refreshMergedDay(daily, entry, 'web');
-      const idx = daily.days.findIndex((d) => d.date === live.date);
-      if (idx >= 0) daily.days[idx] = fusionado;
-      else { daily.days.push(fusionado); daily.days.sort((a, b) => a.date.localeCompare(b.date)); }
+      const idx = web.days.findIndex((d) => d.date === live.date);
+      if (idx >= 0) web.days[idx] = entry;
+      else { web.days.push(entry); web.days.sort((a, b) => a.date.localeCompare(b.date)); }
+      W.invalidateMerged();
       if (!days.includes(live.date)) { days.push(live.date); days.sort(); }
       liveQueriedAt = live.queriedAt;
       if (state.view === 'dashboard') W.render();
@@ -315,27 +315,54 @@
    * tiene Redis configurado, el dashboard sigue funcionando con lo que haya
    * en vez de quedarse esperando.
    */
-  function spliceRecent(daily, recent) {
+  /**
+   * Empalma recent.json sobre el dataset de WEB — su canal de origen — y tira la
+   * fusion para que se rearme. Antes se aplicaba al dataset del canal ACTIVO, y
+   * eso mezclaba los canales: con el filtro en App, el dia de web se metia
+   * dentro del dataset de app y App vs Web mostraba el mismo numero en los dos
+   * lados.
+   *
+   * Y no reemplaza a ciegas: recent.json se supone mas fresco que
+   * daily-summary, pero cuando el pipeline lo deja atras (paso: traia el 15/09
+   * con 175 pedidos cuando el diario tenia 2.242) pisarlo DEGRADA el dato. Solo
+   * entra si su generatedAt es igual o posterior.
+   */
+  async function spliceRecent(recent) {
     if (!recent?.days?.length) return null;
+    const web = await W.loadRaw('daily-summary');
+    const pedidosDe = (d) => Object.values(d?.segments || {}).reduce((t, sg) => t + (sg.orders || 0), 0);
+    let entraron = 0, rechazados = 0;
+
     for (const day of recent.days) {
-      // recent.json es del canal WEB. Con el filtro en "App + Web" reemplazar el
-      // dia fusionado por este perdia la parte de app: el 15/09 mostraba 2.242
-      // pedidos (web sola) en vez de 3.735. Se re-fusiona contra el dia de app.
-      const nuevo = W.refreshMergedDay(daily, day, 'web');
-      const idx = daily.days.findIndex((d) => d.date === day.date);
-      if (idx >= 0) daily.days[idx] = nuevo;
-      else daily.days.push(nuevo);
+      const idx = web.days.findIndex((d) => d.date === day.date);
+      if (idx < 0) { web.days.push(day); entraron += 1; continue; }
+
+      // NO REEMPLAZAR POR MENOS. recent.json se supone mas fresco, y por
+      // generatedAt lo es, pero puede venir INCOMPLETO: el pipeline corre
+      // incrementales y uno de un dia escribio el 15/09 con 175 pedidos cuando
+      // el diario ya tenia 2.242. Los pedidos de un dia no desaparecen, asi que
+      // un conteo menor significa "esta corrida vio menos", no "hubo menos".
+      const nuevos = pedidosDe(day), viejos = pedidosDe(web.days[idx]);
+      if (nuevos < viejos) {
+        rechazados += 1;
+        console.warn(`[EcommDash] recent.json trae ${day.date} con ${nuevos} pedidos y el diario ya tiene ${viejos}: se descarta por incompleto.`);
+        continue;
+      }
+      web.days[idx] = day;
+      entraron += 1;
     }
-    daily.days.sort((a, b) => a.date.localeCompare(b.date));
+    if (!entraron) return null;
+    if (rechazados) W.toast(`${rechazados} día(s) de recent.json venían incompletos y se descartaron.`, 'bad');
+    web.days.sort((a, b) => a.date.localeCompare(b.date));
+    W.invalidateMerged();
     return recent.generatedAt || null;
   }
 
   async function main() {
     try {
-      const daily = await W.load('daily-summary');
       meta = await W.load('_meta/run-info').catch(() => null);
 
-      const recentAt = spliceRecent(daily, await W.load('recent').catch(() => null));
+      const recentAt = await spliceRecent(await W.load('recent').catch(() => null));
       // La hora que se muestra en "actualizado hace X" tiene que ser la del
       // dato más fresco que realmente se está viendo, no la del agregado
       // diario.
@@ -343,8 +370,11 @@
         meta = { ...(meta || {}), generatedAt: recentAt };
       }
 
-      days = daily.days.map((d) => d.date);
-      startDate = daily.detailWindowStartDate;
+      // Despues del empalme, y del canal que este elegido: W.render() los vuelve
+      // a refrescar en cada cambio de canal, esto es solo el arranque.
+      const inicial = await W.load('daily-summary');
+      days = (inicial.days || []).map((d) => d.date);
+      startDate = inicial.detailWindowStartDate || null;
     } catch (e) {
       $('content').innerHTML = `<div class="empty err"><h2>No se pudieron cargar los datos</h2>
         <p>${W.esc(e.message)}</p><p class="muted">¿Ya corrió el pipeline? Ver README.</p></div>`;
