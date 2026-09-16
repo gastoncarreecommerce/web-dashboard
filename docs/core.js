@@ -366,6 +366,67 @@
    */
   const DICTS = ['marketing', 'coupons', 'categories', 'categoriesN1', 'categoriesN2', 'payments', 'paymentBrands', 'installments'];
 
+  /** Un dia fusionado vacio, listo para acumular canales. */
+  W.emptyMergedDay = (date) => ({
+    date, segments: {}, hourly: new Array(24).fill(0),
+    statusStats: {}, discount: 0, newCustomers: 0, activeCustomers: 0,
+    // De donde salio cada dia: un dia que solo tiene un canal no es comparable
+    // con uno que tiene los dos, y el front lo avisa.
+    channels: [],
+  });
+
+  /**
+   * Suma UN dia de UN canal sobre un dia fusionado.
+   *
+   * Existe como funcion aparte porque hay dos lugares que fusionan: la carga
+   * inicial (mergeChannels) y el empalme de recent.json / el vivo, que traen el
+   * dia de web mas fresco y tienen que SUMARSE al de app en vez de pisarlo.
+   * Cuando eran dos implementaciones, el empalme reemplazaba el dia entero y el
+   * total del ultimo dia mostraba solo web: 2.242 pedidos en vez de 3.735.
+   */
+  W.mergeDayInto = function (d, day, ch) {
+    d.channels.push(ch);
+
+    for (const [seg, v] of Object.entries(day.segments || {})) {
+      const t = (d.segments[seg] = d.segments[seg] || {
+        gmv: 0, orders: 0, units: 0, hourly: new Array(24).fill(0),
+        // El desglose se CONSERVA, no se pierde al sumar: es lo que permite
+        // que cada total de la interfaz muestre su mix App/Web en el lugar,
+        // sin que la vista tenga que volver a pedir los dos canales.
+        byChannel: {},
+      });
+      t.gmv += v.gmv || 0;
+      t.orders += v.orders || 0;
+      t.units += v.units || 0;
+      const bc = (t.byChannel[ch] = t.byChannel[ch] || { gmv: 0, orders: 0, units: 0 });
+      bc.gmv += v.gmv || 0; bc.orders += v.orders || 0; bc.units += v.units || 0;
+      if (v.hourly) v.hourly.forEach((n, h) => (t.hourly[h] += n || 0));
+      for (const k of DICTS) {
+        if (!v[k]) continue;
+        const dst = (t[k] = t[k] || {});
+        for (const [name, e] of Object.entries(v[k])) {
+          const acc = (dst[name] = dst[name] || { orders: 0, gmv: 0, units: 0 });
+          acc.orders += e.orders || 0; acc.gmv += e.gmv || 0; acc.units += e.units || 0;
+        }
+      }
+    }
+
+    (day.hourly || []).forEach((n, h) => (d.hourly[h] += n || 0));
+    for (const [st, v] of Object.entries(day.statusStats || {})) {
+      const e = (d.statusStats[st] = d.statusStats[st] || { orders: 0, gmv: 0 });
+      e.orders += v.orders || 0; e.gmv += v.gmv || 0;
+    }
+    d.discount += day.discount || 0;
+    // Clientes: se suman los de cada canal. Es un techo, no el unico real
+    // —alguien que compro en los dos canales el mismo dia cuenta dos veces—
+    // y el front lo aclara donde lo muestra.
+    d.newCustomers += day.newCustomers || 0;
+    d.activeCustomers += day.activeCustomers || 0;
+    d.totalEcommOrders = Math.max(d.totalEcommOrders || 0, day.totalEcommOrders || 0);
+    d.totalEcommGmv = Math.max(d.totalEcommGmv || 0, day.totalEcommGmv || 0);
+    return d;
+  };
+
   W.mergeChannels = function (porCanal) {
     const canales = Object.keys(porCanal);
     const porFecha = new Map();
@@ -373,55 +434,8 @@
     for (const ch of canales) {
       for (const day of porCanal[ch].days || []) {
         let d = porFecha.get(day.date);
-        if (!d) {
-          d = {
-            date: day.date, segments: {}, hourly: new Array(24).fill(0),
-            statusStats: {}, discount: 0, newCustomers: 0, activeCustomers: 0,
-            // De donde salio cada dia: un dia que solo tiene un canal no es
-            // comparable con uno que tiene los dos, y el front lo avisa.
-            channels: [],
-          };
-          porFecha.set(day.date, d);
-        }
-        d.channels.push(ch);
-
-        for (const [seg, v] of Object.entries(day.segments || {})) {
-          const t = (d.segments[seg] = d.segments[seg] || {
-            gmv: 0, orders: 0, units: 0, hourly: new Array(24).fill(0),
-            // El desglose se CONSERVA, no se pierde al sumar: es lo que permite
-            // que cada total de la interfaz muestre su mix App/Web en el lugar,
-            // sin que la vista tenga que volver a pedir los dos canales.
-            byChannel: {},
-          });
-          t.gmv += v.gmv || 0;
-          t.orders += v.orders || 0;
-          t.units += v.units || 0;
-          const bc = (t.byChannel[ch] = t.byChannel[ch] || { gmv: 0, orders: 0, units: 0 });
-          bc.gmv += v.gmv || 0; bc.orders += v.orders || 0; bc.units += v.units || 0;
-          if (v.hourly) v.hourly.forEach((n, h) => (t.hourly[h] += n || 0));
-          for (const k of DICTS) {
-            if (!v[k]) continue;
-            const dst = (t[k] = t[k] || {});
-            for (const [name, e] of Object.entries(v[k])) {
-              const acc = (dst[name] = dst[name] || { orders: 0, gmv: 0, units: 0 });
-              acc.orders += e.orders || 0; acc.gmv += e.gmv || 0; acc.units += e.units || 0;
-            }
-          }
-        }
-
-        (day.hourly || []).forEach((n, h) => (d.hourly[h] += n || 0));
-        for (const [st, v] of Object.entries(day.statusStats || {})) {
-          const e = (d.statusStats[st] = d.statusStats[st] || { orders: 0, gmv: 0 });
-          e.orders += v.orders || 0; e.gmv += v.gmv || 0;
-        }
-        d.discount += day.discount || 0;
-        // Clientes: se suman los de cada canal. Es un techo, no el unico real
-        // —alguien que compro en los dos canales el mismo dia cuenta dos veces—
-        // y el front lo aclara donde lo muestra.
-        d.newCustomers += day.newCustomers || 0;
-        d.activeCustomers += day.activeCustomers || 0;
-        d.totalEcommOrders = Math.max(d.totalEcommOrders || 0, day.totalEcommOrders || 0);
-        d.totalEcommGmv = Math.max(d.totalEcommGmv || 0, day.totalEcommGmv || 0);
+        if (!d) { d = W.emptyMergedDay(day.date); porFecha.set(day.date, d); }
+        W.mergeDayInto(d, day, ch);
       }
     }
 
@@ -444,6 +458,13 @@
       dataFreshAt: fresh.length ? fresh[0] : null,
       has,
       days,
+      // Los datasets de origen, indexados por fecha. El empalme de recent.json
+      // y del vivo traen el dia de WEB mas fresco, y para no perder app tienen
+      // que re-fusionar ese dia contra su origen en vez de reemplazarlo.
+      sources: Object.fromEntries(canales.map((ch) => [
+        ch, new Map((porCanal[ch].days || []).map((d) => [d.date, d])),
+      ])),
+      detailWindowStartDate: porCanal.web?.detailWindowStartDate || null,
     };
   };
 
@@ -555,6 +576,28 @@
 
   /** ¿Hay desglose para mostrar? (false cuando el filtro esta en un solo canal) */
   W.hasSplit = (bc) => !!bc && Object.keys(bc).length > 1;
+
+  /**
+   * Re-fusiona un dia cuando llega una version mas fresca de UN canal.
+   *
+   * recent.json y /api/today-live son del canal web y traen los ultimos dias
+   * actualizados. Con el filtro en "App + Web" ese dia no puede reemplazar al
+   * fusionado: hay que volver a sumar el dia de app (que no cambio) con la
+   * version nueva de web. Si no, el ultimo dia del dashboard muestra web sola.
+   */
+  W.refreshMergedDay = function (dataset, freshDay, ch = 'web') {
+    if (!dataset.sources) return freshDay;          // dataset de un solo canal
+    const d = W.emptyMergedDay(freshDay.date);
+    for (const otro of Object.keys(dataset.sources)) {
+      if (otro === ch) continue;
+      const day = dataset.sources[otro].get(freshDay.date);
+      if (day) W.mergeDayInto(d, day, otro);
+    }
+    W.mergeDayInto(d, freshDay, ch);
+    // El dia fresco de web manda para lo que solo web mide.
+    dataset.sources[ch].set(freshDay.date, freshDay);
+    return d;
+  };
 
   // ── Agregación de la serie diaria ─────────────────────────────────────────
   /**
@@ -892,18 +935,41 @@
     return emailMapPromise;
   };
 
+  /**
+   * Toast. Dos cosas que antes estaban mal:
+   *
+   * 1. El texto se escapaba de la caja. Solo tenia max-width:90vw y ninguna
+   *    regla de corte, asi que un token largo sin espacios —un codigo de cupon
+   *    como CSTAR-46-EZGKM8HKTGSWDYV, un nombre de archivo— no se partia y se
+   *    desbordaba. Ahora el ancho se mide en caracteres y el corte es explicito.
+   * 2. El estado lo decia SOLO el color (verde/rojo). Un estado nunca puede
+   *    depender del color solo: ahora viaja con su icono, y el texto se inserta
+   *    con textContent porque puede venir de datos (nombres de cupon, de
+   *    producto) y no de un literal del codigo.
+   */
+  const TOAST_ICON = { good: 'check', bad: 'alert' };
+
   W.toast = function (msg, kind) {
     let el = document.getElementById('toast');
     if (!el) {
       el = document.createElement('div');
       el.id = 'toast';
       el.className = 'toast';
+      el.setAttribute('role', 'status');
+      el.setAttribute('aria-live', 'polite');
       document.body.appendChild(el);
     }
-    el.textContent = msg;
+    el.replaceChildren();
+    const ic = document.createElement('span');
+    ic.className = 'toast-ic';
+    ic.innerHTML = W.icon(TOAST_ICON[kind] || 'info', 15);
+    const tx = document.createElement('span');
+    tx.className = 'toast-tx';
+    tx.textContent = msg;
+    el.append(ic, tx);
     el.className = `toast show ${kind || ''}`;
     clearTimeout(el._t);
-    el._t = setTimeout(() => (el.className = 'toast'), 3200);
+    el._t = setTimeout(() => (el.className = 'toast'), 4000);
   };
 
 })();

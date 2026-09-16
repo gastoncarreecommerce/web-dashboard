@@ -63,9 +63,12 @@
         discount: live.discount || 0, newCustomers: live.newCustomers || 0,
         activeCustomers: live.activeCustomers || 0, statusStats: live.statusStats || {},
       };
+      // Mismo caso que recent.json: el vivo es del canal web y no puede pisar
+      // el dia fusionado, o el total de hoy queda sin la app.
+      const fusionado = W.refreshMergedDay(daily, entry, 'web');
       const idx = daily.days.findIndex((d) => d.date === live.date);
-      if (idx >= 0) daily.days[idx] = entry;
-      else { daily.days.push(entry); daily.days.sort((a, b) => a.date.localeCompare(b.date)); }
+      if (idx >= 0) daily.days[idx] = fusionado;
+      else { daily.days.push(fusionado); daily.days.sort((a, b) => a.date.localeCompare(b.date)); }
       if (!days.includes(live.date)) { days.push(live.date); days.sort(); }
       liveQueriedAt = live.queriedAt;
       if (state.view === 'dashboard') W.render();
@@ -94,8 +97,14 @@
     return { kind: 'stored', at: meta?.generatedAt || null };
   }
 
-  const NAV_ICON = { dashboard: 'dashboard', analytics: 'analytics', tiendas: 'store', coupons: 'tag', marketing: 'megaphone', buscador: 'search', audiences: 'audience' };
-  const TITLES = { dashboard: 'Dashboard', canales: 'App + Web', productos: 'Productos', analytics: 'Analítica', tiendas: 'Tiendas', coupons: 'Cupones', marketing: 'Marketing', buscador: 'Buscador', audiences: 'Audiencias' };
+  // Sin entrada para canales y productos, W.icon(undefined) caia en un icono
+  // generico y esos dos items del nav mostraban un circulito sin sentido.
+  const NAV_ICON = {
+    dashboard: 'dashboard', canales: 'layers', productos: 'box',
+    analytics: 'analytics', tiendas: 'store',
+    marketing: 'megaphone', coupons: 'tag', buscador: 'search', audiences: 'audience',
+  };
+  const TITLES = { dashboard: 'Resumen', canales: 'App vs. Web', productos: 'Productos', analytics: 'Analítica', tiendas: 'Tiendas', coupons: 'Cupones', marketing: 'Marketing', buscador: 'Buscador', audiences: 'Audiencias' };
 
   function paintChrome() {
     document.querySelectorAll('.nav-item').forEach((n) => {
@@ -274,9 +283,13 @@
   function spliceRecent(daily, recent) {
     if (!recent?.days?.length) return null;
     for (const day of recent.days) {
+      // recent.json es del canal WEB. Con el filtro en "App + Web" reemplazar el
+      // dia fusionado por este perdia la parte de app: el 15/09 mostraba 2.242
+      // pedidos (web sola) en vez de 3.735. Se re-fusiona contra el dia de app.
+      const nuevo = W.refreshMergedDay(daily, day, 'web');
       const idx = daily.days.findIndex((d) => d.date === day.date);
-      if (idx >= 0) daily.days[idx] = day;
-      else daily.days.push(day);
+      if (idx >= 0) daily.days[idx] = nuevo;
+      else daily.days.push(nuevo);
     }
     daily.days.sort((a, b) => a.date.localeCompare(b.date));
     return recent.generatedAt || null;
