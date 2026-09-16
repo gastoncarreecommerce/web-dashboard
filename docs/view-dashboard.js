@@ -26,7 +26,6 @@
 
   // Pestañas internas: los KPIs de arriba quedan siempre visibles y el resto
   // se reparte, para no apilar cinco tarjetas grandes una abajo de la otra.
-  let dashTab = 'evolucion'; // 'evolucion' | 'detalle'
 
   // Color por métrica, tomado de la paleta de series ya validada
   // (--s1..--s8). El hero no está acá: usa el degradé de marca, que es
@@ -43,65 +42,46 @@
 
   // ── Piezas de UI ─────────────────────────────────────────────────────────
   /** El único número protagonista de la vista (uno solo, por diseño). */
-  function hero({ label, value, exact, delta, deltaNote, chip, sub, spark, pace }) {
-    return `<div class="hero">
-      <div class="hero-t">
-        <span class="hero-l">${W.esc(label)}</span>
-        ${delta !== undefined && delta !== null ? W.deltaBadge(delta) : ''}
-        ${chip ? `<span class="hero-chip">${chip}</span>` : ''}
-      </div>
-      <div class="hero-v"${exact ? ` ${W.chart.tip(exact)}` : ''}>${value}</div>
-      ${deltaNote ? `<div class="hero-s">${deltaNote}</div>` : ''}
-      ${sub ? `<div class="hero-s">${sub}</div>` : ''}
-      ${pace ? `<div class="pace">
-        <div class="pace-track"><div class="pace-fill" style="width:${pace.pct}%"></div></div>
-        <span class="pace-l">${pace.label}</span>
-      </div>` : ''}
-      ${spark ? `<div class="hero-spark">${spark}</div>` : ''}
-    </div>`;
-  }
 
   /** Métrica primaria: valor grande, color pleno de la métrica como acento. */
-  function tile({ rail, icon, label, value, sub, delta, chip, spark, tip, split }) {
-    return `<div class="tile" style="--rail:${rail}"${tip ? ` ${W.chart.tip(tip)}` : ''}>
-      <div class="tile-t">
-        <span class="tile-ic">${W.icon(icon, 16)}</span>
-        ${delta !== undefined && delta !== null ? W.deltaBadge(delta) : chip ? `<span class="delta flat">${chip}</span>` : ''}
-      </div>
-      <div class="tile-v">${value}</div>
-      <div class="tile-l">${W.esc(label)}</div>
-      ${sub ? `<div class="tile-s">${sub}</div>` : ''}
-      ${split || ''}
-      ${spark ? `<div class="tile-spark">${spark}</div>` : ''}
-    </div>`;
-  }
 
   /** Un segmento con SU color, su volumen y cuánto pesa del total. */
-  function segCard({ seg, orders, gmv, share, delta, split }) {
-    const color = W.SEGMENT_COLOR[seg];
-    return `<div class="segc" style="--rail:${color};--track:${color}22"
-      ${W.chart.tip(`<strong>${W.esc(W.SEGMENT_LABEL[seg])}</strong><span class="tip-row">${W.fmtNum(orders)} pedidos</span><span class="tip-row">${W.fmtMoney(gmv)}</span><span class="tip-row">${W.fmtPct(share)} de los pedidos del período</span>`)}>
-      <div class="segc-t">${W.icon(W.SEGMENT_ICON_NAME[seg], 13)}${W.esc(W.SEGMENT_LABEL[seg])}</div>
-      <div class="segc-row">
-        <span class="segc-v">${W.fmtNumC(orders)}</span>
-        ${delta !== undefined && delta !== null ? W.deltaBadge(delta) : ''}
+
+  /**
+   * LA TARJETA. Una sola, para todo: KPIs, segmentos y metricas de apoyo.
+   *
+   * Antes habia cuatro lenguajes en la misma pantalla —un hero con degradé del
+   * ancho de tres tarjetas, los `tile`, los `segc` y los `mitem`— cada uno con
+   * su tipografia, su padding y su forma. Cuatro familias no se leen como un
+   * sistema: se leen como cuatro pantallas pegadas.
+   *
+   *   [ic]           99.1%   icono en cuadrado tintado · chip de share
+   *   6,5 K                  el numero
+   *   Food                   etiqueta
+   *   $526,3 M · incl. QC    sub, recesivo
+   *   ↓ 4.3% vs ant.         delta
+   *   ▬▬▬▬▬▬▬▬               barra de participacion, 3px
+   */
+  function kc({ color, icon, label, value, sub, delta, chip, share, note, tip, split }) {
+    return `<div class="kc" style="--kc:${color}"${tip ? ` ${W.chart.tip(tip)}` : ''}>
+      <div class="kc-top">
+        <span class="kc-ic">${W.icon(icon, 15)}</span>
+        ${share != null ? `<span class="kc-share">${W.fmtPct(share, 1)}</span>`
+          : chip ? `<span class="kc-share">${W.esc(chip)}</span>` : ''}
       </div>
-      <div class="segc-s">${W.fmtMoneyC(gmv)} · ${W.fmtPct(share)} de los pedidos</div>
-      <div class="segc-bar"><div class="segc-fill" style="width:${Math.min(100, share * 100)}%"></div></div>
+      <div class="kc-v">${value}</div>
+      <div class="kc-l">${W.esc(label)}</div>
+      ${sub ? `<div class="kc-s">${sub}</div>` : ''}
+      ${delta !== undefined && delta !== null
+        ? `<div class="kc-d">${W.deltaBadge(delta)}<em>vs. ant.</em></div>`
+        : note ? `<div class="kc-d"><em>${note}</em></div>` : ''}
       ${split || ''}
+      ${share != null ? `<div class="kc-bar"><div class="kc-track">
+        <div class="kc-fill" style="width:${Math.min(100, share * 100)}%"></div></div></div>` : ''}
     </div>`;
   }
 
   /** Métrica de apoyo: chica, gris, para consultar — no compite con el hero. */
-  function mitem({ rail, label, value, sub, delta, chip, tip }) {
-    return `<div class="mitem"${tip ? ` ${W.chart.tip(tip)}` : ''}>
-      <div class="mitem-l"><span class="mitem-dot" style="background:${rail}"></span>${W.esc(label)}</div>
-      <div class="mitem-v">${value}${
-        delta !== undefined && delta !== null ? W.deltaBadge(delta)
-        : chip ? `<span class="delta flat">${W.esc(chip)}</span>` : ''}</div>
-      ${sub ? `<div class="mitem-s">${sub}</div>` : ''}
-    </div>`;
-  }
 
   // ── Datos por hora ───────────────────────────────────────────────────────
   /**
@@ -299,7 +279,6 @@
 
     const labels = cur.series.map((s) => s.date);
     const orders = cur.series.map((s) => s.orders);
-    const gmvs = cur.series.map((s) => s.gmv);
 
     // ── Proyección de cierre de mes ──────────────────────────────────────────
     const lastDay = daily.days[daily.days.length - 1].date;
@@ -319,43 +298,7 @@
     const rangeTxt = isToday ? 'hoy' : isSingleDay ? W.fmtDayWeek(range.from) : W.rangeText(range);
 
     // ── Hero: el GMV ────────────────────────────────────────────────────────
-    const heroSpark = gmvs.length > 1 ? W.chart.sparkline(gmvs, 'rgba(255,255,255,.9)', 240, 46) : '';
     const cmpDayTotals = cmpDay ? W.sumRange(daily, bucket, { from: cmpDayDate, to: cmpDayDate }) : null;
-    // ── El mix App/Web de cada total ───────────────────────────────────────
-    // Solo cuando el filtro esta en "App + Web": con un solo canal no hay mix
-    // que mostrar y una barra de un solo color seria ruido.
-    const mostrarSplit = W.hasSplit(cur.byChannel);
-    const chApp = cur.byChannel?.app || { orders: 0, gmv: 0, units: 0 };
-    const chWeb = cur.byChannel?.web || { orders: 0, gmv: 0, units: 0 };
-    function splitOf(metric) {
-      if (!mostrarSplit) return '';
-      const fmt = metric === 'gmv' ? W.fmtMoneyC : W.fmtNumC;
-      return W.splitBar(chApp[metric], chWeb[metric])
-        + `<div class="tile-s">${W.splitLabel(chApp[metric], chWeb[metric], fmt)}</div>`;
-    }
-
-    const heroBlock = hero({
-      label: `GMV · ${rangeTxt}`,
-      value: W.fmtMoneyC(cur.gmv),
-      exact: `<strong>GMV exacto</strong><span class="tip-row">${W.fmtMoney(cur.gmv)}</span>`,
-      delta: showDelta && !isToday ? W.delta(cur.gmv, prev.gmv) : null,
-      chip: isToday ? partialChip : null,
-      // Sin repetir las fechas del período de comparación: ya están arriba,
-      // al lado del check de "Comparar".
-      deltaNote: showDelta && !isToday ? `período anterior: <b>${W.fmtMoneyC(prev.gmv)}</b>` : '',
-      sub: isToday && cmpDayTotals
-        ? `${W.esc(cmpName)} cerró en <b>${W.fmtMoneyC(cmpDayTotals.gmv)}</b>`
-        : `${W.fmtNumC(cur.orders)} pedidos · ticket ${W.fmtMoney(W.ticket(cur.gmv, cur.orders))}${
-            mostrarSplit && cur.gmv
-              ? ` · app ${W.fmtPct(chApp.gmv / cur.gmv, 0)} del GMV`
-              : ''}`,
-      pace: isToday ? {
-        pct: (hoursElapsed / 24) * 100,
-        label: `${hoursElapsed} de 24 horas del día transcurridas`,
-      } : null,
-      spark: isToday ? '' : heroSpark,
-    });
-
     // ── Métricas primarias ─────────────────────────────────────────────────
     const ordersDelta = isToday
       ? (showDelta && cmpOrdersToHour != null ? W.delta(cur.orders, cmpOrdersToHour) : null)
@@ -366,62 +309,19 @@
         : `sin dato horario de ${W.esc(cmpName)} para comparar`)
       : (showDelta ? `período anterior: <b>${W.fmtNumC(prev.orders)}</b>` : '');
 
-    // Sparklines de las métricas de razón: se calculan día por día del rango.
-    const ticketSeries = cur.series.map((s) => W.ticket(s.gmv, s.orders));
-    const upoSeries = cur.series.map((s) => W.unitsPerOrder(s.units, s.orders));
     const curTicket = W.ticket(cur.gmv, cur.orders);
     const curUpo = W.unitsPerOrder(cur.units, cur.orders);
     const cmpTicket = cmpDayTotals ? W.ticket(cmpDayTotals.gmv, cmpDayTotals.orders) : null;
     const cmpUpo = cmpDayTotals ? W.unitsPerOrder(cmpDayTotals.units, cmpDayTotals.orders) : null;
 
-    const tiles = [
-      tile({
-        rail: MC.orders, icon: 'orders', label: 'Pedidos', value: W.fmtNumC(cur.orders),
-        delta: ordersDelta, chip: isToday && ordersDelta == null ? partialChip : null,
-        sub: ordersSub,
-        // El mix viaja pegado al total: nadie tiene que cambiar de vista para
-        // saber que parte del numero es de la app.
-        split: splitOf('orders'),
-        spark: orders.length > 1 ? W.chart.sparkline(orders, MC.orders) : '',
-        tip: `<strong>Pedidos</strong><span class="tip-row">${W.fmtNum(cur.orders)} en el período</span>${
-          isToday && cmpOrdersToHour != null ? `<span class="tip-row">Comparado contra ${W.esc(cmpName)} hasta las ${String(hoursElapsed - 1).padStart(2, '0')}:59, no contra su total del día</span>` : ''}`,
-      }),
-      tile({
-        rail: MC.ticket, icon: 'ticket', label: 'Ticket promedio', value: W.fmtMoney(curTicket),
-        delta: isToday ? dRatio(curTicket, cmpTicket) : d(curTicket, W.ticket(prev.gmv, prev.orders)),
-        sub: isToday && cmpTicket
-          ? `${W.esc(cmpName)}, día completo: <b>${W.fmtMoney(cmpTicket)}</b>`
-          : 'GMV ÷ pedidos',
-        spark: ticketSeries.length > 1 ? W.chart.sparkline(ticketSeries, MC.ticket) : '',
-        tip: `<strong>Ticket promedio</strong><span class="tip-row">GMV dividido la cantidad de pedidos</span>${
-          isToday ? '<span class="tip-row">Es un promedio, no un acumulado: se puede comparar contra el día de referencia aunque hoy no haya terminado.</span>' : ''}`,
-      }),
-      tile({
-        rail: MC.units, icon: 'box', label: 'Unidades por pedido', value: W.fmtDec(curUpo, 1),
-        delta: isToday ? dRatio(curUpo, cmpUpo) : d(curUpo, W.unitsPerOrder(prev.units, prev.orders)),
-        sub: isToday && cmpUpo
-          ? `${W.esc(cmpName)}, día completo: <b>${W.fmtDec(cmpUpo, 1)}</b>`
-          : `${W.fmtNumC(cur.units)} unidades en total`,
-        spark: upoSeries.length > 1 ? W.chart.sparkline(upoSeries, MC.units) : '',
-        tip: '<strong>Tamaño de canasta</strong><span class="tip-row">Unidades totales dividido la cantidad de pedidos</span>',
-      }),
-    ];
+    // ── El mix App/Web de cada total ───────────────────────────────────────
+    // Solo cuando el filtro esta en "App + Web": con un solo canal no hay mix
+    // que mostrar y una barra de un solo color seria ruido.
+    const mostrarSplit = W.hasSplit(cur.byChannel);
+    const chApp = cur.byChannel?.app || { orders: 0, gmv: 0, units: 0 };
+    const chWeb = cur.byChannel?.web || { orders: 0, gmv: 0, units: 0 };
 
-    // ── Segmentos ──────────────────────────────────────────────────────────
-    const segCards = bucket === 'all'
-      ? W.SEGMENTS.map((s) => {
-          const c = cur.bySegment[s], p = prev.bySegment[s] || { gmv: 0, orders: 0 };
-          const bc = cur.byChannelSeg?.[s];
-          return segCard({
-            seg: s, orders: c.orders, gmv: c.gmv,
-            share: cur.orders ? c.orders / cur.orders : 0,
-            delta: d(c.orders, p.orders),
-            split: W.hasSplit(bc)
-              ? `<div class="segc-s segc-mix">${W.splitLabel(bc.app?.orders, bc.web?.orders)}</div>`
-              : '',
-          });
-        })
-      : [];
+
 
     // ── Métricas de apoyo ──────────────────────────────────────────────────
     // `has` lo declara el dataset: la fusion de canales lo calcula como la
@@ -429,44 +329,6 @@
     const soloWeb = daily.has ? daily.has.discount === false : false;
     const canc = W.cancellations(cur.statusStats);
     const cancPrev = showDelta && !isToday ? W.cancellations(prev.statusStats) : null;
-    const support = bucket === 'all' ? [
-      mitem({
-        rail: MC.clients, label: 'Clientes activos', value: W.fmtNumC(cur.activeCustomers),
-        delta: d(cur.activeCustomers, prev.activeCustomers),
-        sub: isSingleDay ? 'compraron en el día' : 'suma de activos por día',
-        tip: '<strong>Clientes activos</strong><span class="tip-row">Se suman los activos de cada día del rango: un cliente que compró dos días cuenta dos veces.</span>',
-      }),
-      mitem({
-        rail: MC.fresh, label: 'Clientes nuevos', value: W.fmtNumC(cur.newCustomers),
-        delta: d(cur.newCustomers, prev.newCustomers),
-        sub: cur.activeCustomers ? `${W.fmtPct(cur.newCustomers / cur.activeCustomers)} de los activos` : '',
-        tip: isToday
-          ? '<strong>Clientes nuevos</strong><span class="tip-row">En el día en curso este número lo completa la corrida del pipeline: el dato en vivo no cruza contra todo el historial de clientes.</span>'
-          : '<strong>Clientes nuevos</strong><span class="tip-row">Primera compra registrada dentro del período.</span>',
-      }),
-      // Los rows de App no traen el descuento (el total ya viene neteado), asi
-      // que con el canal en "App + Web" esta cifra es solo de Web. Decirlo, en
-      // vez de presentar un total que se lee como si fuera de los dos canales.
-      mitem({
-        rail: MC.discount, label: 'Descuentos', value: W.fmtMoneyC(cur.discount),
-        delta: soloWeb ? null : d(cur.discount, prev.discount),
-        // Con el canal en App el valor es 0 por falta de dato, no por no haber
-        // descuentos: "solo Web" ahi se leeria como que hubo cero.
-        chip: soloWeb ? (W.channel === 'app' ? 'sin dato' : 'solo Web') : null,
-        sub: soloWeb
-          ? 'App no informa descuentos'
-          : (cur.gmv ? `${W.fmtPct(cur.discount / (cur.gmv + cur.discount))} del valor bruto` : ''),
-        tip: `<strong>Descuentos</strong><span class="tip-row">Total descontado (cupones y promociones) sobre el valor bruto del período.</span>${
-          soloWeb ? '<span class="tip-row">Con el canal en App + Web, esta cifra es solo del canal Web: el detalle por pedido de App trae el total ya neteado, sin el descuento aplicado.</span>' : ''}`,
-      }),
-      ...(canc.totalOrders ? [mitem({
-        rail: canc.rate > 0.05 ? 'var(--neg)' : 'var(--ink-4)',
-        label: 'Cancelaciones', value: W.fmtPct(canc.rate),
-        delta: cancPrev ? W.delta(canc.rate, cancPrev.rate) : null,
-        sub: `${W.fmtNumC(canc.cancelledOrders)} pedidos · ${W.fmtMoneyC(canc.cancelledGmv)}`,
-        tip: `<strong>Cancelaciones</strong><span class="tip-row">${W.fmtNum(canc.cancelledOrders)} de ${W.fmtNum(canc.totalOrders)} pedidos del período</span><span class="tip-row">No se cuentan en GMV ni en pedidos</span>`,
-      })] : []),
-    ] : [];
 
     // ── Evolución ──────────────────────────────────────────────────────────
     // Un solo día: curva acumulada hora a hora, hoy contra el mismo día de la
@@ -496,18 +358,6 @@
       });
     };
 
-    const dayChart = () => {
-      const reg = W.linreg(orders); // una sola vez, no por punto
-      return W.chart.line({
-        labels,
-        series: [
-          { name: 'Pedidos', color: MC.orders, values: orders, fill: true },
-          { name: 'Media móvil 7d', color: MC.ticket, values: W.movingAvg(orders, 7) },
-          { name: 'Tendencia', color: REF_GRAY, values: orders.map((_, i) => Math.max(0, reg.at(i))), dashed: true },
-        ],
-        height: 260,
-      });
-    };
 
     // ── Mix por segmento en el tiempo ───────────────────────────────────────
     const mixSeries = W.SEGMENTS.map((s) => ({
@@ -518,6 +368,60 @@
         return day?.segments?.[s]?.gmv || 0;
       }),
     }));
+
+    // ── Series de los gráficos nuevos ───────────────────────────────────────
+    // Cada una sale de daily.days, que es la fuente que ya tiene todo por día:
+    // no hace falta un dataset aparte.
+    const diaDe = (fecha) => daily.days.find((dd) => dd.date === fecha);
+
+    // Pedidos por día y por segmento. Cuatro series: dentro del tope seguro de
+    // la paleta, y con leyenda, que es obligatoria a partir de dos.
+    const pedidosPorSeg = W.SEGMENTS.map((sg) => ({
+      name: W.SEGMENT_LABEL[sg],
+      color: W.SEGMENT_COLOR[sg],
+      values: cur.series.map((row) => diaDe(row.date)?.segments?.[sg]?.orders || 0),
+    }));
+
+    // Sin atribución por día, en % — es EL kpi que mira AppDash. Sale de
+    // marketing.sin_atribucion, que es el nombre que le pone el agregador.
+    const sinAtrib = cur.series.map((row) => {
+      const d = diaDe(row.date);
+      if (!d) return 0;
+      let sin = 0, tot = 0;
+      for (const sg of (bucket === 'all' ? W.SEGMENTS : [bucket])) {
+        const mk = d.segments?.[sg]?.marketing || {};
+        for (const [fuente, v] of Object.entries(mk)) {
+          tot += v.orders || 0;
+          if (fuente === 'sin_atribucion' || fuente === 'Sin atribución' || !fuente) sin += v.orders || 0;
+        }
+      }
+      return tot ? (sin / tot) * 100 : 0;
+    });
+    const haySinAtrib = sinAtrib.some((v) => v > 0);
+
+    // Participación de cada canal sobre el total del día, en %.
+    const partPorDia = ['app', 'web'].map((ch) => ({
+      name: W.CHANNEL_LABEL[ch],
+      color: W.CHANNEL_COLOR[ch],
+      values: cur.series.map((row) => {
+        const d = diaDe(row.date);
+        if (!d) return 0;
+        let mio = 0, tot = 0;
+        for (const sg of (bucket === 'all' ? W.SEGMENTS : [bucket])) {
+          const bc = d.segments?.[sg]?.byChannel || {};
+          for (const [k, v] of Object.entries(bc)) { tot += v.orders || 0; if (k === ch) mio += v.orders || 0; }
+        }
+        return tot ? (mio / tot) * 100 : 0;
+      }),
+    }));
+    const hayCanalPorDia = partPorDia.some((sr) => sr.values.some((v) => v > 0));
+
+    // Ticket por día.
+    const ticketPorDia = cur.series.map((row) => W.ticket(row.gmv, row.orders));
+
+    // Actual contra período anterior, día a día, alineados por posición: es la
+    // comparación que pide "vamos mejor o peor que el período pasado".
+    const prevSerie = W.sumRange(daily, bucket, prevRange).series.map((r) => r.orders);
 
     // ── Heatmap día de semana × hora ────────────────────────────────────────
     // A propósito NO usa el rango elegido arriba: con rangos cortos podía
@@ -545,29 +449,153 @@
     // dicen "caída de GMV -73%", que es falso. Se omiten ahí.
     const insights = showDelta && !isToday ? buildInsights(cur, prev, range, daily, catalog, bucket) : [];
 
-    const evolucionTab = `
-      <div class="card">
-        <div class="card-h">
-          <div><h3>${isSingleDay ? 'Pedidos acumulados por hora' : 'Pedidos por día'}</h3>
-            <p>${isSingleDay
-              ? `${W.esc(rangeTxt)} · ${W.esc(scopeTxt)}${cmpHasHours ? ` · contra ${W.esc(cmpName)}, hora por hora` : ''}`
-              : `${W.fmtDayLong(range.from)} → ${W.fmtDayLong(range.to)} · ${W.esc(scopeTxt)}`}</p></div>
-          <button class="btn" data-export="daily">${W.icon('download', 14)}XLSX</button>
-        </div>
-        ${isSingleDay ? hourChart() : dayChart()}
+    // ── LA GRILLA DE TARJETAS ───────────────────────────────────────────────
+    // Una sola familia, todas del mismo tamaño. El GMV ya no es un hero con
+    // degradé del ancho de tres: es la primera tarjeta, y manda por estar
+    // primera, no por ser cuatro veces más grande.
+    const kcs = [
+      kc({
+        color: MC.ticket, icon: 'money', label: 'GMV', value: W.fmtMoneyC(cur.gmv),
+        delta: showDelta && !isToday ? W.delta(cur.gmv, prev.gmv) : null,
+        chip: isToday ? partialChip : null,
+        sub: showDelta && !isToday ? `antes ${W.fmtMoneyC(prev.gmv)}` : '',
+        tip: `<strong>GMV</strong><span class="tip-row">${W.fmtMoney(cur.gmv)}</span>${
+          mostrarSplit ? W.splitTip(chApp.gmv, chWeb.gmv, W.fmtMoney) : ''}`,
+      }),
+      kc({
+        color: MC.orders, icon: 'orders', label: 'Pedidos', value: W.fmtNumC(cur.orders),
+        delta: ordersDelta, chip: isToday && ordersDelta == null ? partialChip : null,
+        sub: ordersSub,
+        split: mostrarSplit
+          ? W.splitBar(chApp.orders, chWeb.orders, { alto: 3 })
+            + `<div class="kc-s">${W.splitLabel(chApp.orders, chWeb.orders)}</div>`
+          : '',
+        tip: `<strong>Pedidos</strong><span class="tip-row">${W.fmtNum(cur.orders)} en el período</span>${
+          mostrarSplit ? W.splitTip(chApp.orders, chWeb.orders) : ''}`,
+      }),
+      kc({
+        color: MC.ticket, icon: 'ticket', label: 'Ticket promedio', value: W.fmtMoney(curTicket),
+        delta: isToday ? dRatio(curTicket, cmpTicket) : d(curTicket, W.ticket(prev.gmv, prev.orders)),
+        sub: 'GMV ÷ pedidos',
+      }),
+      kc({
+        color: MC.units, icon: 'box', label: 'Unidades por pedido', value: W.fmtDec(curUpo, 1),
+        delta: isToday ? dRatio(curUpo, cmpUpo) : d(curUpo, W.unitsPerOrder(prev.units, prev.orders)),
+        sub: `${W.fmtNumC(cur.units)} unidades en total`,
+      }),
+    ];
+
+    const segmentos = bucket === 'all' ? W.SEGMENTS.map((sg) => {
+        const c = cur.bySegment[sg], pv = prev.bySegment[sg] || { gmv: 0, orders: 0 };
+        const bc = cur.byChannelSeg?.[sg];
+        return kc({
+          color: W.SEGMENT_COLOR[sg], icon: W.SEGMENT_ICON_NAME[sg],
+          label: W.SEGMENT_LABEL[sg], value: W.fmtNumC(c.orders),
+          share: cur.orders ? c.orders / cur.orders : 0,
+          delta: d(c.orders, pv.orders),
+          sub: W.fmtMoneyC(c.gmv),
+          split: W.hasSplit(bc)
+            ? `<div class="kc-s">${W.splitLabel(bc.app?.orders, bc.web?.orders)}</div>` : '',
+          tip: `<strong>${W.esc(W.SEGMENT_LABEL[sg])}</strong>
+            <span class="tip-row">${W.fmtNum(c.orders)} pedidos · ${W.fmtMoney(c.gmv)}</span>
+            <span class="tip-row">${W.fmtPct(cur.orders ? c.orders / cur.orders : 0)} de los pedidos del período</span>${
+            W.hasSplit(bc) ? W.splitTip(bc.app?.orders, bc.web?.orders) : ''}`,
+        });
+      }) : [];
+
+    const apoyo = bucket === 'all' ? [
+      kc({
+        color: MC.clients, icon: 'users', label: 'Clientes activos', value: W.fmtNumC(cur.activeCustomers),
+        delta: d(cur.activeCustomers, prev.activeCustomers),
+        sub: isSingleDay ? 'compraron en el día' : 'suma de activos por día',
+      }),
+      kc({
+        color: MC.fresh, icon: 'sparkles', label: 'Clientes nuevos', value: W.fmtNumC(cur.newCustomers),
+        delta: d(cur.newCustomers, prev.newCustomers),
+        sub: cur.activeCustomers ? `${W.fmtPct(cur.newCustomers / cur.activeCustomers)} de los activos` : '',
+      }),
+      kc({
+        color: MC.discount, icon: 'tag', label: 'Descuentos', value: W.fmtMoneyC(cur.discount),
+        delta: soloWeb ? null : d(cur.discount, prev.discount),
+        chip: soloWeb ? (W.channel === 'app' ? 'sin dato' : 'solo Web') : null,
+        sub: soloWeb ? 'App no informa descuentos'
+          : (cur.gmv ? `${W.fmtPct(cur.discount / (cur.gmv + cur.discount))} del valor bruto` : ''),
+      }),
+      ...(canc.totalOrders ? [kc({
+        color: canc.rate > 0.05 ? '#d03b3b' : '#898781', icon: 'ban',
+        label: 'Cancelaciones', value: W.fmtPct(canc.rate),
+        delta: cancPrev ? W.delta(canc.rate, cancPrev.rate) : null,
+        sub: `${W.fmtNumC(canc.cancelledOrders)} pedidos · ${W.fmtMoneyC(canc.cancelledGmv)}`,
+      })] : []),
+      ...(mostrarSplit && cur.orders ? [kc({
+        color: W.CHANNEL_COLOR.app, icon: 'bolt', label: 'Participación App',
+        value: W.fmtPct(chApp.orders / cur.orders, 1),
+        share: chApp.orders / cur.orders,
+        sub: `${W.fmtNumC(chApp.orders)} de ${W.fmtNumC(cur.orders)} pedidos`,
+      })] : []),
+    ] : [];
+
+    // ── LOS GRÁFICOS ────────────────────────────────────────────────────────
+    // Todos visibles, en dos columnas. Antes estaban detrás de dos pestañas, y
+    // una pestaña esconde la mitad de la pantalla a cambio de nada.
+    const cardChart = (titulo, sub, contenido, extra = '') => `<div class="card">
+      <div class="card-h"><div><h3>${titulo}</h3><p>${sub}</p></div>${extra}</div>
+      ${contenido}
+    </div>`;
+
+    const graficoPrincipal = isSingleDay ? hourChart() : W.chart.line({
+      labels, series: pedidosPorSeg, height: 250, yFmt: W.fmtNumC, id: 'ped-seg',
+    });
+
+    const donutItems = W.SEGMENTS
+      .map((sg) => ({ label: W.SEGMENT_LABEL[sg], value: cur.bySegment[sg].orders, color: W.SEGMENT_COLOR[sg] }))
+      .filter((it) => it.value > 0);
+
+    el.innerHTML = `
+      <div class="kgrid k4">${kcs.join('')}</div>
+      ${segmentos.length ? `<div class="kgrid k4">${segmentos.join('')}</div>` : ''}
+      ${apoyo.length ? `<div class="kgrid">${apoyo.join('')}</div>` : ''}
+
+      <div class="cgrid side">
+        ${cardChart(
+          isSingleDay ? 'Pedidos acumulados por hora' : 'Pedidos por día',
+          isSingleDay
+            ? `${W.esc(rangeTxt)} · ${W.esc(scopeTxt)}${cmpHasHours ? ` · contra ${W.esc(cmpName)}, hora por hora` : ''}`
+            : `por segmento de negocio · ${W.esc(scopeTxt)}`,
+          graficoPrincipal,
+          `<button class="btn" data-export="daily">${W.icon('download', 14)}XLSX</button>`)}
+        ${cardChart('Distribución', `${W.esc(rangeTxt)} · pedidos por segmento`,
+          donutItems.length
+            ? W.chart.donut({ items: donutItems, size: 168, valueFmt: W.fmtNumC,
+                centerLabel: 'pedidos', centerValue: W.fmtNumC(cur.orders) })
+            : '<div class="chart-empty">Sin datos en el período.</div>')}
       </div>
 
-      ${insights.length ? `<div>
-        <div class="sec-h"><h3>Qué está pasando</h3><span>lectura automática del período vs. el anterior</span></div>
-        <div class="ins-g">${insights
-          .map((i) => `<div class="ins ${i.kind}">${W.icon(i.kind === 'good' ? 'trend' : i.kind === 'bad' ? 'trendDown' : i.kind === 'warn' ? 'warn' : 'info', 16)}<div><h4>${W.esc(i.title)}</h4><p>${W.esc(i.text)}</p></div></div>`)
-          .join('')}</div></div>` : ''}`;
+      ${!isSingleDay ? `<div class="cgrid">
+        ${haySinAtrib ? cardChart('Sin atribución por día', 'pedidos que llegan sin utm_source',
+          W.chart.line({ labels, series: [{ name: 'Sin atribución', color: '#e34948', values: sinAtrib }],
+            height: 200, yFmt: (v) => `${Math.round(v)}%`, id: 'sin-utm' }))
+        : ''}
+        ${hayCanalPorDia ? cardChart('Participación App vs. Web', '% de los pedidos de cada día',
+          W.chart.line({ labels, series: partPorDia, height: 200, yFmt: (v) => `${Math.round(v)}%`, id: 'part-ch' }))
+        : ''}
+      </div>
 
-    const detalleTab = `
-      <div class="g2">
-        <div class="card">
-          <div class="card-h"><div><h3>Proyección de cierre de mes</h3><p>al ritmo de los primeros ${elapsed} de ${dim} días</p></div></div>
-          <div class="proj">
+      <div class="cgrid">
+        ${cardChart('Ticket promedio por día', 'evolución del AOV',
+          W.chart.line({ labels, series: [{ name: 'Ticket', color: MC.ticket, values: ticketPorDia }],
+            height: 200, yFmt: W.fmtMoneyC, id: 'ticket-dia' }))}
+        ${cardChart('Pedidos: actual vs. período anterior', `misma cantidad de días · ${W.esc(W.rangeText(prevRange))}`,
+          W.chart.line({ labels,
+            series: [
+              { name: 'Período anterior', color: REF_GRAY, values: prevSerie },
+              { name: 'Período actual', color: MC.orders, values: cur.series.map((r) => r.orders) },
+            ], height: 200, yFmt: W.fmtNumC, id: 'vs-prev' }))}
+      </div>
+
+      <div class="cgrid">
+        ${cardChart('Proyección de cierre de mes', `al ritmo de los primeros ${elapsed} de ${dim} días`,
+          `<div class="proj">
             <div class="proj-main">
               <span class="proj-v">${W.fmtMoneyC(paceGmv)}</span>
               <span class="proj-l">GMV proyectado · ${W.fmtNumC(paceOrders)} pedidos</span>
@@ -577,45 +605,26 @@
               <div class="proj-f" style="width:${Math.min(100, (elapsed / dim) * 100)}%"></div>
               <span class="proj-bl">${W.fmtMoneyC(mtd.gmv)} acumulado · ${Math.round((elapsed / dim) * 100)}% del mes transcurrido</span>
             </div>
-          </div>
-        </div>
+          </div>`)}
+        ${cardChart('Mix de GMV por segmento', 'participación diaria',
+          W.chart.stackedBars({ labels, series: mixSeries, height: 200, pct: true, yFmt: W.fmtMoneyC }))}
+      </div>` : ''}
 
-        <div class="card">
-          <div class="card-h"><div><h3>Mix de GMV por segmento</h3><p>participación diaria</p></div></div>
-          ${W.chart.stackedBars({ labels, series: mixSeries, height: 200, pct: true, yFmt: W.fmtMoneyC })}
-        </div>
-      </div>
-
-      ${hasHourly ? `<div class="card">
-        <div class="card-h"><div><h3>Horarios pico</h3><p>pedidos por día de la semana y hora (AR) · ${W.esc(scopeTxt)} — dónde conviene disparar campañas
-          <span class="scope" ${W.chart.tip('Usa siempre los últimos 90 días completos, sin importar el rango elegido arriba: con rangos cortos podía tocarte un solo martes (o ninguno, si era justo hoy) y la fila de "martes" parecía vacía sin estarlo. Hoy queda afuera por ser un día a medio terminar.')}>${W.icon('info', 11)} últimos 90 días, sin hoy</span></p></div></div>
-        ${W.chart.heatmap({
+      ${hasHourly ? cardChart('Horarios pico',
+        `pedidos por día de la semana y hora (AR) · ${W.esc(scopeTxt)}
+         <span class="scope" ${W.chart.tip('Usa siempre los últimos 90 días completos, sin importar el rango elegido arriba: con rangos cortos podía tocarte un solo martes y la fila parecía vacía sin estarlo. Hoy queda afuera por ser un día a medio terminar.')}>${W.icon('info', 11)} últimos 90 días, sin hoy</span>`,
+        W.chart.heatmap({
           rows: W.DOW_LABELS,
           cols: Array.from({ length: 24 }, (_, h) => String(h).padStart(2, '0')),
-          matrix: dowHour,
-          fmt: W.fmtNumC,
-          showValues: false,
-          legend: true,
+          matrix: dowHour, fmt: W.fmtNumC, showValues: false, legend: true,
           tipFmt: (r, c, v) => `<strong>${r} ${c}:00</strong><span class="tip-row"><b>${W.fmtNum(v)}</b> pedidos</span>`,
-        })}
-      </div>` : ''}`;
+        })) : ''}
 
-    el.innerHTML = `
-      <div class="dash-hero">${heroBlock}${tiles.join('')}</div>
+      ${insights.length ? `<div>
+        <div class="sec-h"><h3>Qué está pasando</h3><span>lectura automática del período vs. el anterior</span></div>
+        <div class="ins-g">${insights
+          .map((i) => `<div class="ins ${i.kind}">${W.icon(i.kind === 'good' ? 'trend' : i.kind === 'bad' ? 'trendDown' : i.kind === 'warn' ? 'warn' : 'info', 16)}<div><h4>${W.esc(i.title)}</h4><p>${W.esc(i.text)}</p></div></div>`)
+          .join('')}</div></div>` : ''}`;
 
-      ${segCards.length ? `<div class="sec-h"><h3>Por segmento</h3><span>${W.esc(rangeTxt)} · participación sobre los pedidos del período</span></div>
-        <div class="segs">${segCards.join('')}</div>` : ''}
-
-      ${support.length ? `<div class="mstrip">${support.join('')}</div>` : ''}
-
-      <div class="seg-ctl" style="margin-bottom:.9rem;width:max-content">
-        <button data-dashtab="evolucion" class="${dashTab === 'evolucion' ? 'on' : ''}">Evolución</button>
-        <button data-dashtab="detalle" class="${dashTab === 'detalle' ? 'on' : ''}">Proyección y mix</button>
-      </div>
-
-      ${dashTab === 'evolucion' ? evolucionTab : detalleTab}`;
-
-    document.querySelectorAll('[data-dashtab]').forEach((b) =>
-      b.addEventListener('click', () => { dashTab = b.dataset.dashtab; W.render(); }));
   };
 })();

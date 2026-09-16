@@ -1003,3 +1003,67 @@ details.more[open] summary { margin-bottom: .45rem; }
   width: 34px; height: 34px; border-radius: 7px; display: grid; place-items: center;
   background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-4);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TARJETA DE KPI — anatomía de AppDash
+   Todas las tarjetas iguales, en una grilla uniforme. Antes había un hero con
+   degradé del ancho de tres tarjetas y abajo tres familias distintas (tile,
+   segc, mitem) con tipografías y paddings propios: cuatro lenguajes en una
+   pantalla. Acá hay UNO.
+
+     ┌──────────────────────┐
+     │ [ic]           99.1% │  ícono en cuadrado tintado · chip de share
+     │ 6,5 K                │  el número, proporcional (no tabular)
+     │ Food                 │  etiqueta
+     │ $526,3 M · incl. QC  │  sub, recesivo
+     │ ↓ 4.3% vs ant.       │  delta
+     │ ▬▬▬▬▬▬▬▬▬            │  barra de participación, hairline
+     └──────────────────────┘
+   ═══════════════════════════════════════════════════════════════════════════ */
+.kgrid {
+  display: grid; gap: .7rem; margin-bottom: 1.1rem;
+  grid-template-columns: repeat(auto-fit, minmax(158px, 1fr));
+}
+.kc {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 14px; padding: .85rem .9rem .8rem;
+  display: flex; flex-direction: column; gap: .12rem;
+  transition: border-color .15s var(--ease), box-shadow .15s var(--ease);
+  min-width: 0;
+}
+.kc:hover { border-color: var(--line-2); box-shadow: 0 2px 10px -4px rgba(23,21,40,.1); }
+
+.kc-top { display: flex; align-items: center; justify-content: space-between; gap: .4rem; margin-bottom: .5rem; }
+.kc-ic {
+  width: 30px; height: 30px; border-radius: 9px; flex: 0 0 auto;
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--kc) 12%, transparent);
+  color: var(--kc);
+}
+/* El chip de share: recesivo. Es contexto, no el dato. */
+.kc-share {
+  font-size: .7rem; font-weight: 600; color: var(--ink-3);
+  background: var(--surface-3); padding: .13rem .4rem; border-radius: 6px;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+/* Figuras proporcionales: tabular-nums a este tamaño hace que "121" se vea
+   suelto. Tabular se reserva para columnas que alinean. */
+.kc-v { font-size: 1.5rem; font-weight: 700; letter-spacing: -.03em; line-height: 1.12; }
+.kc-l { font-size: .78rem; font-weight: 550; color: var(--ink); }
+.kc-s { font-size: .7rem; color: var(--ink-3); line-height: 1.4; }
+.kc-d { margin-top: .3rem; font-size: .71rem; display: flex; align-items: center; gap: .3rem; }
+.kc-d em { font-style: normal; color: var(--ink-4); }
+/* La barra: hairline, 3px, con el color del KPI. Va pegada al piso. */
+.kc-bar { margin-top: auto; padding-top: .6rem; }
+.kc-track { height: 3px; border-radius: 2px; background: var(--surface-3); overflow: hidden; }
+.kc-fill { height: 100%; border-radius: 2px; background: var(--kc); }
+
+/* Grilla de gráficos: dos columnas, como AppDash. Sin pestañas — todo visible,
+   se baja con scroll. Las pestañas escondían la mitad de la pantalla. */
+.cgrid { display: grid; gap: .9rem; margin-bottom: .9rem; grid-template-columns: 1fr; }
+@media (min-width: 1100px) { .cgrid { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 1100px) { .cgrid.side { grid-template-columns: 1.7fr 1fr; } }
+.cgrid > .card { margin-bottom: 0; }
+/* Cuatro exactas: con auto-fit, ocho tarjetas daban 7 + 1, y la octava quedaba
+   sola con un hueco del ancho de seis al lado. */
+@media (min-width: 1040px) { .kgrid.k4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
