@@ -21,9 +21,11 @@
  *   - COBERTURA. Web tiene historia desde enero y app desde mayo. Un rango que
  *     empiece antes de mayo no es "app vendio cero": es que el dato no existe.
  *
- * Lo que App no mide (unidades, categorias, medios de pago, cupones, horario)
- * no se dibuja en cero: se dice que es solo de Web. Eso lo declara el campo
- * `has` que arma scripts/build-app-summary.mjs.
+ * Sobre que mide cada canal: casi todo es comparable. App tiene unidades,
+ * productos, cupones, estados, horario, fuentes y clientes unicos — todo eso
+ * vive en los -rows.json del repo privado, que es de donde los saca el
+ * agregador. Solo tres cosas son genuinamente de Web: medio de pago, cuotas y
+ * categoria de producto (App no trae catalogo), mas provincia/tienda.
  */
 (function () {
   const W = (window.W = window.W || {});
@@ -191,15 +193,6 @@
         </div>`;
       }).join('');
 
-      const noMide = channels[ch].has
-        ? Object.entries(channels[ch].has).filter(([, v]) => v === false).map(([k]) => k)
-        : [];
-      const NOMBRE = {
-        units: 'unidades', categories: 'categorías', payments: 'medios de pago',
-        coupons: 'cupones', hourly: 'horario', marketing: 'fuentes', newCustomers: 'clientes nuevos',
-        statusStats: 'cancelaciones',
-      };
-
       return `<div class="card chcard" style="--rail:${CH_RAIL[ch]}">
         <div class="chcard-h">
           <div class="chcard-ti">
@@ -217,7 +210,6 @@
           <div><span class="chk-v">${W.fmtMoney(ticket)}</span><span class="chk-l">ticket</span></div>
         </div>
         <div class="chsegs">${segs}</div>
-        ${noMide.length ? `<div class="chcard-f">${W.icon('info', 12)} Este canal no mide ${noMide.map((k) => NOMBRE[k] || k).join(', ')} — eso es solo de Web.</div>` : ''}
       </div>`;
     }).join('');
 
