@@ -166,6 +166,58 @@ for (const f of archivos) {
   });
 }
 
+// ── Dias que tienen agregado pero todavia no tienen rows ────────────────────
+// Los rows del repo privado se escriben una vez que el dia cerro, asi que HOY
+// (y a veces ayer) no tiene archivo de rows. Iterar solo los rows hacia que
+// esos dias no existieran en este dataset: el dashboard mostraba App = 0
+// pedidos para hoy mientras AppDash mostraba cientos. El agregado de AppDash
+// si esta al dia, y trae pedidos y GMV por segmento — menos de lo que dan los
+// rows (sin unidades, cupones, productos ni hora), pero infinitamente mejor
+// que un cero que miente.
+//
+// Van marcados con `partial: true` para que la UI pueda decir que a ese dia le
+// falta detalle, y con `desdeAgregado: true` para saber de donde salio.
+const conRows = new Set(days.map((d) => d.date));
+let soloAgg = 0;
+for (const f of fs.readdirSync(AGG).filter((x) => /^\d{4}-\d{2}-\d{2}\.json$/.test(x)).sort()) {
+  const date = f.slice(0, 10);
+  if (conRows.has(date)) continue;
+
+  let agg;
+  try { agg = JSON.parse(fs.readFileSync(path.join(AGG, f), 'utf8')); } catch { continue; }
+  const app = agg?.app;
+  if (!app) continue;
+
+  const segments = {};
+  for (const seg of SEGMENTS) {
+    const sg = app.segments?.[seg] || {};
+    segments[seg] = {
+      ...vacioSeg(),
+      orders: sg.orders || 0,
+      gmv: sg.gmv || 0,
+    };
+  }
+  days.push({
+    date,
+    segments,
+    hourly: null,
+    statusStats: {},
+    newCustomers: 0,
+    activeCustomers: 0,
+    discount: 0,
+    totalEcommOrders: agg.total_ecomm_orders || 0,
+    totalEcommGmv: agg.total_ecomm_gmv || 0,
+    conUtm: app.con_utm || 0,
+    sinUtm: app.sin_utm || 0,
+    fetchedAt: agg.fetched_at || null,
+    partial: true,
+    desdeAgregado: true,
+  });
+  soloAgg += 1;
+}
+days.sort((a, b) => a.date.localeCompare(b.date));
+if (soloAgg) console.log(`${soloAgg} dia(s) sin rows todavia: pedidos y GMV desde el agregado de AppDash, sin detalle`);
+
 // La frescura del DATO, no la hora en que corrio este script.
 const fechas = days.map((d) => d.fetchedAt).filter(Boolean).sort();
 const dataFreshAt = fechas.length ? fechas[fechas.length - 1] : null;

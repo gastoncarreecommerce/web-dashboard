@@ -45,7 +45,7 @@ import { getRedis, vtexBaseUrl, vtexHeaders, vtexGetOrder, todayAR, cacheKey } f
 // Traerlo de fetch-day.js además garantiza que el vivo y el pipeline por
 // lotes usen exactamente la misma lista de segmentos, igual que ya pasa con
 // la clasificación.
-import { newDayAcc, applyOrderToAcc, SEGMENTS } from '../src/fetch-day.js';
+import { newDayAcc, applyOrderToAcc, canalDe, SEGMENTS } from '../src/fetch-day.js';
 
 const MAX_PAGE = 30; // límite duro de la VTEX Order Search API
 const PER_PAGE = 100;
@@ -215,15 +215,21 @@ export default async function handler(req, res) {
       await forEachLimit(toFetch, DETAIL_CONCURRENCY, async (orderId) => {
         try {
           const full = await vtexGetOrder(orderId);
+          // El canal se resuelve UNA vez y el pedido se acumula en su propio
+          // canal. Antes se llamaba a applyOrderToAcc sin canal (= solo web) y
+          // todo lo de app salia con bucket:null, o sea: se pagaba la llamada
+          // de detalle a VTEX y despues se tiraba el dato.
+          const canal = canalDe(full);
           const singleAcc = newDayAcc();
-          const isWeb = applyOrderToAcc(singleAcc, full);
+          const contado = applyOrderToAcc(singleAcc, full, canal);
           let bucket = null;
-          if (isWeb) {
+          if (contado) {
             for (const s of SEGMENTS) {
               if (singleAcc.segments[s].orders > 0) { bucket = s; break; }
             }
           }
           fresh[orderId] = JSON.stringify({
+            canal,
             bucket,
             seg: bucket ? stripSeg(singleAcc.segments[bucket]) : null,
             discount: singleAcc.discountTotal || 0,
@@ -242,9 +248,15 @@ export default async function handler(req, res) {
     }
 
     // ── Reconstruir el día completo sumando los deltas cacheados ────────────
-    const segments = Object.fromEntries(SEGMENTS.map((s) => [s, emptySeg()]));
-    let discount = 0;
-    const hashes = new Set();
+    // Un acumulador POR CANAL. El cliente empalma cada uno en el dataset de su
+    // canal, asi que App + Web vuelve a dar el total del ecommerce sin que
+    // ningun pedido se cuente dos veces.
+    const porCanal = {};
+    const nuevoCanal = () => ({
+      segments: Object.fromEntries(SEGMENTS.map((s) => [s, emptySeg()])),
+      discount: 0, hashes: new Set(),
+    });
+    for (const c of ['web', 'app']) porCanal[c] = nuevoCanal();
     // OJO con el tipo que devuelve Redis: el cliente de Upstash trae
     // `automaticDeserialization` en true por defecto, así que un valor que se
     // guardó con JSON.stringify VUELVE YA PARSEADO, como objeto. Hacerle
@@ -267,27 +279,51 @@ export default async function handler(req, res) {
         continue;
       }
       if (!rec || typeof rec !== 'object') { descartados += 1; continue; }
-      if (rec.bucket && rec.seg) mergeSegInto(segments[rec.bucket], rec.seg);
-      discount += rec.discount || 0;
-      if (rec.hash) hashes.add(rec.hash);
+      // Los deltas guardados antes de este cambio no tienen `canal`. Eran
+      // web-only por construccion, asi que se leen como web en vez de
+      // descartarse (y los de app de esos ciclos venian con bucket:null, no
+      // aportan nada hasta que se recacheen: por eso sube CACHE_VERSION).
+      const canal = rec.canal || 'web';
+      const acc = (porCanal[canal] = porCanal[canal] || nuevoCanal());
+      if (rec.bucket && rec.seg) mergeSegInto(acc.segments[rec.bucket], rec.seg);
+      acc.discount += rec.discount || 0;
+      if (rec.hash) acc.hashes.add(rec.hash);
     }
 
-    let orders = 0, gmv = 0;
-    for (const s of SEGMENTS) { orders += segments[s].orders; gmv += segments[s].gmv; }
+    const totales = (acc) => {
+      let orders = 0, gmv = 0;
+      for (const s of SEGMENTS) { orders += acc.segments[s].orders; gmv += acc.segments[s].gmv; }
+      return { orders, gmv };
+    };
+    const { orders, gmv } = totales(porCanal.web);
 
     res.setHeader('Cache-Control', 'no-store');
     return res.status(200).json({
       date,
+      // `orders`/`gmv`/`segments`/`discount` siguen siendo los de WEB, igual
+      // que siempre, para no romper a ningun consumidor viejo. Lo nuevo es
+      // `canales` (web y app por separado) y `totalEcommOrders`.
       orders,
       gmv: Math.round(gmv),
-      segments,
-      discount: Math.round(discount),
+      segments: porCanal.web.segments,
+      discount: Math.round(porCanal.web.discount),
+      canales: Object.fromEntries(Object.entries(porCanal).map(([c, acc]) => {
+        const t = totales(acc);
+        return [c, {
+          orders: t.orders, gmv: Math.round(t.gmv), segments: acc.segments,
+          discount: Math.round(acc.discount), activeCustomers: acc.hashes.size,
+        }];
+      })),
+      // Cuantos pedidos vio VTEX hoy, sin filtrar por canal ni por estado: es
+      // el numero que muestra el OMS. Sirve para saber si lo que sumamos por
+      // canal cubre todo o si hay pedidos que nuestra clasificacion no toma.
+      totalEcommOrders: allIds.length,
       // "Nuevos hoy" necesitaría cruzar contra todo el historial de clientes
       // (~16MB de audience-index.json) en cada poll de 15s — no vale la pena
       // acá. Queda en 0 y se corrige solo con la próxima corrida del pipeline
       // de 30 min, que sí lo calcula bien contra el histórico completo.
       newCustomers: 0,
-      activeCustomers: hashes.size,
+      activeCustomers: porCanal.web.hashes.size,
       statusStats,
       scanned: allIds.length,
       // > 0 significa que hay registros en el cache que no se pudieron leer:

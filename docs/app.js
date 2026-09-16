@@ -57,17 +57,34 @@
       const res = await fetch('/api/today-live', { cache: 'no-store' });
       if (!res.ok) { warnLiveUnavailable(res); return; } // se reintenta el próximo tick
       const live = await res.json();
-      // Al dataset de WEB, que es de donde viene el vivo (api/today-live filtra
-      // orderChannel !== 'web'). Nunca al dataset del canal activo.
-      const web = await W.loadRaw('daily-summary');
-      const entry = {
-        date: live.date, segments: live.segments, hourly: null,
-        discount: live.discount || 0, newCustomers: live.newCustomers || 0,
-        activeCustomers: live.activeCustomers || 0, statusStats: live.statusStats || {},
-      };
-      const idx = web.days.findIndex((d) => d.date === live.date);
-      if (idx >= 0) web.days[idx] = entry;
-      else { web.days.push(entry); web.days.sort((a, b) => a.date.localeCompare(b.date)); }
+
+      // El vivo ahora trae los DOS canales del mismo escaneo de VTEX
+      // (`live.canales.web` / `live.canales.app`), asi que cada uno se empalma
+      // en el dataset de SU canal. Antes el endpoint descartaba los pedidos de
+      // app y aca solo se escribia web: por eso hoy App daba 0 mientras VTEX
+      // tenia cientos de pedidos de app. Nunca se escribe en el dataset del
+      // canal activo, y App + Web se recalcula invalidando la union.
+      const canales = live.canales || { web: live };
+      for (const [canal, d] of Object.entries(canales)) {
+        if (!d) continue;
+        const ds = canal === 'web'
+          ? await W.loadRaw('daily-summary')
+          : await W.loadChannel(canal, 'daily-summary');
+        if (!ds?.days) continue;
+        const entry = {
+          date: live.date, segments: d.segments, hourly: null,
+          discount: d.discount || 0, newCustomers: 0,
+          activeCustomers: d.activeCustomers || 0,
+          // statusStats sale del listado del dia SIN filtrar por canal, asi
+          // que es del ecommerce entero: va solo en web para no contarlo dos
+          // veces cuando se suman los canales.
+          statusStats: canal === 'web' ? (live.statusStats || {}) : {},
+          totalEcommOrders: canal === 'web' ? (live.totalEcommOrders || 0) : 0,
+        };
+        const idx = ds.days.findIndex((x) => x.date === live.date);
+        if (idx >= 0) ds.days[idx] = entry;
+        else { ds.days.push(entry); ds.days.sort((x, y) => x.date.localeCompare(y.date)); }
+      }
       W.invalidateMerged();
       if (!days.includes(live.date)) { days.push(live.date); days.sort(); }
       liveQueriedAt = live.queriedAt;

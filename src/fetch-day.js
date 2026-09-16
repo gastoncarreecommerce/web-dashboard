@@ -188,9 +188,16 @@ function newDayAcc() {
 
 /** Suma UN pedido completo al acumulador. Es todo lo que hay que hacer por pedido,
  *  así que sirve igual para el fetch inicial y para reparar los que fallaron. */
-function applyOrderToAcc(acc, full) {
+function applyOrderToAcc(acc, full, canal = 'web') {
   acc.processedIds.add(String(full.orderId));
-  if (orderChannel(full, channelMap) !== 'web') return false;
+  // `canal` existe para que el vivo (api/today-live) pueda acumular TAMBIEN
+  // los pedidos de app en un acumulador aparte. Antes esto era un filtro fijo
+  // a 'web': el endpoint se bajaba de VTEX los pedidos del dia entero, los
+  // clasificaba, y tiraba los de app — por eso "hoy" mostraba App 0 aunque
+  // AppDash tuviera 288. El default 'web' deja el pipeline por lotes igual
+  // que siempre (el historico committeado de este repo es solo web; los dias
+  // cerrados de app vienen del repo de AppDash, asi que nada se duplica).
+  if (orderChannel(full, channelMap) !== canal) return false;
 
   const view = classifyOrder(full, segmentMap);
   const gmv = view.gmv;
@@ -565,7 +572,14 @@ if (require.main === module) {
   });
 }
 
+/** El canal de un pedido ('web' | 'app' | ...), con el channel-map de este
+ *  modulo ya aplicado. Se exporta para que api/today-live.js clasifique una
+ *  sola vez por pedido y mande cada uno a su acumulador, sin reimplementar
+ *  nada ni tener que conocer el channelMap. */
+function canalDe(full) { return orderChannel(full, channelMap); }
+
 module.exports = {
+  canalDe,
   fetchDay,
   SEGMENTS,
   arDayRange,

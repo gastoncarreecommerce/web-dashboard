@@ -66,6 +66,9 @@ export function todayAR() {
   return new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
 }
 
+// v2: los deltas ahora guardan el canal del pedido. Los de v1 no lo tenian y
+// los de app venian vacios (bucket:null), asi que reusar la misma key dejaria
+// "hoy" sin los pedidos de app ya cacheados hasta el dia siguiente.
 export function cacheKey(dateAR) {
-  return `webdash:live:${dateAR}`;
+  return `webdash:live:v2:${dateAR}`;
 }
