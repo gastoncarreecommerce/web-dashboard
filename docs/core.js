@@ -111,10 +111,24 @@
     return `hace ${Math.round(min / 60)} h`;
   };
   W.fmtMonth = (m) => new Date(`${m}-01T00:00:00Z`).toLocaleDateString('es-AR', { timeZone: 'UTC', month: 'short', year: '2-digit' });
+  /** Mes en palabras: "septiembre de 2026". En una frase, "sept 26" se lee como
+   *  el dia 26 de septiembre; en un eje o un chip, la version corta esta bien. */
+  W.fmtMonthLong = (m) => new Date(`${m}-01T00:00:00Z`)
+    .toLocaleDateString('es-AR', { timeZone: 'UTC', month: 'long', year: 'numeric' })
+    .replace(' de ', ' de ');
   W.esc = (s) =>
     String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   W.DOW_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+  /** Para inputs de texto: re-renderizar en cada tecla tira la vista entera. */
+  W.debounce = function (fn, ms = 250) {
+    let t = null;
+    return function (...args) {
+      clearTimeout(t);
+      t = setTimeout(() => fn.apply(this, args), ms);
+    };
+  };
 
   // ── Fechas ────────────────────────────────────────────────────────────────
   W.addDays = (dateStr, n) => {
@@ -374,10 +388,16 @@
         for (const [seg, v] of Object.entries(day.segments || {})) {
           const t = (d.segments[seg] = d.segments[seg] || {
             gmv: 0, orders: 0, units: 0, hourly: new Array(24).fill(0),
+            // El desglose se CONSERVA, no se pierde al sumar: es lo que permite
+            // que cada total de la interfaz muestre su mix App/Web en el lugar,
+            // sin que la vista tenga que volver a pedir los dos canales.
+            byChannel: {},
           });
           t.gmv += v.gmv || 0;
           t.orders += v.orders || 0;
           t.units += v.units || 0;
+          const bc = (t.byChannel[ch] = t.byChannel[ch] || { gmv: 0, orders: 0, units: 0 });
+          bc.gmv += v.gmv || 0; bc.orders += v.orders || 0; bc.units += v.units || 0;
           if (v.hourly) v.hourly.forEach((n, h) => (t.hourly[h] += n || 0));
           for (const k of DICTS) {
             if (!v[k]) continue;
@@ -455,8 +475,10 @@
           const acc = (dstSeg[ym] = dstSeg[ym] || new Map());
           for (const it of arr) {
             const k = String(it.sku || it.name);
-            const e = acc.get(k) || { sku: it.sku, name: it.name, dept: '', qty: 0, gmv: 0, orders: 0 };
+            const e = acc.get(k) || { sku: it.sku, name: it.name, dept: '', qty: 0, gmv: 0, orders: 0, byChannel: {} };
             e.qty += it.qty || 0; e.gmv += it.gmv || 0; e.orders += it.orders || 0;
+            const bc = (e.byChannel[ch] = e.byChannel[ch] || { qty: 0, gmv: 0, orders: 0 });
+            bc.qty += it.qty || 0; bc.gmv += it.gmv || 0; bc.orders += it.orders || 0;
             if ((it.name || '').length > (e.name || '').length) e.name = it.name;
             if (!e.dept && it.dept) e.dept = it.dept;
             acc.set(k, e);
@@ -482,6 +504,58 @@
     };
   };
 
+  /**
+   * EL SPLIT: la pieza que hace que el dashboard sea del ecommerce total sin
+   * esconder de donde viene cada numero.
+   *
+   * Decision de diseño: el total es siempre EL numero, y el mix App/Web viaja
+   * pegado a el como una barra de una sola linea. Nadie tiene que cambiar de
+   * vista ni de filtro para saber que parte es de la app — y como es una barra
+   * apilada de dos tramos, se lee de un vistazo sin ocupar una fila de texto.
+   *
+   * Especificaciones que vienen del skill de dataviz y no son decorativas:
+   *  - Dos tramos separados por un hueco de 2px del color de la SUPERFICIE. El
+   *    hueco es lo que separa, no un borde: un stroke agrega tinta que no es dato.
+   *  - El par violeta/azul esta validado con el script (CVD ΔE 13,0 contra un
+   *    objetivo de 8; vision normal 16,3 contra un piso de 15), no elegido a ojo.
+   *  - La identidad la da el swatch al lado del texto, nunca el color del texto:
+   *    un texto violeta claro sobre blanco no llega a contraste.
+   *  - El valor exacto de los dos canales vive en el tooltip Y en la leyenda de
+   *    la barra, asi que el hover nunca es la unica forma de leerlo.
+   */
+  W.splitBar = function (app, web, opts = {}) {
+    const t = (app || 0) + (web || 0);
+    if (!t) return '';
+    const pApp = ((app || 0) / t) * 100;
+    const alto = opts.alto || 4;
+    return `<div class="csplit" style="--h:${alto}px" aria-hidden="true">
+      <span class="csplit-a" style="width:${pApp}%"></span>
+      <span class="csplit-w" style="width:${100 - pApp}%"></span>
+    </div>`;
+  };
+
+  /** Texto del mix, para poner debajo de la barra o al lado del valor. */
+  W.splitLabel = function (app, web, fmt = W.fmtNumC) {
+    const t = (app || 0) + (web || 0);
+    if (!t) return '';
+    return `<span class="csplit-l">
+      <span class="csplit-k app"></span>${fmt(app || 0)}
+      <span class="csplit-k web"></span>${fmt(web || 0)}
+    </span>`;
+  };
+
+  /** Filas de tooltip con el desglose, para sumar al tip de cualquier tarjeta. */
+  W.splitTip = function (app, web, fmt = W.fmtNum) {
+    const t = (app || 0) + (web || 0);
+    if (!t) return '';
+    const pct = (v) => W.fmtPct(v / t, 0);
+    return `<span class="tip-row"><b>App</b> ${fmt(app || 0)} · ${pct(app || 0)}</span>`
+         + `<span class="tip-row"><b>Web</b> ${fmt(web || 0)} · ${pct(web || 0)}</span>`;
+  };
+
+  /** ¿Hay desglose para mostrar? (false cuando el filtro esta en un solo canal) */
+  W.hasSplit = (bc) => !!bc && Object.keys(bc).length > 1;
+
   // ── Agregación de la serie diaria ─────────────────────────────────────────
   /**
    * Suma los días de `range` para uno o todos los segmentos.
@@ -491,6 +565,9 @@
     const acc = {
       gmv: 0, orders: 0, units: 0, discount: 0, newCustomers: 0, activeCustomers: 0,
       marketing: {}, series: [], bySegment: {}, hourly: new Array(24).fill(0), statusStats: {},
+      // Mix App/Web del rango, total y por segmento. Queda vacio cuando el
+      // dataset es de un solo canal, y ahi la interfaz no dibuja el split.
+      byChannel: {}, byChannelSeg: {},
       // Catálogo del rango, ya recortado al segmento elegido (schema 2).
       categories: {}, categoriesN1: {}, categoriesN2: {}, coupons: {}, payments: {},
       paymentBrands: {}, installments: {}, hasCatalog: false,
@@ -509,6 +586,13 @@
         acc.bySegment[b].gmv += seg.gmv;
         acc.bySegment[b].orders += seg.orders;
         acc.bySegment[b].units += seg.units || 0;
+        for (const [ch, v] of Object.entries(seg.byChannel || {})) {
+          const t = (acc.byChannel[ch] = acc.byChannel[ch] || { gmv: 0, orders: 0, units: 0 });
+          t.gmv += v.gmv || 0; t.orders += v.orders || 0; t.units += v.units || 0;
+          const ts = ((acc.byChannelSeg[b] = acc.byChannelSeg[b] || {})[ch]
+            = acc.byChannelSeg[b][ch] || { gmv: 0, orders: 0, units: 0 });
+          ts.gmv += v.gmv || 0; ts.orders += v.orders || 0; ts.units += v.units || 0;
+        }
         for (const [name, v] of Object.entries(seg.marketing || {})) {
           const e = (acc.marketing[name] = acc.marketing[name] || { gmv: 0, orders: 0 });
           e.gmv += v.gmv; e.orders += v.orders;

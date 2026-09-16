@@ -62,7 +62,7 @@
   }
 
   /** Métrica primaria: valor grande, color pleno de la métrica como acento. */
-  function tile({ rail, icon, label, value, sub, delta, chip, spark, tip }) {
+  function tile({ rail, icon, label, value, sub, delta, chip, spark, tip, split }) {
     return `<div class="tile" style="--rail:${rail}"${tip ? ` ${W.chart.tip(tip)}` : ''}>
       <div class="tile-t">
         <span class="tile-ic">${W.icon(icon, 16)}</span>
@@ -71,12 +71,13 @@
       <div class="tile-v">${value}</div>
       <div class="tile-l">${W.esc(label)}</div>
       ${sub ? `<div class="tile-s">${sub}</div>` : ''}
+      ${split || ''}
       ${spark ? `<div class="tile-spark">${spark}</div>` : ''}
     </div>`;
   }
 
   /** Un segmento con SU color, su volumen y cuánto pesa del total. */
-  function segCard({ seg, orders, gmv, share, delta }) {
+  function segCard({ seg, orders, gmv, share, delta, split }) {
     const color = W.SEGMENT_COLOR[seg];
     return `<div class="segc" style="--rail:${color};--track:${color}22"
       ${W.chart.tip(`<strong>${W.esc(W.SEGMENT_LABEL[seg])}</strong><span class="tip-row">${W.fmtNum(orders)} pedidos</span><span class="tip-row">${W.fmtMoney(gmv)}</span><span class="tip-row">${W.fmtPct(share)} de los pedidos del período</span>`)}>
@@ -87,6 +88,7 @@
       </div>
       <div class="segc-s">${W.fmtMoneyC(gmv)} · ${W.fmtPct(share)} de los pedidos</div>
       <div class="segc-bar"><div class="segc-fill" style="width:${Math.min(100, share * 100)}%"></div></div>
+      ${split || ''}
     </div>`;
   }
 
@@ -319,6 +321,19 @@
     // ── Hero: el GMV ────────────────────────────────────────────────────────
     const heroSpark = gmvs.length > 1 ? W.chart.sparkline(gmvs, 'rgba(255,255,255,.9)', 240, 46) : '';
     const cmpDayTotals = cmpDay ? W.sumRange(daily, bucket, { from: cmpDayDate, to: cmpDayDate }) : null;
+    // ── El mix App/Web de cada total ───────────────────────────────────────
+    // Solo cuando el filtro esta en "App + Web": con un solo canal no hay mix
+    // que mostrar y una barra de un solo color seria ruido.
+    const mostrarSplit = W.hasSplit(cur.byChannel);
+    const chApp = cur.byChannel?.app || { orders: 0, gmv: 0, units: 0 };
+    const chWeb = cur.byChannel?.web || { orders: 0, gmv: 0, units: 0 };
+    function splitOf(metric) {
+      if (!mostrarSplit) return '';
+      const fmt = metric === 'gmv' ? W.fmtMoneyC : W.fmtNumC;
+      return W.splitBar(chApp[metric], chWeb[metric])
+        + `<div class="tile-s">${W.splitLabel(chApp[metric], chWeb[metric], fmt)}</div>`;
+    }
+
     const heroBlock = hero({
       label: `GMV · ${rangeTxt}`,
       value: W.fmtMoneyC(cur.gmv),
@@ -330,7 +345,10 @@
       deltaNote: showDelta && !isToday ? `período anterior: <b>${W.fmtMoneyC(prev.gmv)}</b>` : '',
       sub: isToday && cmpDayTotals
         ? `${W.esc(cmpName)} cerró en <b>${W.fmtMoneyC(cmpDayTotals.gmv)}</b>`
-        : `${W.fmtNumC(cur.orders)} pedidos · ticket ${W.fmtMoney(W.ticket(cur.gmv, cur.orders))}`,
+        : `${W.fmtNumC(cur.orders)} pedidos · ticket ${W.fmtMoney(W.ticket(cur.gmv, cur.orders))}${
+            mostrarSplit && cur.gmv
+              ? ` · app ${W.fmtPct(chApp.gmv / cur.gmv, 0)} del GMV`
+              : ''}`,
       pace: isToday ? {
         pct: (hoursElapsed / 24) * 100,
         label: `${hoursElapsed} de 24 horas del día transcurridas`,
@@ -361,6 +379,9 @@
         rail: MC.orders, icon: 'orders', label: 'Pedidos', value: W.fmtNumC(cur.orders),
         delta: ordersDelta, chip: isToday && ordersDelta == null ? partialChip : null,
         sub: ordersSub,
+        // El mix viaja pegado al total: nadie tiene que cambiar de vista para
+        // saber que parte del numero es de la app.
+        split: splitOf('orders'),
         spark: orders.length > 1 ? W.chart.sparkline(orders, MC.orders) : '',
         tip: `<strong>Pedidos</strong><span class="tip-row">${W.fmtNum(cur.orders)} en el período</span>${
           isToday && cmpOrdersToHour != null ? `<span class="tip-row">Comparado contra ${W.esc(cmpName)} hasta las ${String(hoursElapsed - 1).padStart(2, '0')}:59, no contra su total del día</span>` : ''}`,
@@ -390,10 +411,14 @@
     const segCards = bucket === 'all'
       ? W.SEGMENTS.map((s) => {
           const c = cur.bySegment[s], p = prev.bySegment[s] || { gmv: 0, orders: 0 };
+          const bc = cur.byChannelSeg?.[s];
           return segCard({
             seg: s, orders: c.orders, gmv: c.gmv,
             share: cur.orders ? c.orders / cur.orders : 0,
             delta: d(c.orders, p.orders),
+            split: W.hasSplit(bc)
+              ? `<div class="segc-s segc-mix">${W.splitLabel(bc.app?.orders, bc.web?.orders)}</div>`
+              : '',
           });
         })
       : [];

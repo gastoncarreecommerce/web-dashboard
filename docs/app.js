@@ -95,7 +95,7 @@
   }
 
   const NAV_ICON = { dashboard: 'dashboard', analytics: 'analytics', tiendas: 'store', coupons: 'tag', marketing: 'megaphone', buscador: 'search', audiences: 'audience' };
-  const TITLES = { dashboard: 'Dashboard', canales: 'App + Web', analytics: 'Analítica', tiendas: 'Tiendas', coupons: 'Cupones', marketing: 'Marketing', buscador: 'Buscador', audiences: 'Audiencias' };
+  const TITLES = { dashboard: 'Dashboard', canales: 'App + Web', productos: 'Productos', analytics: 'Analítica', tiendas: 'Tiendas', coupons: 'Cupones', marketing: 'Marketing', buscador: 'Buscador', audiences: 'Audiencias' };
 
   function paintChrome() {
     document.querySelectorAll('.nav-item').forEach((n) => {
@@ -170,7 +170,7 @@
     // Dashboard, Analítica, Tiendas, Cupones y Marketing se filtran por
     // segmento; Audiencias mira la base completa y Buscador mira GA4 (no
     // pedidos de VTEX), así que en esas dos la fila no aplica.
-    const hasSeg = ['dashboard', 'analytics', 'tiendas', 'coupons', 'marketing'].includes(state.view);
+    const hasSeg = ['dashboard', 'productos', 'analytics', 'tiendas', 'coupons', 'marketing'].includes(state.view);
     // "App + Web" cruza los cuatro segmentos contra los dos canales: filtrar por
     // un segmento la dejaria sin su razon de ser, asi que ahi la fila de chips
     // no aplica. El comparador contra el periodo anterior si, porque toda la
@@ -229,6 +229,7 @@
     try {
       if (state.view === 'dashboard') await W.viewDashboard(ctx);
       else if (state.view === 'canales') await W.viewCanales(ctx);
+      else if (state.view === 'productos') await W.viewProductos(ctx);
       else if (state.view === 'analytics') await W.viewAnalytics(ctx);
       else if (state.view === 'tiendas') await W.viewTiendas(ctx);
       else if (state.view === 'coupons') await W.viewCoupons(ctx);

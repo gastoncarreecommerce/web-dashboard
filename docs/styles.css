@@ -844,3 +844,90 @@ details.more[open] summary { margin-bottom: .45rem; }
    mas grueso del dashboard (App+Web / App / Web), así que va primero en la fila. */
 .chan-ctl { margin-right: .6rem; }
 .chan-ctl button.on { font-weight: 650; }
+
+/* ── El split App/Web ──────────────────────────────────────────────────────
+   La barra que lleva el mix pegado a cada total. Dos tramos separados por un
+   hueco de 2px del color de la superficie: el hueco es lo que separa, no un
+   borde (un stroke agregaría tinta que no es dato). El par violeta/azul está
+   validado con el script del skill de dataviz, no elegido a ojo. */
+.csplit {
+  display: flex;
+  height: var(--h, 4px);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--line);
+  margin-top: .5rem;
+}
+.csplit > span { display: block; height: 100%; }
+/* El hueco de superficie: 2px, y el radio solo en los extremos de la barra
+   para que el dato arranque y termine redondeado pero no en la juntura. */
+.csplit-a { background: #4a3aa7; border-radius: 999px 0 0 999px; }
+.csplit-w { background: #2a78d6; border-radius: 0 999px 999px 0; margin-left: 2px; }
+
+/* La leyenda del mix: la identidad la da el swatch, nunca el color del texto. */
+.csplit-l {
+  display: inline-flex; align-items: center; gap: .28rem;
+  font-size: .7rem; color: var(--ink-3); font-variant-numeric: tabular-nums;
+}
+.csplit-k { width: 7px; height: 7px; border-radius: 2px; display: inline-block; flex: 0 0 auto; }
+.csplit-k + .csplit-k, .csplit-l .csplit-k:not(:first-child) { margin-left: .4rem; }
+.csplit-k.app { background: #4a3aa7; }
+.csplit-k.web { background: #2a78d6; }
+
+/* Leyenda de canal, presente siempre que haya dos series en pantalla. */
+.chleg { display: flex; gap: .9rem; align-items: center; font-size: .74rem; color: var(--ink-2); }
+.chleg span { display: inline-flex; align-items: center; gap: .35rem; }
+.chleg i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+
+/* ── Vista "Productos" ─────────────────────────────────────────────────────
+   Ranking con barra apilada horizontal. Las medidas no son de gusto: salen de
+   las especificaciones de marca del skill de dataviz.
+     · barra ≤ 24px de grosor (acá 14: es una fila de tabla, no un gráfico solo)
+     · punta redondeada de 4px SOLO en el extremo del dato, cuadrada en la base
+     · hueco de 2px del color de la superficie entre los dos tramos
+     · sin borde alrededor de la marca: el hueco es lo que separa            */
+
+.prod-sum { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .9rem; margin-bottom: 1.1rem; }
+.prod-sumk {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
+  padding: 1.05rem 1.15rem; display: flex; flex-direction: column; gap: .1rem;
+}
+/* Figuras proporcionales en un número grande: tabular-nums a este tamaño
+   hace que "121" se vea suelto. */
+.prod-sumv { font-size: 1.85rem; font-weight: 700; letter-spacing: -.025em; line-height: 1.1; }
+.prod-suml { font-size: .78rem; color: var(--ink-3); }
+.prod-sums { font-size: .72rem; color: var(--ink-3); margin-top: .35rem; }
+
+.prod-tools { display: flex; align-items: center; gap: .7rem; flex-wrap: wrap; }
+.prod-q { min-width: 230px; font-size: .8rem; padding: .45rem .7rem; }
+
+.tbl.prod td { vertical-align: middle; }
+.tbl.prod .prod-i { width: 34px; color: var(--ink-4); font-size: .76rem; font-variant-numeric: tabular-nums; text-align: right; }
+.prod-n { max-width: 330px; }
+.prod-nm { display: block; font-size: .84rem; font-weight: 550; line-height: 1.3; }
+.prod-sk { display: block; font-size: .7rem; color: var(--ink-4); font-variant-numeric: tabular-nums; }
+
+.prod-b { width: 42%; min-width: 180px; }
+.prod-track { width: 100%; }
+.prod-bar {
+  display: flex; height: 14px; border-radius: 0 4px 4px 0;
+  overflow: hidden; min-width: 3px;
+}
+.prod-seg { display: block; height: 100%; }
+.prod-seg.app { background: #4a3aa7; }
+.prod-seg.web { background: #2a78d6; margin-left: 2px; }   /* el hueco de 2px */
+.prod-seg.solo { background: #2a78d6; }
+/* La punta redondeada va en el extremo del dato; la base queda cuadrada. */
+.prod-bar > .prod-seg:last-child { border-radius: 0 4px 4px 0; }
+.prod-mix { display: block; font-size: .68rem; color: var(--ink-3); margin-top: .25rem; font-variant-numeric: tabular-nums; }
+
+.tbl.prod tr:hover { background: var(--surface-2); }
+.prod-more { display: flex; justify-content: center; padding-top: .9rem; }
+
+@media (max-width: 860px) {
+  .prod-n { max-width: 160px; }
+  .prod-b { width: auto; min-width: 110px; }
+}
+/* El mix dentro de una tarjeta de segmento: va después de la barra de
+   participación, así que necesita aire para no leerse como parte de ella. */
+.segc-mix { margin-top: .4rem; }
