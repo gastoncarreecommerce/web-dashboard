@@ -317,9 +317,13 @@
    * decirlo en vez de mostrar una caida que no paso.
    */
   W.loadChannels = async function () {
+    // loadRaw, NO load: W.load es consciente del canal y con el filtro en "total"
+    // devuelve la FUSION. Pedirla aca ponia el total en la columna de Web, y el
+    // total de la matriz sumaba el total otra vez: 1.493 + 3.735 = 5.228, con el
+    // mismo ticket en las dos tarjetas porque una era la suma de la otra.
     const [app, web] = await Promise.all([
       W.loadChannel('app', 'daily-summary'),
-      W.load('daily-summary'),
+      W.loadRaw('daily-summary'),
     ]);
     const out = {};
     for (const [ch, data] of [['app', app], ['web', web]]) {
