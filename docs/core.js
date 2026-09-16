@@ -121,6 +121,34 @@
 
   W.DOW_LABELS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
+  /**
+   * Foto del producto, por EAN, contra /api/product-image (que consulta VTEX).
+   *
+   * Vivia dentro de view-analytics, que era la unica vista con ranking. Ahora
+   * que Productos tiene su propia vista lo comparten las dos, en vez de tener
+   * dos implementaciones o —peor— una vista con fotos y otra sin.
+   *
+   * Cachea tambien los fallos: un EAN que VTEX no tiene no se vuelve a pedir en
+   * cada re-render. El timeout de 3s es para que una foto lenta no frene la
+   * tabla entera.
+   */
+  const imgCache = new Map();
+  W.productImg = async function (sku) {
+    const k = String(sku || '');
+    if (imgCache.has(k)) return imgCache.get(k);
+    if (!/^\d{8,14}$/.test(k)) { imgCache.set(k, null); return null; }
+    let url = null;
+    try {
+      const ctrl = new AbortController();
+      const to = setTimeout(() => ctrl.abort(), 3000);
+      const res = await fetch(`/api/product-image?ean=${encodeURIComponent(k)}`, { signal: ctrl.signal });
+      clearTimeout(to);
+      if (res.ok) url = (await res.json())?.image || null;
+    } catch { /* sin red, timeout, o VTEX no lo tiene: se sigue sin imagen */ }
+    imgCache.set(k, url);
+    return url;
+  };
+
   /** Para inputs de texto: re-renderizar en cada tecla tira la vista entera. */
   W.debounce = function (fn, ms = 250) {
     let t = null;

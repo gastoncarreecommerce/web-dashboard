@@ -132,7 +132,7 @@
           </div>
         </div>
         <div class="tbl-wrap"><table class="tbl">
-          <thead><tr><th>#</th><th>Cupón</th><th class="num">Pedidos</th><th class="num">GMV</th><th class="num">Ticket</th><th class="num">vs. período anterior</th><th style="width:16%">% del ${W.METRIC_LABEL[couponMetric]} con cupón</th><th></th></tr></thead>
+          <thead><tr><th>#</th><th>Cupón</th><th class="num">Pedidos</th><th class="num">GMV</th><th class="num">Ticket</th><th class="num">vs. período anterior</th><th style="width:16%">${couponMetric === 'orders' ? '% de los pedidos con cupón' : '% del GMV con cupón'}</th><th></th></tr></thead>
           <tbody>${coupons.length ? coupons.map((c, i) => {
             const p = prevByCode[c.code];
             const dOrders = p ? W.delta(c.orders, p.orders) : undefined;

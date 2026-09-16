@@ -123,6 +123,10 @@
     const visibles = filas.slice(0, tope);
     const max = visibles.length ? (visibles[0][metric] || 1) : 1;
 
+    // Las fotos de los visibles, en paralelo. W.productImg cachea los fallos, asi
+    // que un EAN que VTEX no tiene no se vuelve a pedir en cada re-render.
+    const fotos = await Promise.all(visibles.map((r) => W.productImg(r.sku)));
+
     if (!porSku.size) {
       el.innerHTML = `<div class="empty"><h2>Sin productos en el período</h2>
         <p>El ranking se corta por mes; el rango elegido no cae en ningún mes con datos.</p></div>`;
@@ -148,6 +152,7 @@
 
     // ── Las filas ──────────────────────────────────────────────────────────
     const fila = (r, i) => {
+      const foto = fotos[i];
       const v = r[metric] || 0;
       const a = r.app[metric] || 0;
       const w = r.web[metric] || 0;
@@ -163,6 +168,9 @@
         + `<span class="tip-row">${W.fmtNum(r.orders)} pedidos · ${W.fmtMoney(r.gmv)}</span>`;
       return `<tr ${W.chart.tip(tip)}>
         <td class="prod-i">${i + 1}</td>
+        <td class="prod-img">${foto
+          ? `<img src="${W.esc(foto)}" alt="" loading="lazy" width="34" height="34">`
+          : `<span class="prod-noimg">${W.icon('box', 14)}</span>`}</td>
         <td class="prod-n">
           <span class="prod-nm">${W.esc(r.name)}</span>
           <span class="prod-sk">${W.esc(String(r.sku))}${r.dept ? ` · ${W.esc(r.dept)}` : ''}</span>
@@ -210,7 +218,7 @@
         <div class="tbl-wrap">
           <table class="tbl prod">
             <thead><tr>
-              <th class="prod-i">#</th><th>Producto</th>
+              <th class="prod-i">#</th><th class="prod-img"></th><th>Producto</th>
               <th>${W.esc(M.label)}${hayCanal ? ' · mix App / Web' : ''}</th>
               <th class="num">${W.esc(M.label)}</th><th class="num">% del top</th>
             </tr></thead>

@@ -16,10 +16,8 @@
 (function () {
   const W = (window.W = window.W || {});
 
-  let productQuery = '';
   let catLevel = 'n3';     // 'n1' (departamento) | 'n2' (rubro) | 'n3' (detalle)
   let segMetric = 'gmv';   // 'gmv' | 'orders' — comparativa de segmentos
-  let prodMetric = 'gmv';  // ranking de productos
   let catMetric = 'gmv';   // ranking de categorías
   let payMetric = 'gmv';   // donut de medios de pago
   const CAT_LEVEL = {
@@ -44,24 +42,7 @@
    * imagen, timeout) cae a null y se muestra un placeholder — nunca rompe el
    * panel de productos. Cacheado en memoria: no se repite en cada re-render.
    */
-  const productImgCache = new Map();
-  async function resolveProductImg(sku) {
-    if (productImgCache.has(sku)) return productImgCache.get(sku);
-    if (!/^\d{8,14}$/.test(String(sku || ''))) { productImgCache.set(sku, null); return null; }
-    let url = null;
-    try {
-      const ctrl = new AbortController();
-      const to = setTimeout(() => ctrl.abort(), 3000);
-      const res = await fetch(`/api/product-image?ean=${encodeURIComponent(sku)}`, { signal: ctrl.signal });
-      clearTimeout(to);
-      if (res.ok) {
-        const data = await res.json();
-        url = data?.image || null;
-      }
-    } catch { /* sin red, timeout, o VTEX no tiene el producto — se sigue sin imagen */ }
-    productImgCache.set(sku, url);
-    return url;
-  }
+
 
   const SEG_ALL = 'all';
   const segsOf = (bucket) => (bucket === SEG_ALL ? W.SEGMENTS : [bucket]);
@@ -71,7 +52,6 @@
     const { range, bucket, el } = ctx;
     const daily = await W.load('daily-summary');
     const cohorts = await W.load('cohorts').catch(() => null);
-    const productsFile = await W.load('products').catch(() => null);
 
     if (!daily.days.length) {
       el.innerHTML = `<div class="empty"><h2>Todavía no hay datos</h2><p>Corré el backfill inicial (ver README).</p></div>`;
@@ -101,21 +81,6 @@
     const months = [...new Set((daily.days || [])
       .filter((d) => d.date >= range.from && d.date <= range.to)
       .map((d) => d.date.slice(0, 7)))];
-    const prodMap = {};
-    for (const s of segsOf(bucket)) {
-      for (const m of months) {
-        for (const p of productsFile?.segments?.[s]?.[m] || []) {
-          const e = (prodMap[p.sku] = prodMap[p.sku] || { sku: p.sku, name: p.name, dept: p.dept, qty: 0, gmv: 0, orders: 0 });
-          e.qty += p.qty; e.gmv += p.gmv; e.orders += p.orders;
-        }
-      }
-    }
-    const products = Object.values(prodMap).sort((a, b) => b[prodMetric] - a[prodMetric]);
-    const filtered = productQuery
-      ? products.filter((p) => `${p.name} ${p.sku} ${p.dept}`.toLowerCase().includes(productQuery.toLowerCase()))
-      : products;
-    const topProductImgs = await Promise.all(filtered.slice(0, 10).map((p) => resolveProductImg(p.sku)));
-
     const categories = Object.entries(cur[CAT_LEVEL[catLevel].key] || {}).map(([name, v]) => ({ name, ...v })).sort((a, b) => b[catMetric] - a[catMetric]);
     const payments = Object.entries(cur[PAY_LEVEL[payLevel].key] || {}).map(([name, v]) => ({ name, ...v })).sort((a, b) => b[payMetric] - a[payMetric]);
     const hasPayDetail = Object.keys(cur.paymentBrands || {}).length > 0;
@@ -134,11 +99,6 @@
       filename: `webdash-segmentos-${tag}.csv`,
       headers: ['segmento', 'pedidos', 'gmv', 'unidades', 'ticket', 'unidades_por_pedido', 'share_gmv'],
       rows: segRows.map((r) => [r.label, r.orders, Math.round(r.gmv), Math.round(r.units), Math.round(r.ticket), Number(r.upo.toFixed(2)), r.share]),
-    };
-    ctx.exports.products = {
-      filename: `webdash-productos-${tag}.csv`,
-      headers: ['sku', 'producto', 'departamento', 'unidades', 'gmv', 'lineas_pedido'],
-      rows: products.map((p) => [p.sku, p.name, p.dept, p.qty, p.gmv, p.orders]),
     };
     ctx.exports.categories = {
       filename: `webdash-categorias-${CAT_LEVEL[catLevel].key}-${tag}.csv`,
@@ -179,21 +139,6 @@
             centerValue: W.metricFmt(segMetric)(segMetric === 'gmv' ? all.gmv : all.orders), centerLabel: segMetric === 'gmv' ? 'GMV total' : 'Pedidos totales',
           })}</div>
         </div>
-      </div>
-
-      <div class="card">
-        <div class="card-h">
-          <div><h3>Top 10 productos más vendidos</h3><p>${scopeTxt}
-            <span class="scope" ${W.chart.tip('El ranking se agrega por mes: el rango se redondea a los meses que toca. Para el día exacto está el detalle crudo en data/daily.')}>por mes</span></p></div>
-          <div class="card-a">
-            <input class="inp inp-search" id="prod-search" type="search" placeholder="Buscar producto…" value="${W.esc(productQuery)}" />
-            ${W.metricToggle(prodMetric, 'prodmetric')}
-            <button class="btn" data-export="products">${W.icon('download', 14)}XLSX (todos)</button>
-          </div>
-        </div>
-        ${filtered.length ? W.chart.barsH({ items: filtered.slice(0, 10).map((p, i) => ({ label: p.name, sub: p.dept, value: p[prodMetric], img: topProductImgs[i] })), valueFmt: W.metricFmt(prodMetric), color: 'var(--s1)' })
-          : '<div class="chart-empty">Sin productos para este filtro.</div>'}
-        ${filtered.length > 10 ? `<p class="muted" style="font-size:.75rem;padding-top:.6rem">Mostrando 10 de ${W.fmtNum(filtered.length)} — el XLSX trae todos los que matchean la búsqueda.</p>` : ''}
       </div>
 
       <div class="g2">
@@ -280,18 +225,6 @@
   };
 
   function wire(ctx, months) {
-    const search = document.getElementById('prod-search');
-    if (search) {
-      search.addEventListener('input', (e) => {
-        productQuery = e.target.value;
-        const pos = e.target.selectionStart;
-        W.render().then(() => {
-          const s2 = document.getElementById('prod-search');
-          if (s2) { s2.focus(); s2.setSelectionRange(pos, pos); }
-        });
-      });
-    }
-
     document.querySelectorAll('[data-catlevel]').forEach((b) =>
       b.addEventListener('click', () => { catLevel = b.dataset.catlevel; W.render(); }));
 
@@ -300,8 +233,6 @@
 
     document.querySelectorAll('[data-segmetric]').forEach((b) =>
       b.addEventListener('click', () => { segMetric = b.dataset.segmetric; W.render(); }));
-    document.querySelectorAll('[data-prodmetric]').forEach((b) =>
-      b.addEventListener('click', () => { prodMetric = b.dataset.prodmetric; W.render(); }));
     document.querySelectorAll('[data-catmetric]').forEach((b) =>
       b.addEventListener('click', () => { catMetric = b.dataset.catmetric; W.render(); }));
     document.querySelectorAll('[data-paymetric]').forEach((b) =>

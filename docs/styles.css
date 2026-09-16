@@ -8,6 +8,14 @@
    dataviz, aparte del color de marca, para que un dato nunca se confunda con
    un elemento de interfaz.
    ═══════════════════════════════════════════════════════════════════════════ */
+/* LA ESCALA BASE. A 16px el dashboard entraba justo y aparecia scroll
+   horizontal en pantallas de 1440. Bajando la raiz a 87,5% (14px) todo lo que
+   esta en rem —tipografia, padding, gaps, radios— se encoge de una vez y entra
+   una columna mas de tarjetas, que es lo que se pedia con "que se vea como si
+   tuviera zoom al 80". No se baja a 80% (12,8px) porque el texto de las tablas
+   queda por debajo de lo legible. */
+html { font-size: 87.5%; }
+
 :root {
   color-scheme: light;
 
@@ -57,7 +65,7 @@
   --sh-2: 0 6px 16px rgba(23,21,40,.09);
   --sh-3: 0 16px 40px rgba(23,21,40,.16);
   --ease: cubic-bezier(.2,.8,.2,1);
-  --nav-w: 236px;
+  --nav-w: 208px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -65,7 +73,14 @@
 }
 
 * { box-sizing: border-box; }
-html, body { background: var(--page); }
+html, /* min-width:0 en la columna principal: sin esto un hijo ancho (una tabla, la
+   fila de herramientas del header) empuja el layout y aparece scroll
+   horizontal, que es lo que se veia a 100%. */
+.main { min-width: 0; }
+.body, .top { min-width: 0; }
+.tbl-wrap { overflow-x: auto; }
+
+body { background: var(--page); }
 body {
   margin: 0;
   font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -975,3 +990,16 @@ details.more[open] summary { margin-bottom: .45rem; }
 /* El mix dentro de una tarjeta de segmento: va después de la barra de
    participación, así que necesita aire para no leerse como parte de ella. */
 .segc-mix { margin-top: .4rem; }
+
+/* La foto del producto. Cuadrada, contenida y con un placeholder del mismo
+   tamaño cuando VTEX no tiene el EAN: sin el placeholder la columna se
+   encoge en las filas sin foto y la tabla baila. */
+.tbl.prod .prod-img { width: 44px; padding-right: 0; }
+.tbl.prod .prod-img img {
+  width: 34px; height: 34px; border-radius: 7px; object-fit: contain;
+  background: var(--surface-2); border: 1px solid var(--line); display: block;
+}
+.prod-noimg {
+  width: 34px; height: 34px; border-radius: 7px; display: grid; place-items: center;
+  background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-4);
+}
