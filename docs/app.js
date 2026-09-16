@@ -106,6 +106,16 @@
     });
     $('logout').innerHTML = `${W.icon('logout', 15)}<span>Cerrar sesión</span>`;
 
+    // El canal se pinta siempre que la vista mire pedidos: es el corte mas
+    // grueso del dashboard, arriba incluso del segmento.
+    const CH = [
+      ['total', 'App + Web'],
+      ['app', 'App'],
+      ['web', 'Web'],
+    ];
+    $('chanbar').innerHTML = CH.map(([k, label]) =>
+      `<button data-chan="${k}" class="${W.channel === k ? 'on' : ''}">${label}</button>`).join('');
+
     $('segbar').innerHTML = [
       { k: 'all', label: 'Todos', icon: 'globe' },
       ...W.SEGMENTS.map((s) => ({ k: s, label: W.SEGMENT_LABEL[s], icon: W.SEGMENT_ICON_NAME[s] })),
@@ -168,6 +178,9 @@
     const showRow2 = hasSeg || state.view === 'canales';
     $('row2').style.display = showRow2 ? '' : 'none';
     $('segbar').style.display = hasSeg ? '' : 'none';
+    // La vista "App + Web" muestra los dos canales lado a lado por definicion,
+    // asi que ahi el filtro de canal no tiene sentido.
+    $('chanbar').style.display = (showRow2 && state.view !== 'canales') ? '' : 'none';
     $('cmp-wrap').style.display = (state.view === 'dashboard' || state.view === 'canales') ? '' : 'none';
     // Audiencias mira toda la base histórica y Buscador tiene su propia
     // ventana fija (GA4, últimos 30 días) — ninguna usa el selector de rango.
@@ -230,6 +243,11 @@
 
   // Exportaciones: delegado, porque las vistas se re-renderizan enteras.
   document.addEventListener('click', (e) => {
+    const ch = e.target.closest('[data-chan]');
+    if (ch) {
+      if (ch.dataset.chan !== W.channel) { W.setChannel(ch.dataset.chan); W.render(); }
+      return;
+    }
     const btn = e.target.closest('[data-export]');
     if (!btn) return;
     const spec = exportsBag[btn.dataset.export];

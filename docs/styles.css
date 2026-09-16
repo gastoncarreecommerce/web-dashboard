@@ -839,3 +839,8 @@ details.more[open] summary { margin-bottom: .45rem; }
   border-top: 1px solid var(--bd, #e5e7eb);
   font-size: .72rem; line-height: 1.5;
 }
+
+/* Selector de canal: mismo control que los presets de fecha, pero es el corte
+   mas grueso del dashboard (App+Web / App / Web), así que va primero en la fila. */
+.chan-ctl { margin-right: .6rem; }
+.chan-ctl button.on { font-weight: 650; }

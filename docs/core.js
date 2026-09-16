@@ -20,7 +20,23 @@
     },
   };
 
+  /**
+   * Canal elegido: 'total' | 'app' | 'web'. Es estado global porque el dashboard
+   * dejo de ser del canal web y paso a ser del ecommerce completo: el default es
+   * el total, y el corte por canal es un filtro de arriba que TODAS las vistas
+   * respetan, igual que el rango de fechas o el segmento.
+   *
+   * W.CHANNEL se queda en 'web' a proposito: es el prefijo de los datasets que
+   * solo existen para ese canal (geo, tiendas, cohortes, audiencias, catalogo),
+   * y esos se siguen leyendo de data/web/ sin importar el filtro.
+   */
   W.CHANNEL = 'web';
+  W.channel = W.store.get('channel', 'total');
+  W.setChannel = function (ch) {
+    W.channel = ch;
+    W.store.set('channel', ch);
+  };
+
 
   /**
    * Los dos canales del ecommerce. `web` es todo lo que NO viene de la app;
@@ -211,7 +227,42 @@
    */
   const ARCHIVE = /^(?:orders|order-index)\//;
 
+  /**
+   * Datasets que dependen del canal elegido. Pedir 'daily-summary' con el filtro
+   * en "total" devuelve la fusion de los dos canales, asi las vistas que ya
+   * existian pasan a mostrar el ecommerce completo sin cambiarles una linea.
+   * Los demas datasets (geo, cohortes, catalogo, audiencias) siguen siendo del
+   * canal web, que es el unico que los tiene.
+   */
+  const POR_CANAL = new Set(['daily-summary', 'products']);
+
   W.load = async function (name) {
+    if (!POR_CANAL.has(name)) return W.loadRaw(name);
+
+    const ch = W.channel || 'total';
+    const key = `${ch}::${name}`;
+    if (cache[key]) return cache[key];
+
+    if (ch === 'app') {
+      cache[key] = await W.loadChannel('app', name);
+    } else if (ch === 'web') {
+      cache[key] = await W.loadRaw(name);
+    } else {
+      const [app, web] = await Promise.all([
+        W.loadChannel('app', name).catch(() => null),
+        W.loadRaw(name),
+      ]);
+      // Si el canal app todavia no se genero, el total es el web solo: mejor un
+      // dashboard que funciona con un canal que una pantalla de error. La vista
+      // App + Web si avisa cuando falta.
+      const merge = name === 'products' ? W.mergeProducts : W.mergeChannels;
+      cache[key] = app ? merge({ app, web }) : web;
+    }
+    return cache[key];
+  };
+
+  /** La carga cruda de siempre, del canal web. */
+  W.loadRaw = async function (name) {
     if (cache[name]) return cache[name];
 
     let res;
@@ -283,6 +334,152 @@
       };
     }
     return out;
+  };
+
+  /**
+   * Fusiona los dos canales en UN dataset con el mismo schema, para que el
+   * dashboard entero pase a ser del ecommerce total sin tocar las siete vistas
+   * una por una: cada vista sigue pidiendo 'daily-summary' y recibe el canal
+   * que este elegido.
+   *
+   * Se suma dia por dia y segmento por segmento. Los diccionarios (cupones,
+   * fuentes, categorias, medios de pago) se suman por clave, asi un cupon que
+   * existe en los dos canales queda con el total y no duplicado.
+   *
+   * Lo que un canal no mide no se inventa en cero: `has` de la fusion es la
+   * interseccion, y ahi es donde el front se entera de que "medios de pago" es
+   * solo de web y tiene que decirlo en vez de mostrar un total incompleto.
+   */
+  const DICTS = ['marketing', 'coupons', 'categories', 'categoriesN1', 'categoriesN2', 'payments', 'paymentBrands', 'installments'];
+
+  W.mergeChannels = function (porCanal) {
+    const canales = Object.keys(porCanal);
+    const porFecha = new Map();
+
+    for (const ch of canales) {
+      for (const day of porCanal[ch].days || []) {
+        let d = porFecha.get(day.date);
+        if (!d) {
+          d = {
+            date: day.date, segments: {}, hourly: new Array(24).fill(0),
+            statusStats: {}, discount: 0, newCustomers: 0, activeCustomers: 0,
+            // De donde salio cada dia: un dia que solo tiene un canal no es
+            // comparable con uno que tiene los dos, y el front lo avisa.
+            channels: [],
+          };
+          porFecha.set(day.date, d);
+        }
+        d.channels.push(ch);
+
+        for (const [seg, v] of Object.entries(day.segments || {})) {
+          const t = (d.segments[seg] = d.segments[seg] || {
+            gmv: 0, orders: 0, units: 0, hourly: new Array(24).fill(0),
+          });
+          t.gmv += v.gmv || 0;
+          t.orders += v.orders || 0;
+          t.units += v.units || 0;
+          if (v.hourly) v.hourly.forEach((n, h) => (t.hourly[h] += n || 0));
+          for (const k of DICTS) {
+            if (!v[k]) continue;
+            const dst = (t[k] = t[k] || {});
+            for (const [name, e] of Object.entries(v[k])) {
+              const acc = (dst[name] = dst[name] || { orders: 0, gmv: 0, units: 0 });
+              acc.orders += e.orders || 0; acc.gmv += e.gmv || 0; acc.units += e.units || 0;
+            }
+          }
+        }
+
+        (day.hourly || []).forEach((n, h) => (d.hourly[h] += n || 0));
+        for (const [st, v] of Object.entries(day.statusStats || {})) {
+          const e = (d.statusStats[st] = d.statusStats[st] || { orders: 0, gmv: 0 });
+          e.orders += v.orders || 0; e.gmv += v.gmv || 0;
+        }
+        d.discount += day.discount || 0;
+        // Clientes: se suman los de cada canal. Es un techo, no el unico real
+        // —alguien que compro en los dos canales el mismo dia cuenta dos veces—
+        // y el front lo aclara donde lo muestra.
+        d.newCustomers += day.newCustomers || 0;
+        d.activeCustomers += day.activeCustomers || 0;
+        d.totalEcommOrders = Math.max(d.totalEcommOrders || 0, day.totalEcommOrders || 0);
+        d.totalEcommGmv = Math.max(d.totalEcommGmv || 0, day.totalEcommGmv || 0);
+      }
+    }
+
+    const has = {};
+    for (const ch of canales) {
+      const h = porCanal[ch].has;
+      if (!h) continue;                         // web no lo declara: mide todo
+      for (const [k, v] of Object.entries(h)) has[k] = k in has ? (has[k] && v) : v;
+    }
+
+    const days = [...porFecha.values()].sort((a, b) => (a.date < b.date ? -1 : 1));
+    const fresh = canales.map((ch) => porCanal[ch].dataFreshAt || porCanal[ch].generatedAt).filter(Boolean).sort();
+
+    return {
+      channel: 'total',
+      channels: canales,
+      generatedAt: new Date().toISOString(),
+      // La frescura del total es la del canal MAS ATRASADO: decir la del mas
+      // fresco haria parecer todo el dataset mas actual de lo que es.
+      dataFreshAt: fresh.length ? fresh[0] : null,
+      has,
+      days,
+    };
+  };
+
+  /**
+   * Fusiona los rankings de productos de los dos canales. Tiene su propia forma
+   * —segmento -> mes -> top— asi que no pasa por mergeChannels.
+   *
+   * Se suma por SKU, que es la clave estable: el nombre del producto cambia de
+   * escritura entre pedidos y entre canales, asi que agrupar por nombre partiria
+   * el mismo producto en dos filas. Se conserva el nombre mas largo de los dos,
+   * que suele ser el menos truncado, y el `dept` del canal que lo tenga (los
+   * rows de App no traen categoria).
+   *
+   * Ojo con el sesgo del top: cada canal publica su top 150 por mes, asi que un
+   * producto que quedo afuera del top de un canal suma solo lo del otro. Para el
+   * ranking general no mueve la aguja; para el numero exacto de un SKU puntual
+   * hay que ir al detalle diario.
+   */
+  W.mergeProducts = function (porCanal) {
+    const canales = Object.keys(porCanal);
+    const segments = {};
+    const meses = new Set();
+
+    for (const ch of canales) {
+      for (const [seg, porMes] of Object.entries(porCanal[ch].segments || {})) {
+        const dstSeg = (segments[seg] = segments[seg] || {});
+        for (const [ym, arr] of Object.entries(porMes || {})) {
+          meses.add(ym);
+          const acc = (dstSeg[ym] = dstSeg[ym] || new Map());
+          for (const it of arr) {
+            const k = String(it.sku || it.name);
+            const e = acc.get(k) || { sku: it.sku, name: it.name, dept: '', qty: 0, gmv: 0, orders: 0 };
+            e.qty += it.qty || 0; e.gmv += it.gmv || 0; e.orders += it.orders || 0;
+            if ((it.name || '').length > (e.name || '').length) e.name = it.name;
+            if (!e.dept && it.dept) e.dept = it.dept;
+            acc.set(k, e);
+          }
+        }
+      }
+    }
+
+    for (const [seg, porMes] of Object.entries(segments)) {
+      for (const [ym, mapa] of Object.entries(porMes)) {
+        porMes[ym] = [...mapa.values()].sort((a, b) => b.qty - a.qty);
+      }
+    }
+
+    return {
+      channel: 'total',
+      channels: canales,
+      generatedAt: new Date().toISOString(),
+      note: 'Productos de App + Web sumados por SKU. Cada canal publica su top por mes, '
+        + 'asi que un producto que quedo afuera del top de un canal suma solo lo del otro.',
+      months: [...meses].sort(),
+      segments,
+    };
   };
 
   // ── Agregación de la serie diaria ─────────────────────────────────────────

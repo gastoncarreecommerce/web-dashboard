@@ -91,10 +91,12 @@
   }
 
   /** Métrica de apoyo: chica, gris, para consultar — no compite con el hero. */
-  function mitem({ rail, label, value, sub, delta, tip }) {
+  function mitem({ rail, label, value, sub, delta, chip, tip }) {
     return `<div class="mitem"${tip ? ` ${W.chart.tip(tip)}` : ''}>
       <div class="mitem-l"><span class="mitem-dot" style="background:${rail}"></span>${W.esc(label)}</div>
-      <div class="mitem-v">${value}${delta !== undefined && delta !== null ? W.deltaBadge(delta) : ''}</div>
+      <div class="mitem-v">${value}${
+        delta !== undefined && delta !== null ? W.deltaBadge(delta)
+        : chip ? `<span class="delta flat">${W.esc(chip)}</span>` : ''}</div>
       ${sub ? `<div class="mitem-s">${sub}</div>` : ''}
     </div>`;
   }
@@ -397,6 +399,9 @@
       : [];
 
     // ── Métricas de apoyo ──────────────────────────────────────────────────
+    // `has` lo declara el dataset: la fusion de canales lo calcula como la
+    // interseccion, asi que si un canal no mide algo, queda en false y se avisa.
+    const soloWeb = daily.has ? daily.has.discount === false : false;
     const canc = W.cancellations(cur.statusStats);
     const cancPrev = showDelta && !isToday ? W.cancellations(prev.statusStats) : null;
     const support = bucket === 'all' ? [
@@ -414,11 +419,20 @@
           ? '<strong>Clientes nuevos</strong><span class="tip-row">En el día en curso este número lo completa la corrida del pipeline: el dato en vivo no cruza contra todo el historial de clientes.</span>'
           : '<strong>Clientes nuevos</strong><span class="tip-row">Primera compra registrada dentro del período.</span>',
       }),
+      // Los rows de App no traen el descuento (el total ya viene neteado), asi
+      // que con el canal en "App + Web" esta cifra es solo de Web. Decirlo, en
+      // vez de presentar un total que se lee como si fuera de los dos canales.
       mitem({
         rail: MC.discount, label: 'Descuentos', value: W.fmtMoneyC(cur.discount),
-        delta: d(cur.discount, prev.discount),
-        sub: cur.gmv ? `${W.fmtPct(cur.discount / (cur.gmv + cur.discount))} del valor bruto` : '',
-        tip: '<strong>Descuentos</strong><span class="tip-row">Total descontado (cupones y promociones) sobre el valor bruto del período.</span>',
+        delta: soloWeb ? null : d(cur.discount, prev.discount),
+        // Con el canal en App el valor es 0 por falta de dato, no por no haber
+        // descuentos: "solo Web" ahi se leeria como que hubo cero.
+        chip: soloWeb ? (W.channel === 'app' ? 'sin dato' : 'solo Web') : null,
+        sub: soloWeb
+          ? 'App no informa descuentos'
+          : (cur.gmv ? `${W.fmtPct(cur.discount / (cur.gmv + cur.discount))} del valor bruto` : ''),
+        tip: `<strong>Descuentos</strong><span class="tip-row">Total descontado (cupones y promociones) sobre el valor bruto del período.</span>${
+          soloWeb ? '<span class="tip-row">Con el canal en App + Web, esta cifra es solo del canal Web: el detalle por pedido de App trae el total ya neteado, sin el descuento aplicado.</span>' : ''}`,
       }),
       ...(canc.totalOrders ? [mitem({
         rail: canc.rate > 0.05 ? 'var(--neg)' : 'var(--ink-4)',

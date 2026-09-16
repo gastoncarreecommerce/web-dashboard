@@ -76,7 +76,10 @@ const bump = (obj, key, gmv, units) => {
 const archivos = fs.readdirSync(ROWS).filter((f) => /^\d{4}-\d{2}-\d{2}-rows\.json$/.test(f)).sort();
 
 const days = [];
-const productos = {};          // nombre -> {orders, gmv, units, sku}
+// Productos con el MISMO corte que el canal web: por segmento y por mes, para
+// que los dos rankings se puedan fusionar y mirar juntos. La clave es el sku
+// cuando existe (el nombre cambia de escritura entre pedidos).
+const productos = {};          // `${seg}|${ym}|${sku}` -> {sku, name, qty, gmv, orders}
 const vistos = new Set();      // emails ya vistos en dias anteriores -> clientes nuevos
 let sinFecha = 0, sinSegmento = 0;
 
@@ -134,12 +137,14 @@ for (const f of archivos) {
       if (!vistos.has(mail)) { vistos.add(mail); nuevos += 1; }
     }
 
+    const ym = date.slice(0, 7);
     for (const i of items) {
-      const nombre = i.name || i.sku || i.id;
-      if (!nombre) continue;
-      const p = (productos[nombre] = productos[nombre] || { orders: 0, gmv: 0, units: 0, sku: i.sku || i.id || '' });
+      const sku = i.sku || i.id || i.name;
+      if (!sku) continue;
+      const k = `${seg}|${ym}|${sku}`;
+      const p = (productos[k] = productos[k] || { seg, ym, sku, name: i.name || String(sku), qty: 0, gmv: 0, orders: 0 });
       p.orders += 1;
-      p.units += Number(i.qty) || 0;
+      p.qty += Number(i.qty) || 0;
       p.gmv += (Number(i.price) || 0) * (Number(i.qty) || 0);
     }
   }
@@ -189,22 +194,41 @@ const salida = {
 fs.mkdirSync(OUT_DIR, { recursive: true });
 fs.writeFileSync(path.join(OUT_DIR, 'daily-summary.json'), JSON.stringify(salida));
 
-// Ranking de productos: se recorta a los 3000 con mas unidades para no publicar
-// un archivo gigante con la cola larga de SKUs de una sola venta.
-const topProd = Object.entries(productos)
-  .sort((a, b) => b[1].units - a[1].units)
-  .slice(0, 3000)
-  .map(([name, v]) => ({ name, sku: v.sku, orders: v.orders, units: v.units, gmv: Math.round(v.gmv) }));
+// products.json con el schema del canal web: segments[segmento][mes] = top 150.
+// El corte por mes mantiene el archivo manejable y el top evita publicar la cola
+// larga de SKUs de una sola venta. `dept` queda vacio: los rows de App no traen
+// la categoria del producto (haria falta cruzar el catalogo de VTEX).
+const TOP_POR_MES = 150;
+const porSegMes = {};
+for (const v of Object.values(productos)) {
+  ((porSegMes[v.seg] = porSegMes[v.seg] || {})[v.ym] = porSegMes[v.seg][v.ym] || []).push(v);
+}
+const segments = {};
+const meses = new Set();
+for (const seg of SEGMENTS) {
+  segments[seg] = {};
+  for (const [ym, arr] of Object.entries(porSegMes[seg] || {})) {
+    meses.add(ym);
+    segments[seg][ym] = arr
+      .sort((a, b) => b.qty - a.qty)
+      .slice(0, TOP_POR_MES)
+      .map((v) => ({ sku: v.sku, name: v.name, dept: '', qty: v.qty, gmv: Math.round(v.gmv), orders: v.orders }));
+  }
+}
 fs.writeFileSync(path.join(OUT_DIR, 'products.json'), JSON.stringify({
-  generatedAt: salida.generatedAt, channel: 'app',
-  totalDistinct: Object.keys(productos).length,
-  products: topProd,
+  generatedAt: salida.generatedAt,
+  channel: 'app',
+  note: `Top ${TOP_POR_MES} productos por segmento y por mes, mismo corte que el canal web. dept vacio: los rows de App no traen la categoria del producto.`,
+  months: [...meses].sort(),
+  totalDistinct: new Set(Object.values(productos).map((v) => v.sku)).size,
+  segments,
 }));
 
 const kb = (p) => (fs.statSync(path.join(OUT_DIR, p)).size / 1024).toFixed(0);
 const tot = (k) => days.reduce((t, d) => t + SEGMENTS.reduce((a, s) => a + d.segments[s][k], 0), 0);
 console.log(`daily-summary.json · ${days.length} dias · ${tot('orders').toLocaleString('es-AR')} pedidos · ${tot('units').toLocaleString('es-AR')} unidades · ${kb('daily-summary.json')} KB`);
-console.log(`products.json     · ${topProd.length} de ${Object.keys(productos).length} productos · ${kb('products.json')} KB`);
+const nProd = Object.values(segments).reduce((t, m) => t + Object.values(m).reduce((a, arr) => a + arr.length, 0), 0);
+console.log(`products.json     · ${nProd} filas (top ${TOP_POR_MES} x segmento x mes) de ${new Set(Object.values(productos).map((v) => v.sku)).size} skus · ${kb('products.json')} KB`);
 console.log(`clientes unicos en todo el historial: ${vistos.size.toLocaleString('es-AR')}`);
 console.log(`frescura del dato: ${dataFreshAt || 'n/d'}`);
 if (sinSegmento) console.log(`(${sinSegmento} pedido(s) sin segmento reconocido, descartados)`);
