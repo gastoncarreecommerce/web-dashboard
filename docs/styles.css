@@ -1067,3 +1067,17 @@ details.more[open] summary { margin-bottom: .45rem; }
 /* Cuatro exactas: con auto-fit, ocho tarjetas daban 7 + 1, y la octava quedaba
    sola con un hueco del ancho de seis al lado. */
 @media (min-width: 1040px) { .kgrid.k4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+/* ── Resumen mensual ──────────────────────────────────────────────────────── */
+.tbl.mens td, .tbl.mens th { white-space: nowrap; }
+.tbl.mens .num { font-variant-numeric: tabular-nums; text-align: right; }
+.tbl.mens .strong { font-weight: 700; }
+.tbl.mens .dim { color: var(--ink-3); }
+.mes-n { font-weight: 550; }
+/* El mes en curso se marca: sus números no son comparables con los cerrados. */
+.tbl.mens tr.is-parcial { background: color-mix(in srgb, #eda100 6%, transparent); }
+.mes-chip {
+  display: inline-block; margin-left: .4rem; font-size: .66rem; font-weight: 600;
+  color: #8a6400; background: color-mix(in srgb, #eda100 16%, transparent);
+  padding: .1rem .35rem; border-radius: 5px; vertical-align: middle;
+}

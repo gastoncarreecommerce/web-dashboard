@@ -100,11 +100,11 @@
   // Sin entrada para canales y productos, W.icon(undefined) caia en un icono
   // generico y esos dos items del nav mostraban un circulito sin sentido.
   const NAV_ICON = {
-    dashboard: 'dashboard', canales: 'layers', productos: 'box',
+    dashboard: 'dashboard', canales: 'layers', mensual: 'calendar', productos: 'box',
     analytics: 'analytics', tiendas: 'store',
     marketing: 'megaphone', coupons: 'tag', buscador: 'search', audiences: 'audience',
   };
-  const TITLES = { dashboard: 'Resumen', canales: 'App vs. Web', productos: 'Productos', analytics: 'Analítica', tiendas: 'Tiendas', coupons: 'Cupones', marketing: 'Marketing', buscador: 'Buscador', audiences: 'Audiencias' };
+  const TITLES = { dashboard: 'Resumen', canales: 'App vs. Web', mensual: 'Resumen mensual', productos: 'Productos', analytics: 'Analítica', tiendas: 'Tiendas', coupons: 'Cupones', marketing: 'Marketing', buscador: 'Buscador', audiences: 'Audiencias' };
 
   function paintChrome() {
     document.querySelectorAll('.nav-item').forEach((n) => {
@@ -179,7 +179,7 @@
     // Dashboard, Analítica, Tiendas, Cupones y Marketing se filtran por
     // segmento; Audiencias mira la base completa y Buscador mira GA4 (no
     // pedidos de VTEX), así que en esas dos la fila no aplica.
-    const hasSeg = ['dashboard', 'productos', 'analytics', 'tiendas', 'coupons', 'marketing'].includes(state.view);
+    const hasSeg = ['dashboard', 'mensual', 'productos', 'analytics', 'tiendas', 'coupons', 'marketing'].includes(state.view);
     // "App + Web" cruza los cuatro segmentos contra los dos canales: filtrar por
     // un segmento la dejaria sin su razon de ser, asi que ahi la fila de chips
     // no aplica. El comparador contra el periodo anterior si, porque toda la
@@ -193,7 +193,9 @@
     $('cmp-wrap').style.display = (state.view === 'dashboard' || state.view === 'canales') ? '' : 'none';
     // Audiencias mira toda la base histórica y Buscador tiene su propia
     // ventana fija (GA4, últimos 30 días) — ninguna usa el selector de rango.
-    const noRange = state.view === 'audiences' || state.view === 'buscador';
+    // El resumen mensual muestra TODOS los meses: recortarlo al rango elegido lo
+    // dejaria de ser un resumen. El canal y el segmento si aplican.
+    const noRange = state.view === 'audiences' || state.view === 'buscador' || state.view === 'mensual';
     $('date-controls').style.display = noRange ? 'none' : '';
     $('range-label').style.display = noRange ? 'none' : '';
 
@@ -216,13 +218,45 @@
     }
   }
 
+  /**
+   * El pie: cuando se actualizo el dato y cuanto historial hay.
+   *
+   * daysAggregated y uniqueCustomers de run-info son de LA ULTIMA CORRIDA del
+   * pipeline, no del dataset. Con un incremental de un dia el pie decia
+   * "173 clientes · 1 días de historial", que se lee como que el dashboard tiene
+   * un dia de datos cuando tiene nueve meses. El historial sale del dataset que
+   * se esta mirando, y se repinta en cada render porque cambia con el canal.
+   */
+  function pintarPie() {
+    if (!meta?.generatedAt) return;
+    const bits = [`Actualizado ${new Date(meta.generatedAt).toLocaleString('es-AR')}`];
+    if (days.length) {
+      bits.push(`${W.fmtNum(days.length)} días de historial`);
+      bits.push(`${W.fmtDayShort(days[0])} → ${W.fmtDayShort(days[days.length - 1])}`);
+    }
+    $('meta').innerHTML = bits.map((b) => `<span>${W.esc(b)}</span>`).join('');
+  }
+
   W.render = async function () {
+    // Los dias disponibles dependen del canal: app arranca en mayo y web en
+    // enero. Sin refrescarlos, al filtrar por App los presets de fecha seguian
+    // ofreciendo el rango de web y el pie mostraba su historial.
+    try {
+      const ds = await W.load('daily-summary');
+      const nuevos = (ds.days || []).map((d) => d.date);
+      if (nuevos.length) {
+        days = nuevos;
+        startDate = ds.detailWindowStartDate || startDate;
+      }
+    } catch { /* la vista se encarga de avisar si el dataset no carga */ }
+
     state.range = resolveRange();
     sync();
+    pintarPie();
 
     // Sin rango no hay nada que calcular: se muestra el estado vacío en vez de
     // dejar que cada vista falle leyendo range.from.
-    if (!state.range && state.view !== 'audiences' && state.view !== 'buscador') {
+    if (!state.range && !['audiences', 'buscador', 'mensual'].includes(state.view)) {
       $('content').innerHTML = `<div class="empty"><h2>Todavía no hay datos</h2>
         <p>Corré el backfill inicial para poblar el historial (ver README).</p></div>`;
       return;
@@ -239,6 +273,7 @@
       if (state.view === 'dashboard') await W.viewDashboard(ctx);
       else if (state.view === 'canales') await W.viewCanales(ctx);
       else if (state.view === 'productos') await W.viewProductos(ctx);
+      else if (state.view === 'mensual') await W.viewMensual(ctx);
       else if (state.view === 'analytics') await W.viewAnalytics(ctx);
       else if (state.view === 'tiendas') await W.viewTiendas(ctx);
       else if (state.view === 'coupons') await W.viewCoupons(ctx);
@@ -320,12 +355,7 @@
     // El footer es lo único siempre visible sin scroll extra: solo va acá lo
     // que le sirve a quien mira el negocio (cuándo se actualizó, cuánta base
     // hay) — nada de detalles de infraestructura o del pipeline interno.
-    if (meta) {
-      const bits = [`Actualizado ${new Date(meta.generatedAt).toLocaleString('es-AR')}`];
-      if (meta.uniqueCustomers) bits.push(`${W.fmtNumC(meta.uniqueCustomers)} clientes`);
-      if (meta.daysAggregated) bits.push(`${meta.daysAggregated} días de historial`);
-      $('meta').innerHTML = bits.map((b) => `<span>${W.esc(b)}</span>`).join('');
-    }
+    if (meta) pintarPie();
 
     document.querySelectorAll('.nav-item').forEach((n) =>
       n.addEventListener('click', (ev) => {
