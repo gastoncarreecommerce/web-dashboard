@@ -21,6 +21,25 @@
   };
 
   W.CHANNEL = 'web';
+
+  /**
+   * Los dos canales del ecommerce. `web` es todo lo que NO viene de la app;
+   * `app` son los pedidos con from=app, que los venia midiendo AppDash por
+   * separado (repo vtex-utm-audit). Son complementarios: sumados dan el total
+   * del ecommerce con 0,2-0,7% de diferencia contra el total que reporta VTEX,
+   * medido sobre los 24 dias completos de agosto y septiembre.
+   *
+   * `has` dice que campos existen de verdad en cada canal, porque no miden lo
+   * mismo: los agregados de App traen pedidos y GMV por segmento y nada mas.
+   * La vista lo consulta para no dibujar un cero donde el dato no se mide.
+   */
+  W.CHANNELS = ['app', 'web'];
+  W.CHANNEL_LABEL = { app: 'App', web: 'Web' };
+  W.CHANNEL_DESC = { app: 'Pedidos con from=app', web: 'Todo lo que no es app' };
+  // Slots de la paleta validada: violeta para app, azul para web.
+  W.CHANNEL_COLOR = { app: '#4a3aa7', web: '#2a78d6' };
+  W.CHANNEL_ICON = { app: 'bolt', web: 'store' };
+
   W.SEGMENTS = ['food', 'non-food', 'marketplace', 'quickcommerce'];
   W.SEGMENT_LABEL = { food: 'Food', 'non-food': 'Non Food', marketplace: 'Marketplace', quickcommerce: 'Quick Commerce' };
   W.SEGMENT_ICON = { food: '🥦', 'non-food': '🏠', marketplace: '🛒', quickcommerce: '⚡' };
@@ -210,6 +229,62 @@
     return cache[name];
   };
 
+  /**
+   * Igual que W.load pero para un canal explicito. W.load queda intacta y
+   * sigue apuntando al canal web, asi que ninguna vista existente cambia de
+   * comportamiento; las nuevas piden el canal que necesitan.
+   */
+  W.loadChannel = async function (channel, name) {
+    const key = `${channel}/${name}`;
+    if (cache[key]) return cache[key];
+    const res = await fetch(`data/${channel}/${name}.json`, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`No se pudo cargar ${channel}/${name}.json (${res.status})`);
+    cache[key] = await res.json();
+    return cache[key];
+  };
+
+  /**
+   * Los dos canales, ya resueltos y con su cobertura de fechas.
+   *
+   * La cobertura no es un detalle: web arranca el 2026-01-01 y app el
+   * 2026-05-01, asi que un rango que empiece antes de mayo tiene app en cero
+   * por no existir, no por no haber vendido. Quien dibuja usa `covers` para
+   * decirlo en vez de mostrar una caida que no paso.
+   */
+  W.loadChannels = async function () {
+    const [app, web] = await Promise.all([
+      W.loadChannel('app', 'daily-summary'),
+      W.load('daily-summary'),
+    ]);
+    const out = {};
+    for (const [ch, data] of [['app', app], ['web', web]]) {
+      const days = data.days || [];
+      out[ch] = {
+        data,
+        has: data.has || null,   // web no lo declara: mide todo
+        first: days.length ? days[0].date : null,
+        last: days.length ? days[days.length - 1].date : null,
+        generatedAt: data.generatedAt || null,
+        // Cuando se trajo el DATO, que es lo que importa para comparar canales.
+        // Para app es el ultimo fetched_at de VTEX; para web, generatedAt es
+        // efectivamente eso (el pipeline escribe el archivo al terminar de leer).
+        freshAt: data.dataFreshAt || data.generatedAt || null,
+        covers(range) {
+          if (!this.first) return false;
+          return range.from >= this.first && range.to <= this.last;
+        },
+        /** Dias del rango que este canal no tiene, para nombrarlos. */
+        missing(range) {
+          if (!this.first) return { before: 0, after: 0 };
+          const before = range.from < this.first ? W.daysBetween(range.from, W.addDays(this.first, -1)) : 0;
+          const after = range.to > this.last ? W.daysBetween(W.addDays(this.last, 1), range.to) : 0;
+          return { before, after };
+        },
+      };
+    }
+    return out;
+  };
+
   // ── Agregación de la serie diaria ─────────────────────────────────────────
   /**
    * Suma los días de `range` para uno o todos los segmentos.
@@ -273,6 +348,54 @@
       acc.series.push({ date: day.date, gmv: dayGmv, orders: dayOrders, units: dayUnits, newCustomers: day.newCustomers || 0 });
     }
     return acc;
+  };
+
+  /**
+   * La matriz que pide la vista unificada: para cada canal y cada segmento,
+   * pedidos y GMV del rango, mas los totales por fila (segmento, sumando
+   * canales) y por columna (canal, sumando segmentos).
+   *
+   * Se apoya en W.sumRange por canal en vez de reimplementar la suma, asi la
+   * vista unificada y las vistas de un solo canal no pueden divergir en los
+   * numeros.
+   */
+  W.channelMatrix = function (channels, range) {
+    const porCanal = {};
+    for (const ch of W.CHANNELS) porCanal[ch] = W.sumRange(channels[ch].data, 'all', range);
+
+    const celdas = {};       // celdas[segmento][canal] = {orders, gmv, units}
+    const porSegmento = {};  // total del segmento sumando canales
+    for (const seg of W.SEGMENTS) {
+      celdas[seg] = {};
+      porSegmento[seg] = { orders: 0, gmv: 0, units: 0 };
+      for (const ch of W.CHANNELS) {
+        const c = porCanal[ch].bySegment[seg] || { orders: 0, gmv: 0, units: 0 };
+        celdas[seg][ch] = c;
+        porSegmento[seg].orders += c.orders;
+        porSegmento[seg].gmv += c.gmv;
+        porSegmento[seg].units += c.units || 0;
+      }
+    }
+
+    const total = { orders: 0, gmv: 0, units: 0 };
+    for (const ch of W.CHANNELS) {
+      total.orders += porCanal[ch].orders;
+      total.gmv += porCanal[ch].gmv;
+      total.units += porCanal[ch].units || 0;
+    }
+
+    // Denominador honesto para la participacion: el total del ecommerce que
+    // reporta VTEX, que trae el canal app. Es mas que app+web (sobran ~0,5%
+    // de pedidos que no caen en ninguno de los dos), asi que usarlo evita
+    // inflar las participaciones hasta sumar 100% a la fuerza.
+    let ecommOrders = 0, ecommGmv = 0;
+    for (const d of channels.app.data.days || []) {
+      if (d.date < range.from || d.date > range.to) continue;
+      ecommOrders += d.totalEcommOrders || 0;
+      ecommGmv += d.totalEcommGmv || 0;
+    }
+
+    return { porCanal, celdas, porSegmento, total, ecommOrders, ecommGmv };
   };
 
   // Estados que cuentan como cancelación. Tiene que coincidir con

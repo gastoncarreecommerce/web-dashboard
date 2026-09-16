@@ -771,3 +771,71 @@ details.more[open] summary { margin-bottom: .45rem; }
 .modal-body p { margin: 0 0 1rem; font-size: .88rem; line-height: 1.55; color: var(--ink-2); }
 .modal-body p b { color: var(--ink); }
 .modal-body button { width: 100%; justify-content: center; padding: .65rem; font-size: .85rem; }
+
+/* ── Vista "App + Web" ─────────────────────────────────────────────────────
+   Piezas propias de la vista de canales. Reusa .tile, .card, .tbl y .dash-hero
+   del resto del dashboard; acá van solo las que no existían: la tarjeta por
+   canal, la barra partida app/web y la matriz. */
+
+.chalerts { display: grid; gap: .5rem; margin-bottom: 1rem; }
+.chalert {
+  display: flex; gap: .65rem; align-items: flex-start;
+  padding: .8rem .9rem; border-radius: 12px;
+  border: 1px solid var(--warn-bd, #eda10055); background: var(--warn-bg, #eda1000f);
+}
+.chalert-ic { color: #eda100; flex: 0 0 auto; line-height: 0; margin-top: .1rem; }
+.chalert strong { display: block; font-size: .82rem; font-weight: 650; margin-bottom: .15rem; }
+.chalert span { font-size: .78rem; color: var(--fg-dim, #6b7280); line-height: 1.5; }
+
+.chcards { align-items: start; }
+.chcard { border-top: 3px solid var(--rail); }
+.chcard-h { display: flex; align-items: center; justify-content: space-between; gap: .6rem; margin-bottom: .9rem; }
+.chcard-ti { display: flex; align-items: center; gap: .6rem; }
+.chcard-ic {
+  width: 30px; height: 30px; border-radius: 9px;
+  display: grid; place-items: center; flex: 0 0 auto;
+}
+.chcard-ti strong { display: block; font-size: .95rem; font-weight: 700; }
+.chcard-ti em { display: block; font-size: .72rem; font-style: normal; color: var(--fg-dim, #6b7280); }
+
+.chcard-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; margin-bottom: 1rem; }
+.chcard-kpis > div { display: flex; flex-direction: column; gap: .1rem; }
+.chk-v { font-size: 1.15rem; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.chk-l { font-size: .7rem; color: var(--fg-dim, #6b7280); }
+
+.chsegs { display: grid; gap: .55rem; }
+.chseg { display: grid; grid-template-columns: 1fr auto auto; grid-template-areas: "t v s" "b b b"; gap: .1rem .5rem; align-items: baseline; }
+.chseg-t { grid-area: t; display: flex; align-items: center; gap: .35rem; font-size: .78rem; }
+.chseg-v { grid-area: v; font-size: .88rem; font-weight: 650; font-variant-numeric: tabular-nums; }
+.chseg-s { grid-area: s; font-size: .7rem; color: var(--fg-dim, #6b7280); font-variant-numeric: tabular-nums; }
+.chseg-bar { grid-area: b; height: 3px; border-radius: 2px; background: var(--bd, #e5e7eb); overflow: hidden; margin-top: .25rem; }
+.chseg-fill { height: 100%; border-radius: 2px; }
+.chcard-f { margin-top: .9rem; padding-top: .7rem; border-top: 1px solid var(--bd, #e5e7eb); font-size: .72rem; color: var(--fg-dim, #6b7280); display: flex; gap: .35rem; align-items: center; }
+
+/* Barra partida: una sola línea que muestra el mix app/web sin leyenda aparte. */
+.chsplit { display: flex; height: 6px; border-radius: 3px; overflow: hidden; min-width: 70px; background: var(--bd, #e5e7eb); }
+.chsplit-a { background: #4a3aa7; }
+.chsplit-w { background: #2a78d6; }
+
+.chm-seg { display: flex; align-items: center; gap: .4rem; white-space: nowrap; }
+.chm-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+.chm-th { display: inline-flex; align-items: center; gap: .3rem; }
+.chm-th::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--c); }
+.chm-mix { min-width: 130px; }
+.chm-mixl { display: block; font-size: .68rem; color: var(--fg-dim, #6b7280); margin-top: .2rem; font-variant-numeric: tabular-nums; }
+.chm .num { font-variant-numeric: tabular-nums; text-align: right; }
+.chm .strong { font-weight: 700; }
+.chm .dim { color: var(--fg-dim, #6b7280); }
+.chm tfoot td { border-top: 2px solid var(--bd, #e5e7eb); }
+
+@media (max-width: 720px) {
+  .chcard-kpis { grid-template-columns: 1fr 1fr; }
+  .chm-mix { min-width: 90px; }
+}
+
+/* Pie de tarjeta: la nota al pie que explica de dónde sale lo que se ve. */
+.card-f {
+  margin-top: .85rem; padding-top: .7rem;
+  border-top: 1px solid var(--bd, #e5e7eb);
+  font-size: .72rem; line-height: 1.5;
+}

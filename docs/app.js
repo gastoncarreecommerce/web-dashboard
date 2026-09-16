@@ -95,7 +95,7 @@
   }
 
   const NAV_ICON = { dashboard: 'dashboard', analytics: 'analytics', tiendas: 'store', coupons: 'tag', marketing: 'megaphone', buscador: 'search', audiences: 'audience' };
-  const TITLES = { dashboard: 'Dashboard', analytics: 'Analítica', tiendas: 'Tiendas', coupons: 'Cupones', marketing: 'Marketing', buscador: 'Buscador', audiences: 'Audiencias' };
+  const TITLES = { dashboard: 'Dashboard', canales: 'App + Web', analytics: 'Analítica', tiendas: 'Tiendas', coupons: 'Cupones', marketing: 'Marketing', buscador: 'Buscador', audiences: 'Audiencias' };
 
   function paintChrome() {
     document.querySelectorAll('.nav-item').forEach((n) => {
@@ -161,8 +161,14 @@
     // segmento; Audiencias mira la base completa y Buscador mira GA4 (no
     // pedidos de VTEX), así que en esas dos la fila no aplica.
     const hasSeg = ['dashboard', 'analytics', 'tiendas', 'coupons', 'marketing'].includes(state.view);
-    $('row2').style.display = hasSeg ? '' : 'none';
-    $('cmp-wrap').style.display = state.view === 'dashboard' ? '' : 'none';
+    // "App + Web" cruza los cuatro segmentos contra los dos canales: filtrar por
+    // un segmento la dejaria sin su razon de ser, asi que ahi la fila de chips
+    // no aplica. El comparador contra el periodo anterior si, porque toda la
+    // vista muestra variaciones.
+    const showRow2 = hasSeg || state.view === 'canales';
+    $('row2').style.display = showRow2 ? '' : 'none';
+    $('segbar').style.display = hasSeg ? '' : 'none';
+    $('cmp-wrap').style.display = (state.view === 'dashboard' || state.view === 'canales') ? '' : 'none';
     // Audiencias mira toda la base histórica y Buscador tiene su propia
     // ventana fija (GA4, últimos 30 días) — ninguna usa el selector de rango.
     const noRange = state.view === 'audiences' || state.view === 'buscador';
@@ -209,6 +215,7 @@
 
     try {
       if (state.view === 'dashboard') await W.viewDashboard(ctx);
+      else if (state.view === 'canales') await W.viewCanales(ctx);
       else if (state.view === 'analytics') await W.viewAnalytics(ctx);
       else if (state.view === 'tiendas') await W.viewTiendas(ctx);
       else if (state.view === 'coupons') await W.viewCoupons(ctx);
