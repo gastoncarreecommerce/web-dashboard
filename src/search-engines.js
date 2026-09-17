@@ -194,8 +194,21 @@ const dynamicYield = {
       body,
     });
 
+    // Distinguir "no hay resultados" de "la ruta esta mal". Si productsPath no
+    // resuelve, `leerRuta` devuelve undefined y tratarlo como lista vacia haria
+    // que DY reportara 0 productos para TODOS los terminos: el diagnostico
+    // diria que el buscador esta roto cuando en realidad esta mal configurado
+    // este archivo. Un array vacio SI es un resultado valido (no encontro nada).
     const crudos = leerRuta(json, cfg.productsPath);
-    const lista = Array.isArray(crudos) ? crudos : [];
+    if (crudos === undefined) {
+      throw new Error(`productsPath "${cfg.productsPath}" no existe en la respuesta de DY. `
+        + `Claves de primer nivel: ${Object.keys(json || {}).join(', ') || '(ninguna)'}. `
+        + 'Corregilo en config/dy-search.json mirando un response real.');
+    }
+    if (!Array.isArray(crudos)) {
+      throw new Error(`productsPath "${cfg.productsPath}" apunta a un ${typeof crudos}, no a una lista de productos.`);
+    }
+    const lista = crudos;
     const total = Number(leerRuta(json, cfg.totalPath));
     const nameKey = cfg.nameKey || 'name';
     const catsKey = cfg.categoriesKey || 'categories';

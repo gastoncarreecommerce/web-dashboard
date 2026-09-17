@@ -63,11 +63,22 @@ test('top_searches y correction_search', async () => {
 
 test('DY: sin configurar dice QUE falta, no falla mudo', () => {
   delete process.env.DY_API_KEY;
+  // Con la config ya commiteada, lo unico que falta es la key.
   assert.strictEqual(E.dynamicYield.disponible(), false);
-  const por = E.dynamicYield.porQueNo();
-  assert.match(por, /DY_API_KEY/);
-  assert.match(por, /dy-search\.json/);
-  console.log('   motivo:', por);
+  assert.match(E.dynamicYield.porQueNo(), /DY_API_KEY/);
+
+  // Y sin el archivo tampoco, nombra las dos cosas.
+  const p = path.join(R, 'config', 'dy-search.json');
+  const previo = fs.readFileSync(p, 'utf8');
+  fs.unlinkSync(p);
+  try {
+    delete require.cache[require.resolve(path.join(R,'src','search-engines.js'))];
+    const E2 = require(path.join(R,'src','search-engines.js'));
+    const por = E2.dynamicYield.porQueNo();
+    assert.match(por, /DY_API_KEY/);
+    assert.match(por, /dy-search\.json/);
+    console.log('   motivo sin nada configurado:', por);
+  } finally { fs.writeFileSync(p, previo); }
 });
 
 test('DY: con config puesta, sustituye {{query}} y manda la key en el header', async () => {
@@ -79,7 +90,11 @@ test('DY: con config puesta, sustituye {{query}} y manda la key en el header', a
     totalPath: 'choices.0.variations.0.payload.data.totalResults',
     nameKey: 'sku.name', categoriesKey: 'sku.categories',
   };
+  // OJO: este test escribe en la MISMA ruta que usa el proyecto de verdad.
+  // Antes hacia unlinkSync al terminar y eso BORRABA la config real de DY.
+  // Ahora se respalda y se restaura.
   const p = path.join(R,'config','dy-search.json');
+  const previo = fs.existsSync(p) ? fs.readFileSync(p,'utf8') : null;
   fs.writeFileSync(p, JSON.stringify(cfg));
   process.env.DY_API_KEY = 'secreta';
   try {
@@ -97,7 +112,10 @@ test('DY: con config puesta, sustituye {{query}} y manda la key en el header', a
     assert.strictEqual(enviado.context.query,'palta "premium"', 'las comillas del termino no rompen el JSON');
     assert.strictEqual(r.total, 12);
     assert.deepStrictEqual(r.products[0], { name:'Palta Hass', categories:['Frutas'] });
-  } finally { fs.unlinkSync(p); delete process.env.DY_API_KEY; }
+  } finally {
+    if (previo === null) fs.unlinkSync(p); else fs.writeFileSync(p, previo);
+    delete process.env.DY_API_KEY;
+  }
 });
 
 test('motoresActivos: omite los que no se pueden usar, y dice por que', () => {
@@ -110,4 +128,46 @@ test('motoresActivos: omite los que no se pueden usar, y dice por que', () => {
   console.log('   omitidos:', omitidos.map(o=>`${o.id} (${o.motivo})`).join(' · '));
   delete process.env.SEARCH_ENGINES;
   assert.deepStrictEqual(E3.motoresActivos().activos.map(e=>e.id), ['vtex-is'], 'default = Intelligent Search');
+});
+
+test('DY: la config real sustituye el termino en query.text y nada mas', async () => {
+  process.env.DY_API_KEY = 'secreta';
+  delete require.cache[require.resolve(path.join(R,'src','search-engines.js'))];
+  const E = require(path.join(R,'src','search-engines.js'));
+  assert.strictEqual(E.dynamicYield.disponible(), true, 'config/dy-search.json ya esta cargada');
+  mockFetch({ choices:[{ variations:[{ payload:{ data:{
+    totalResults: 58, slots:[{ sku:{ name:'Leche La Serenisima 1L', categories:['Lacteos'] }}],
+  }}}]}]});
+  const r = await E.dynamicYield.search('queso rayado');
+  const b = JSON.parse(ultimoInit.body);
+  assert.strictEqual(b.query.text, 'queso rayado');
+  assert.strictEqual(b.selector.name, 'Semantic Search');
+  assert.strictEqual(b.context.page.locale, 'es_AR', 'no en_US: se busca en español');
+  assert.strictEqual(b.context.page.type, 'OTHER', 'no HOMEPAGE: es una consulta de diagnostico');
+  assert.strictEqual(b.query.filters, undefined, 'sin filtros: se mide el motor crudo');
+  assert.strictEqual(b.query.pagination.numItems, 10);
+  assert.strictEqual(ultimoInit.headers['DY-API-Key'], 'secreta');
+  assert.strictEqual(r.total, 58);
+  assert.deepStrictEqual(r.products[0], { name:'Leche La Serenisima 1L', categories:['Lacteos'] });
+  delete process.env.DY_API_KEY;
+});
+
+test('DY: una ruta mal NO se reporta como cero resultados', async () => {
+  process.env.DY_API_KEY = 'secreta';
+  delete require.cache[require.resolve(path.join(R,'src','search-engines.js'))];
+  const E = require(path.join(R,'src','search-engines.js'));
+  // Respuesta con OTRA forma: si esto devolviera total 0, el diagnostico diria
+  // que DY no encuentra nada cuando en realidad la config esta mal.
+  mockFetch({ choices:[{ variations:[{ payload:{ data:{ items:[{name:'x'}], count: 7 } }}]}]});
+  await assert.rejects(() => E.dynamicYield.search('leche'), (e) => {
+    assert.match(e.message, /productsPath/);
+    assert.match(e.message, /no existe en la respuesta/);
+    assert.match(e.message, /choices/, 'dice que claves SI trae, para poder corregirlo');
+    return true;
+  });
+  // Un array vacio SI es un resultado valido: no encontro nada.
+  mockFetch({ choices:[{ variations:[{ payload:{ data:{ slots:[], totalResults: 0 } }}]}]});
+  const r = await E.dynamicYield.search('xkjhsdf');
+  assert.strictEqual(r.total, 0, 'lista vacia = cero resultados de verdad');
+  delete process.env.DY_API_KEY;
 });
