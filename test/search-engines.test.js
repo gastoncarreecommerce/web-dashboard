@@ -135,12 +135,18 @@ test('DY: la config real sustituye el termino en query.text y nada mas', async (
   delete require.cache[require.resolve(path.join(R,'src','search-engines.js'))];
   const E = require(path.join(R,'src','search-engines.js'));
   assert.strictEqual(E.dynamicYield.disponible(), true, 'config/dy-search.json ya esta cargada');
-  // Forma documentada: SIN `choices`, y cada slot es {slotId, sku} nada mas.
-  mockFetch({ id: 24, name:'Semantic Search', type:'SEMANTIC_SEARCH_DECISION',
-    variations:[{ id: 203, payload:{ type:'SEARCH', data:{
+  // Forma REAL (confirmada con una llamada de verdad): viene envuelta en
+  // `choices` —al contrario del ejemplo de la doc— y cada slot trae
+  // `productData` con nombre y categorias, no solo el sku.
+  mockFetch({ choices:[{ id: 1528333, name:'Semantic Search', type:'SEMANTIC_SEARCH_DECISION',
+    variations:[{ id: 30897055, payload:{ data:{
       totalNumResults: 58,
-      slots:[{ slotId:'abc', sku:'7791720029411' }, { slotId:'def', sku:'7791720029404' }],
-    }}}]});
+      facets:[{ column:'categories', values:[{ name:'lacteos', count: 47 }] }],
+      slots:[
+        { slotId:'abc', sku:'7791720029411', productData:{ name:'Leche UAT parcialmente descremada 1 L', categories:['lacteos','leches'], price: 2290 } },
+        { slotId:'def', sku:'7791720029404', productData:{ name:'Leche UAT entera Carrefour 1 L', categories:['lacteos'], price: 2290 } },
+      ],
+    }}}]}]});
   const r = await E.dynamicYield.search('queso rayado');
   const b = JSON.parse(ultimoInit.body);
   // TODO va anidado adentro de `query`, como documenta DY para Experience
@@ -163,9 +169,12 @@ test('DY: la config real sustituye el termino en query.text y nada mas', async (
   assert.strictEqual(b.context.page.type, 'OTHER', 'no HOMEPAGE: es una consulta de diagnostico');
   assert.strictEqual(ultimoInit.headers['DY-API-Key'], 'secreta');
   assert.strictEqual(r.total, 58);
-  // Los slots traen SOLO el sku: no hay nombre ni categoria que normalizar.
-  // Resolver sku -> nombre es el paso que falta para poder medir relevancia.
-  assert.deepStrictEqual(r.products[0], { name:'7791720029411', categories:[] });
+  // Nombre y categorias salen directo de la respuesta: no hace falta resolver
+  // los SKUs contra VTEX, como se habia supuesto leyendo el ejemplo abreviado
+  // de la doc.
+  assert.deepStrictEqual(r.products[0],
+    { name:'Leche UAT parcialmente descremada 1 L', categories:['lacteos','leches'] });
+  assert.strictEqual(r.products.length, 2, 'los facets no se cuentan como productos');
   delete process.env.DY_API_KEY;
 });
 
@@ -175,15 +184,15 @@ test('DY: una ruta mal NO se reporta como cero resultados', async () => {
   const E = require(path.join(R,'src','search-engines.js'));
   // Respuesta con OTRA forma: si esto devolviera total 0, el diagnostico diria
   // que DY no encuentra nada cuando en realidad la config esta mal.
-  mockFetch({ variations:[{ payload:{ data:{ items:[{name:'x'}], count: 7 } }}]});
+  mockFetch({ choices:[{ variations:[{ payload:{ data:{ items:[{name:'x'}], count: 7 } }}]}]});
   await assert.rejects(() => E.dynamicYield.search('leche'), (e) => {
     assert.match(e.message, /productsPath/);
     assert.match(e.message, /no existe en la respuesta/);
-    assert.match(e.message, /variations/, 'dice que claves SI trae, para poder corregirlo');
+    assert.match(e.message, /choices/, 'dice que claves SI trae, para poder corregirlo');
     return true;
   });
   // Un array vacio SI es un resultado valido: no encontro nada.
-  mockFetch({ variations:[{ payload:{ data:{ slots:[], totalNumResults: 0 } }}]});
+  mockFetch({ choices:[{ variations:[{ payload:{ data:{ slots:[], totalNumResults: 0 } }}]}]});
   const r = await E.dynamicYield.search('xkjhsdf');
   assert.strictEqual(r.total, 0, 'lista vacia = cero resultados de verdad');
   delete process.env.DY_API_KEY;

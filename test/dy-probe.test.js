@@ -133,3 +133,25 @@ test('un endpoint que devuelve productos SIN envolver en choices tambien cuenta'
   assert.match(out, /"productsPath": "results"/);
   assert.match(out, /"totalPath": "numResults"/);
 });
+
+test('la lista de RESULTADOS le gana a los facets, aunque los facets sean mas largos', () => {
+  // Forma de la respuesta REAL de DY: 10 slots con productData, y un facet de
+  // categorias con 100 valores. Ordenando solo por largo ganaban las categorias
+  // y la heuristica proponia las categorias como si fueran los productos.
+  const facetValues = Array.from({ length: 100 }, (_, i) => ({ name: `cat${i}`, count: i }));
+  const out = correr({ choices: [{ id: 1528333, name: 'Semantic Search',
+    type: 'SEMANTIC_SEARCH_DECISION', variations: [{ id: 30897055, payload: { data: {
+      totalNumResults: 1842,
+      facets: [{ column: 'categories', displayName: 'Category', valuesType: 'string', values: facetValues }],
+      slots: Array.from({ length: 10 }, (_, i) => ({
+        slotId: `s${i}`, sku: `779100000${i}`,
+        productData: { name: `Leche variedad ${i}`, categories: ['lacteos'], price: 2290 },
+      })),
+    }}}]}]});
+  assert.match(out, /"productsPath": "choices\.0\.variations\.0\.payload\.data\.slots"/);
+  assert.match(out, /"nameKey": "productData\.name"/);
+  assert.match(out, /"categoriesKey": "productData\.categories"/);
+  assert.match(out, /"totalPath": "choices\.0\.variations\.0\.payload\.data\.totalNumResults"/,
+    'totalNumResults le gana al count de un facet');
+  assert.doesNotMatch(out, /"productsPath": ".*facets/, 'los facets no son productos');
+});

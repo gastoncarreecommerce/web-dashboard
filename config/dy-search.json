@@ -85,33 +85,10 @@
     "`session` se saca: la _dyjsession que devuelve DY vence a los 30 minutos",
     "(maxAge 1800), así que clavarla en un archivo no tiene sentido. DY crea una."
   ],
-  "productsPath": "variations.0.payload.data.slots",
-  "totalPath": "variations.0.payload.data.totalNumResults",
-  "nameKey": "sku",
-  "categoriesKey": "",
-  "endpointsAProbar": [
-    "https://dy-api.com/v2/serve/user/search"
-  ],
-  "_pendiente": [
-    "El endpoint todavia NO esta confirmado. El request que da el panel trae un",
-    "bloque `query` con text/filters/pagination, y eso NO existe en el `choose`",
-    "estandar (que lleva solo selector, user, session, context y options): apunta a",
-    "que Experience Search tiene su propio endpoint. La doc (dy.dev/docs/search) no",
-    "es accesible desde donde corre esto, asi que el probe recorre `endpointsAProbar`",
-    "y la API decide. `endpoint` de arriba es el que se usa una vez confirmado."
-  ],
-  "_slots_solo_traen_sku": [
-    "OJO: cada slot de la respuesta es {slotId, sku} y NADA MAS. No hay nombre ni",
-    "categoria del producto.",
-    "",
-    "Eso rompe el juicio de relevancia tal como esta armado, que mira nombres",
-    "('palta' devolviendo shampoos) y dispersion de categorias. Con solo SKUs no se",
-    "puede comparar contra VTEX, que si devuelve productName y categories.",
-    "",
-    "Hay que resolver sku -> nombre/categoria antes de poder medir. El catalogo",
-    "local (docs/data/web/catalog.json) tiene solo los 400 mas vendidos, asi que no",
-    "alcanza: va a haber que pedirselo a VTEX por SKU."
-  ],
+  "productsPath": "choices.0.variations.0.payload.data.slots",
+  "totalPath": "choices.0.variations.0.payload.data.totalNumResults",
+  "nameKey": "productData.name",
+  "categoriesKey": "productData.categories",
   "_hallazgos_de_la_doc": [
     "1) El CORRECTOR DE TIPEOS de DY es SOLO EN INGLES: 'Available only in",
     "   English. The locale sent in the API request can't include other",
@@ -136,5 +113,24 @@
     "",
     "5) `facets` vuelve en cada respuesta si estan configuradas en Experience OS.",
     "   No se piden ni se usan para el diagnostico."
+  ],
+  "_confirmado": [
+    "Endpoint, selector y rutas CONFIRMADOS contra la respuesta real (HTTP 200,",
+    "choices: 1, 10 slots para 'leche').",
+    "",
+    "Dos cosas que la doc tenia distinto y la respuesta real corrigio:",
+    "",
+    "  1. La respuesta SI viene envuelta en `choices`. El ejemplo de la doc arranca",
+    "     directo en la decision ({id, name, type, variations}); la real es",
+    "     {choices: [{id, name, type, variations}]}.",
+    "",
+    "  2. Los slots NO traen solo el sku. El ejemplo de la doc muestra",
+    "     {slotId, sku} y por eso se habia anotado que iba a haber que resolver",
+    "     cada SKU contra VTEX para poder medir relevancia. La respuesta real trae",
+    "     `productData` con name, categories, price y demas: se puede juzgar",
+    "     relevancia directo, sin ninguna llamada extra.",
+    "",
+    "`facets` tambien vuelve en cada respuesta (los filtros disponibles con su",
+    "conteo por categoria). No se usan para el diagnostico."
   ]
 }

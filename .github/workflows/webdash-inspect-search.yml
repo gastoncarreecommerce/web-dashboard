@@ -49,7 +49,7 @@ jobs:
           # sitio; el legacy queda al lado solo para comparar (antes el
           # diagnóstico medía SOLO el legacy, o sea un motor que nadie usa).
           # Para sumar Dynamic Yield: "vtex-is,vtex-legacy,dy".
-          SEARCH_ENGINES: ${{ vars.SEARCH_ENGINES || 'vtex-is,vtex-legacy' }}
+          SEARCH_ENGINES: ${{ vars.SEARCH_ENGINES || 'vtex-is,vtex-legacy,dy' }}
           # Experience Search de DY. Sin estas dos, ese motor se omite con un
           # mensaje que dice qué falta — no rompe la corrida.
           DY_API_KEY: ${{ secrets.DY_API_KEY }}

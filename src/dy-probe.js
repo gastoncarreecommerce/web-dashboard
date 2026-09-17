@@ -40,8 +40,26 @@ const RUTAS_IGNORADAS = [
   /^(cookies|warnings|errors)(\.|$)/,
   /^choices$/,
   /^choices\.\d+\.variations$/,
+  // `facets` son los filtros disponibles (categorias con su conteo), no
+  // resultados. En la primera corrida que funciono, facets.0.values traia 100
+  // categorias contra 10 productos en `slots`, asi que le gano por "la mas
+  // poblada" y la heuristica propuso las categorias como si fueran productos.
+  /(^|\.)facets(\.|$)/,
 ];
 const ignorada = (ruta) => RUTAS_IGNORADAS.some((r) => r.test(ruta));
+
+/** Cuanto se parece a un producto el primer elemento de la lista. Es lo que
+ *  distingue la lista de RESULTADOS de cualquier otra lista de objetos del
+ *  payload: contar elementos no alcanza. */
+function pintaDeProducto(muestra) {
+  const texto = JSON.stringify(muestra || {});
+  let puntos = 0;
+  for (const re of [/"(sku|skuId|productId|itemId)"/i, /"(name|productName|title)"/i,
+                    /"categor/i, /"price/i, /"(image|imageUrl|url)"/i, /"slotId"/i]) {
+    if (re.test(texto)) puntos += 1;
+  }
+  return puntos;
+}
 
 /** Todas las rutas que apuntan a una lista de objetos: cualquiera de estas
  *  puede ser la lista de productos. Se ordena por largo descendente porque la
@@ -214,14 +232,22 @@ async function main() {
   console.log('── Respuesta ' + (crudo.length > MAX_JSON_CHARS ? `(primeros ${MAX_JSON_CHARS} de ${crudo.length} caracteres)` : '') + ' ──');
   console.log(crudo.slice(0, MAX_JSON_CHARS));
 
-  const listas = listasDeObjetos(json).sort((a, b) => b.largo - a.largo);
-  const totales = posiblesTotales(json);
+  // Primero las que PARECEN productos; el largo desempata. Ordenar solo por
+  // largo hacia ganar a los facets, que traen muchas mas filas que los
+  // resultados.
+  const listas = listasDeObjetos(json)
+    .map((l) => ({ ...l, pinta: pintaDeProducto(l.muestra) }))
+    .sort((a, b) => b.pinta - a.pinta || b.largo - a.largo);
+  // Los nombres exactos que usa DY van primero: `count` de un facet tambien
+  // matchea el patron generico y hay uno por categoria.
+  const totales = posiblesTotales(json)
+    .sort((a, b) => (/total(Num)?Results$/i.test(b.ruta) ? 1 : 0) - (/total(Num)?Results$/i.test(a.ruta) ? 1 : 0));
 
   console.log('\n── Candidatos para productsPath (listas de objetos, la más poblada primero) ──');
   if (!listas.length) console.log('  ninguna: la respuesta no trae ninguna lista de objetos.');
   for (const l of listas.slice(0, 8)) {
     const c = camposDe(l.muestra);
-    console.log(`  ${l.ruta}  (${l.largo} elementos)`);
+    console.log(`  ${l.ruta}  (${l.largo} elementos, pinta de producto ${l.pinta}/6)`);
     if (c.nombre.length) console.log(`      nameKey candidato: ${c.nombre.map((x) => `${x.ruta} = ${JSON.stringify(x.valor).slice(0, 60)}`).join(' | ')}`);
     if (c.categorias.length) console.log(`      categoriesKey candidato: ${c.categorias.map((x) => x.ruta).join(' | ')}`);
   }
