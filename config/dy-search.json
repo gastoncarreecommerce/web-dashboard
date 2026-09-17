@@ -24,7 +24,13 @@
     "`session` se omite: el error no la pide y DY la crea sola (devuelve la cookie",
     "_dyjsession). Clavar una en el archivo tampoco serviria: vence a los 30 min.",
     "",
-    "La API key va en la env var DY_API_KEY."
+    "La API key va en la env var DY_API_KEY.",
+    "",
+    "`context.page.data` es OBLIGATORIO aunque vaya vacio. Sin el:",
+    "    HTTP 422 { error: { message: 'request must contain context page data' } }",
+    "La plantilla que da el panel lo traia como [] y se perdio al reescribir el body",
+    "siguiendo la doc, que no lo menciona. En una pagina de producto llevaria el SKU",
+    "del producto mirado; para una consulta de diagnostico va vacio."
   ],
   "endpoint": "https://dy-api.com/v2/serve/user/search",
   "selector": "Semantic Search",
@@ -42,6 +48,7 @@
     },
     "context": {
       "page": {
+        "data": [],
         "type": "OTHER",
         "location": "https://www.carrefour.com.ar/",
         "locale": "es_AR"

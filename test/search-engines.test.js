@@ -157,6 +157,8 @@ test('DY: la config real sustituye el termino en query.text y nada mas', async (
     'nada mas que text y pagination adentro de query');
   assert.strictEqual(b.selector.name, 'Semantic Search');
   assert.ok(b.context.page, 'context va ARRIBA: sin esto la API tira 422');
+  assert.deepStrictEqual(b.context.page.data, [],
+    'context.page.data es obligatorio aunque vaya vacio: sin el, 422 "must contain context page data"');
   assert.strictEqual(b.context.page.locale, 'es_AR', 'no en_US: se busca en español');
   assert.strictEqual(b.context.page.type, 'OTHER', 'no HOMEPAGE: es una consulta de diagnostico');
   assert.strictEqual(ultimoInit.headers['DY-API-Key'], 'secreta');
