@@ -1,0 +1,52 @@
+# Le pregunta AL SITIO que hace cuando alguien busca cada uno de los terminos
+# mas buscados: muestra resultados, o redirige a una categoria.
+#
+# Existe porque el admin de VTEX tiene 561 redirects paginados de 15 en 15 y solo
+# boton de importar, no de exportar. El export sale por la CLI de VTEX, que es
+# una herramienta de desarrollo. Esto no necesita nada instalado: un click.
+#
+# Y mide algo mejor que la config: lo que le pasa de verdad a la persona que
+# busca, no lo que dice un archivo.
+name: Redirect probe (que terminos redirigen a una categoria)
+
+on:
+  workflow_dispatch:
+    inputs:
+      top:
+        description: 'Cuántos términos probar (por volumen de búsqueda)'
+        required: false
+        default: '200'
+      escribir:
+        description: 'Guardar el resultado en config/search-redirects.json y commitearlo'
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Preguntarle al sitio
+        env:
+          STORE_URL: ${{ vars.STORE_URL || 'https://www.carrefour.com.ar' }}
+        run: node src/redirect-probe.js --top "${{ inputs.top }}" ${{ inputs.escribir && '--escribir' || '' }}
+
+      - name: Commit del resultado
+        if: ${{ inputs.escribir }}
+        run: |
+          git config user.name "webdash-bot"
+          git config user.email "webdash-bot@users.noreply.github.com"
+          git add -f config/search-redirects.json
+          git diff --cached --quiet || git commit -m "chore(buscador): redirects detectados en el sitio [skip ci]"
+          ok=0
+          for i in 1 2 4 8; do
+            if git push; then ok=1; break; fi
+            sleep $i
+            git pull --rebase --autostash || true
+          done
+          if [ "$ok" != 1 ]; then echo "::error::no se pudo pushear el resultado"; exit 1; fi
