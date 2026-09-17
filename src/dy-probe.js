@@ -107,13 +107,28 @@ function selectoresAProbar(cfg) {
   return [...new Set([cfg.selector, 'Semantic Search API', 'Semantic Search', 'Default Search Experience'].filter(Boolean))];
 }
 
-/** Reemplaza el nombre del selector donde sea que esté en el body. */
+/** Endpoints a probar. El request que da el panel trae un bloque `query` que no
+ *  existe en el `choose` estandar, asi que Experience Search probablemente tenga
+ *  su propio endpoint. La doc no es accesible desde donde corre esto: se prueban
+ *  los candidatos y la API decide. Un 404 o 405 descarta uno al instante. */
+function endpointsAProbar(cfg) {
+  const env = (process.env.DY_ENDPOINTS || '').split(',').map((s) => s.trim()).filter(Boolean);
+  if (env.length) return env;
+  return [...new Set([...(cfg.endpointsAProbar || []), cfg.endpoint].filter(Boolean))];
+}
+
+/** Reemplaza el nombre del selector donde sea que esté en el body. En Experience
+ *  Search el selector va anidado adentro de `query`, no en el nivel de arriba
+ *  como en `choose`, así que se busca en los dos lugares. */
 function conSelector(body, nombre) {
   const copia = JSON.parse(JSON.stringify(body));
-  if (copia.selector) {
-    if (Array.isArray(copia.selector.names)) copia.selector.names = [nombre];
-    if ('name' in copia.selector) copia.selector.name = nombre;
-  }
+  const poner = (sel) => {
+    if (!sel) return;
+    if (Array.isArray(sel.names)) sel.names = [nombre];
+    if ('name' in sel) sel.name = nombre;
+  };
+  poner(copia.selector);
+  poner(copia.query?.selector);
   return copia;
 }
 
@@ -131,34 +146,53 @@ async function main() {
   const cfg = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
 
   const selectores = selectoresAProbar(cfg);
-  console.log(`→ POST ${cfg.endpoint}`);
-  console.log(`  término: "${termino}"  ·  selectores a probar: ${selectores.map((s) => `"${s}"`).join(', ')}\n`);
+  const endpoints = endpointsAProbar(cfg);
+  console.log(`  término: "${termino}"`);
+  console.log(`  endpoints a probar: ${endpoints.length}  ·  selectores: ${selectores.map((s) => `"${s}"`).join(', ')}\n`);
 
-  let json = null, elegido = null;
-  for (const nombre of selectores) {
-    const body = JSON.stringify(conSelector(cfg.body, nombre))
-      .split('{{query}}').join(JSON.stringify(termino).slice(1, -1));
-    const res = await fetch(cfg.endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'DY-API-Key': process.env.DY_API_KEY },
-      body,
-    });
-    const texto = await res.text();
-    let j = null;
-    try { j = JSON.parse(texto); } catch { /* se reporta abajo */ }
+  let json = null, elegido = null, endpointElegido = null;
+  for (const url of endpoints) {
+    console.log(`→ POST ${url}`);
+    let endpointVive = true;
 
-    const choices = Array.isArray(j?.choices) ? j.choices.length : null;
-    const warns = (j?.warnings || []).map((w) => `${w.code} ${w.message}`);
-    console.log(`  "${nombre}" → HTTP ${res.status}`
-      + (choices === null ? ' (respuesta sin `choices`)' : ` · choices: ${choices}`)
-      + (warns.length ? `\n      warnings: ${warns.join(' | ')}` : ''));
+    for (const nombre of selectores) {
+      const body = JSON.stringify(conSelector(cfg.body, nombre))
+        .split('{{query}}').join(JSON.stringify(termino).slice(1, -1));
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'DY-API-Key': process.env.DY_API_KEY },
+        body,
+      }).catch((e) => ({ ok: false, status: 0, _err: e.message, text: async () => '' }));
 
-    if (!j) { console.log(`      cuerpo: ${texto.slice(0, 300)}`); continue; }
-    // La ULTIMA respuesta parseada siempre se guarda, sirva o no. Antes solo se
-    // guardaba en el caso !res.ok, asi que un 200 con `choices: []` —justo el
-    // caso que hay que mirar— terminaba imprimiendo "null".
-    json = j;
-    if (res.ok && choices) { elegido = nombre; break; }
+      const texto = await res.text().catch(() => '');
+      let j = null;
+      try { j = JSON.parse(texto); } catch { /* se reporta abajo */ }
+
+      // Un 404/405 es del ENDPOINT, no del selector: no tiene sentido probar
+      // los otros nombres contra una URL que no existe.
+      if (res.status === 404 || res.status === 405 || res.status === 0) {
+        console.log(`    ${res.status === 0 ? `sin conexión (${res._err})` : `HTTP ${res.status}`} — este endpoint no existe, se descarta`);
+        endpointVive = false;
+        break;
+      }
+
+      const choices = Array.isArray(j?.choices) ? j.choices.length : null;
+      // Un endpoint de busqueda propio puede devolver los productos sin envolver
+      // en `choices`: eso tambien cuenta como que funciono.
+      const otrasListas = j ? listasDeObjetos(j).length : 0;
+      const warns = (j?.warnings || []).map((w) => `${w.code} ${w.message}`);
+      console.log(`    "${nombre}" → HTTP ${res.status}`
+        + (choices === null ? ` (sin \`choices\`; ${otrasListas} lista(s) de objetos)` : ` · choices: ${choices}`)
+        + (warns.length ? `\n        warnings: ${warns.join(' | ')}` : ''));
+
+      if (!j) { if (texto) console.log(`        cuerpo: ${texto.slice(0, 300)}`); continue; }
+      json = j;
+      if (res.ok && (choices || (choices === null && otrasListas))) {
+        elegido = nombre; endpointElegido = url; break;
+      }
+    }
+    if (elegido) break;
+    if (endpointVive) console.log('');
   }
 
   if (!elegido) {
@@ -173,7 +207,8 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`\n✓ El selector que funciona es "${elegido}"\n`);
+  console.log(`\n✓ Funciona: POST ${endpointElegido}  ·  selector "${elegido}"`);
+  console.log(`  Poner en config/dy-search.json: "endpoint": ${JSON.stringify(endpointElegido)}, "selector": ${JSON.stringify(elegido)}\n`);
 
   const crudo = JSON.stringify(json, null, 2);
   console.log('── Respuesta ' + (crudo.length > MAX_JSON_CHARS ? `(primeros ${MAX_JSON_CHARS} de ${crudo.length} caracteres)` : '') + ' ──');

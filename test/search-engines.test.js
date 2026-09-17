@@ -135,20 +135,30 @@ test('DY: la config real sustituye el termino en query.text y nada mas', async (
   delete require.cache[require.resolve(path.join(R,'src','search-engines.js'))];
   const E = require(path.join(R,'src','search-engines.js'));
   assert.strictEqual(E.dynamicYield.disponible(), true, 'config/dy-search.json ya esta cargada');
-  mockFetch({ choices:[{ variations:[{ payload:{ data:{
-    totalResults: 58, slots:[{ sku:{ name:'Leche La Serenisima 1L', categories:['Lacteos'] }}],
-  }}}]}]});
+  // Forma documentada: SIN `choices`, y cada slot es {slotId, sku} nada mas.
+  mockFetch({ id: 24, name:'Semantic Search', type:'SEMANTIC_SEARCH_DECISION',
+    variations:[{ id: 203, payload:{ type:'SEARCH', data:{
+      totalNumResults: 58,
+      slots:[{ slotId:'abc', sku:'7791720029411' }, { slotId:'def', sku:'7791720029404' }],
+    }}}]});
   const r = await E.dynamicYield.search('queso rayado');
   const b = JSON.parse(ultimoInit.body);
-  assert.strictEqual(b.query.text, 'queso rayado');
-  assert.strictEqual(b.selector.name, 'Semantic Search');
-  assert.strictEqual(b.context.page.locale, 'es_AR', 'no en_US: se busca en español');
-  assert.strictEqual(b.context.page.type, 'OTHER', 'no HOMEPAGE: es una consulta de diagnostico');
-  assert.strictEqual(b.query.filters, undefined, 'sin filtros: se mide el motor crudo');
-  assert.strictEqual(b.query.pagination.numItems, 10);
+  // TODO va anidado adentro de `query`, como documenta DY para Experience
+  // Search. Tenerlo en el nivel de arriba (como en `choose`) era el bug que
+  // hacia que DY respondiera 200 con `choices: []`.
+  const q = b.query;
+  assert.strictEqual(q.text, 'queso rayado');
+  assert.strictEqual(q.selector.name, 'Semantic Search');
+  assert.strictEqual(q.context.page.locale, 'es_AR', 'no en_US: se busca en español');
+  assert.strictEqual(q.context.page.type, 'OTHER', 'no HOMEPAGE: es una consulta de diagnostico');
+  assert.strictEqual(q.filters, undefined, 'sin filtros: se mide el motor crudo');
+  assert.strictEqual(q.pagination.numItems, 10);
+  assert.strictEqual(b.selector, undefined, 'nada queda en el nivel de arriba');
   assert.strictEqual(ultimoInit.headers['DY-API-Key'], 'secreta');
   assert.strictEqual(r.total, 58);
-  assert.deepStrictEqual(r.products[0], { name:'Leche La Serenisima 1L', categories:['Lacteos'] });
+  // Los slots traen SOLO el sku: no hay nombre ni categoria que normalizar.
+  // Resolver sku -> nombre es el paso que falta para poder medir relevancia.
+  assert.deepStrictEqual(r.products[0], { name:'7791720029411', categories:[] });
   delete process.env.DY_API_KEY;
 });
 
@@ -158,15 +168,15 @@ test('DY: una ruta mal NO se reporta como cero resultados', async () => {
   const E = require(path.join(R,'src','search-engines.js'));
   // Respuesta con OTRA forma: si esto devolviera total 0, el diagnostico diria
   // que DY no encuentra nada cuando en realidad la config esta mal.
-  mockFetch({ choices:[{ variations:[{ payload:{ data:{ items:[{name:'x'}], count: 7 } }}]}]});
+  mockFetch({ variations:[{ payload:{ data:{ items:[{name:'x'}], count: 7 } }}]});
   await assert.rejects(() => E.dynamicYield.search('leche'), (e) => {
     assert.match(e.message, /productsPath/);
     assert.match(e.message, /no existe en la respuesta/);
-    assert.match(e.message, /choices/, 'dice que claves SI trae, para poder corregirlo');
+    assert.match(e.message, /variations/, 'dice que claves SI trae, para poder corregirlo');
     return true;
   });
   // Un array vacio SI es un resultado valido: no encontro nada.
-  mockFetch({ choices:[{ variations:[{ payload:{ data:{ slots:[], totalResults: 0 } }}]}]});
+  mockFetch({ variations:[{ payload:{ data:{ slots:[], totalNumResults: 0 } }}]});
   const r = await E.dynamicYield.search('xkjhsdf');
   assert.strictEqual(r.total, 0, 'lista vacia = cero resultados de verdad');
   delete process.env.DY_API_KEY;

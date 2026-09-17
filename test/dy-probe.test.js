@@ -85,3 +85,51 @@ test('un error HTTP no se confunde con una respuesta vacia', () => {
     assert.match(e.stdout, /Invalid API key/);
   } finally { fs.unlinkSync(pre); }
 });
+
+/** Mock que responde distinto segun la URL, para probar el recorrido de endpoints. */
+function correrMulti(porUrl, termino = 'leche', extraEnv = {}) {
+  const pre = path.join(os.tmpdir(), `dyprobe-multi-${process.pid}.js`);
+  fs.writeFileSync(pre, `
+    const porUrl = ${JSON.stringify(porUrl)};
+    globalThis.__llamadas = [];
+    globalThis.fetch = async (url) => {
+      globalThis.__llamadas.push(String(url));
+      const e = porUrl[String(url)] || { status: 404, body: { error: 'not found' } };
+      console.error('LLAMADA ' + url);
+      return { ok: e.status < 400, status: e.status,
+        text: async () => JSON.stringify(e.body), json: async () => e.body };
+    };`);
+  try {
+    return execFileSync('node', ['-r', pre, 'src/dy-probe.js', termino], {
+      cwd: R, encoding: 'utf8', env: { ...process.env, DY_API_KEY: 'falsa', ...extraEnv },
+      stdio: ['pipe','pipe','pipe'],
+    });
+  } finally { fs.unlinkSync(pre); }
+}
+
+test('un endpoint 404 se descarta sin probarle los demas selectores', () => {
+  const out = correrMulti({
+    'https://A/': { status: 404, body: { error: 'no' } },
+    'https://B/': { status: 200, body: { choices: [{ variations: [{ payload: { data: {
+      totalResults: 58,
+      products: [{ sku: { name: 'Leche entera 1L', categories: ['Lacteos'] } }],
+    }}}]}]}},
+  }, 'leche', { DY_ENDPOINTS: 'https://A/,https://B/', DY_SELECTORS: 'uno,dos,tres' });
+  assert.match(out, /HTTP 404 — este endpoint no existe, se descarta/);
+  assert.match(out, /Funciona: POST https:\/\/B\//);
+  assert.match(out, /selector "uno"/, 'para en el primer selector que anda');
+  assert.match(out, /"productsPath": "choices\.0\.variations\.0\.payload\.data\.products"/);
+});
+
+test('un endpoint que devuelve productos SIN envolver en choices tambien cuenta', () => {
+  const out = correrMulti({
+    'https://S/': { status: 200, body: {
+      numResults: 12,
+      results: [{ name: 'Leche descremada 1L', categories: ['Lacteos'] }],
+    }},
+  }, 'leche', { DY_ENDPOINTS: 'https://S/', DY_SELECTORS: 'uno' });
+  assert.match(out, /sin `choices`/);
+  assert.match(out, /Funciona: POST https:\/\/S\//);
+  assert.match(out, /"productsPath": "results"/);
+  assert.match(out, /"totalPath": "numResults"/);
+});

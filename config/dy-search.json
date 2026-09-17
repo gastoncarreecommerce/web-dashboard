@@ -1,45 +1,44 @@
 {
   "_origen": [
-    "El `body` de acá es la forma del request de la Semantic Search API tal como",
-    "la muestra el panel de DY para la cuenta PROD - Carrefour AR (pestaña JSON",
-    "de la variación, una vez publicada la experiencia). No se adivinó nada.",
+    "Request y response salen de la doc de Experience Search de DY (dy.dev/docs/search).",
     "",
-    "PENDIENTE DE CONFIRMAR: `productsPath` y `totalPath`. Salen del RESPONSE,",
-    "y todavía no vimos uno real. Si están mal, el adaptador TIRA un error que",
-    "nombra las claves que sí trae la respuesta — a propósito, para que no se",
-    "confunda 'la ruta está mal' con 'el buscador no encontró nada'.",
+    "LO QUE ESTABA MAL ANTES: tenia `selector`, `user`, `context` y `options` en el",
+    "nivel de arriba y `query` al lado. La doc los pone TODOS anidados adentro de",
+    "`query`. DY recibia un request sin selector donde lo esperaba, respondia",
+    "HTTP 200 con `choices: []` y nada matcheaba.",
     "",
-    "La API key NO va acá: va en la env var DY_API_KEY."
+    "La respuesta NO viene envuelta en `choices`: arranca directo en la decision",
+    "({id, name, type, decisionId, variations}).",
+    "",
+    "La API key va en la env var DY_API_KEY."
   ],
   "endpoint": "https://dy-api.com/v2/serve/user/choose",
   "selector": "Semantic Search",
   "body": {
-    "selector": {
-      "name": "Semantic Search"
-    },
     "query": {
       "text": "{{query}}",
       "pagination": {
         "numItems": 10,
         "offset": 0
+      },
+      "user": {
+        "active_consent_accepted": true,
+        "dyid": "7530018819271298053"
+      },
+      "context": {
+        "page": {
+          "type": "OTHER",
+          "location": "https://www.carrefour.com.ar/",
+          "locale": "es_AR"
+        }
+      },
+      "selector": {
+        "name": "Semantic Search"
+      },
+      "options": {
+        "returnAnalyticsMetadata": false,
+        "isImplicitClientData": false
       }
-    },
-    "context": {
-      "page": {
-        "data": [],
-        "locale": "es_AR",
-        "location": "https://www.carrefour.com.ar/",
-        "type": "OTHER"
-      }
-    },
-    "options": {
-      "isImplicitClientData": false,
-      "returnAnalyticsMetadata": false
-    },
-    "user": {
-      "dyid": "7530018819271298053",
-      "dyid_server": "7530018819271298053",
-      "active_consent_accepted": true
     }
   },
   "_decisiones": [
@@ -65,8 +64,34 @@
     "`session` se saca: la _dyjsession que devuelve DY vence a los 30 minutos",
     "(maxAge 1800), así que clavarla en un archivo no tiene sentido. DY crea una."
   ],
-  "productsPath": "choices.0.variations.0.payload.data.slots",
-  "totalPath": "choices.0.variations.0.payload.data.totalResults",
-  "nameKey": "sku.name",
-  "categoriesKey": "sku.categories"
+  "productsPath": "variations.0.payload.data.slots",
+  "totalPath": "variations.0.payload.data.totalNumResults",
+  "nameKey": "sku",
+  "categoriesKey": "",
+  "endpointsAProbar": [
+    "https://dy-api.com/v2/serve/user/search",
+    "https://dy-api.com/v2/serve/user/semantic_search",
+    "https://dy-api.com/v2/search/user/search",
+    "https://dy-api.com/v2/serve/user/choose"
+  ],
+  "_pendiente": [
+    "El endpoint todavia NO esta confirmado. El request que da el panel trae un",
+    "bloque `query` con text/filters/pagination, y eso NO existe en el `choose`",
+    "estandar (que lleva solo selector, user, session, context y options): apunta a",
+    "que Experience Search tiene su propio endpoint. La doc (dy.dev/docs/search) no",
+    "es accesible desde donde corre esto, asi que el probe recorre `endpointsAProbar`",
+    "y la API decide. `endpoint` de arriba es el que se usa una vez confirmado."
+  ],
+  "_slots_solo_traen_sku": [
+    "OJO: cada slot de la respuesta es {slotId, sku} y NADA MAS. No hay nombre ni",
+    "categoria del producto.",
+    "",
+    "Eso rompe el juicio de relevancia tal como esta armado, que mira nombres",
+    "('palta' devolviendo shampoos) y dispersion de categorias. Con solo SKUs no se",
+    "puede comparar contra VTEX, que si devuelve productName y categories.",
+    "",
+    "Hay que resolver sku -> nombre/categoria antes de poder medir. El catalogo",
+    "local (docs/data/web/catalog.json) tiene solo los 400 mas vendidos, asi que no",
+    "alcanza: va a haber que pedirselo a VTEX por SKU."
+  ]
 }
