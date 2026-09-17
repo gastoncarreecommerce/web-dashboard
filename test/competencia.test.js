@@ -45,7 +45,9 @@ async function correr(porTienda, query) {
       const d = Object.keys(SIMS).find((x) => u.includes(x));
       const sim = SIMS[d];
       if (sim === undefined) return { ok: false, status: 500, text: async () => 'no simula' };
-      if (typeof sim === 'number') return { ok: false, status: sim, text: async () => 'boom' };
+      if (typeof sim === 'number') {
+        return { ok: false, status: sim, text: async () => '{"error":{"message":"Sales channel not found"}}' };
+      }
       return { ok: true, status: 200, json: async () => ({
         // La simulacion habla en CENTAVOS: x100.
         items: [{ sellingPrice: Math.round(sim.precio * 100), price: Math.round(sim.precio * 100),
@@ -254,8 +256,34 @@ test('los fallos de simulacion se agrupan por tienda y motivo', async () => {
     ],
   }, { eans: '11111111,22222222', tiendas: 'jumbo' });
 
-  // Agrupado: el motivo UNA vez con su conteo, no una fila por celda.
-  assert.deepStrictEqual(res.body.simulacionErrores, { jumbo: { 'HTTP 403': 2 } });
+  // Agrupado: el motivo UNA vez con su conteo, no una fila por celda. Y el
+  // motivo incluye el CUERPO de la respuesta, que es donde VTEX explica el
+  // rechazo: sin eso un 400 y un 403 se ven iguales.
+  const motivos = res.body.simulacionErrores.jumbo;
+  const clave = Object.keys(motivos)[0];
+  assert.match(clave, /^HTTP 403/);
+  assert.match(clave, /Sales channel not found/, 'el cuerpo viaja en el motivo');
+  assert.strictEqual(motivos[clave], 2, 'agrupado con su conteo');
   assert.strictEqual(res.body.aSimular, 2);
   assert.strictEqual(res.body.simuladas, 0, 'ninguna salio de la simulacion');
+});
+
+test('una simulacion que responde 200 sin el item reporta el motivo de VTEX', async () => {
+  sesionOk = true;
+  global.fetch = async (url) => {
+    const u = String(url);
+    if (u.includes('orderForms/simulation')) {
+      // VTEX responde 200 y rechaza el item: el motivo esta en `messages`.
+      return { ok: true, status: 200, json: async () => ({
+        items: [], messages: [{ code: 'withoutStock', text: 'Item sin stock en el canal' }],
+      })};
+    }
+    return { ok: true, status: 200, json: async () => [prod('11111111', 'A', { precio: 500 })] };
+  };
+  const handler = await handlerP;
+  const res = fakeRes();
+  await handler({ method: 'GET', query: { eans: '11111111', tiendas: 'jumbo' }, headers: {} }, res);
+  const x = res.body.resultados['11111111'].jumbo;
+  assert.match(x.simulacionFallo, /rechazado: Item sin stock/,
+    'el motivo de VTEX, no un "no devolvio el item" que no dice nada');
 });

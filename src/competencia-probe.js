@@ -148,8 +148,10 @@ async function main() {
 
           const it = (sim.items || [])[0];
           if (!it) {
-            console.log('         SIMULACION: no devolvio el item'
-              + (sim.messages?.length ? ` — ${sim.messages.map((m) => m.text).join(' | ')}` : ''));
+            const msgs = (sim.messages || []).map((m) => m?.text || m?.code).filter(Boolean);
+            console.log(`         SIMULACION: respondio 200 pero sin el item`
+              + (msgs.length ? ` — ${msgs.join(' | ')}` : ' (y sin messages)'));
+            console.log(`            claves de la respuesta: ${Object.keys(sim).join(', ')}`);
             continue;
           }
           // Centavos -> pesos.

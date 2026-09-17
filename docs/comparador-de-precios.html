@@ -79,7 +79,9 @@
   .vs { display: block; font-size: .72rem; font-weight: 600; margin-top: .1rem; }
   .vs.peor { color: #dc2626; }
   .vs.mejor { color: #067a55; }
-  .propia th { background: #f8fafc; }
+  .thnota { display: block; font-size: .65rem; font-weight: 500; color: #b45309;
+            text-transform: none; letter-spacing: 0; cursor: help; max-width: 9rem;
+            margin-left: auto; white-space: normal; line-height: 1.25; }
   .prog { font-size: .85rem; color: var(--muted, #6b7280); }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) .aviso.info { background: #16233a; border-color: #1e3a5f; color: #93c5fd; }
@@ -290,8 +292,24 @@
     avisar(avisos.join(''));
 
     // Cabecera
-    const th = ['<th>EAN</th>', '<th>Producto</th>']
-      .concat(tiendas.map((t) => `<th class="num"${t.propia ? ' style="color:#2a78d6"' : ''}>${esc(t.nombre)}</th>`));
+    // El motivo del fallo va en la CABECERA de la columna cuando afecta a la
+    // mayoria de las celdas de esa tienda. Antes estaba solo en un cartel
+    // arriba de la tabla y en los tooltips: con 76 celdas fallando, quien mira
+    // la tabla no lo encontraba nunca. Si el problema es de la tienda entera,
+    // se dice en el titulo de la tienda.
+    const th = ['<th>EAN</th>', '<th>Producto</th>'].concat(tiendas.map((t) => {
+      const motivos = d.simulacionErrores?.[t.id];
+      let nota = '';
+      if (motivos) {
+        const fallos = Object.values(motivos).reduce((a, b) => a + b, 0);
+        const conProducto = eans.filter((e) => d.resultados[e]?.[t.id]?.encontrado).length;
+        if (conProducto && fallos >= conProducto * 0.5) {
+          const peor = Object.entries(motivos).sort((a, b) => b[1] - a[1])[0][0];
+          nota = `<br><span class="thnota" title="${esc(peor)}">sin simular: ${esc(peor.slice(0, 40))}${peor.length > 40 ? '…' : ''}</span>`;
+        }
+      }
+      return `<th class="num"${t.propia ? ' style="color:#2a78d6"' : ''}>${esc(t.nombre)}${nota}</th>`;
+    }));
 
     const filas = eans.map((ean) => {
       const porTienda = d.resultados[ean] || {};

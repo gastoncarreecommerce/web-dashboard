@@ -105,10 +105,24 @@ async function simular(tienda, itemId, sellerId) {
         country: 'ARG',
       }),
     });
-    if (!r.ok) return { error: `HTTP ${r.status}` };
+    if (!r.ok) {
+      // EL CUERPO ES LO QUE IMPORTA. Antes esto devolvia solo `HTTP ${status}` y
+      // se perdia el motivo: VTEX explica en el body por que rechazo la
+      // simulacion (canal de venta inexistente, item no disponible, falta la
+      // region...). Sin eso, un 400 y un 403 se ven iguales y no hay como
+      // saber que arreglar. Se recorta para que no inunde la respuesta.
+      const cuerpo = await r.text().catch(() => '');
+      return { error: `HTTP ${r.status}${cuerpo ? `: ${cuerpo.replace(/\s+/g, ' ').slice(0, 220)}` : ''}` };
+    }
     const j = await r.json();
     const it = (j.items || [])[0];
-    if (!it) return { error: 'la simulación no devolvió el item' };
+    if (!it) {
+      // Una simulacion puede responder 200 y rechazar el item igual: el motivo
+      // viene en `messages`, y sin mostrarlo esto queda en "no devolvio el
+      // item", que no dice nada.
+      const msgs = (j.messages || []).map((m) => m?.text || m?.code).filter(Boolean);
+      return { error: msgs.length ? `rechazado: ${msgs.join(' | ').slice(0, 220)}` : 'la simulación no devolvió el item' };
+    }
 
     const aPesos = (v) => (Number.isFinite(v) ? v / 100 : null);
     // `sellingPrice` es lo que se paga; `price` suele coincidir. Se toma el
