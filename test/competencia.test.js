@@ -243,3 +243,19 @@ test('los ids internos no viajan al cliente', async () => {
   assert.strictEqual(x._itemId, undefined);
   assert.strictEqual(x._sellerId, undefined);
 });
+
+test('los fallos de simulacion se agrupan por tienda y motivo', async () => {
+  sesionOk = true;
+  SIMS = { 'www.jumbo.com.ar': 403 };   // falla en todas
+  const { res } = await correr({
+    'www.jumbo.com.ar': [
+      prod('11111111', 'A', { precio: 100 }),
+      prod('22222222', 'B', { precio: 200 }),
+    ],
+  }, { eans: '11111111,22222222', tiendas: 'jumbo' });
+
+  // Agrupado: el motivo UNA vez con su conteo, no una fila por celda.
+  assert.deepStrictEqual(res.body.simulacionErrores, { jumbo: { 'HTTP 403': 2 } });
+  assert.strictEqual(res.body.aSimular, 2);
+  assert.strictEqual(res.body.simuladas, 0, 'ninguna salio de la simulacion');
+});

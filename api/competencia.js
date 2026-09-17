@@ -255,6 +255,7 @@ export default async function handler(req, res) {
   // resultados[ean][tiendaId]
   const resultados = Object.fromEntries(eans.map((e) => [e, {}]));
   const errores = {};
+  const simErrores = {};   // simErrores[tiendaId][motivo] = cuantas veces
 
   const lotes = [];
   for (const id of tiendas) {
@@ -289,6 +290,9 @@ export default async function handler(req, res) {
   });
 
   // Paso 2: la simulacion, que es la que trae el precio real con promociones.
+  // Los fallos se cuentan AGRUPADOS por tienda y por motivo: cuando falla en
+  // todas las celdas de una tienda —lo que paso con Jumbo y Disco— lo que hace
+  // falta es el motivo una vez, no una lista de 76 celdas.
   // El precio del catalogo queda como `precioCatalogo` para poder ver la
   // diferencia, pero el que se muestra es el simulado.
   await forEachLimit(aSimular, CONCURRENCIA, async ({ id, fila }) => {
@@ -300,6 +304,8 @@ export default async function handler(req, res) {
       // el cliente. Se marca para que la pagina lo diga en vez de darlo por
       // bueno.
       fila.simulacionFallo = sim.error;
+      const porTienda = (simErrores[id] = simErrores[id] || {});
+      porTienda[sim.error] = (porTienda[sim.error] || 0) + 1;
       return;
     }
 
@@ -337,6 +343,9 @@ export default async function handler(req, res) {
     eans,
     resultados,
     errores,
+    simulacionErrores: simErrores,
+    simuladas: aSimular.filter((x) => x.fila.fuentePrecio === 'simulacion').length,
+    aSimular: aSimular.length,
     ...(invalidos.length ? { invalidos: invalidos.slice(0, 20) } : {}),
     ...(desconocidas.length ? { tiendasDesconocidas: desconocidas } : {}),
     fuente: 'El precio sale de la simulación de carrito de cada tienda (una por producto, '

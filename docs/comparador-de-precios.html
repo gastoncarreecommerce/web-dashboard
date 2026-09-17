@@ -34,34 +34,61 @@
   .aviso.warn { background: #fffbeb; border-color: #fde68a; color: #92400e; }
   .aviso.bad  { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
 
-  .tabla-wrap { overflow-x: auto; }
-  table.cmp-t { width: 100%; border-collapse: collapse; font-size: .85rem; }
-  table.cmp-t th, table.cmp-t td { padding: .55rem .6rem; text-align: left;
-    border-bottom: 1px solid var(--line, #eef0f3); vertical-align: top; }
-  table.cmp-t th { font-size: .72rem; text-transform: uppercase; letter-spacing: .03em;
+  .tabla-wrap { overflow-x: auto; margin: 0 -1.25rem -1.25rem; padding: 0 1.25rem 1.25rem; }
+  table.cmp-t { width: 100%; border-collapse: separate; border-spacing: 0; font-size: .85rem; }
+  table.cmp-t th, table.cmp-t td {
+    padding: .7rem .75rem; text-align: left; vertical-align: middle;
+    border-bottom: 1px solid var(--line, #eef0f3);
+  }
+  table.cmp-t thead th {
+    font-size: .68rem; text-transform: uppercase; letter-spacing: .05em;
     color: var(--muted, #6b7280); font-weight: 600; white-space: nowrap;
-    position: sticky; top: 0; background: var(--card, #fff); }
-  table.cmp-t td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .ean { font-family: ui-monospace, monospace; font-size: .8rem; color: var(--muted, #6b7280); }
-  .prod { max-width: 24rem; }
-  .precio { font-weight: 700; }
-  .lista { text-decoration: line-through; color: var(--muted, #9ca3af); font-size: .78rem; }
-  .off { color: #1baf7a; font-size: .78rem; font-weight: 600; }
-  .barato { background: #ecfdf5; }
-  .barato .precio { color: #067a55; }
-  .nada { color: var(--muted, #9ca3af); font-size: .8rem; }
-  .sinstock { color: #b45309; font-size: .78rem; }
-  .precio.revision { color: #b45309; text-decoration: underline wavy #f59e0b 1px; text-underline-offset: 3px; }
-  .cat { display: block; font-size: .7rem; color: var(--muted, #9ca3af); cursor: help; }
-  .dudoso { color: #b45309; font-size: .74rem; border-bottom: 1px dotted currentColor; cursor: help; }
-  .promo { display: block; font-size: .72rem; color: #6d28d9; margin-top: .15rem; line-height: 1.3; }
+    position: sticky; top: 0; z-index: 2; background: var(--card, #fff);
+    border-bottom: 1px solid var(--line, #e5e7eb);
+  }
+  /* Las dos primeras columnas quedan fijas: con cinco tiendas hay scroll
+     horizontal y perder de vista de que producto se trata lo vuelve inutil. */
+  table.cmp-t th:nth-child(1), table.cmp-t td:nth-child(1) { position: sticky; left: 0; z-index: 1; background: var(--card, #fff); }
+  table.cmp-t th:nth-child(2), table.cmp-t td:nth-child(2) { position: sticky; left: 7.5rem; z-index: 1; background: var(--card, #fff); min-width: 16rem; }
+  table.cmp-t thead th:nth-child(1), table.cmp-t thead th:nth-child(2) { z-index: 3; }
+  table.cmp-t tbody tr:hover td { background: var(--hover, #fafbfc); }
+  table.cmp-t td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; min-width: 8.5rem; }
+
+  .ean { font-family: ui-monospace, monospace; font-size: .75rem; color: var(--muted, #9ca3af); }
+  .prod { font-size: .84rem; line-height: 1.35; }
+  .precio { font-weight: 650; font-size: .95rem; display: block; }
+  .antes { font-size: .74rem; color: var(--muted, #9ca3af); }
+  .antes s { text-decoration: line-through; }
+  .off { color: #067a55; font-weight: 600; }
+
+  /* El ganador: un fondo apenas verde y un check. El bloque verde oscuro
+     tapaba el numero y ensuciaba toda la tabla. */
+  td.barato { background: #f0fdf5 !important; box-shadow: inset 2px 0 0 #16a34a; }
+  td.barato .precio { color: #067a55; }
+  td.barato .precio::after { content: ' ✓'; font-size: .8em; }
+
+  .nada { color: var(--muted, #c7cbd1); font-size: .8rem; font-weight: 400; }
+  /* Un solo renglon para cualquier problema, en vez de dos o tres avisos
+     apilados que hacian ilegible la celda. */
+  .ojo { display: block; font-size: .72rem; color: #b45309; margin-top: .15rem; cursor: help; }
+  .promo { display: block; font-size: .71rem; color: #6d28d9; margin-top: .2rem;
+           line-height: 1.25; max-width: 12rem; margin-left: auto;
+           overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Diferencia contra nuestra tienda: es la pregunta del negocio. Rojo cuando
+     el competidor esta mas barato (perdemos), verde cuando esta mas caro. */
+  .vs { display: block; font-size: .72rem; font-weight: 600; margin-top: .1rem; }
+  .vs.peor { color: #dc2626; }
+  .vs.mejor { color: #067a55; }
+  .propia th { background: #f8fafc; }
   .prog { font-size: .85rem; color: var(--muted, #6b7280); }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) .aviso.info { background: #16233a; border-color: #1e3a5f; color: #93c5fd; }
     :root:not([data-theme="light"]) .aviso.warn { background: #2a2113; border-color: #4d3c14; color: #fcd34d; }
     :root:not([data-theme="light"]) .aviso.bad  { background: #2b1618; border-color: #532025; color: #fca5a5; }
-    :root:not([data-theme="light"]) .barato { background: #10291f; }
-    :root:not([data-theme="light"]) .barato .precio { color: #34d399; }
+    :root:not([data-theme="light"]) td.barato { background: #0f2419 !important; box-shadow: inset 2px 0 0 #16a34a; }
+    :root:not([data-theme="light"]) td.barato .precio { color: #34d399; }
+    :root:not([data-theme="light"]) .off { color: #34d399; }
+    :root:not([data-theme="light"]) table.cmp-t tbody tr:hover td { background: #161a20; }
   }
 </style>
 </head>
@@ -175,7 +202,8 @@
     const tandas = [];
     for (let i = 0; i < validos.length; i += POR_TANDA) tandas.push(validos.slice(i, i + POR_TANDA));
 
-    const juntos = { resultados: {}, errores: {}, tiendas: null, advertencia: null, fuente: null, eans: [] };
+    const juntos = { resultados: {}, errores: {}, simulacionErrores: {}, tiendas: null,
+      advertencia: null, fuente: null, eans: [], simuladas: 0, aSimular: 0 };
     let fallo = null;
 
     for (let i = 0; i < tandas.length; i += 1) {
@@ -195,6 +223,13 @@
         for (const [id, errs] of Object.entries(j.errores || {})) {
           (juntos.errores[id] = juntos.errores[id] || []).push(...errs);
         }
+        // Los contadores se SUMAN entre tandas, no se sobreescriben.
+        for (const [id, motivos] of Object.entries(j.simulacionErrores || {})) {
+          const acc = (juntos.simulacionErrores[id] = juntos.simulacionErrores[id] || {});
+          for (const [m, n] of Object.entries(motivos)) acc[m] = (acc[m] || 0) + n;
+        }
+        juntos.simuladas += j.simuladas || 0;
+        juntos.aSimular += j.aSimular || 0;
       } catch (e) { fallo = e.message; break; }
     }
 
@@ -223,21 +258,28 @@
     }
     if (d.fuente) avisos.push(`<div class="aviso info">${esc(d.fuente)}</div>`);
 
-    // Productos donde la simulacion fallo: ese precio es el del catalogo, que
-    // puede NO incluir promociones. Va ARRIBA de los errores de red, porque un
-    // numero equivocado es mas grave que una columna faltante.
-    const sinSim = [];
-    for (const ean of eans) {
-      for (const t of tiendas) {
-        const x = d.resultados[ean]?.[t.id];
-        if (x?.encontrado && x.simulacionFallo) sinSim.push(`${t.nombre} · ${ean}`);
-      }
+    // Fallos de simulacion AGRUPADOS por tienda y motivo. Si falla en todas las
+    // celdas de una tienda, lo util es el motivo una vez —no una lista de 76
+    // celdas truncada a 6, que es lo que habia antes y no dejaba ver la causa.
+    const grupos = Object.entries(d.simulacionErrores || {});
+    if (grupos.length) {
+      const detalle = grupos.map(([id, motivos]) => {
+        const t = tiendas.find((x) => x.id === id);
+        const total = Object.values(motivos).reduce((a, b) => a + b, 0);
+        const porQue = Object.entries(motivos)
+          .sort((a, b) => b[1] - a[1])
+          .map(([m, n]) => `${esc(m)} (${n}×)`).join(', ');
+        return `<li><strong>${esc(t?.nombre || id)}</strong>: ${total} sin simular — ${porQue}</li>`;
+      }).join('');
+      avisos.push(`<div class="aviso bad">
+        <strong>La simulación de carrito falló en algunas tiendas.</strong>
+        Para esos productos se muestra el precio del catálogo, que puede no incluir
+        promociones. Están marcados y no compiten por el "más barato".
+        <ul style="margin:.4rem 0 0 1.1rem; padding:0">${detalle}</ul></div>`);
     }
-    if (sinSim.length) {
-      avisos.push(`<div class="aviso bad"><strong>${sinSim.length} precio(s) sin simular.</strong>
-        Para esos la simulación de carrito falló, así que se muestra el precio del catálogo,
-        que puede no incluir las promociones. Están marcados en la tabla y no compiten por
-        el "más barato".<br><span class="ean">${esc(sinSim.slice(0, 6).join(' · '))}${sinSim.length > 6 ? '…' : ''}</span></div>`);
+    if (d.aSimular) {
+      avisos.push(`<div class="aviso info">${d.simuladas} de ${d.aSimular} precios salieron de la
+        simulación de carrito (con promociones aplicadas).</div>`);
     }
     for (const [id, errs] of Object.entries(d.errores || {})) {
       const t = tiendas.find((x) => x.id === id);
@@ -249,7 +291,7 @@
 
     // Cabecera
     const th = ['<th>EAN</th>', '<th>Producto</th>']
-      .concat(tiendas.map((t) => `<th class="num">${esc(t.nombre)}</th>`));
+      .concat(tiendas.map((t) => `<th class="num"${t.propia ? ' style="color:#2a78d6"' : ''}>${esc(t.nombre)}</th>`));
 
     const filas = eans.map((ean) => {
       const porTienda = d.resultados[ean] || {};
@@ -268,29 +310,51 @@
       // celda mostraba "[object Object]".
       const nombre = tiendas.map((t) => porTienda[t.id]).find((x) => x?.nombre)?.nombre;
 
+      // Nuestro precio, para el delta. Si no lo tenemos, no se muestra ninguno:
+      // un "vs" sin referencia no significa nada.
+      const propia = tiendas.find((t) => t.propia);
+      const nuestro = propia ? porTienda[propia.id] : null;
+      const base = (nuestro?.encontrado && nuestro.precio != null && !nuestro.simulacionFallo)
+        ? nuestro.precio : null;
+
       const celdas = tiendas.map((t) => {
         const x = porTienda[t.id];
-        if (!x || !x.encontrado) return '<td class="num"><span class="nada">no está</span></td>';
-        const barato = min != null && x.precio === min && x.disponible && !x.simulacionFallo;
-        const revision = Boolean(x.simulacionFallo);
-        const bits = [`<span class="precio${revision ? ' revision' : ''}"${revision
-          ? ` title="La simulación falló (${esc(x.simulacionFallo)}): este es el precio del catálogo y puede no incluir promociones."` : ''}>${plata(x.precio)}</span>`];
-        if (revision) bits.push('<br><span class="dudoso">sin promos aplicadas</span>');
-        // Si el catalogo decia otro precio, mostrarlo: es la prueba de que la
-        // simulacion cambio algo, y de cuanto.
-        if (!revision && x.precioCatalogo != null && x.precioCatalogo !== x.precio) {
-          bits.push(`<br><span class="cat" title="El catálogo devolvía este precio; el mostrado sale de la simulación, con promociones aplicadas.">catálogo ${plata(x.precioCatalogo)}</span>`);
-        }
+        if (!x || !x.encontrado) return '<td class="num"><span class="nada">—</span></td>';
+
+        const malo = Boolean(x.simulacionFallo) || Boolean(x.listaSospechosa);
+        const barato = min != null && x.precio === min && x.disponible && !malo;
+
+        const bits = [`<span class="precio">${plata(x.precio)}</span>`];
+
+        // Antes / descuento, en un solo renglon.
         if (x.precioLista != null && x.descuentoPct) {
-          bits.push(`<br><span class="lista">${plata(x.precioLista)}</span> <span class="off">−${x.descuentoPct}%</span>`);
-        } else if (x.listaSospechosa) {
-          // El servidor descarto el precio de lista por implausible. Se dice
-          // que falta y por que: un hueco sin explicacion se lee como "no hay
-          // promo", que es una conclusion distinta.
-          bits.push(`<br><span class="dudoso" title="La tienda devolvió ${plata(x.listaSospechosa.valor)} como precio de lista, que implicaría −${x.listaSospechosa.pctImplicado}%. No es creíble, así que no se muestra.">precio de lista dudoso</span>`);
+          bits.push(`<span class="antes"><s>${plata(x.precioLista)}</s> <span class="off">−${x.descuentoPct}%</span></span>`);
         }
-        if (!x.disponible) bits.push('<br><span class="sinstock">sin stock</span>');
-        for (const p of (x.promos || []).slice(0, 3)) bits.push(`<span class="promo">${esc(p)}</span>`);
+
+        // Diferencia contra nuestra tienda.
+        if (base != null && !t.propia && x.precio != null && x.disponible && !malo) {
+          const d = Math.round((x.precio / base - 1) * 1000) / 10;
+          if (d !== 0) {
+            bits.push(`<span class="vs ${d < 0 ? 'peor' : 'mejor'}" title="${d < 0
+              ? 'Más barato que nosotros' : 'Más caro que nosotros'}">${d > 0 ? '+' : ''}${d}% vs Carrefour</span>`);
+          }
+        }
+
+        if (!x.disponible) bits.push('<span class="ojo" title="La tienda lo tiene publicado pero sin stock.">sin stock</span>');
+
+        // UN solo renglon para el problema, con el detalle en el tooltip. Antes
+        // se apilaban "sin promos aplicadas" y "precio de lista dudoso" y la
+        // celda se volvia ilegible.
+        if (malo) {
+          const por = x.simulacionFallo
+            ? `No se pudo simular el carrito (${x.simulacionFallo}), así que este es el precio del catálogo y puede no incluir promociones.`
+            : `La tienda devolvió ${plata(x.listaSospechosa.valor)} como precio anterior, que implicaría −${x.listaSospechosa.pctImplicado}%. No es creíble, así que no se muestra.`;
+          bits.push(`<span class="ojo" title="${esc(por)}">precio sin verificar</span>`);
+        }
+
+        for (const p of (x.promos || []).slice(0, 2)) {
+          bits.push(`<span class="promo" title="${esc(p)}">${esc(p)}</span>`);
+        }
         return `<td class="num${barato ? ' barato' : ''}">${bits.join('')}</td>`;
       });
 
