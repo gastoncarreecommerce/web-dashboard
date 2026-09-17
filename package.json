@@ -15,7 +15,8 @@
     "inspect:search-diagnosis": "node src/inspect-search-diagnosis.js",
     "test": "node --test \"test/**/*.test.js\"",
     "dy:probe": "node src/dy-probe.js",
-    "is:probe": "node src/is-probe.js"
+    "is:probe": "node src/is-probe.js",
+    "redirects:import": "node scripts/import-redirects.mjs"
   },
   "license": "UNLICENSED",
   "dependencies": {
