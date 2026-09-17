@@ -1,0 +1,28 @@
+# Consulta VTEX Intelligent Search con unos pocos terminos y muestra la
+# respuesta completa, para entender por que devuelve 0 productos en terminos que
+# el Search legacy y Dynamic Yield si resuelven (99 de los 200 mas buscados).
+#
+# Se corre a mano. No toca ningun dato ni commitea nada: imprime y termina.
+name: IS probe (por que Intelligent Search devuelve 0)
+
+on:
+  workflow_dispatch:
+    inputs:
+      terminos:
+        description: 'Términos separados por espacio (vacío = leche manteca azucar "papel higienico" "queso crema")'
+        required: false
+        default: ''
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Probar Intelligent Search
+        env:
+          VTEX_ACCOUNT_NAME: ${{ secrets.VTEX_ACCOUNT_NAME }}
+          VTEX_ENVIRONMENT: ${{ secrets.VTEX_ENVIRONMENT }}
+        run: node src/is-probe.js ${{ inputs.terminos }}
