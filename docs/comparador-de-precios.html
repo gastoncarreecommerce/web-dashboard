@@ -51,6 +51,7 @@
   .barato .precio { color: #067a55; }
   .nada { color: var(--muted, #9ca3af); font-size: .8rem; }
   .sinstock { color: #b45309; font-size: .78rem; }
+  .dudoso { color: #b45309; font-size: .74rem; border-bottom: 1px dotted currentColor; cursor: help; }
   .promo { display: block; font-size: .72rem; color: #6d28d9; margin-top: .15rem; line-height: 1.3; }
   .prog { font-size: .85rem; color: var(--muted, #6b7280); }
   @media (prefers-color-scheme: dark) {
@@ -246,6 +247,11 @@
         const bits = [`<span class="precio">${plata(x.precio)}</span>`];
         if (x.precioLista != null && x.descuentoPct) {
           bits.push(`<br><span class="lista">${plata(x.precioLista)}</span> <span class="off">−${x.descuentoPct}%</span>`);
+        } else if (x.listaSospechosa) {
+          // El servidor descarto el precio de lista por implausible. Se dice
+          // que falta y por que: un hueco sin explicacion se lee como "no hay
+          // promo", que es una conclusion distinta.
+          bits.push(`<br><span class="dudoso" title="La tienda devolvió ${plata(x.listaSospechosa.valor)} como precio de lista, que implicaría −${x.listaSospechosa.pctImplicado}%. No es creíble, así que no se muestra.">precio de lista dudoso</span>`);
         }
         if (!x.disponible) bits.push('<br><span class="sinstock">sin stock</span>');
         for (const p of (x.promos || []).slice(0, 3)) bits.push(`<span class="promo">${esc(p)}</span>`);

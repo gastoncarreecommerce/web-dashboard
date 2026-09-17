@@ -38,6 +38,12 @@ const MAX_EANS = 300;
 const CONCURRENCIA = 4;     // por tienda: son sitios de terceros, no hay que maltratarlos
 const TIMEOUT_MS = 20000;
 
+// Arriba de este descuento implicado, el precio de lista se descarta por
+// sospechoso (ver el comentario en normalizar()). 70% es holgado: las promos
+// reales de supermercado —2do al 70%, 50% en la segunda unidad— dan descuentos
+// efectivos por unidad bastante menores.
+const UMBRAL_PCT = 70;
+
 export const TIENDAS = {
   carrefour: { nombre: 'Carrefour', dominio: 'https://www.carrefour.com.ar', propia: true },
   jumbo: { nombre: 'Jumbo', dominio: 'https://www.jumbo.com.ar' },
@@ -76,17 +82,34 @@ function normalizar(producto) {
   const precio = Number.isFinite(o.Price) ? o.Price : null;
   const lista = Number.isFinite(o.ListPrice) ? o.ListPrice : null;
 
+  // Cuánto descuento implica la lista, si la cuenta da.
+  const pct = (precio != null && lista != null && lista > precio)
+    ? Math.round((1 - precio / lista) * 1000) / 10
+    : null;
+
+  // DESCUENTO IMPLAUSIBLE = CAMPO EQUIVOCADO, no una promoción.
+  //
+  // En Jumbo y Disco, `ListPrice` devolvia $252.066 para un agua de 2 litros de
+  // $3.050: un -98,8%. Ningun supermercado hace eso. Las dos son Cencosud (mismo
+  // backend), y en Masonline y DIA el mismo campo daba valores plausibles (-33%,
+  // -30%), asi que el problema es que en esas cuentas `ListPrice` contiene otra
+  // cosa. Cual es el campo correcto se averigua con src/competencia-probe.js,
+  // que imprime todos los campos de precio de cada tienda.
+  //
+  // Hasta entonces: un precio de lista que implica mas de UMBRAL_PCT de
+  // descuento no se muestra, y se marca `listaSospechosa` para que la pagina
+  // pueda decir POR QUE falta, en vez de dejar un hueco sin explicacion.
+  // Preferir un dato menos antes que un numero inventado.
+  const sospechosa = pct != null && pct > UMBRAL_PCT;
+
   return {
     encontrado: true,
     nombre: producto.productName || null,
     marca: producto.brand || null,
     precio,
-    precioLista: lista,
-    // Solo se calcula cuando los dos números existen y la lista es mayor: un
-    // "descuento" negativo o inventado confunde más que no mostrar nada.
-    descuentoPct: (precio != null && lista != null && lista > precio)
-      ? Math.round((1 - precio / lista) * 1000) / 10
-      : null,
+    precioLista: sospechosa ? null : lista,
+    descuentoPct: sospechosa ? null : pct,
+    ...(sospechosa ? { listaSospechosa: { valor: lista, pctImplicado: pct } } : {}),
     disponible: Boolean(o.IsAvailable && (o.AvailableQuantity || 0) > 0),
     promos: [...new Set(promos)],
     unidad: item.unitMultiplier && item.unitMultiplier !== 1 ? item.unitMultiplier : null,

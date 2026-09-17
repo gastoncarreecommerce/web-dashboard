@@ -140,3 +140,24 @@ test('sin sesion no consulta nada: el proxy no puede quedar abierto', async () =
   assert.strictEqual(toco, false);
   sesionOk = true;
 });
+
+test('un precio de lista implausible se descarta, no se muestra como -98,8%', async () => {
+  sesionOk = true;
+  // El caso REAL: Jumbo devolvia ListPrice 252066 para un agua de $3.050.
+  const { res } = await correr({
+    'www.jumbo.com.ar': [prod('7799155000197', 'Agua 2 L', { precio: 3050, lista: 252066 })],
+    'www.masonline.com.ar': [prod('7799155000197', 'Agua 2 L', { precio: 2139, lista: 3199 })],
+  }, { eans: '7799155000197', tiendas: 'jumbo,masonline' });
+
+  const r = res.body.resultados['7799155000197'];
+  assert.strictEqual(r.jumbo.precio, 3050, 'el precio se sigue mostrando');
+  assert.strictEqual(r.jumbo.precioLista, null, 'la lista implausible NO se muestra');
+  assert.strictEqual(r.jumbo.descuentoPct, null);
+  assert.deepStrictEqual(r.jumbo.listaSospechosa, { valor: 252066, pctImplicado: 98.8 },
+    'pero se reporta el valor y el pct, para poder decir por que falta');
+
+  // Un descuento real no se toca.
+  assert.strictEqual(r.masonline.precioLista, 3199);
+  assert.strictEqual(r.masonline.descuentoPct, 33.1);
+  assert.strictEqual(r.masonline.listaSospechosa, undefined);
+});

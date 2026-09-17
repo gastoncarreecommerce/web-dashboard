@@ -1,0 +1,28 @@
+# Muestra TODOS los campos de precio que devuelve cada tienda para unos pocos
+# EANs, para saber cual leer en vez de adivinar.
+#
+# Existe porque el comparador mostraba, en Jumbo y Disco, un precio de lista de
+# $252.066 con un -98,8% en un agua de 2 litros: el campo `ListPrice` no
+# significa lo mismo en todas las cuentas de VTEX.
+#
+# Se corre a mano. No toca ningun dato ni commitea nada: imprime y termina.
+name: Competencia probe (que campo de precio leer en cada tienda)
+
+on:
+  workflow_dispatch:
+    inputs:
+      eans:
+        description: 'EANs separados por espacio (vacío = tres de la corrida que falló)'
+        required: false
+        default: ''
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Volcar los campos de precio de cada tienda
+        run: node src/competencia-probe.js ${{ inputs.eans }}

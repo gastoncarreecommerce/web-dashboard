@@ -17,7 +17,8 @@
     "dy:probe": "node src/dy-probe.js",
     "is:probe": "node src/is-probe.js",
     "redirects:import": "node scripts/import-redirects.mjs",
-    "redirects:probe": "node src/redirect-probe.js"
+    "redirects:probe": "node src/redirect-probe.js",
+    "competencia:probe": "node src/competencia-probe.js"
   },
   "license": "UNLICENSED",
   "dependencies": {
