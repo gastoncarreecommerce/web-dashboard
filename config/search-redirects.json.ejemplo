@@ -1,0 +1,23 @@
+{
+  "_como_usar": [
+    "Lista de los redirects manuales del buscador de VTEX: los terminos que NO",
+    "muestran resultados de busqueda sino que mandan al usuario directo a una PLP.",
+    "",
+    "Por que hace falta. La API product_search devuelve 0 para muchos de estos",
+    "terminos, y sin esta lista el diagnostico los reportaba como 'el buscador no",
+    "encuentra nada' — cuando en realidad el cliente nunca ve una pagina de",
+    "resultados: lo redirigen a una categoria curada a mano. Medir la cantidad de",
+    "productos ahi es medir algo que nadie ve.",
+    "",
+    "Copiar a config/search-redirects.json. Sacar la lista del admin de VTEX:",
+    "Search > Redirects (tiene export). Alcanza con term y url.",
+    "",
+    "El match es por termino normalizado (minusculas, sin espacios de sobra), el",
+    "mismo criterio que usa el diagnostico para agrupar las busquedas de GA4."
+  ],
+  "redirects": [
+    { "term": "leche", "url": "/lacteos-y-productos-frescos/leches" },
+    { "term": "papel higienico", "url": "/limpieza/papeles/papel-higienico" },
+    { "term": "manteca", "url": "/lacteos-y-productos-frescos/mantecas" }
+  ]
+}

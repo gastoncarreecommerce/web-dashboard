@@ -59,6 +59,7 @@ const IN_PATH = path.join(__dirname, '..', 'config', 'search-inspect.report.json
 const OUT_PATH = path.join(__dirname, '..', 'config', 'search-diagnosis.report.json');
 const CLIENT_OUT_PATH = path.join(__dirname, '..', 'docs', 'data', 'web', 'search-diagnosis.json');
 const HISTORY_PATH = path.join(__dirname, '..', 'docs', 'data', 'web', 'search-diagnosis-history.json');
+const REDIRECTS_PATH = path.join(__dirname, '..', 'config', 'search-redirects.json');
 const TOP_N = Number(process.env.INSPECT_SEARCH_TOP_N || 200);
 const TOP_TERMS_SHOWN = 30;
 const HISTORY_MAX = 90;
@@ -123,6 +124,33 @@ function candidateCorrections(term) {
   else candidates.add(`${term}s`); // singular → plural
   candidates.delete(term);
   return [...candidates].sort((a, b) => levenshtein(a, term) - levenshtein(b, term)).slice(0, MAX_CANDIDATES_TRIED);
+}
+
+/**
+ * Los redirects manuales del buscador: terminos que NO muestran resultados de
+ * busqueda sino que mandan directo a una PLP curada.
+ *
+ * Sin esto, el diagnostico miente por partida doble. La API product_search
+ * devuelve 0 para muchos de esos terminos y se reportaban como "el buscador no
+ * encuentra nada", cuando el cliente nunca ve una pagina de resultados: llega a
+ * una categoria elegida a mano y compra. Medir cuantos productos devuelve la
+ * busqueda ahi es medir algo que nadie mira.
+ *
+ * Con la lista cargada, esos terminos salen del cubo de "roto" y pasan a tener
+ * su propia pregunta, que es otra: si la PLP de destino es la correcta.
+ */
+function cargarRedirects() {
+  if (!fs.existsSync(REDIRECTS_PATH)) return new Map();
+  let data;
+  try { data = JSON.parse(fs.readFileSync(REDIRECTS_PATH, 'utf8')); }
+  catch { console.warn(`  ! ${path.relative(process.cwd(), REDIRECTS_PATH)} no es JSON valido, se ignora`); return new Map(); }
+  const lista = Array.isArray(data) ? data : (data.redirects || []);
+  const m = new Map();
+  for (const r of lista) {
+    const t = normalizeTerm(String(r.term || r.termino || ''));
+    if (t) m.set(t, r.url || r.destino || null);
+  }
+  return m;
 }
 
 function topSearchTerms(report, n) {
@@ -207,6 +235,7 @@ async function forEachLimit(items, limit, fn) {
 let MOTOR_PRIMARIO = null;
 let MOTORES = [];
 let aiDiferido = null;
+let REDIRECTS = new Map();
 
 /** Prueba, EN EL MOTOR PRIMARIO de verdad, las variantes candidatas de un término fallido.
  * Devuelve la primera que trae resultados reales, o null si ninguna sirvió. */
@@ -222,6 +251,11 @@ async function findVerifiedSuggestion(term) {
 
 function recommendation(t) {
   if (t.status === 'ok') return null;
+  if (t.status === 'redirige_a_plp') {
+    return `Redirige a ${t.redirectUrl || 'una PLP'}: el cliente no ve resultados de búsqueda, `
+      + `así que la cantidad de productos que devuelva la API no lo afecta. `
+      + `Lo que hay que revisar es si esa categoría es el destino correcto para este término.`;
+  }
   if (t.status === 'motor_no_indexa') {
     const vol = `${t.searchCount.toLocaleString('es-AR')} búsquedas/mes`;
     const quien = (t.encontradoPor || []).map((o) => `${o.id} (${o.results})`).join(', ');
@@ -262,6 +296,9 @@ async function main() {
     return;
   }
   MOTORES = activos;
+  REDIRECTS = cargarRedirects();
+  if (REDIRECTS.size) console.log(`${REDIRECTS.size} redirects manuales cargados: esos terminos no se juzgan por cantidad de resultados.`);
+  else console.log('Sin config/search-redirects.json: los terminos con redirect manual se van a reportar como si mostraran resultados de busqueda (ver el .ejemplo).');
   MOTOR_PRIMARIO = activos[0];
   console.log(`Motor primario: ${MOTOR_PRIMARIO.label}`);
   if (activos.length > 1) console.log(`Comparando contra: ${activos.slice(1).map((e) => e.label).join(', ')}`);
@@ -302,6 +339,14 @@ async function main() {
     // hace que el sugeridor proponga barbaridades: con Intelligent Search
     // devolviendo 0 para "azucar", la busqueda de variantes encontraba que
     // "asucar" traia 2.116 productos y lo proponia como correccion.
+    // Un termino con redirect no se juzga por cantidad de resultados: el cliente
+    // va a una PLP. Se marca como tal y se sale.
+    if (REDIRECTS.has(t.term)) {
+      t.status = 'redirige_a_plp';
+      t.redirectUrl = REDIRECTS.get(t.term);
+      return;
+    }
+
     if (p.status === 'sin_resultados') {
       const otros = Object.entries(t.engines)
         .filter(([id, e]) => id !== MOTOR_PRIMARIO.id && (e.results || 0) > 0)
@@ -375,13 +420,13 @@ async function main() {
   for (const t of terms) t.recommendation = recommendation(t);
 
   terms.sort((a, b) => {
-    const rank = { motor_no_indexa: 0, sin_resultados: 1, error_consulta: 2, pocos_resultados: 3, resultados_irrelevantes: 4, resultados_dispersos: 5, ok: 6 };
+    const rank = { motor_no_indexa: 0, redirige_a_plp: 7, sin_resultados: 1, error_consulta: 2, pocos_resultados: 3, resultados_irrelevantes: 4, resultados_dispersos: 5, ok: 6 };
     return (rank[a.status] ?? 9) - (rank[b.status] ?? 9) || b.searchCount - a.searchCount;
   });
 
   for (const t of terms) {
     const tag = {
-      motor_no_indexa: '✗✗ NO ESTA EN EL INDICE', sin_resultados: '✗ SIN RESULTADOS', pocos_resultados: '⚠ pocos resultados',
+      redirige_a_plp: '→ redirige a PLP', motor_no_indexa: '✗✗ NO ESTA EN EL INDICE', sin_resultados: '✗ SIN RESULTADOS', pocos_resultados: '⚠ pocos resultados',
       resultados_dispersos: '⚠ resultados dispersos', resultados_irrelevantes: '✗ IRRELEVANTES',
       error_consulta: '? error', ok: '✓',
     }[t.status];
@@ -396,6 +441,13 @@ async function main() {
   const resultadosDispersos = terms.filter((t) => t.status === 'resultados_dispersos');
   const resultadosIrrelevantes = terms.filter((t) => t.status === 'resultados_irrelevantes');
   const motorNoIndexa = terms.filter((t) => t.status === 'motor_no_indexa');
+  const redirigidos = terms.filter((t) => t.status === 'redirige_a_plp');
+  if (redirigidos.length) {
+    const vol = redirigidos.reduce((s, t) => s + t.searchCount, 0);
+    console.log(`\n${redirigidos.length} de ${terms.length} términos redirigen a una PLP (${vol.toLocaleString('es-AR')} búsquedas/mes).`);
+    console.log('  → No se los juzga por cantidad de resultados: el cliente no ve una página de búsqueda.');
+    console.log('    La pregunta ahí es si la PLP de destino es la correcta, y eso no se mide con esta API.');
+  }
   if (motorNoIndexa.length) {
     const vol = motorNoIndexa.reduce((s, t) => s + t.searchCount, 0);
     console.log(`\n${motorNoIndexa.length} de ${terms.length} términos NO los encuentra ${MOTOR_PRIMARIO.label} pero SÍ otro motor`);
@@ -420,9 +472,12 @@ async function main() {
     resultadosDispersos: resultadosDispersos.length,
     resultadosIrrelevantes: resultadosIrrelevantes.length,
     motorNoIndexa: motorNoIndexa.length,
+    redirigidos: redirigidos.length,
+    redirigidosSearches: redirigidos.reduce((s, t) => s + t.searchCount, 0),
     motorNoIndexaSearches: motorNoIndexa.reduce((s, t) => s + t.searchCount, 0),
     ok: terms.length - sinResultados.length - pocosResultados.length
-        - resultadosDispersos.length - resultadosIrrelevantes.length - motorNoIndexa.length,
+        - resultadosDispersos.length - resultadosIrrelevantes.length
+        - motorNoIndexa.length - redirigidos.length,
     totalSearches,
     lostSearches,
   };
@@ -544,6 +599,7 @@ function writeClientReport(report) {
       suggestion: t.suggestion || null,
       nativeCorrection: t.nativeCorrection || null,
       encontradoPor: t.encontradoPor || null,
+      redirectUrl: t.redirectUrl || null,
       aiRelevance: t.aiRelevance || null,
       categoryConsistency: t.categoryConsistency ?? null,
       dominantCategory: t.dominantCategory || null,

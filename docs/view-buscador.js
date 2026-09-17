@@ -21,12 +21,12 @@
   const W = (window.W = window.W || {});
 
   const STATUS_LABEL = {
-    motor_no_indexa: 'No está en el índice', sin_resultados: 'Sin resultados', pocos_resultados: 'Pocos resultados',
+    redirige_a_plp: 'Redirige a categoría', motor_no_indexa: 'No está en el índice', sin_resultados: 'Sin resultados', pocos_resultados: 'Pocos resultados',
     resultados_dispersos: 'Resultados dispersos', resultados_irrelevantes: 'No es lo que se buscaba',
     error_consulta: 'Error de consulta', ok: 'OK',
   };
   const STATUS_PILL = {
-    motor_no_indexa: 'no', sin_resultados: 'no', pocos_resultados: 'w', resultados_dispersos: 'w',
+    redirige_a_plp: 'n', motor_no_indexa: 'no', sin_resultados: 'no', pocos_resultados: 'w', resultados_dispersos: 'w',
     resultados_irrelevantes: 'no', error_consulta: 'n', ok: 'ok',
   };
 
