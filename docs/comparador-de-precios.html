@@ -52,6 +52,7 @@
   .nada { color: var(--muted, #9ca3af); font-size: .8rem; }
   .sinstock { color: #b45309; font-size: .78rem; }
   .precio.revision { color: #b45309; text-decoration: underline wavy #f59e0b 1px; text-underline-offset: 3px; }
+  .cat { display: block; font-size: .7rem; color: var(--muted, #9ca3af); cursor: help; }
   .dudoso { color: #b45309; font-size: .74rem; border-bottom: 1px dotted currentColor; cursor: help; }
   .promo { display: block; font-size: .72rem; color: #6d28d9; margin-top: .15rem; line-height: 1.3; }
   .prog { font-size: .85rem; color: var(--muted, #6b7280); }
@@ -99,9 +100,11 @@
 (function () {
   'use strict';
 
-  // Tope del endpoint. Arriba de esto se manda por tandas, para que una lista
-  // de 800 EANs no se caiga entera ni deje al servidor colgado.
-  const POR_TANDA = 100;
+  // Tope del endpoint. Ahora cada producto lleva una simulacion de carrito
+  // aparte del catalogo, asi que las tandas son chicas: con 5 tiendas, 20 EANs
+  // son ~100 simulaciones por request, que es lo que entra en el tiempo de una
+  // funcion serverless.
+  const POR_TANDA = 20;
 
   const TIENDAS = [
     { id: 'carrefour', nombre: 'Carrefour', propia: true },
@@ -172,7 +175,7 @@
     const tandas = [];
     for (let i = 0; i < validos.length; i += POR_TANDA) tandas.push(validos.slice(i, i + POR_TANDA));
 
-    const juntos = { resultados: {}, errores: {}, tiendas: null, advertencia: null, eans: [] };
+    const juntos = { resultados: {}, errores: {}, tiendas: null, advertencia: null, fuente: null, eans: [] };
     let fallo = null;
 
     for (let i = 0; i < tandas.length; i += 1) {
@@ -186,6 +189,9 @@
         juntos.eans.push(...j.eans);
         juntos.tiendas = j.tiendas;
         juntos.advertencia = j.advertencia;
+        // Sin esta linea el aviso de `fuente` nunca se muestra: el merge de las
+        // tandas copiaba solo `advertencia`.
+        juntos.fuente = j.fuente;
         for (const [id, errs] of Object.entries(j.errores || {})) {
           (juntos.errores[id] = juntos.errores[id] || []).push(...errs);
         }
@@ -215,12 +221,23 @@
       avisos.push(`<div class="aviso warn">${malos.length} línea(s) no tenían forma de EAN y se ignoraron:
         <span class="ean">${esc(malos.slice(0, 8).join(', '))}${malos.length > 8 ? '…' : ''}</span></div>`);
     }
-    // Tiendas donde sabemos que el precio esta mal. Va ARRIBA de los errores de
-    // red: es mas grave un numero equivocado que una columna faltante.
-    for (const t of tiendas) {
-      if (!t.enRevision) continue;
-      avisos.push(`<div class="aviso bad"><strong>${esc(t.nombre)}: el precio no es confiable.</strong>
-        ${esc(t.enRevision)}</div>`);
+    if (d.fuente) avisos.push(`<div class="aviso info">${esc(d.fuente)}</div>`);
+
+    // Productos donde la simulacion fallo: ese precio es el del catalogo, que
+    // puede NO incluir promociones. Va ARRIBA de los errores de red, porque un
+    // numero equivocado es mas grave que una columna faltante.
+    const sinSim = [];
+    for (const ean of eans) {
+      for (const t of tiendas) {
+        const x = d.resultados[ean]?.[t.id];
+        if (x?.encontrado && x.simulacionFallo) sinSim.push(`${t.nombre} · ${ean}`);
+      }
+    }
+    if (sinSim.length) {
+      avisos.push(`<div class="aviso bad"><strong>${sinSim.length} precio(s) sin simular.</strong>
+        Para esos la simulación de carrito falló, así que se muestra el precio del catálogo,
+        que puede no incluir las promociones. Están marcados en la tabla y no compiten por
+        el "más barato".<br><span class="ean">${esc(sinSim.slice(0, 6).join(' · '))}${sinSim.length > 6 ? '…' : ''}</span></div>`);
     }
     for (const [id, errs] of Object.entries(d.errores || {})) {
       const t = tiendas.find((x) => x.id === id);
@@ -238,13 +255,12 @@
       const porTienda = d.resultados[ean] || {};
       // El más barato entre los que tienen precio Y stock: comparar contra un
       // producto sin stock no sirve para decidir nada.
-      // Las tiendas en revision NO participan del "mas barato": su precio esta
-      // mal tomado, asi que marcarlas como ganadoras o perdedoras seria una
-      // conclusion sacada de un numero que ya sabemos falso.
-      const enRevision = new Set(tiendas.filter((t) => t.enRevision).map((t) => t.id));
+      // Un precio sin simular puede no incluir promociones, asi que NO compite
+      // por el "mas barato": declararlo ganador o perdedor seria una conclusion
+      // sacada de un numero que no es el que ve el cliente.
       const precios = tiendas
         .map((t) => ({ id: t.id, ...(porTienda[t.id] || {}) }))
-        .filter((x) => x.encontrado && x.precio != null && x.disponible && !enRevision.has(x.id))
+        .filter((x) => x.encontrado && x.precio != null && x.disponible && !x.simulacionFallo)
         .map((x) => x.precio);
       const min = precios.length ? Math.min(...precios) : null;
 
@@ -255,11 +271,16 @@
       const celdas = tiendas.map((t) => {
         const x = porTienda[t.id];
         if (!x || !x.encontrado) return '<td class="num"><span class="nada">no está</span></td>';
-        const barato = min != null && x.precio === min && x.disponible && !enRevision.has(t.id);
-        const revision = enRevision.has(t.id);
+        const barato = min != null && x.precio === min && x.disponible && !x.simulacionFallo;
+        const revision = Boolean(x.simulacionFallo);
         const bits = [`<span class="precio${revision ? ' revision' : ''}"${revision
-          ? ' title="Este precio es el anterior, no el final: ver el aviso de arriba."' : ''}>${plata(x.precio)}</span>`];
-        if (revision) bits.push('<br><span class="dudoso">precio no confiable</span>');
+          ? ` title="La simulación falló (${esc(x.simulacionFallo)}): este es el precio del catálogo y puede no incluir promociones."` : ''}>${plata(x.precio)}</span>`];
+        if (revision) bits.push('<br><span class="dudoso">sin promos aplicadas</span>');
+        // Si el catalogo decia otro precio, mostrarlo: es la prueba de que la
+        // simulacion cambio algo, y de cuanto.
+        if (!revision && x.precioCatalogo != null && x.precioCatalogo !== x.precio) {
+          bits.push(`<br><span class="cat" title="El catálogo devolvía este precio; el mostrado sale de la simulación, con promociones aplicadas.">catálogo ${plata(x.precioCatalogo)}</span>`);
+        }
         if (x.precioLista != null && x.descuentoPct) {
           bits.push(`<br><span class="lista">${plata(x.precioLista)}</span> <span class="off">−${x.descuentoPct}%</span>`);
         } else if (x.listaSospechosa) {
@@ -297,7 +318,8 @@
     if (!ultimo) return;
     const tiendas = ultimo.tiendas || [];
     const cab = ['ean', 'producto'];
-    for (const t of tiendas) cab.push(`${t.id}_precio`, `${t.id}_lista`, `${t.id}_desc_pct`, `${t.id}_stock`, `${t.id}_promos`);
+    for (const t of tiendas) cab.push(`${t.id}_precio`, `${t.id}_lista`, `${t.id}_desc_pct`,
+      `${t.id}_stock`, `${t.id}_promos`, `${t.id}_precio_catalogo`, `${t.id}_sin_simular`);
     const q = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
 
     const lineas = [cab.join(',')];
@@ -308,7 +330,8 @@
       for (const t of tiendas) {
         const x = porTienda[t.id] || {};
         fila.push(q(x.precio ?? ''), q(x.precioLista ?? ''), q(x.descuentoPct ?? ''),
-          q(x.encontrado ? (x.disponible ? 'si' : 'no') : ''), q((x.promos || []).join(' | ')));
+          q(x.encontrado ? (x.disponible ? 'si' : 'no') : ''), q((x.promos || []).join(' | ')),
+          q(x.precioCatalogo ?? ''), q(x.simulacionFallo ? 'si' : ''));
       }
       lineas.push(fila.join(','));
     }

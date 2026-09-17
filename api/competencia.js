@@ -34,8 +34,11 @@ import { verifySession } from './_session.js';
 // El límite duro de la API de VTEX para `fq` múltiples es generoso, pero pedir
 // de a 20 mantiene las URLs manejables y reparte la carga.
 const EANS_POR_LOTE = 20;
-const MAX_EANS = 300;
-const CONCURRENCIA = 4;     // por tienda: son sitios de terceros, no hay que maltratarlos
+// Mas bajo que antes: ahora cada producto lleva ADEMAS una simulacion de carrito,
+// asi que un request con 300 EANs x 5 tiendas serian ~1500 llamadas y la funcion
+// se quedaria sin tiempo. La pagina manda por tandas chicas.
+const MAX_EANS = 40;
+const CONCURRENCIA = 8;
 const TIMEOUT_MS = 20000;
 
 // Arriba de este descuento implicado, el precio de lista se descarta por
@@ -44,37 +47,10 @@ const TIMEOUT_MS = 20000;
 // efectivos por unidad bastante menores.
 const UMBRAL_PCT = 70;
 
-/**
- * `enRevision` marca las tiendas donde YA SABEMOS que el precio que devolvemos
- * no es el que muestra la ficha, y el numero no se puede usar para decidir.
- *
- * El caso verificado: EAN 7799155000197 (agua Villavicencio 2 L) en Jumbo. La
- * ficha muestra $1.982,50 con -35% y $3.050 tachado. La API devuelve
- * Price = 3050, o sea el precio ANTERIOR. Y 3050 x 0,65 = 1982,50 exacto, asi
- * que no hay duda: en estas cuentas `Price` no es el precio final.
- *
- * Jumbo y Disco son Cencosud (mismo backend) y las dos devolvian tambien el
- * ListPrice absurdo de $252.066. En que campo esta el precio final se averigua
- * con src/competencia-probe.js, que imprime todos los campos de precio.
- *
- * Hasta entonces la tienda se sigue consultando —el dato sirve para ver que
- * producto tienen y que promos declaran— pero la respuesta avisa, porque un
- * precio equivocado en una comparacion de precios es peor que no tener la
- * columna.
- */
 export const TIENDAS = {
   carrefour: { nombre: 'Carrefour', dominio: 'https://www.carrefour.com.ar', propia: true },
-  jumbo: {
-    nombre: 'Jumbo', dominio: 'https://www.jumbo.com.ar',
-    enRevision: 'El precio que devuelve la API es el ANTERIOR, no el final. Verificado con el '
-      + 'agua Villavicencio 2 L: la ficha muestra $1.982,50 (−35%) y la API devuelve $3.050, '
-      + 'que es justo el precio tachado. No usar esta columna para decidir hasta que se corrija.',
-  },
-  disco: {
-    nombre: 'Disco', dominio: 'https://www.disco.com.ar',
-    enRevision: 'Mismo backend que Jumbo (Cencosud) y mismos síntomas: el precio devuelto es '
-      + 'probablemente el anterior, no el final. Sin verificar contra la ficha todavía.',
-  },
+  jumbo: { nombre: 'Jumbo', dominio: 'https://www.jumbo.com.ar' },
+  disco: { nombre: 'Disco', dominio: 'https://www.disco.com.ar' },
   masonline: { nombre: 'Masonline', dominio: 'https://www.masonline.com.ar' },
   dia: { nombre: 'DIA', dominio: 'https://diaonline.supermercadosdia.com.ar' },
 };
@@ -86,6 +62,68 @@ function pedirConTimeout(url) {
     signal: ctrl.signal,
     headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0 (compatible; comparador-precios)' },
   }).finally(() => clearTimeout(t));
+}
+
+/**
+ * Simula el carrito con UN item y devuelve el precio con las promociones ya
+ * aplicadas, mas el precio anterior y los nombres de las promos.
+ *
+ * Por que hace falta: el precio promocional NO esta en la API de catalogo. En
+ * Jumbo, para el agua Villavicencio 2 L, TODOS los campos de precio del catalogo
+ * valen $3.050 (Price, PriceWithoutDiscount, FullSellingPrice) mientras la ficha
+ * muestra $1.982,50 con -35%. En VTEX las promociones las calcula el motor de
+ * checkout: Carrefour las expone como `Teasers` y por eso se veian, pero Jumbo no
+ * manda ninguno. La simulacion devuelve 1982,50 y ademas listPrice 3.050, que es
+ * el tachado real — asi que de paso resuelve el ListPrice de $252.066 que traia
+ * el catalogo de Cencosud.
+ *
+ * DOS COSAS QUE NO HAY QUE CONFUNDIR:
+ *
+ * 1. La simulacion devuelve los precios en CENTAVOS (enteros); el catalogo, en
+ *    pesos. Mezclarlas daria precios 100 veces mas grandes.
+ *
+ * 2. Se simula UN item por llamada, a proposito. Meter 20 productos en el mismo
+ *    carrito seria mas rapido, pero las promos que dependen de la composicion
+ *    ("2do al 70%", combos entre productos) se activarian y el precio por
+ *    producto dejaria de ser el de comprar esa unidad sola — que es justo lo que
+ *    se quiere comparar. Un comparador mas lento y correcto le gana a uno rapido
+ *    con precios que dependen de que mas habia en la lista.
+ */
+async function simular(tienda, itemId, sellerId) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+  try {
+    const r = await fetch(`${tienda.dominio}/api/checkout/pub/orderForms/simulation?sc=1`, {
+      method: 'POST',
+      signal: ctrl.signal,
+      headers: {
+        'Content-Type': 'application/json', Accept: 'application/json',
+        'User-Agent': 'Mozilla/5.0 (compatible; comparador-precios)',
+      },
+      body: JSON.stringify({
+        items: [{ id: String(itemId), quantity: 1, seller: String(sellerId || '1') }],
+        country: 'ARG',
+      }),
+    });
+    if (!r.ok) return { error: `HTTP ${r.status}` };
+    const j = await r.json();
+    const it = (j.items || [])[0];
+    if (!it) return { error: 'la simulación no devolvió el item' };
+
+    const aPesos = (v) => (Number.isFinite(v) ? v / 100 : null);
+    // `sellingPrice` es lo que se paga; `price` suele coincidir. Se toma el
+    // primero que exista para no depender de un solo nombre.
+    const precio = aPesos(it.sellingPrice ?? it.price);
+    const lista = aPesos(it.listPrice);
+    return {
+      precio,
+      lista,
+      promos: (j.ratesAndBenefitsData?.rateAndBenefitsIdentifiers || [])
+        .map((b) => b?.name).filter(Boolean),
+    };
+  } catch (e) {
+    return { error: e.name === 'AbortError' ? 'timeout' : e.message };
+  } finally { clearTimeout(t); }
 }
 
 /** Lo que nos interesa de un producto de VTEX, aplanado. */
@@ -143,6 +181,9 @@ function normalizar(producto) {
     medida: item.measurementUnit || null,
     url: producto.link || (producto.linkText ? `/${producto.linkText}/p` : null),
     sellerNombre: seller.sellerName || null,
+    // Para la simulacion, que es la que trae el precio de verdad.
+    _itemId: item.itemId || null,
+    _sellerId: seller.sellerId || null,
   };
 }
 
@@ -222,6 +263,8 @@ export default async function handler(req, res) {
     }
   }
 
+  // Paso 1: el catalogo, que da el producto, el itemId y el seller.
+  const aSimular = [];
   await forEachLimit(lotes, CONCURRENCIA, async ({ id, eans: grupo }) => {
     const tienda = TIENDAS[id];
     try {
@@ -232,7 +275,10 @@ export default async function handler(req, res) {
         // Un producto puede traer varios EANs (packs, variantes): se asigna a
         // todos los que hayamos pedido.
         for (const ean of eansDe(p)) {
-          if (resultados[ean] && !resultados[ean][id]) resultados[ean][id] = fila;
+          if (resultados[ean] && !resultados[ean][id]) {
+            resultados[ean][id] = fila;
+            if (fila._itemId) aSimular.push({ ean, id, fila });
+          }
         }
       }
     } catch (e) {
@@ -241,6 +287,42 @@ export default async function handler(req, res) {
       (errores[id] = errores[id] || []).push(`${grupo.length} EANs: ${e.message}`);
     }
   });
+
+  // Paso 2: la simulacion, que es la que trae el precio real con promociones.
+  // El precio del catalogo queda como `precioCatalogo` para poder ver la
+  // diferencia, pero el que se muestra es el simulado.
+  await forEachLimit(aSimular, CONCURRENCIA, async ({ id, fila }) => {
+    const sim = await simular(TIENDAS[id], fila._itemId, fila._sellerId);
+    fila.precioCatalogo = fila.precio;
+
+    if (sim.error) {
+      // Sin simulacion queda el precio del catalogo, que puede NO ser el que ve
+      // el cliente. Se marca para que la pagina lo diga en vez de darlo por
+      // bueno.
+      fila.simulacionFallo = sim.error;
+      return;
+    }
+
+    if (sim.precio != null) fila.precio = sim.precio;
+    if (sim.lista != null) {
+      // La lista de la simulacion reemplaza a la del catalogo: en Cencosud esa
+      // venia en $252.066 y aca viene el tachado real.
+      fila.precioLista = sim.lista > (fila.precio ?? 0) ? sim.lista : null;
+      fila.descuentoPct = fila.precioLista != null
+        ? Math.round((1 - fila.precio / fila.precioLista) * 1000) / 10
+        : null;
+      delete fila.listaSospechosa;
+    }
+    if (sim.promos.length) fila.promos = [...new Set([...sim.promos, ...(fila.promos || [])])];
+    fila.fuentePrecio = 'simulacion';
+  });
+
+  // Los internos no viajan al cliente.
+  for (const ean of eans) {
+    for (const f of Object.values(resultados[ean])) {
+      if (f && typeof f === 'object') { delete f._itemId; delete f._sellerId; }
+    }
+  }
 
   for (const ean of eans) {
     for (const id of tiendas) {
@@ -257,6 +339,10 @@ export default async function handler(req, res) {
     errores,
     ...(invalidos.length ? { invalidos: invalidos.slice(0, 20) } : {}),
     ...(desconocidas.length ? { tiendasDesconocidas: desconocidas } : {}),
+    fuente: 'El precio sale de la simulación de carrito de cada tienda (una por producto, '
+      + 'de a una unidad), que es donde VTEX aplica las promociones. El catálogo solo da el '
+      + 'precio base: para el agua Villavicencio 2 L en Jumbo daba $3.050 cuando la ficha '
+      + 'muestra $1.982,50.',
     advertencia: 'Los precios son los de la política comercial y región por defecto '
       + 'de cada tienda. Los supermercados varían precio por zona, así que esto es el '
       + 'precio que muestra cada sitio sin indicarle una ubicación.',

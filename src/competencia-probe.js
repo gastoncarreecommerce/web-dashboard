@@ -42,6 +42,48 @@ const CAMPOS = ['Price', 'ListPrice', 'PriceWithoutDiscount', 'SellingPrice', 's
 const POR_DEFECTO = ['7799155000197', '7792799000097', '7792798014019'];
 const TIMEOUT_MS = 20000;
 
+/**
+ * La simulacion de carrito de VTEX. Es el unico lugar donde aparecen las
+ * promociones aplicadas.
+ *
+ * Por que hace falta: la corrida anterior mostro que en Jumbo TODOS los campos
+ * de precio del catalogo valen 3.050 (Price, PriceWithoutDiscount,
+ * FullSellingPrice) mientras la ficha muestra $1.982,50 con -35%. O sea que el
+ * precio promocional NO esta en la API de catalogo. En VTEX las promociones las
+ * calcula el motor de checkout, no el catalogo: Carrefour las expone como
+ * `Teasers` y por eso se veian, pero Jumbo no manda ninguno.
+ *
+ * OJO con las unidades: la simulacion devuelve los precios en CENTAVOS (enteros),
+ * al contrario del catalogo que los da en pesos. Por eso se divide por 100 al
+ * mostrar; confundir las dos escalas daria precios 100 veces mas grandes.
+ */
+async function simular(tienda, itemId, sellerId) {
+  const url = `${tienda.dominio}/api/checkout/pub/orderForms/simulation?sc=1`;
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+  try {
+    const r = await fetch(url, {
+      method: 'POST',
+      signal: ctrl.signal,
+      headers: {
+        'Content-Type': 'application/json', Accept: 'application/json',
+        'User-Agent': 'Mozilla/5.0 (compatible; comparador-probe)',
+      },
+      body: JSON.stringify({
+        items: [{ id: String(itemId), quantity: 1, seller: String(sellerId || '1') }],
+        country: 'ARG',
+      }),
+    });
+    if (!r.ok) {
+      const cuerpo = await r.text().catch(() => '');
+      return { error: `HTTP ${r.status}${cuerpo ? `: ${cuerpo.slice(0, 160)}` : ''}` };
+    }
+    return await r.json();
+  } catch (e) {
+    return { error: e.name === 'AbortError' ? 'timeout' : e.message };
+  } finally { clearTimeout(t); }
+}
+
 function pedir(url) {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
@@ -98,20 +140,53 @@ async function main() {
           for (const [k, v] of otros) console.log(`         ${(k + ' (extra)').padEnd(22)} ${plata(v)}`);
 
           const teasers = [...(o.Teasers || []), ...(o.PromotionTeasers || [])].map((t) => t?.Name).filter(Boolean);
-          if (teasers.length) console.log(`         promos: ${teasers.join(' | ')}`);
+          console.log(`         teasers del catalogo: ${teasers.length ? teasers.join(' | ') : '(ninguno)'}`);
+
+          // ── La simulacion, que es donde viven las promociones ──────────────
+          const sim = await simular(tienda, item.itemId, s.sellerId);
+          if (sim.error) { console.log(`         SIMULACION: ${sim.error}`); continue; }
+
+          const it = (sim.items || [])[0];
+          if (!it) {
+            console.log('         SIMULACION: no devolvio el item'
+              + (sim.messages?.length ? ` — ${sim.messages.map((m) => m.text).join(' | ')}` : ''));
+            continue;
+          }
+          // Centavos -> pesos.
+          const c = (v) => (typeof v === 'number' ? plata(v / 100) : String(v));
+          console.log('         SIMULACION (los precios vienen en centavos, se dividen por 100):');
+          for (const k of ['price', 'listPrice', 'sellingPrice', 'priceWithoutDiscount']) {
+            if (it[k] !== undefined) console.log(`            ${k.padEnd(20)} ${c(it[k])}`);
+          }
+          if (it.priceDefinition) {
+            const pd = it.priceDefinition;
+            if (pd.calculatedSellingPrice !== undefined) console.log(`            calculatedSellingPrice ${c(pd.calculatedSellingPrice)}`);
+            if (pd.total !== undefined) console.log(`            total                ${c(pd.total)}`);
+          }
+          const benes = (sim.ratesAndBenefitsData?.rateAndBenefitsIdentifiers || [])
+            .map((b) => b?.name).filter(Boolean);
+          console.log(`            promociones aplicadas: ${benes.length ? benes.join(' | ') : '(ninguna)'}`);
+          const desc = (sim.totals || []).find((x) => x.id === 'Discounts');
+          if (desc && desc.value) console.log(`            descuento total      ${c(desc.value)}`);
         }
       }
     }
   }
 
   console.log(`\n${'='.repeat(78)}`);
-  console.log('Qué hacer con esto: abrir la ficha de cada producto en el sitio y ver qué');
-  console.log('precio muestra como "precio" y cuál como "precio anterior/tachado". El campo');
-  console.log('correcto es el que COINCIDE con la ficha, no el que parece razonable.');
+  console.log('Qué buscar: el precio que muestra la ficha del sitio.');
   console.log('');
-  console.log('El comparador leía ListPrice y para Jumbo y Disco eso daba $252.066 con');
-  console.log('un -98,8% en un agua de 2 litros. Con este listado se ve qué campo usar');
-  console.log('en cada tienda.');
+  console.log('La corrida anterior mostró que en Jumbo TODOS los campos de precio del');
+  console.log('catálogo valen $3.050, mientras la ficha muestra $1.982,50 con −35%. O sea');
+  console.log('que el precio promocional NO está en el catálogo: en VTEX las promociones');
+  console.log('las calcula el motor de checkout. Por eso ahora se simula el carrito.');
+  console.log('');
+  console.log('Si la SIMULACIÓN de Jumbo devuelve 1982,50 en alguno de sus campos, ese es');
+  console.log('el precio que hay que mostrar, y el comparador tiene que simular además de');
+  console.log('consultar el catálogo. Si tampoco aparece, el descuento se aplica más');
+  console.log('adelante (carrito o medio de pago) y entonces no hay forma de obtenerlo');
+  console.log('por API: habría que decirlo en la página en vez de mostrar un precio que');
+  console.log('no es el que ve el cliente.');
 }
 
 main().catch((e) => { console.error('competencia-probe falló:', e.message); process.exit(1); });

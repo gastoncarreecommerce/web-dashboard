@@ -16,8 +16,8 @@ const handlerP = import(path.join(R, 'api', 'competencia.js')).then((m) => m.def
 function prod(ean, nombre, { precio = 1000, lista = null, stock = true, promos = [] } = {}) {
   return {
     productName: nombre, brand: 'X', link: `https://t/${nombre}/p`, linkText: nombre,
-    items: [{ ean, measurementUnit: 'un', unitMultiplier: 1, sellers: [{
-      sellerName: 'seller', commertialOffer: {
+    items: [{ ean, itemId: '405993', measurementUnit: 'un', unitMultiplier: 1, sellers: [{
+      sellerId: '1', sellerName: 'seller', commertialOffer: {
         Price: precio, ListPrice: lista, IsAvailable: stock, AvailableQuantity: stock ? 5 : 0,
         Teasers: promos.map((n) => ({ Name: n })),
       } }] }],
@@ -30,11 +30,30 @@ function fakeRes() {
     setHeader(k, v) { this.headers[k] = v; } };
 }
 
+/** Simulaciones por dominio: { dominio: {precio, lista, promos} | numero (HTTP) }.
+ *  Sin entrada para un dominio, la simulacion falla y el precio queda el del
+ *  catalogo — que es justo el caso que hay que poder distinguir. */
+let SIMS = {};
+
 async function correr(porTienda, query) {
   const llamadas = [];
-  global.fetch = async (url) => {
+  global.fetch = async (url, init) => {
     const u = String(url);
     llamadas.push(u);
+
+    if (u.includes('/api/checkout/pub/orderForms/simulation')) {
+      const d = Object.keys(SIMS).find((x) => u.includes(x));
+      const sim = SIMS[d];
+      if (sim === undefined) return { ok: false, status: 500, text: async () => 'no simula' };
+      if (typeof sim === 'number') return { ok: false, status: sim, text: async () => 'boom' };
+      return { ok: true, status: 200, json: async () => ({
+        // La simulacion habla en CENTAVOS: x100.
+        items: [{ sellingPrice: Math.round(sim.precio * 100), price: Math.round(sim.precio * 100),
+                  listPrice: sim.lista != null ? Math.round(sim.lista * 100) : undefined }],
+        ratesAndBenefitsData: { rateAndBenefitsIdentifiers: (sim.promos || []).map((n) => ({ name: n })) },
+      })};
+    }
+
     const d = Object.keys(porTienda).find((x) => u.includes(x));
     const r = porTienda[d];
     if (typeof r === 'number') return { ok: false, status: r, text: async () => 'boom' };
@@ -48,6 +67,11 @@ async function correr(porTienda, query) {
 
 test('compara el mismo EAN en varias tiendas: precio, lista, descuento y promos', async () => {
   sesionOk = true;
+  SIMS = {
+    'www.carrefour.com.ar': { precio: 2290, lista: 2790, promos: ['2do al 70%'] },
+    'www.jumbo.com.ar': { precio: 2450 },
+    'diaonline.supermercadosdia.com.ar': { precio: 2100 },
+  };
   const { res, llamadas } = await correr({
     'www.carrefour.com.ar': [prod('7790742358608', 'Leche 1L', { precio: 2290, lista: 2790, promos: ['2do al 70%'] })],
     'www.jumbo.com.ar': [prod('7790742358608', 'Leche 1L Jumbo', { precio: 2450 })],
@@ -63,11 +87,17 @@ test('compara el mismo EAN en varias tiendas: precio, lista, descuento y promos'
   assert.strictEqual(r.dia.disponible, false, 'DIA mas barato pero SIN stock');
   assert.ok(llamadas.some((u) => u.includes('jumbo.com.ar/api/catalog_system/pub/products/search')),
     'se consulta el dominio publico de cada tienda, no un accountName adivinado');
-  assert.ok(llamadas.every((u) => u.includes('fq=alternateIds_Ean')));
+  // La asercion aplica solo a las del catalogo: las de simulacion son POST a
+  // otro path y no llevan `fq`.
+  const cat = llamadas.filter((u) => u.includes('catalog_system'));
+  assert.ok(cat.length && cat.every((u) => u.includes('fq=alternateIds_Ean')));
+  assert.ok(llamadas.some((u) => u.includes('orderForms/simulation')),
+    'y ademas se simula, que es de donde sale el precio real');
 });
 
 test('sin lista o con lista menor al precio, no se inventa un descuento', async () => {
   sesionOk = true;
+  SIMS = { 'www.carrefour.com.ar': { precio: 1000, lista: null } };
   const { res } = await correr({
     'www.carrefour.com.ar': [
       prod('11111111', 'Sin lista', { precio: 1000, lista: null }),
@@ -81,6 +111,7 @@ test('sin lista o con lista menor al precio, no se inventa un descuento', async 
 
 test('un EAN que la tienda no tiene sale encontrado:false, no como precio 0', async () => {
   sesionOk = true;
+  SIMS = { 'www.carrefour.com.ar': { precio: 1000 } };
   const { res } = await correr({
     'www.carrefour.com.ar': [prod('11111111', 'A')],
     'www.jumbo.com.ar': [],
@@ -93,6 +124,7 @@ test('un EAN que la tienda no tiene sale encontrado:false, no como precio 0', as
 
 test('si una tienda falla, las otras siguen y el error se reporta por tienda', async () => {
   sesionOk = true;
+  SIMS = { 'www.carrefour.com.ar': { precio: 2290 } };
   const { res } = await correr({
     'www.carrefour.com.ar': [prod('7790742358608', 'Leche', { precio: 2290 })],
     'www.jumbo.com.ar': 503,
@@ -143,6 +175,7 @@ test('sin sesion no consulta nada: el proxy no puede quedar abierto', async () =
 
 test('un precio de lista implausible se descarta, no se muestra como -98,8%', async () => {
   sesionOk = true;
+  SIMS = {};  // sin simulacion: queda el precio del catalogo y la guarda del ListPrice
   // El caso REAL: Jumbo devolvia ListPrice 252066 para un agua de $3.050.
   const { res } = await correr({
     'www.jumbo.com.ar': [prod('7799155000197', 'Agua 2 L', { precio: 3050, lista: 252066 })],
@@ -162,19 +195,51 @@ test('un precio de lista implausible se descarta, no se muestra como -98,8%', as
   assert.strictEqual(r.masonline.listaSospechosa, undefined);
 });
 
-test('una tienda en revision se sigue consultando pero viene marcada', async () => {
+test('EL CASO REAL: la simulacion da el precio con promo y el tachado correcto', async () => {
   sesionOk = true;
+  // Jumbo, agua Villavicencio 2 L. El catalogo dice Price 3050 y ListPrice
+  // 252066 (basura). La ficha del sitio muestra $1.982,50 con -35% y $3.050
+  // tachado. La simulacion devuelve justo eso.
+  SIMS = { 'www.jumbo.com.ar': { precio: 1982.5, lista: 3050, promos: ['Villavicencio 35% OFF'] } };
+  const { res, llamadas } = await correr({
+    'www.jumbo.com.ar': [prod('7799155000197', 'Agua 2 L', { precio: 3050, lista: 252066 })],
+  }, { eans: '7799155000197', tiendas: 'jumbo' });
+
+  const x = res.body.resultados['7799155000197'].jumbo;
+  assert.strictEqual(x.precio, 1982.5, 'el precio es el de la simulacion, no el del catalogo');
+  assert.strictEqual(x.precioCatalogo, 3050, 'y se guarda el del catalogo para poder compararlos');
+  assert.strictEqual(x.precioLista, 3050, 'el tachado real, no los $252.066 del catalogo');
+  assert.strictEqual(x.descuentoPct, 35, 'que da el -35% exacto que muestra la ficha');
+  assert.ok(x.promos.includes('Villavicencio 35% OFF'));
+  assert.strictEqual(x.fuentePrecio, 'simulacion');
+  assert.strictEqual(x.listaSospechosa, undefined, 'la guarda del ListPrice ya no hace falta');
+  assert.strictEqual(x.simulacionFallo, undefined);
+
+  const sims = llamadas.filter((u) => u.includes('orderForms/simulation'));
+  assert.strictEqual(sims.length, 1, 'UNA simulacion por producto: de a una unidad');
+  assert.ok(sims[0].includes('jumbo.com.ar'));
+});
+
+test('si la simulacion falla, queda el precio del catalogo MARCADO', async () => {
+  sesionOk = true;
+  SIMS = { 'www.jumbo.com.ar': 503 };
   const { res } = await correr({
     'www.jumbo.com.ar': [prod('7799155000197', 'Agua 2 L', { precio: 3050 })],
-    'www.masonline.com.ar': [prod('7799155000197', 'Agua 2 L', { precio: 2139, lista: 3199 })],
-  }, { eans: '7799155000197', tiendas: 'jumbo,masonline' });
+  }, { eans: '7799155000197', tiendas: 'jumbo' });
 
-  const jumbo = res.body.tiendas.find((t) => t.id === 'jumbo');
-  const mas = res.body.tiendas.find((t) => t.id === 'masonline');
-  assert.match(jumbo.enRevision, /ANTERIOR, no el final/,
-    'el motivo viaja al cliente para poder mostrarlo');
-  assert.match(jumbo.enRevision, /1\.982,50/, 'con el caso concreto que lo prueba');
-  assert.strictEqual(mas.enRevision, undefined, 'las tiendas sanas no se marcan');
-  // El dato se sigue trayendo: sirve para saber que producto tienen y que promos declaran.
-  assert.strictEqual(res.body.resultados['7799155000197'].jumbo.precio, 3050);
+  const x = res.body.resultados['7799155000197'].jumbo;
+  assert.strictEqual(x.precio, 3050, 'se muestra algo, no se pierde la fila');
+  assert.match(x.simulacionFallo, /503/, 'pero marcado: puede no incluir promos');
+  assert.strictEqual(x.fuentePrecio, undefined);
+});
+
+test('los ids internos no viajan al cliente', async () => {
+  sesionOk = true;
+  SIMS = { 'www.jumbo.com.ar': { precio: 1982.5, lista: 3050 } };
+  const { res } = await correr({
+    'www.jumbo.com.ar': [prod('7799155000197', 'Agua 2 L', { precio: 3050 })],
+  }, { eans: '7799155000197', tiendas: 'jumbo' });
+  const x = res.body.resultados['7799155000197'].jumbo;
+  assert.strictEqual(x._itemId, undefined);
+  assert.strictEqual(x._sellerId, undefined);
 });
