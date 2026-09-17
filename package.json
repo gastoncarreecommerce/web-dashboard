@@ -13,7 +13,7 @@
     "inspect:channels": "node src/inspect-channels.js",
     "inspect:search": "node src/inspect-search.js",
     "inspect:search-diagnosis": "node src/inspect-search-diagnosis.js",
-    "test": "node --test \"test/**/*.test.js\"",
+    "test": "node --experimental-test-module-mocks --test \"test/**/*.test.js\"",
     "dy:probe": "node src/dy-probe.js",
     "is:probe": "node src/is-probe.js",
     "redirects:import": "node scripts/import-redirects.mjs",

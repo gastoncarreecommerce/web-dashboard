@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comparador de competencia</title>
+<link rel="icon" href="favicon.svg">
+<link rel="stylesheet" href="styles.css">
+<style>
+  /* Página independiente: no entra al nav del dashboard a propósito. */
+  .cmp { max-width: 1400px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+  .cmp h1 { font-size: 1.5rem; margin: 0 0 .25rem; }
+  .cmp .sub { color: var(--muted, #6b7280); margin: 0 0 1.5rem; font-size: .9rem; }
+
+  .panel { background: var(--card, #fff); border: 1px solid var(--line, #e5e7eb);
+           border-radius: 12px; padding: 1.25rem; margin-bottom: 1.25rem; }
+  .panel h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em;
+              color: var(--muted, #6b7280); margin: 0 0 .75rem; }
+
+  textarea { width: 100%; min-height: 8rem; font-family: ui-monospace, monospace;
+             font-size: .85rem; padding: .6rem; border: 1px solid var(--line, #e5e7eb);
+             border-radius: 8px; background: var(--bg, #fff); color: inherit; resize: vertical; }
+  .fila { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; margin-top: .75rem; }
+  .btn { background: #2a78d6; color: #fff; border: 0; border-radius: 8px;
+         padding: .55rem 1.1rem; font-size: .9rem; font-weight: 600; cursor: pointer; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .btn.sec { background: transparent; color: inherit; border: 1px solid var(--line, #e5e7eb); }
+  .tiendas { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .tiendas label { display: flex; align-items: center; gap: .4rem; font-size: .9rem; cursor: pointer; }
+
+  .aviso { border-radius: 8px; padding: .7rem .9rem; font-size: .85rem; margin-bottom: .75rem;
+           border: 1px solid; line-height: 1.45; }
+  .aviso.info { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
+  .aviso.warn { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+  .aviso.bad  { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+
+  .tabla-wrap { overflow-x: auto; }
+  table.cmp-t { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  table.cmp-t th, table.cmp-t td { padding: .55rem .6rem; text-align: left;
+    border-bottom: 1px solid var(--line, #eef0f3); vertical-align: top; }
+  table.cmp-t th { font-size: .72rem; text-transform: uppercase; letter-spacing: .03em;
+    color: var(--muted, #6b7280); font-weight: 600; white-space: nowrap;
+    position: sticky; top: 0; background: var(--card, #fff); }
+  table.cmp-t td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .ean { font-family: ui-monospace, monospace; font-size: .8rem; color: var(--muted, #6b7280); }
+  .prod { max-width: 24rem; }
+  .precio { font-weight: 700; }
+  .lista { text-decoration: line-through; color: var(--muted, #9ca3af); font-size: .78rem; }
+  .off { color: #1baf7a; font-size: .78rem; font-weight: 600; }
+  .barato { background: #ecfdf5; }
+  .barato .precio { color: #067a55; }
+  .nada { color: var(--muted, #9ca3af); font-size: .8rem; }
+  .sinstock { color: #b45309; font-size: .78rem; }
+  .promo { display: block; font-size: .72rem; color: #6d28d9; margin-top: .15rem; line-height: 1.3; }
+  .prog { font-size: .85rem; color: var(--muted, #6b7280); }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .aviso.info { background: #16233a; border-color: #1e3a5f; color: #93c5fd; }
+    :root:not([data-theme="light"]) .aviso.warn { background: #2a2113; border-color: #4d3c14; color: #fcd34d; }
+    :root:not([data-theme="light"]) .aviso.bad  { background: #2b1618; border-color: #532025; color: #fca5a5; }
+    :root:not([data-theme="light"]) .barato { background: #10291f; }
+    :root:not([data-theme="light"]) .barato .precio { color: #34d399; }
+  }
+</style>
+</head>
+<body>
+<div class="cmp">
+  <h1>Comparador de competencia</h1>
+  <p class="sub">Precios y promociones de una lista de EANs en las tiendas de la competencia, vía la API pública de VTEX de cada sitio.</p>
+
+  <div class="panel">
+    <h2>1 · Los EANs</h2>
+    <textarea id="eans" placeholder="Un EAN por línea, o separados por coma.&#10;7790742358608&#10;7791720029411&#10;7798033333907"></textarea>
+    <div class="fila">
+      <input type="file" id="archivo" accept=".txt,.csv,.tsv">
+      <span class="prog" id="cuenta"></span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>2 · Las tiendas</h2>
+    <div class="tiendas" id="tiendas"></div>
+    <div class="fila">
+      <button class="btn" id="buscar">Comparar precios</button>
+      <button class="btn sec" id="csv" disabled>Bajar CSV</button>
+      <span class="prog" id="prog"></span>
+    </div>
+  </div>
+
+  <div id="avisos"></div>
+  <div class="panel" id="panel-res" hidden>
+    <h2 id="titulo-res">3 · Resultados</h2>
+    <div class="tabla-wrap"><table class="cmp-t" id="tabla"></table></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // Tope del endpoint. Arriba de esto se manda por tandas, para que una lista
+  // de 800 EANs no se caiga entera ni deje al servidor colgado.
+  const POR_TANDA = 100;
+
+  const TIENDAS = [
+    { id: 'carrefour', nombre: 'Carrefour', propia: true },
+    { id: 'jumbo', nombre: 'Jumbo' },
+    { id: 'disco', nombre: 'Disco' },
+    { id: 'masonline', nombre: 'Masonline' },
+    { id: 'dia', nombre: 'DIA' },
+  ];
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const plata = (n) => n == null ? '—' : '$' + n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  let ultimo = null;
+
+  // ── Entrada ────────────────────────────────────────────────────────────────
+  function leerEans() {
+    const crudos = $('eans').value.split(/[\s,;]+/).map((s) => s.trim()).filter(Boolean);
+    const validos = [...new Set(crudos.filter((e) => /^\d{8,14}$/.test(e)))];
+    const malos = crudos.filter((e) => !/^\d{8,14}$/.test(e));
+    return { validos, malos, crudos };
+  }
+
+  function contar() {
+    const { validos, malos } = leerEans();
+    const partes = [];
+    if (validos.length) partes.push(`${validos.length} EAN${validos.length === 1 ? '' : 's'} válido${validos.length === 1 ? '' : 's'}`);
+    if (malos.length) partes.push(`${malos.length} sin formato de EAN (se ignoran)`);
+    $('cuenta').textContent = partes.join(' · ');
+  }
+
+  $('eans').addEventListener('input', contar);
+  $('archivo').addEventListener('change', (ev) => {
+    const f = ev.target.files?.[0];
+    if (!f) return;
+    const lector = new FileReader();
+    lector.onload = () => {
+      // De un CSV se toma la primera columna de cada línea: es donde suele
+      // estar el código. El resto se descarta y el contador avisa cuántos no
+      // tenían forma de EAN.
+      const texto = String(lector.result || '');
+      const eans = texto.split(/\r?\n/).map((l) => l.split(/[,;\t]/)[0].trim()).filter(Boolean);
+      $('eans').value = eans.join('\n');
+      contar();
+    };
+    lector.readAsText(f);
+  });
+
+  $('tiendas').innerHTML = TIENDAS.map((t) => `<label>
+    <input type="checkbox" value="${t.id}" checked> ${esc(t.nombre)}${t.propia ? ' (nuestra)' : ''}
+  </label>`).join('');
+
+  const tiendasElegidas = () => [...$('tiendas').querySelectorAll('input:checked')].map((i) => i.value);
+
+  // ── Consulta ───────────────────────────────────────────────────────────────
+  function avisar(html) { $('avisos').innerHTML = html; }
+
+  async function buscar() {
+    const { validos, malos } = leerEans();
+    const tiendas = tiendasElegidas();
+
+    if (!validos.length) return avisar('<div class="aviso bad">No hay ningún EAN válido. Tienen que ser de 8 a 14 dígitos.</div>');
+    if (!tiendas.length) return avisar('<div class="aviso bad">Elegí al menos una tienda.</div>');
+
+    $('buscar').disabled = true;
+    $('csv').disabled = true;
+    const tandas = [];
+    for (let i = 0; i < validos.length; i += POR_TANDA) tandas.push(validos.slice(i, i + POR_TANDA));
+
+    const juntos = { resultados: {}, errores: {}, tiendas: null, advertencia: null, eans: [] };
+    let fallo = null;
+
+    for (let i = 0; i < tandas.length; i += 1) {
+      $('prog').textContent = `Consultando tanda ${i + 1} de ${tandas.length}…`;
+      try {
+        const r = await fetch(`/api/competencia?eans=${tandas[i].join(',')}&tiendas=${tiendas.join(',')}`,
+          { cache: 'no-store' });
+        const j = await r.json().catch(() => null);
+        if (!r.ok) { fallo = j?.message || j?.error || `HTTP ${r.status}`; break; }
+        Object.assign(juntos.resultados, j.resultados);
+        juntos.eans.push(...j.eans);
+        juntos.tiendas = j.tiendas;
+        juntos.advertencia = j.advertencia;
+        for (const [id, errs] of Object.entries(j.errores || {})) {
+          (juntos.errores[id] = juntos.errores[id] || []).push(...errs);
+        }
+      } catch (e) { fallo = e.message; break; }
+    }
+
+    $('prog').textContent = '';
+    $('buscar').disabled = false;
+
+    if (fallo) return avisar(`<div class="aviso bad"><strong>No se pudo consultar.</strong> ${esc(fallo)}</div>`);
+
+    ultimo = juntos;
+    pintar(juntos, malos);
+    $('csv').disabled = false;
+  }
+
+  $('buscar').addEventListener('click', buscar);
+
+  // ── Salida ─────────────────────────────────────────────────────────────────
+  function pintar(d, malos) {
+    const tiendas = d.tiendas || [];
+    const eans = d.eans;
+
+    const avisos = [];
+    if (d.advertencia) avisos.push(`<div class="aviso info">${esc(d.advertencia)}</div>`);
+    if (malos?.length) {
+      avisos.push(`<div class="aviso warn">${malos.length} línea(s) no tenían forma de EAN y se ignoraron:
+        <span class="ean">${esc(malos.slice(0, 8).join(', '))}${malos.length > 8 ? '…' : ''}</span></div>`);
+    }
+    for (const [id, errs] of Object.entries(d.errores || {})) {
+      const t = tiendas.find((x) => x.id === id);
+      avisos.push(`<div class="aviso bad"><strong>${esc(t?.nombre || id)} no respondió a ${errs.length} consulta(s).</strong>
+        Las columnas de esa tienda están incompletas, no vacías por falta de producto.
+        <br><span class="ean">${esc(errs.slice(0, 3).join(' · '))}</span></div>`);
+    }
+    avisar(avisos.join(''));
+
+    // Cabecera
+    const th = ['<th>EAN</th>', '<th>Producto</th>']
+      .concat(tiendas.map((t) => `<th class="num">${esc(t.nombre)}</th>`));
+
+    const filas = eans.map((ean) => {
+      const porTienda = d.resultados[ean] || {};
+      // El más barato entre los que tienen precio Y stock: comparar contra un
+      // producto sin stock no sirve para decidir nada.
+      const precios = tiendas
+        .map((t) => ({ id: t.id, ...(porTienda[t.id] || {}) }))
+        .filter((x) => x.encontrado && x.precio != null && x.disponible)
+        .map((x) => x.precio);
+      const min = precios.length ? Math.min(...precios) : null;
+
+      // .find() devuelve el OBJETO, no el nombre: sin el .nombre del final la
+      // celda mostraba "[object Object]".
+      const nombre = tiendas.map((t) => porTienda[t.id]).find((x) => x?.nombre)?.nombre;
+
+      const celdas = tiendas.map((t) => {
+        const x = porTienda[t.id];
+        if (!x || !x.encontrado) return '<td class="num"><span class="nada">no está</span></td>';
+        const barato = min != null && x.precio === min && x.disponible;
+        const bits = [`<span class="precio">${plata(x.precio)}</span>`];
+        if (x.precioLista != null && x.descuentoPct) {
+          bits.push(`<br><span class="lista">${plata(x.precioLista)}</span> <span class="off">−${x.descuentoPct}%</span>`);
+        }
+        if (!x.disponible) bits.push('<br><span class="sinstock">sin stock</span>');
+        for (const p of (x.promos || []).slice(0, 3)) bits.push(`<span class="promo">${esc(p)}</span>`);
+        return `<td class="num${barato ? ' barato' : ''}">${bits.join('')}</td>`;
+      });
+
+      return `<tr>
+        <td class="ean">${esc(ean)}</td>
+        <td class="prod">${nombre ? esc(nombre) : '<span class="nada">sin datos</span>'}</td>
+        ${celdas.join('')}
+      </tr>`;
+    });
+
+    $('tabla').innerHTML = `<thead><tr>${th.join('')}</tr></thead><tbody>${filas.join('')}</tbody>`;
+
+    // Cuántos encontró cada tienda: sin esto, una columna vacía puede leerse
+    // como "no lo vende" cuando en realidad la consulta no encontró el EAN.
+    const cobertura = tiendas.map((t) => {
+      const n = eans.filter((e) => d.resultados[e]?.[t.id]?.encontrado).length;
+      return `${t.nombre} ${n}/${eans.length}`;
+    }).join(' · ');
+    $('titulo-res').textContent = `3 · Resultados — ${cobertura}`;
+    $('panel-res').hidden = false;
+  }
+
+  // ── CSV ────────────────────────────────────────────────────────────────────
+  $('csv').addEventListener('click', () => {
+    if (!ultimo) return;
+    const tiendas = ultimo.tiendas || [];
+    const cab = ['ean', 'producto'];
+    for (const t of tiendas) cab.push(`${t.id}_precio`, `${t.id}_lista`, `${t.id}_desc_pct`, `${t.id}_stock`, `${t.id}_promos`);
+    const q = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+
+    const lineas = [cab.join(',')];
+    for (const ean of ultimo.eans) {
+      const porTienda = ultimo.resultados[ean] || {};
+      const nombre = tiendas.map((t) => porTienda[t.id]).find((x) => x?.nombre)?.nombre || '';
+      const fila = [q(ean), q(nombre)];
+      for (const t of tiendas) {
+        const x = porTienda[t.id] || {};
+        fila.push(q(x.precio ?? ''), q(x.precioLista ?? ''), q(x.descuentoPct ?? ''),
+          q(x.encontrado ? (x.disponible ? 'si' : 'no') : ''), q((x.promos || []).join(' | ')));
+      }
+      lineas.push(fila.join(','));
+    }
+    const blob = new Blob(['﻿' + lineas.join('\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `comparador-competencia-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  contar();
+})();
+</script>
+</body>
+</html>
