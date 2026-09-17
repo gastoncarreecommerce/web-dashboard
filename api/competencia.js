@@ -44,10 +44,37 @@ const TIMEOUT_MS = 20000;
 // efectivos por unidad bastante menores.
 const UMBRAL_PCT = 70;
 
+/**
+ * `enRevision` marca las tiendas donde YA SABEMOS que el precio que devolvemos
+ * no es el que muestra la ficha, y el numero no se puede usar para decidir.
+ *
+ * El caso verificado: EAN 7799155000197 (agua Villavicencio 2 L) en Jumbo. La
+ * ficha muestra $1.982,50 con -35% y $3.050 tachado. La API devuelve
+ * Price = 3050, o sea el precio ANTERIOR. Y 3050 x 0,65 = 1982,50 exacto, asi
+ * que no hay duda: en estas cuentas `Price` no es el precio final.
+ *
+ * Jumbo y Disco son Cencosud (mismo backend) y las dos devolvian tambien el
+ * ListPrice absurdo de $252.066. En que campo esta el precio final se averigua
+ * con src/competencia-probe.js, que imprime todos los campos de precio.
+ *
+ * Hasta entonces la tienda se sigue consultando —el dato sirve para ver que
+ * producto tienen y que promos declaran— pero la respuesta avisa, porque un
+ * precio equivocado en una comparacion de precios es peor que no tener la
+ * columna.
+ */
 export const TIENDAS = {
   carrefour: { nombre: 'Carrefour', dominio: 'https://www.carrefour.com.ar', propia: true },
-  jumbo: { nombre: 'Jumbo', dominio: 'https://www.jumbo.com.ar' },
-  disco: { nombre: 'Disco', dominio: 'https://www.disco.com.ar' },
+  jumbo: {
+    nombre: 'Jumbo', dominio: 'https://www.jumbo.com.ar',
+    enRevision: 'El precio que devuelve la API es el ANTERIOR, no el final. Verificado con el '
+      + 'agua Villavicencio 2 L: la ficha muestra $1.982,50 (−35%) y la API devuelve $3.050, '
+      + 'que es justo el precio tachado. No usar esta columna para decidir hasta que se corrija.',
+  },
+  disco: {
+    nombre: 'Disco', dominio: 'https://www.disco.com.ar',
+    enRevision: 'Mismo backend que Jumbo (Cencosud) y mismos síntomas: el precio devuelto es '
+      + 'probablemente el anterior, no el final. Sin verificar contra la ficha todavía.',
+  },
   masonline: { nombre: 'Masonline', dominio: 'https://www.masonline.com.ar' },
   dia: { nombre: 'DIA', dominio: 'https://diaonline.supermercadosdia.com.ar' },
 };

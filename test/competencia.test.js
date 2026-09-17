@@ -161,3 +161,20 @@ test('un precio de lista implausible se descarta, no se muestra como -98,8%', as
   assert.strictEqual(r.masonline.descuentoPct, 33.1);
   assert.strictEqual(r.masonline.listaSospechosa, undefined);
 });
+
+test('una tienda en revision se sigue consultando pero viene marcada', async () => {
+  sesionOk = true;
+  const { res } = await correr({
+    'www.jumbo.com.ar': [prod('7799155000197', 'Agua 2 L', { precio: 3050 })],
+    'www.masonline.com.ar': [prod('7799155000197', 'Agua 2 L', { precio: 2139, lista: 3199 })],
+  }, { eans: '7799155000197', tiendas: 'jumbo,masonline' });
+
+  const jumbo = res.body.tiendas.find((t) => t.id === 'jumbo');
+  const mas = res.body.tiendas.find((t) => t.id === 'masonline');
+  assert.match(jumbo.enRevision, /ANTERIOR, no el final/,
+    'el motivo viaja al cliente para poder mostrarlo');
+  assert.match(jumbo.enRevision, /1\.982,50/, 'con el caso concreto que lo prueba');
+  assert.strictEqual(mas.enRevision, undefined, 'las tiendas sanas no se marcan');
+  // El dato se sigue trayendo: sirve para saber que producto tienen y que promos declaran.
+  assert.strictEqual(res.body.resultados['7799155000197'].jumbo.precio, 3050);
+});

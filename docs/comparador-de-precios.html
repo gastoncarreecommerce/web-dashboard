@@ -51,6 +51,7 @@
   .barato .precio { color: #067a55; }
   .nada { color: var(--muted, #9ca3af); font-size: .8rem; }
   .sinstock { color: #b45309; font-size: .78rem; }
+  .precio.revision { color: #b45309; text-decoration: underline wavy #f59e0b 1px; text-underline-offset: 3px; }
   .dudoso { color: #b45309; font-size: .74rem; border-bottom: 1px dotted currentColor; cursor: help; }
   .promo { display: block; font-size: .72rem; color: #6d28d9; margin-top: .15rem; line-height: 1.3; }
   .prog { font-size: .85rem; color: var(--muted, #6b7280); }
@@ -214,6 +215,13 @@
       avisos.push(`<div class="aviso warn">${malos.length} línea(s) no tenían forma de EAN y se ignoraron:
         <span class="ean">${esc(malos.slice(0, 8).join(', '))}${malos.length > 8 ? '…' : ''}</span></div>`);
     }
+    // Tiendas donde sabemos que el precio esta mal. Va ARRIBA de los errores de
+    // red: es mas grave un numero equivocado que una columna faltante.
+    for (const t of tiendas) {
+      if (!t.enRevision) continue;
+      avisos.push(`<div class="aviso bad"><strong>${esc(t.nombre)}: el precio no es confiable.</strong>
+        ${esc(t.enRevision)}</div>`);
+    }
     for (const [id, errs] of Object.entries(d.errores || {})) {
       const t = tiendas.find((x) => x.id === id);
       avisos.push(`<div class="aviso bad"><strong>${esc(t?.nombre || id)} no respondió a ${errs.length} consulta(s).</strong>
@@ -230,9 +238,13 @@
       const porTienda = d.resultados[ean] || {};
       // El más barato entre los que tienen precio Y stock: comparar contra un
       // producto sin stock no sirve para decidir nada.
+      // Las tiendas en revision NO participan del "mas barato": su precio esta
+      // mal tomado, asi que marcarlas como ganadoras o perdedoras seria una
+      // conclusion sacada de un numero que ya sabemos falso.
+      const enRevision = new Set(tiendas.filter((t) => t.enRevision).map((t) => t.id));
       const precios = tiendas
         .map((t) => ({ id: t.id, ...(porTienda[t.id] || {}) }))
-        .filter((x) => x.encontrado && x.precio != null && x.disponible)
+        .filter((x) => x.encontrado && x.precio != null && x.disponible && !enRevision.has(x.id))
         .map((x) => x.precio);
       const min = precios.length ? Math.min(...precios) : null;
 
@@ -243,8 +255,11 @@
       const celdas = tiendas.map((t) => {
         const x = porTienda[t.id];
         if (!x || !x.encontrado) return '<td class="num"><span class="nada">no está</span></td>';
-        const barato = min != null && x.precio === min && x.disponible;
-        const bits = [`<span class="precio">${plata(x.precio)}</span>`];
+        const barato = min != null && x.precio === min && x.disponible && !enRevision.has(t.id);
+        const revision = enRevision.has(t.id);
+        const bits = [`<span class="precio${revision ? ' revision' : ''}"${revision
+          ? ' title="Este precio es el anterior, no el final: ver el aviso de arriba."' : ''}>${plata(x.precio)}</span>`];
+        if (revision) bits.push('<br><span class="dudoso">precio no confiable</span>');
         if (x.precioLista != null && x.descuentoPct) {
           bits.push(`<br><span class="lista">${plata(x.precioLista)}</span> <span class="off">−${x.descuentoPct}%</span>`);
         } else if (x.listaSospechosa) {
