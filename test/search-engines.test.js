@@ -146,14 +146,19 @@ test('DY: la config real sustituye el termino en query.text y nada mas', async (
   // TODO va anidado adentro de `query`, como documenta DY para Experience
   // Search. Tenerlo en el nivel de arriba (como en `choose`) era el bug que
   // hacia que DY respondiera 200 con `choices: []`.
-  const q = b.query;
-  assert.strictEqual(q.text, 'queso rayado');
-  assert.strictEqual(q.selector.name, 'Semantic Search');
-  assert.strictEqual(q.context.page.locale, 'es_AR', 'no en_US: se busca en español');
-  assert.strictEqual(q.context.page.type, 'OTHER', 'no HOMEPAGE: es una consulta de diagnostico');
-  assert.strictEqual(q.filters, undefined, 'sin filtros: se mide el motor crudo');
-  assert.strictEqual(q.pagination.numItems, 10);
-  assert.strictEqual(b.selector, undefined, 'nada queda en el nivel de arriba');
+  // `query` lleva SOLO lo de la busqueda; user/context/selector/options van en el
+  // nivel de arriba. Con todo anidado adentro de `query` la API devuelve 422
+  // "request must contain context" — la doc de Search se contradice con la de
+  // Autosuggest y la API le dio la razon a la segunda.
+  assert.strictEqual(b.query.text, 'queso rayado');
+  assert.strictEqual(b.query.pagination.numItems, 10);
+  assert.strictEqual(b.query.filters, undefined, 'sin filtros: se mide el motor crudo');
+  assert.deepStrictEqual(Object.keys(b.query).sort(), ['pagination', 'text'],
+    'nada mas que text y pagination adentro de query');
+  assert.strictEqual(b.selector.name, 'Semantic Search');
+  assert.ok(b.context.page, 'context va ARRIBA: sin esto la API tira 422');
+  assert.strictEqual(b.context.page.locale, 'es_AR', 'no en_US: se busca en español');
+  assert.strictEqual(b.context.page.type, 'OTHER', 'no HOMEPAGE: es una consulta de diagnostico');
   assert.strictEqual(ultimoInit.headers['DY-API-Key'], 'secreta');
   assert.strictEqual(r.total, 58);
   // Los slots traen SOLO el sku: no hay nombre ni categoria que normalizar.

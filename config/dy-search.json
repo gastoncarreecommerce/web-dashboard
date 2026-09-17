@@ -1,44 +1,58 @@
 {
   "_origen": [
-    "Request y response salen de la doc de Experience Search de DY (dy.dev/docs/search).",
+    "ENDPOINT CONFIRMADO por la API: /v2/serve/user/search devuelve 422 (existe y",
+    "valida), mientras /v2/serve/user/semantic_search y /v2/search/user/search dan",
+    "404. El `choose` estandar tambien responde, pero no es el de busqueda.",
     "",
-    "LO QUE ESTABA MAL ANTES: tenia `selector`, `user`, `context` y `options` en el",
-    "nivel de arriba y `query` al lado. La doc los pone TODOS anidados adentro de",
-    "`query`. DY recibia un request sin selector donde lo esperaba, respondia",
-    "HTTP 200 con `choices: []` y nada matcheaba.",
+    "LA DOC DE DY SE CONTRADICE, y la API decidio:",
     "",
-    "La respuesta NO viene envuelta en `choices`: arranca directo en la decision",
-    "({id, name, type, decisionId, variations}).",
+    "  · El ejemplo de 'Experience Search' pone selector, user, session, context y",
+    "    options TODOS anidados adentro de `query`.",
+    "  · El ejemplo de 'Autosuggest' —misma API, segun la doc 'maintains the same",
+    "    structure as the Search API'— los pone en el NIVEL DE ARRIBA, y deja",
+    "    adentro de `query` solo text/suggestions.",
+    "",
+    "Con todo anidado adentro de `query`, la API responde:",
+    "    HTTP 422 { error: { message: 'request must contain context', type:",
+    "    'badRequest' } }",
+    "",
+    "O sea que `context` va arriba. Se sigue la forma del ejemplo de Autosuggest:",
+    "`query` lleva SOLO lo propio de la busqueda (text, pagination, y si algun dia",
+    "hicieran falta, filters/sortBy/facets) y user/context/selector/options van en",
+    "el nivel de arriba.",
+    "",
+    "`session` se omite: el error no la pide y DY la crea sola (devuelve la cookie",
+    "_dyjsession). Clavar una en el archivo tampoco serviria: vence a los 30 min.",
     "",
     "La API key va en la env var DY_API_KEY."
   ],
-  "endpoint": "https://dy-api.com/v2/serve/user/choose",
+  "endpoint": "https://dy-api.com/v2/serve/user/search",
   "selector": "Semantic Search",
   "body": {
+    "user": {
+      "active_consent_accepted": true,
+      "dyid": "7530018819271298053"
+    },
     "query": {
       "text": "{{query}}",
       "pagination": {
         "numItems": 10,
         "offset": 0
-      },
-      "user": {
-        "active_consent_accepted": true,
-        "dyid": "7530018819271298053"
-      },
-      "context": {
-        "page": {
-          "type": "OTHER",
-          "location": "https://www.carrefour.com.ar/",
-          "locale": "es_AR"
-        }
-      },
-      "selector": {
-        "name": "Semantic Search"
-      },
-      "options": {
-        "returnAnalyticsMetadata": false,
-        "isImplicitClientData": false
       }
+    },
+    "context": {
+      "page": {
+        "type": "OTHER",
+        "location": "https://www.carrefour.com.ar/",
+        "locale": "es_AR"
+      }
+    },
+    "selector": {
+      "name": "Semantic Search"
+    },
+    "options": {
+      "returnAnalyticsMetadata": false,
+      "isImplicitClientData": false
     }
   },
   "_decisiones": [
@@ -69,10 +83,7 @@
   "nameKey": "sku",
   "categoriesKey": "",
   "endpointsAProbar": [
-    "https://dy-api.com/v2/serve/user/search",
-    "https://dy-api.com/v2/serve/user/semantic_search",
-    "https://dy-api.com/v2/search/user/search",
-    "https://dy-api.com/v2/serve/user/choose"
+    "https://dy-api.com/v2/serve/user/search"
   ],
   "_pendiente": [
     "El endpoint todavia NO esta confirmado. El request que da el panel trae un",
