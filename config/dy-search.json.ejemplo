@@ -1,0 +1,31 @@
+{
+  "_como_usar": [
+    "Copiar este archivo a config/dy-search.json y llenarlo con el request que",
+    "indique Dynamic Yield para Experience Search. NO se adivina la forma del",
+    "cuerpo: Experience Search va sobre el endpoint `choose` de la Experience API",
+    "y el request exacto depende de como este armada la campana en tu cuenta.",
+    "",
+    "Pediselo a tu contacto de DY asi: 'necesito un ejemplo de request y response",
+    "de Experience Search para la campana <nombre>, server-side'. Pega el cuerpo",
+    "tal cual en 'body' y poné {{query}} donde vaya el termino buscado.",
+    "",
+    "La API key NO va en este archivo: va en la env var DY_API_KEY (secret de",
+    "GitHub / env var de Vercel). Este archivo se commitea; la key no.",
+    "",
+    "productsPath / totalPath: donde estan los productos y el total dentro de la",
+    "respuesta, con puntos y numeros para los indices de array. Miralo en el",
+    "response de ejemplo que te de DY."
+  ],
+  "endpoint": "https://dy-api.com/v2/serve/user/choose",
+  "selector": "PONER-AQUI-EL-API-SELECTOR-NAME-DE-LA-CAMPANA",
+  "body": {
+    "selector": { "names": ["PONER-AQUI-EL-API-SELECTOR-NAME-DE-LA-CAMPANA"] },
+    "user": { "dyid": "webdash-diagnostico" },
+    "context": { "page": { "type": "OTHER", "location": "https://www.carrefour.com.ar/busca?q={{query}}" } },
+    "options": { "isImplicitPageview": false }
+  },
+  "productsPath": "choices.0.variations.0.payload.data.slots",
+  "totalPath": "choices.0.variations.0.payload.data.totalResults",
+  "nameKey": "sku.name",
+  "categoriesKey": "sku.categories"
+}

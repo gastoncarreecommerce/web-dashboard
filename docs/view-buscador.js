@@ -22,9 +22,13 @@
 
   const STATUS_LABEL = {
     sin_resultados: 'Sin resultados', pocos_resultados: 'Pocos resultados',
-    resultados_dispersos: 'Resultados dispersos', error_consulta: 'Error de consulta', ok: 'OK',
+    resultados_dispersos: 'Resultados dispersos', resultados_irrelevantes: 'No es lo que se buscaba',
+    error_consulta: 'Error de consulta', ok: 'OK',
   };
-  const STATUS_PILL = { sin_resultados: 'no', pocos_resultados: 'w', resultados_dispersos: 'w', error_consulta: 'n', ok: 'ok' };
+  const STATUS_PILL = {
+    sin_resultados: 'no', pocos_resultados: 'w', resultados_dispersos: 'w',
+    resultados_irrelevantes: 'no', error_consulta: 'n', ok: 'ok',
+  };
 
   function pill(status) {
     return `<span class="pill ${STATUS_PILL[status] || 'n'}">${W.esc(STATUS_LABEL[status] || status)}</span>`;

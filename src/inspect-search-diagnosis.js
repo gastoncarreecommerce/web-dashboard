@@ -52,6 +52,8 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { motoresActivos, vtexCorrection } = require('./search-engines');
+const relevanciaIA = require('./search-relevance-ai');
 
 const IN_PATH = path.join(__dirname, '..', 'config', 'search-inspect.report.json');
 const OUT_PATH = path.join(__dirname, '..', 'config', 'search-diagnosis.report.json');
@@ -160,41 +162,33 @@ function categoryDispersion(products) {
   return { consistency: dominantCount / cats.length, dominant, categories: [...new Set(cats)] };
 }
 
-async function searchProductCount(term) {
-  const url = `${baseUrl()}/api/catalog_system/pub/products/search?ft=${encodeURIComponent(term)}&_from=0&_to=9`;
-  const res = await fetch(url, { headers: { Accept: 'application/json' } });
-  if (!res.ok && res.status !== 206) throw new Error(`VTEX ${res.status}`);
-  const products = await res.json().catch(() => []);
-  const count = Array.isArray(products) ? products.length : 0;
-
-  // VTEX manda el total real en esta cabecera ("resources 0-9/123"), pero
-  // solo cuando corta la respuesta (206) — si no viene, no hay forma de
-  // saber si "10" es el total real o si hay muchos más y esta consulta solo
-  // pidió los primeros 10. Se marca `capped` para no mostrar un número
-  // como si fuera exacto cuando en realidad es "10 o más".
-  const range = res.headers.get('resources-content-range'); // "resources 0-9/123"
-  const total = range ? Number(range.split('/')[1]) : null;
-  const capped = !(Number.isFinite(total));
-
+/** Busca el término en UN motor y devuelve lo que hace falta para juzgarlo.
+ *  La forma normalizada la garantiza src/search-engines.js, así que esto ya no
+ *  sabe con qué API está hablando. */
+async function buscarEn(motor, term) {
+  const r = await motor.search(term);
   return {
-    total: Number.isFinite(total) ? total : count,
-    capped: capped && count >= 10,
-    sample: (products || []).slice(0, 3).map((p) => p.productName).filter(Boolean),
-    dispersion: categoryDispersion(products || []),
+    total: r.total,
+    capped: r.capped,
+    sample: r.products.map((p) => p.name).filter(Boolean).slice(0, 3),
+    dispersion: categoryDispersion(r.products),
   };
 }
 
-/**
- * Punto de extensión para sumar IA generativa más adelante — hoy no hay
- * ninguna API key configurada (SEARCH_AI_API_KEY), así que esto no hace
- * nada y no se llama en ningún lado. Cuando exista una key, acá es donde
- * iría el juicio de relevancia semántica real ("¿estos productos tienen
- * que ver con lo que la persona escribió?"), más fino que medir solo
- * consistencia de categoría.
- */
-async function assessRelevanceWithAI(term, sampleProducts) {
-  if (!process.env.SEARCH_AI_API_KEY) return null;
-  return null; // TODO: sumar la llamada real cuando haya una key configurada.
+/** El veredicto sobre un resultado, separado del bucle para poder aplicarlo
+ *  IGUAL a cada motor y después comparar manzanas con manzanas. */
+function clasificar(r) {
+  if (r.total === 0) return { status: 'sin_resultados' };
+  if (r.total < 5) return { status: 'pocos_resultados' };
+  if (r.dispersion && r.dispersion.consistency < DISPERSION_THRESHOLD) {
+    return {
+      status: 'resultados_dispersos',
+      categoryConsistency: r.dispersion.consistency,
+      dominantCategory: r.dispersion.dominant,
+      resultCategories: r.dispersion.categories,
+    };
+  }
+  return { status: 'ok' };
 }
 
 async function forEachLimit(items, limit, fn) {
@@ -208,12 +202,18 @@ async function forEachLimit(items, limit, fn) {
   await Promise.all(workers);
 }
 
-/** Prueba, EN VTEX de verdad, las variantes candidatas de un término fallido.
+// Qué motor manda. Lo define main() a partir de SEARCH_ENGINES; el resto se
+// usa solo para comparar. Módulo-global para no pasarlo por seis firmas.
+let MOTOR_PRIMARIO = null;
+let MOTORES = [];
+let aiDiferido = null;
+
+/** Prueba, EN EL MOTOR PRIMARIO de verdad, las variantes candidatas de un término fallido.
  * Devuelve la primera que trae resultados reales, o null si ninguna sirvió. */
 async function findVerifiedSuggestion(term) {
   for (const candidate of candidateCorrections(term)) {
     try {
-      const r = await searchProductCount(candidate);
+      const r = await buscarEn(MOTOR_PRIMARIO, candidate);
       if (r.total > 0) return { term: candidate, vtexResults: r.total, vtexResultsCapped: r.capped };
     } catch { /* esta variante no respondió, se sigue probando la próxima */ }
   }
@@ -247,6 +247,18 @@ async function main() {
     return;
   }
 
+  const { activos, omitidos } = motoresActivos();
+  if (!activos.length) {
+    console.log('⚠ Ningún motor de búsqueda disponible:');
+    for (const o of omitidos) console.log(`   · ${o.id}: ${o.motivo}`);
+    return;
+  }
+  MOTORES = activos;
+  MOTOR_PRIMARIO = activos[0];
+  console.log(`Motor primario: ${MOTOR_PRIMARIO.label}`);
+  if (activos.length > 1) console.log(`Comparando contra: ${activos.slice(1).map((e) => e.label).join(', ')}`);
+  for (const o of omitidos) console.log(`   (omitido ${o.id}: ${o.motivo})`);
+
   const inputReport = JSON.parse(fs.readFileSync(IN_PATH, 'utf8'));
   const terms = topSearchTerms(inputReport, TOP_N);
   if (!terms.length) {
@@ -256,30 +268,73 @@ async function main() {
   console.log(`Diagnosticando ${terms.length} términos (top búsquedas reales, ya normalizados) contra VTEX...\n`);
 
   await forEachLimit(terms, CONCURRENCY, async (t) => {
-    try {
-      const r = await searchProductCount(t.term);
-      t.vtexResults = r.total;
-      t.vtexResultsCapped = r.capped; // true: "vtexResults o más" (no se pidió el total real, se cortó en la página)
-      t.sampleProducts = r.sample;
-      if (r.total === 0) t.status = 'sin_resultados';
-      else if (r.total < 5) t.status = 'pocos_resultados';
-      else if (r.dispersion && r.dispersion.consistency < DISPERSION_THRESHOLD) {
-        t.status = 'resultados_dispersos';
-        t.categoryConsistency = r.dispersion.consistency;
-        t.dominantCategory = r.dispersion.dominant;
-        t.resultCategories = r.dispersion.categories;
-      } else {
-        t.status = 'ok';
+    // Cada motor se consulta por separado y se juzga con el MISMO criterio.
+    // El veredicto del término lo fija el motor primario (el que corre en el
+    // sitio); los demás quedan al lado para poder comparar.
+    t.engines = {};
+    for (const motor of MOTORES) {
+      try {
+        const r = await buscarEn(motor, t.term);
+        const v = clasificar(r);
+        t.engines[motor.id] = {
+          results: r.total, resultsCapped: r.capped, sampleProducts: r.sample, ...v,
+        };
+      } catch (e) {
+        t.engines[motor.id] = { status: 'error_consulta', error: e.message };
       }
-      // Sin efecto hoy (no hay SEARCH_AI_API_KEY configurada) — ver el
-      // comentario de assessRelevanceWithAI.
-      const aiVerdict = await assessRelevanceWithAI(t.term, r.sample);
-      if (aiVerdict) t.aiRelevance = aiVerdict;
-    } catch (e) {
-      t.error = e.message;
-      t.status = 'error_consulta';
     }
+
+    const p = t.engines[MOTOR_PRIMARIO.id];
+    t.status = p.status;
+    t.vtexResults = p.results ?? null;
+    t.vtexResultsCapped = !!p.resultsCapped;
+    t.sampleProducts = p.sampleProducts || [];
+    if (p.error) t.error = p.error;
+    if (p.categoryConsistency != null) {
+      t.categoryConsistency = p.categoryConsistency;
+      t.dominantCategory = p.dominantCategory;
+      t.resultCategories = p.resultCategories;
+    }
+
   });
+
+  // ── Relevancia semántica con IA ───────────────────────────────────────────
+  // Va DESPUES del bucle y en un solo lote: 200 llamadas de a una serían 200
+  // requests interactivos al doble de precio. Solo se juzgan los terminos que
+  // trajeron productos (sin resultados no hay nada que juzgar) y que las reglas
+  // no condenaron ya: si un termino no trae NADA, la IA no aporta.
+  const paraIA = terms
+    .filter((t) => (t.sampleProducts || []).length > 0)
+    .map((t) => ({ term: t.term, products: t.sampleProducts }));
+
+  if (relevanciaIA.habilitado()) {
+    const { veredictos, diferido } = await relevanciaIA.analizarRelevancia(paraIA);
+    for (const t of terms) {
+      const v = veredictos.get(t.term);
+      if (!v) continue;
+      t.aiRelevance = v;
+      // La IA puede DEGRADAR un veredicto pero nunca mejorarlo: si las reglas
+      // dijeron "sin resultados", eso es un hecho medido y no lo discute nadie.
+      // Al reves si: un termino con 40 productos que no tienen nada que ver
+      // esta roto, aunque la cantidad y la categoria den bien.
+      if (t.status === 'ok' && v.veredicto === 'irrelevante') t.status = 'resultados_irrelevantes';
+    }
+    if (diferido) aiDiferido = diferido;
+  } else {
+    console.log(`  IA de relevancia apagada: ${relevanciaIA.porQueNo()}`);
+  }
+
+  // La corrección NATIVA del motor: es la que de verdad va a ver el usuario en
+  // el sitio, a diferencia de las variantes que este script genera a mano.
+  if (MOTOR_PRIMARIO.id.startsWith('vtex')) {
+    const conProblema = terms.filter((t) => t.status === 'sin_resultados' || t.status === 'pocos_resultados');
+    await forEachLimit(conProblema, CONCURRENCY, async (t) => {
+      try {
+        const c = await vtexCorrection(t.term);
+        if (c?.corregido && c.termino) t.nativeCorrection = c.termino;
+      } catch { /* la corrección es un extra: si falla, el diagnóstico sigue igual */ }
+    });
+  }
 
   // Sinónimo sugerido: solo vale la pena buscarlo (y gastar más consultas a
   // VTEX) para los términos que ya fallaron — son pocos frente al total.
@@ -290,14 +345,15 @@ async function main() {
   for (const t of terms) t.recommendation = recommendation(t);
 
   terms.sort((a, b) => {
-    const rank = { sin_resultados: 0, error_consulta: 1, pocos_resultados: 2, resultados_dispersos: 3, ok: 4 };
+    const rank = { sin_resultados: 0, error_consulta: 1, pocos_resultados: 2, resultados_irrelevantes: 3, resultados_dispersos: 4, ok: 5 };
     return (rank[a.status] ?? 9) - (rank[b.status] ?? 9) || b.searchCount - a.searchCount;
   });
 
   for (const t of terms) {
     const tag = {
       sin_resultados: '✗ SIN RESULTADOS', pocos_resultados: '⚠ pocos resultados',
-      resultados_dispersos: '⚠ resultados dispersos', error_consulta: '? error', ok: '✓',
+      resultados_dispersos: '⚠ resultados dispersos', resultados_irrelevantes: '✗ IRRELEVANTES',
+      error_consulta: '? error', ok: '✓',
     }[t.status];
     const productsTxt = t.vtexResults == null ? '—' : `${t.vtexResults}${t.vtexResultsCapped ? '+' : ''}`;
     const sugTxt = t.suggestion ? ` → probá "${t.suggestion.term}" (${t.suggestion.vtexResults} productos)` : '';
@@ -308,6 +364,7 @@ async function main() {
   const sinResultados = terms.filter((t) => t.status === 'sin_resultados');
   const pocosResultados = terms.filter((t) => t.status === 'pocos_resultados');
   const resultadosDispersos = terms.filter((t) => t.status === 'resultados_dispersos');
+  const resultadosIrrelevantes = terms.filter((t) => t.status === 'resultados_irrelevantes');
   console.log(`\n${sinResultados.length} de ${terms.length} términos NO traen ningún resultado.`);
   console.log(`${pocosResultados.length} de ${terms.length} traen menos de 5 resultados.`);
   console.log(`${resultadosDispersos.length} de ${terms.length} traen ≥5 resultados pero dispersos en categorías sin relación.`);
@@ -318,13 +375,16 @@ async function main() {
   // que pesar, en vez de licuarse como "1 de 200". Los resultados dispersos
   // cuentan acá también: no son "sin resultados", pero es la misma frustración
   // real para quien busca algo puntual y encuentra productos que no tienen que ver.
-  const lostSearches = [...sinResultados, ...pocosResultados, ...resultadosDispersos].reduce((s, t) => s + t.searchCount, 0);
+  const lostSearches = [...sinResultados, ...pocosResultados, ...resultadosDispersos, ...resultadosIrrelevantes]
+    .reduce((s, t) => s + t.searchCount, 0);
 
   const summary = {
     sinResultados: sinResultados.length,
     pocosResultados: pocosResultados.length,
     resultadosDispersos: resultadosDispersos.length,
-    ok: terms.length - sinResultados.length - pocosResultados.length - resultadosDispersos.length,
+    resultadosIrrelevantes: resultadosIrrelevantes.length,
+    ok: terms.length - sinResultados.length - pocosResultados.length
+        - resultadosDispersos.length - resultadosIrrelevantes.length,
     totalSearches,
     lostSearches,
   };
@@ -332,8 +392,19 @@ async function main() {
   const report = {
     generatedAt: new Date().toISOString(),
     source: 'config/search-inspect.report.json (GA4, evento "search")',
+    engine: MOTOR_PRIMARIO.id,
+    engineLabel: MOTOR_PRIMARIO.label,
+    enginesCompared: MOTORES.map((e) => ({ id: e.id, label: e.label })),
     termsAnalyzed: terms.length,
     summary,
+    comparison: compararMotores(terms),
+    ai: {
+      activa: relevanciaIA.habilitado(),
+      motivo: relevanciaIA.porQueNo(),
+      modelo: relevanciaIA.habilitado() ? relevanciaIA.MODELO : null,
+      loteDiferido: aiDiferido,
+      juzgados: terms.filter((t) => t.aiRelevance).length,
+    },
     terms,
   };
   fs.mkdirSync(path.dirname(OUT_PATH), { recursive: true });
@@ -342,6 +413,56 @@ async function main() {
 
   writeClientReport(report);
   updateHistory(summary, terms.length);
+}
+
+/**
+ * Motor contra motor, pesado por volumen de búsqueda. null con un solo motor.
+ *
+ * `mejoresQue` es lo que de verdad importa para decidir: en cuántas búsquedas
+ * reales (no en cuántos términos) el otro motor le contesta bien a la gente y
+ * el primario no. Contar términos licuaría un término de altísimo volumen
+ * roto como "1 de 200".
+ */
+function compararMotores(terms) {
+  if (MOTORES.length < 2) return null;
+  const malo = (st) => st === 'sin_resultados' || st === 'pocos_resultados' || st === 'resultados_dispersos';
+  const out = { primario: MOTOR_PRIMARIO.id, motores: {} };
+
+  for (const motor of MOTORES) {
+    const conteo = { ok: 0, sin_resultados: 0, pocos_resultados: 0, resultados_dispersos: 0, error_consulta: 0 };
+    let busquedasMalas = 0;
+    for (const t of terms) {
+      const st = t.engines?.[motor.id]?.status;
+      if (st in conteo) conteo[st] += 1;
+      if (malo(st)) busquedasMalas += t.searchCount;
+    }
+    out.motores[motor.id] = { label: motor.label, ...conteo, busquedasMalas };
+  }
+
+  for (const motor of MOTORES) {
+    if (motor.id === MOTOR_PRIMARIO.id) continue;
+    const gana = [], pierde = [];
+    let busquedasGanadas = 0, busquedasPerdidas = 0;
+    for (const t of terms) {
+      const a = t.engines?.[MOTOR_PRIMARIO.id]?.status;
+      const b = t.engines?.[motor.id]?.status;
+      if (!a || !b || a === b) continue;
+      if (malo(a) && !malo(b)) {
+        gana.push({ term: t.term, searchCount: t.searchCount, primario: a, otro: b });
+        busquedasGanadas += t.searchCount;
+      } else if (!malo(a) && malo(b)) {
+        pierde.push({ term: t.term, searchCount: t.searchCount, primario: a, otro: b });
+        busquedasPerdidas += t.searchCount;
+      }
+    }
+    const orden = (x, y) => y.searchCount - x.searchCount;
+    out.motores[motor.id].mejoresQue = {
+      gana: gana.sort(orden).slice(0, 20), pierde: pierde.sort(orden).slice(0, 20),
+      terminosGanados: gana.length, terminosPerdidos: pierde.length,
+      busquedasGanadas, busquedasPerdidas,
+    };
+  }
+  return out;
 }
 
 /** Recomendaciones generales (no por término) para el panel del dashboard. */
@@ -383,6 +504,8 @@ function writeClientReport(report) {
       vtexResultsCapped: !!t.vtexResultsCapped,
       sampleProducts: t.sampleProducts || [],
       suggestion: t.suggestion || null,
+      nativeCorrection: t.nativeCorrection || null,
+      aiRelevance: t.aiRelevance || null,
       categoryConsistency: t.categoryConsistency ?? null,
       dominantCategory: t.dominantCategory || null,
       resultCategories: t.resultCategories || null,
@@ -391,6 +514,11 @@ function writeClientReport(report) {
 
   const client = {
     generatedAt: report.generatedAt,
+    engine: report.engine,
+    engineLabel: report.engineLabel,
+    enginesCompared: report.enginesCompared,
+    comparison: report.comparison,
+    ai: report.ai,
     termsAnalyzed: report.termsAnalyzed,
     summary: report.summary,
     recommendations: globalRecommendations(report.summary),

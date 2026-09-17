@@ -41,10 +41,21 @@ jobs:
           GA4_PROPERTY_ID: ${{ secrets.GA4_PROPERTY_ID }}
         run: npm run inspect:search
 
-      - name: Diagnosticar top de búsquedas contra VTEX (¿cuáles no traen resultados?)
+      - name: Diagnosticar top de búsquedas contra los buscadores reales
         env:
           VTEX_ACCOUNT_NAME: ${{ secrets.VTEX_ACCOUNT_NAME }}
           VTEX_ENVIRONMENT: ${{ secrets.VTEX_ENVIRONMENT }}
+          # Motor primario primero. Intelligent Search es el que corre en el
+          # sitio; el legacy queda al lado solo para comparar (antes el
+          # diagnóstico medía SOLO el legacy, o sea un motor que nadie usa).
+          # Para sumar Dynamic Yield: "vtex-is,vtex-legacy,dy".
+          SEARCH_ENGINES: ${{ vars.SEARCH_ENGINES || 'vtex-is,vtex-legacy' }}
+          # Experience Search de DY. Sin estas dos, ese motor se omite con un
+          # mensaje que dice qué falta — no rompe la corrida.
+          DY_API_KEY: ${{ secrets.DY_API_KEY }}
+          # Relevancia semántica con IA. Sin la key, el diagnóstico corre igual
+          # con sus reglas y lo dice.
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: npm run inspect:search-diagnosis
 
       - name: Commit report
@@ -52,6 +63,7 @@ jobs:
           git config user.name "webdash-bot"
           git config user.email "webdash-bot@users.noreply.github.com"
           [ -f config/search-inspect.report.json ] && git add -f config/search-inspect.report.json
+          [ -f config/search-ai-batch.json ] && git add -f config/search-ai-batch.json
           [ -f config/search-diagnosis.report.json ] && git add -f config/search-diagnosis.report.json
           [ -f docs/data/web/search-diagnosis.json ] && git add -f docs/data/web/search-diagnosis.json
           [ -f docs/data/web/search-diagnosis-history.json ] && git add -f docs/data/web/search-diagnosis-history.json
