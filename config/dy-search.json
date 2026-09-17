@@ -93,5 +93,30 @@
     "Hay que resolver sku -> nombre/categoria antes de poder medir. El catalogo",
     "local (docs/data/web/catalog.json) tiene solo los 400 mas vendidos, asi que no",
     "alcanza: va a haber que pedirselo a VTEX por SKU."
+  ],
+  "_hallazgos_de_la_doc": [
+    "1) El CORRECTOR DE TIPEOS de DY es SOLO EN INGLES: 'Available only in",
+    "   English. The locale sent in the API request can't include other",
+    "   languages.' Con locale es_AR queda desactivado. O sea que 'queso rayado'",
+    "   (2.435 busquedas/mes, 0 resultados en VTEX) no lo va a arreglar el",
+    "   spellchecker. Puede que el modelo semantico lo resuelva igual, porque",
+    "   trabaja por embeddings y no por keyword exacta, pero eso hay que MEDIRLO,",
+    "   no asumirlo. Es uno de los terminos del bake-off.",
+    "",
+    "   Se deja es_AR igual: el catalogo y las busquedas son en espanol, y sin",
+    "   locale DY interpretaria los terminos como ingles, que es peor. Perder el",
+    "   corrector de un idioma que no hablamos no cuesta nada.",
+    "",
+    "2) `pagination` es OBLIGATORIA en cada query de texto. Ya esta.",
+    "",
+    "3) `sortBy` NO se usa: la doc avisa que pisa por completo la logica de",
+    "   relevancia. Medir relevancia con sortBy puesto no mediria nada.",
+    "",
+    "4) El locale agrega latencia: DY traduce las queries en tiempo real con un",
+    "   LLM y despues las cachea. Las primeras corridas del bake-off van a ser",
+    "   mas lentas que las siguientes.",
+    "",
+    "5) `facets` vuelve en cada respuesta si estan configuradas en Experience OS.",
+    "   No se piden ni se usan para el diagnostico."
   ]
 }
