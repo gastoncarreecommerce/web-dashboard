@@ -1,686 +1,2516 @@
 {
-  "generatedAt": "2026-09-17T14:01:27.081Z",
+  "generatedAt": "2026-09-17T17:27:39.557Z",
+  "engine": "vtex-is",
+  "engineLabel": "VTEX Intelligent Search",
+  "enginesCompared": [
+    {
+      "id": "vtex-is",
+      "label": "VTEX Intelligent Search"
+    },
+    {
+      "id": "vtex-legacy",
+      "label": "VTEX Search (legacy)"
+    },
+    {
+      "id": "dy",
+      "label": "Dynamic Yield Experience Search"
+    }
+  ],
+  "comparison": {
+    "primario": "vtex-is",
+    "motores": {
+      "vtex-is": {
+        "label": "VTEX Intelligent Search",
+        "ok": 94,
+        "sin_resultados": 99,
+        "pocos_resultados": 0,
+        "resultados_dispersos": 7,
+        "error_consulta": 0,
+        "busquedasMalas": 696818
+      },
+      "vtex-legacy": {
+        "label": "VTEX Search (legacy)",
+        "ok": 173,
+        "sin_resultados": 1,
+        "pocos_resultados": 0,
+        "resultados_dispersos": 26,
+        "error_consulta": 0,
+        "busquedasMalas": 202762,
+        "mejoresQue": {
+          "gana": [
+            {
+              "term": "papel higienico",
+              "searchCount": 27931,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "aceite",
+              "searchCount": 25307,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "queso crema",
+              "searchCount": 24817,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "coca cola",
+              "searchCount": 21186,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "azucar",
+              "searchCount": 19406,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "fideos",
+              "searchCount": 18120,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "cafe",
+              "searchCount": 16926,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "arroz",
+              "searchCount": 16787,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "atun",
+              "searchCount": 15383,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "rollo de cocina",
+              "searchCount": 14888,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "harina",
+              "searchCount": 12459,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "pan lactal",
+              "searchCount": 12171,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "papel higiénico",
+              "searchCount": 12086,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "pañales",
+              "searchCount": 11141,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "mayonesa",
+              "searchCount": 10991,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "rollo cocina",
+              "searchCount": 9958,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "galletitas",
+              "searchCount": 9752,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "fernet",
+              "searchCount": 9640,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "queso",
+              "searchCount": 9622,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "detergente",
+              "searchCount": 9503,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            }
+          ],
+          "pierde": [
+            {
+              "term": "leche",
+              "searchCount": 50568,
+              "primario": "ok",
+              "otro": "resultados_dispersos"
+            },
+            {
+              "term": "crema",
+              "searchCount": 6335,
+              "primario": "ok",
+              "otro": "resultados_dispersos"
+            },
+            {
+              "term": "tomate",
+              "searchCount": 5991,
+              "primario": "ok",
+              "otro": "resultados_dispersos"
+            },
+            {
+              "term": "agua",
+              "searchCount": 5620,
+              "primario": "ok",
+              "otro": "resultados_dispersos"
+            },
+            {
+              "term": "banana",
+              "searchCount": 5288,
+              "primario": "ok",
+              "otro": "resultados_dispersos"
+            },
+            {
+              "term": "cebolla",
+              "searchCount": 4524,
+              "primario": "ok",
+              "otro": "resultados_dispersos"
+            },
+            {
+              "term": "vino",
+              "searchCount": 4392,
+              "primario": "ok",
+              "otro": "resultados_dispersos"
+            },
+            {
+              "term": "ricota",
+              "searchCount": 2975,
+              "primario": "ok",
+              "otro": "resultados_dispersos"
+            },
+            {
+              "term": "huevo",
+              "searchCount": 2646,
+              "primario": "ok",
+              "otro": "resultados_dispersos"
+            },
+            {
+              "term": "queso rayado",
+              "searchCount": 2455,
+              "primario": "ok",
+              "otro": "sin_resultados"
+            },
+            {
+              "term": "ariel",
+              "searchCount": 2407,
+              "primario": "ok",
+              "otro": "resultados_dispersos"
+            },
+            {
+              "term": "milanesa",
+              "searchCount": 2104,
+              "primario": "ok",
+              "otro": "resultados_dispersos"
+            },
+            {
+              "term": "valija",
+              "searchCount": 2059,
+              "primario": "ok",
+              "otro": "resultados_dispersos"
+            }
+          ],
+          "terminosGanados": 92,
+          "terminosPerdidos": 13,
+          "busquedasGanadas": 591420,
+          "busquedasPerdidas": 97364
+        }
+      },
+      "dy": {
+        "label": "Dynamic Yield Experience Search",
+        "ok": 183,
+        "sin_resultados": 0,
+        "pocos_resultados": 0,
+        "resultados_dispersos": 17,
+        "error_consulta": 0,
+        "busquedasMalas": 121611,
+        "mejoresQue": {
+          "gana": [
+            {
+              "term": "papel higienico",
+              "searchCount": 27931,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "dulce de leche",
+              "searchCount": 26081,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "aceite",
+              "searchCount": 25307,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "queso crema",
+              "searchCount": 24817,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "manteca",
+              "searchCount": 22137,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "coca cola",
+              "searchCount": 21186,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "fideos",
+              "searchCount": 18120,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "rollo de cocina",
+              "searchCount": 14888,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "harina",
+              "searchCount": 12459,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "pan lactal",
+              "searchCount": 12171,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "papel higiénico",
+              "searchCount": 12086,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "pañales",
+              "searchCount": 11141,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "mayonesa",
+              "searchCount": 10991,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "carne",
+              "searchCount": 10673,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "rollo cocina",
+              "searchCount": 9958,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "pollo",
+              "searchCount": 9875,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "galletitas",
+              "searchCount": 9752,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "fernet",
+              "searchCount": 9640,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "queso",
+              "searchCount": 9622,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "detergente",
+              "searchCount": 9503,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            }
+          ],
+          "pierde": [
+            {
+              "term": "harina 0000",
+              "searchCount": 5219,
+              "primario": "ok",
+              "otro": "resultados_dispersos"
+            },
+            {
+              "term": "pasta de mani",
+              "searchCount": 4636,
+              "primario": "ok",
+              "otro": "resultados_dispersos"
+            },
+            {
+              "term": "levite",
+              "searchCount": 2169,
+              "primario": "ok",
+              "otro": "resultados_dispersos"
+            },
+            {
+              "term": "milanesa",
+              "searchCount": 2104,
+              "primario": "ok",
+              "otro": "resultados_dispersos"
+            }
+          ],
+          "terminosGanados": 93,
+          "terminosPerdidos": 4,
+          "busquedasGanadas": 589335,
+          "busquedasPerdidas": 14128
+        }
+      }
+    }
+  },
+  "ai": {
+    "activa": false,
+    "motivo": "falta la env var ANTHROPIC_API_KEY",
+    "modelo": null,
+    "loteDiferido": null,
+    "juzgados": 0
+  },
   "termsAnalyzed": 200,
   "summary": {
-    "sinResultados": 1,
+    "sinResultados": 99,
     "pocosResultados": 0,
-    "resultadosDispersos": 27,
-    "ok": 172,
-    "totalSearches": 1167769,
-    "lostSearches": 211501
+    "resultadosDispersos": 7,
+    "resultadosIrrelevantes": 0,
+    "ok": 94,
+    "totalSearches": 1173059,
+    "lostSearches": 696818
   },
   "recommendations": [
-    "1 término(s) no traen ningún resultado — priorizalos por volumen, son los que más gente frustra.",
-    "Se estima que 211.501 búsquedas del último mes (18.1% de las analizadas) terminaron en 0 o muy pocos resultados.",
-    "27 término(s) traen suficientes productos pero de categorías sin relación entre sí — el buscador probablemente está completando con coincidencias débiles en vez de lo que la gente realmente busca."
+    "99 término(s) no traen ningún resultado — priorizalos por volumen, son los que más gente frustra.",
+    "Se estima que 696.818 búsquedas del último mes (59.4% de las analizadas) terminaron en 0 o muy pocos resultados.",
+    "7 término(s) traen suficientes productos pero de categorías sin relación entre sí — el buscador probablemente está completando con coincidencias débiles en vez de lo que la gente realmente busca."
   ],
   "topTerms": [
     {
       "term": "leche",
-      "searchCount": 50472,
-      "status": "resultados_dispersos"
+      "searchCount": 50568,
+      "status": "ok"
     },
     {
       "term": "papel higienico",
-      "searchCount": 27745,
-      "status": "ok"
+      "searchCount": 27931,
+      "status": "sin_resultados"
     },
     {
       "term": "dulce de leche",
-      "searchCount": 25927,
-      "status": "resultados_dispersos"
+      "searchCount": 26081,
+      "status": "sin_resultados"
     },
     {
       "term": "aceite",
-      "searchCount": 25211,
-      "status": "ok"
+      "searchCount": 25307,
+      "status": "sin_resultados"
     },
     {
       "term": "queso crema",
-      "searchCount": 24651,
-      "status": "ok"
+      "searchCount": 24817,
+      "status": "sin_resultados"
     },
     {
       "term": "manteca",
-      "searchCount": 22048,
-      "status": "resultados_dispersos"
+      "searchCount": 22137,
+      "status": "sin_resultados"
     },
     {
       "term": "coca cola",
-      "searchCount": 21076,
+      "searchCount": 21186,
+      "status": "sin_resultados"
+    },
+    {
+      "term": "crema de leche",
+      "searchCount": 19495,
       "status": "ok"
     },
     {
       "term": "azucar",
-      "searchCount": 19282,
-      "status": "ok"
-    },
-    {
-      "term": "crema de leche",
-      "searchCount": 19264,
-      "status": "ok"
+      "searchCount": 19406,
+      "status": "sin_resultados"
     },
     {
       "term": "yerba",
-      "searchCount": 18444,
+      "searchCount": 18524,
       "status": "ok"
     },
     {
       "term": "fideos",
-      "searchCount": 17961,
-      "status": "ok"
+      "searchCount": 18120,
+      "status": "sin_resultados"
     },
     {
       "term": "cafe",
-      "searchCount": 16851,
-      "status": "ok"
+      "searchCount": 16926,
+      "status": "sin_resultados"
     },
     {
       "term": "arroz",
-      "searchCount": 16667,
-      "status": "ok"
+      "searchCount": 16787,
+      "status": "sin_resultados"
     },
     {
       "term": "atun",
-      "searchCount": 15282,
-      "status": "ok"
+      "searchCount": 15383,
+      "status": "sin_resultados"
     },
     {
       "term": "rollo de cocina",
-      "searchCount": 14844,
-      "status": "ok"
+      "searchCount": 14888,
+      "status": "sin_resultados"
     },
     {
       "term": "queso cremoso",
-      "searchCount": 14831,
+      "searchCount": 14840,
       "status": "ok"
     },
     {
       "term": "cerveza",
-      "searchCount": 12718,
+      "searchCount": 12762,
       "status": "ok"
     },
     {
       "term": "harina",
-      "searchCount": 12386,
-      "status": "ok"
+      "searchCount": 12459,
+      "status": "sin_resultados"
     },
     {
       "term": "pan lactal",
-      "searchCount": 12173,
+      "searchCount": 12171,
+      "status": "sin_resultados"
+    },
+    {
+      "term": "queso rallado",
+      "searchCount": 12090,
       "status": "ok"
     },
     {
       "term": "papel higiénico",
-      "searchCount": 12077,
-      "status": "ok"
-    },
-    {
-      "term": "queso rallado",
-      "searchCount": 11967,
-      "status": "ok"
+      "searchCount": 12086,
+      "status": "sin_resultados"
     },
     {
       "term": "pañales",
-      "searchCount": 11112,
-      "status": "ok"
+      "searchCount": 11141,
+      "status": "sin_resultados"
     },
     {
       "term": "mayonesa",
-      "searchCount": 10914,
-      "status": "ok"
+      "searchCount": 10991,
+      "status": "sin_resultados"
     },
     {
       "term": "carne",
-      "searchCount": 10605,
-      "status": "resultados_dispersos"
+      "searchCount": 10673,
+      "status": "sin_resultados"
     },
     {
       "term": "rollo cocina",
-      "searchCount": 9922,
-      "status": "ok"
+      "searchCount": 9958,
+      "status": "sin_resultados"
     },
     {
       "term": "papas fritas",
-      "searchCount": 9868,
+      "searchCount": 9957,
       "status": "ok"
     },
     {
       "term": "pollo",
-      "searchCount": 9782,
-      "status": "resultados_dispersos"
+      "searchCount": 9875,
+      "status": "sin_resultados"
     },
     {
       "term": "galletitas",
-      "searchCount": 9701,
+      "searchCount": 9752,
+      "status": "sin_resultados"
+    },
+    {
+      "term": "yogurt",
+      "searchCount": 9644,
       "status": "ok"
     },
     {
       "term": "fernet",
-      "searchCount": 9622,
-      "status": "ok"
-    },
-    {
-      "term": "leche en polvo",
-      "searchCount": 9581,
-      "status": "ok"
+      "searchCount": 9640,
+      "status": "sin_resultados"
     }
   ],
   "problems": [
     {
-      "term": "queso rayado",
-      "searchCount": 2452,
+      "term": "papel higienico",
+      "searchCount": 27931,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Revisar manualmente (27.931 búsquedas/mes sin resultado y sin variante cercana con stock): puede faltar el producto en catálogo, ser una marca no vendida, o requerir un sinónimo que no es un simple error de tipeo."
+    },
+    {
+      "term": "dulce de leche",
+      "searchCount": 26081,
       "status": "sin_resultados",
       "vtexResults": 0,
       "vtexResultsCapped": false,
       "sampleProducts": [],
       "suggestion": {
-        "term": "queso rallado",
-        "vtexResults": 10,
-        "vtexResultsCapped": true
+        "term": "dulce de leches",
+        "vtexResults": 570,
+        "vtexResultsCapped": false
       },
+      "nativeCorrection": null,
+      "aiRelevance": null,
       "categoryConsistency": null,
       "dominantCategory": null,
       "resultCategories": null,
-      "recommendation": "Alta prioridad: agregar \"queso rayado\" como sinónimo de \"queso rallado\" en VTEX (búsqueda real que sí tiene stock) — 2.452 búsquedas/mes van hoy a una página vacía."
+      "recommendation": "Alta prioridad: agregar \"dulce de leche\" como sinónimo de \"dulce de leches\" en VTEX (búsqueda real que sí tiene stock) — 26.081 búsquedas/mes van hoy a una página vacía."
     },
     {
-      "term": "leche",
-      "searchCount": 50472,
-      "status": "resultados_dispersos",
-      "vtexResults": 10,
-      "vtexResultsCapped": true,
-      "sampleProducts": [
-        "Pepitas artesanales dulce de leche",
-        "Leche chocolatada ​Cindor 1 lt",
-        "Licor Cusenier dulce de leche700 cc"
-      ],
+      "term": "aceite",
+      "searchCount": 25307,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
       "suggestion": null,
-      "categoryConsistency": 0.5,
-      "dominantCategory": "Lácteos y productos frescos",
-      "resultCategories": [
-        "Panadería",
-        "Lácteos y productos frescos",
-        "Bebidas",
-        "Electro y tecnología",
-        "Desayuno y merienda"
-      ],
-      "recommendation": "Trae 50% de resultados de \"Lácteos y productos frescos\" y el resto de categorías sin relación (Panadería, Bebidas, Electro y tecnología, Desayuno y merienda) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (50.472 búsquedas/mes)."
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Revisar manualmente (25.307 búsquedas/mes sin resultado y sin variante cercana con stock): puede faltar el producto en catálogo, ser una marca no vendida, o requerir un sinónimo que no es un simple error de tipeo."
     },
     {
-      "term": "dulce de leche",
-      "searchCount": 25927,
-      "status": "resultados_dispersos",
-      "vtexResults": 10,
-      "vtexResultsCapped": true,
-      "sampleProducts": [
-        "Pepitas artesanales dulce de leche",
-        "Licor Cusenier dulce de leche700 cc",
-        "Yogur entero Tregar dulce de leche"
-      ],
-      "suggestion": null,
-      "categoryConsistency": 0.5,
-      "dominantCategory": "Desayuno y merienda",
-      "resultCategories": [
-        "Panadería",
-        "Bebidas",
-        "Lácteos y productos frescos",
-        "Desayuno y merienda",
-        "Almacén"
-      ],
-      "recommendation": "Trae 50% de resultados de \"Desayuno y merienda\" y el resto de categorías sin relación (Panadería, Bebidas, Lácteos y productos frescos, Almacén) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (25.927 búsquedas/mes)."
+      "term": "queso crema",
+      "searchCount": 24817,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "quezo crema",
+        "vtexResults": 378,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"queso crema\" como sinónimo de \"quezo crema\" en VTEX (búsqueda real que sí tiene stock) — 24.817 búsquedas/mes van hoy a una página vacía."
     },
     {
       "term": "manteca",
-      "searchCount": 22048,
-      "status": "resultados_dispersos",
-      "vtexResults": 10,
-      "vtexResultsCapped": true,
-      "sampleProducts": [
-        "Medialunas de manteca x 6 u.",
-        "Medialuna de manteca x 3 uni",
-        "Figacitas de manteca x 8 uni"
-      ],
+      "searchCount": 22137,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
       "suggestion": null,
-      "categoryConsistency": 0.5,
-      "dominantCategory": "Lácteos y productos frescos",
-      "resultCategories": [
-        "Panadería",
-        "Lácteos y productos frescos",
-        "Desayuno y merienda"
-      ],
-      "recommendation": "Trae 50% de resultados de \"Lácteos y productos frescos\" y el resto de categorías sin relación (Panadería, Desayuno y merienda) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (22.048 búsquedas/mes)."
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Revisar manualmente (22.137 búsquedas/mes sin resultado y sin variante cercana con stock): puede faltar el producto en catálogo, ser una marca no vendida, o requerir un sinónimo que no es un simple error de tipeo."
+    },
+    {
+      "term": "coca cola",
+      "searchCount": 21186,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "coca colas",
+        "vtexResults": 99,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"coca cola\" como sinónimo de \"coca colas\" en VTEX (búsqueda real que sí tiene stock) — 21.186 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "azucar",
+      "searchCount": 19406,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "asucar",
+        "vtexResults": 2116,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"azucar\" como sinónimo de \"asucar\" en VTEX (búsqueda real que sí tiene stock) — 19.406 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "fideos",
+      "searchCount": 18120,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "fideoz",
+        "vtexResults": 912,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"fideos\" como sinónimo de \"fideoz\" en VTEX (búsqueda real que sí tiene stock) — 18.120 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "cafe",
+      "searchCount": 16926,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Revisar manualmente (16.926 búsquedas/mes sin resultado y sin variante cercana con stock): puede faltar el producto en catálogo, ser una marca no vendida, o requerir un sinónimo que no es un simple error de tipeo."
+    },
+    {
+      "term": "arroz",
+      "searchCount": 16787,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "arrozs",
+        "vtexResults": 934,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"arroz\" como sinónimo de \"arrozs\" en VTEX (búsqueda real que sí tiene stock) — 16.787 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "atun",
+      "searchCount": 15383,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "atuns",
+        "vtexResults": 88,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"atun\" como sinónimo de \"atuns\" en VTEX (búsqueda real que sí tiene stock) — 15.383 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "rollo de cocina",
+      "searchCount": 14888,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "rollo de cocinas",
+        "vtexResults": 186,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"rollo de cocina\" como sinónimo de \"rollo de cocinas\" en VTEX (búsqueda real que sí tiene stock) — 14.888 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "harina",
+      "searchCount": 12459,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Revisar manualmente (12.459 búsquedas/mes sin resultado y sin variante cercana con stock): puede faltar el producto en catálogo, ser una marca no vendida, o requerir un sinónimo que no es un simple error de tipeo."
+    },
+    {
+      "term": "pan lactal",
+      "searchCount": 12171,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "pan lactals",
+        "vtexResults": 58,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"pan lactal\" como sinónimo de \"pan lactals\" en VTEX (búsqueda real que sí tiene stock) — 12.171 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "papel higiénico",
+      "searchCount": 12086,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Revisar manualmente (12.086 búsquedas/mes sin resultado y sin variante cercana con stock): puede faltar el producto en catálogo, ser una marca no vendida, o requerir un sinónimo que no es un simple error de tipeo."
+    },
+    {
+      "term": "pañales",
+      "searchCount": 11141,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "pañalez",
+        "vtexResults": 632,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"pañales\" como sinónimo de \"pañalez\" en VTEX (búsqueda real que sí tiene stock) — 11.141 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "mayonesa",
+      "searchCount": 10991,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "mayoneza",
+        "vtexResults": 1,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"mayonesa\" como sinónimo de \"mayoneza\" en VTEX (búsqueda real que sí tiene stock) — 10.991 búsquedas/mes van hoy a una página vacía."
     },
     {
       "term": "carne",
-      "searchCount": 10605,
-      "status": "resultados_dispersos",
-      "vtexResults": 10,
-      "vtexResultsCapped": true,
-      "sampleProducts": [
-        "Empanada de carne 6 u.",
-        "Empanada de carne 2 u.",
-        "Milanesa de carne x kg"
-      ],
+      "searchCount": 10673,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
       "suggestion": null,
-      "categoryConsistency": 0.4,
-      "dominantCategory": "Panadería",
-      "resultCategories": [
-        "Panadería",
-        "Almacén",
-        "Congelados"
-      ],
-      "recommendation": "Trae 40% de resultados de \"Panadería\" y el resto de categorías sin relación (Almacén, Congelados) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (10.605 búsquedas/mes)."
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Revisar manualmente (10.673 búsquedas/mes sin resultado y sin variante cercana con stock): puede faltar el producto en catálogo, ser una marca no vendida, o requerir un sinónimo que no es un simple error de tipeo."
+    },
+    {
+      "term": "rollo cocina",
+      "searchCount": 9958,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "rollo cocinas",
+        "vtexResults": 186,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"rollo cocina\" como sinónimo de \"rollo cocinas\" en VTEX (búsqueda real que sí tiene stock) — 9.958 búsquedas/mes van hoy a una página vacía."
     },
     {
       "term": "pollo",
-      "searchCount": 9782,
-      "status": "resultados_dispersos",
-      "vtexResults": 10,
-      "vtexResultsCapped": true,
-      "sampleProducts": [
-        "Pollo entero congelado x kg",
-        "Pollo al spiedo x kg.",
-        "Empanada de pollo 2 u."
-      ],
-      "suggestion": null,
-      "categoryConsistency": 0.3,
-      "dominantCategory": "Carnes y pescados",
-      "resultCategories": [
-        "Carnes y pescados",
-        "Panadería",
-        "Congelados",
-        "Almacén"
-      ],
-      "recommendation": "Trae 30% de resultados de \"Carnes y pescados\" y el resto de categorías sin relación (Panadería, Congelados, Almacén) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (9.782 búsquedas/mes)."
+      "searchCount": 9875,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "poyo",
+        "vtexResults": 207,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"pollo\" como sinónimo de \"poyo\" en VTEX (búsqueda real que sí tiene stock) — 9.875 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "galletitas",
+      "searchCount": 9752,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "galletitaz",
+        "vtexResults": 1843,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"galletitas\" como sinónimo de \"galletitaz\" en VTEX (búsqueda real que sí tiene stock) — 9.752 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "fernet",
+      "searchCount": 9640,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "fernets",
+        "vtexResults": 217,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"fernet\" como sinónimo de \"fernets\" en VTEX (búsqueda real que sí tiene stock) — 9.640 búsquedas/mes van hoy a una página vacía."
     },
     {
       "term": "queso",
-      "searchCount": 9483,
-      "status": "resultados_dispersos",
-      "vtexResults": 10,
-      "vtexResultsCapped": true,
-      "sampleProducts": [
-        "Papas fritas sabor a queso y cebolla Lays 77 g.",
-        "La Paulina queso untable queso azul 190 grs",
-        "Queso untable Tonadita sabor queso azul 180 g."
-      ],
+      "searchCount": 9622,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "quezo",
+        "vtexResults": 5,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"queso\" como sinónimo de \"quezo\" en VTEX (búsqueda real que sí tiene stock) — 9.622 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "detergente",
+      "searchCount": 9503,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
       "suggestion": null,
-      "categoryConsistency": 0.5,
-      "dominantCategory": "Lácteos y productos frescos",
-      "resultCategories": [
-        "Almacén",
-        "Lácteos y productos frescos",
-        "Desayuno y merienda"
-      ],
-      "recommendation": "Trae 50% de resultados de \"Lácteos y productos frescos\" y el resto de categorías sin relación (Almacén, Desayuno y merienda) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (9.483 búsquedas/mes)."
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Revisar manualmente (9.503 búsquedas/mes sin resultado y sin variante cercana con stock): puede faltar el producto en catálogo, ser una marca no vendida, o requerir un sinónimo que no es un simple error de tipeo."
+    },
+    {
+      "term": "shampoo",
+      "searchCount": 9349,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "zhampoo",
+        "vtexResults": 1318,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"shampoo\" como sinónimo de \"zhampoo\" en VTEX (búsqueda real que sí tiene stock) — 9.349 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "aceite de oliva",
+      "searchCount": 9238,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "aceite de oliba",
+        "vtexResults": 312,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"aceite de oliva\" como sinónimo de \"aceite de oliba\" en VTEX (búsqueda real que sí tiene stock) — 9.238 búsquedas/mes van hoy a una página vacía."
     },
     {
       "term": "carne picada",
-      "searchCount": 8391,
-      "status": "resultados_dispersos",
-      "vtexResults": 10,
-      "vtexResultsCapped": true,
-      "sampleProducts": [
-        "Carne picada Swift congelada 500 grs",
-        "Carne picada congelada Swift 1 kg",
-        "Picadillo de carne Carrefour Classic 90 g."
-      ],
-      "suggestion": null,
-      "categoryConsistency": 0.5,
-      "dominantCategory": "Carnes y pescados",
-      "resultCategories": [
-        "Carnes y pescados",
-        "Almacén",
-        "Congelados"
-      ],
-      "recommendation": "Trae 50% de resultados de \"Carnes y pescados\" y el resto de categorías sin relación (Almacén, Congelados) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (8.391 búsquedas/mes)."
+      "searchCount": 8426,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "carne picadas",
+        "vtexResults": 93,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"carne picada\" como sinónimo de \"carne picadas\" en VTEX (búsqueda real que sí tiene stock) — 8.426 búsquedas/mes van hoy a una página vacía."
     },
     {
-      "term": "crema",
-      "searchCount": 6312,
-      "status": "resultados_dispersos",
-      "vtexResults": 10,
-      "vtexResultsCapped": true,
-      "sampleProducts": [
-        "Crema Tonadita tradicional 350 cc.",
-        "Crema Goicoechea Anticelulitis 400 ml",
-        "Crema chantilly Tonadita 250 g."
-      ],
-      "suggestion": null,
-      "categoryConsistency": 0.4,
-      "dominantCategory": "Lácteos y productos frescos",
-      "resultCategories": [
-        "Lácteos y productos frescos",
-        "Perfumería y farmacia",
-        "Almacén"
-      ],
-      "recommendation": "Trae 40% de resultados de \"Lácteos y productos frescos\" y el resto de categorías sin relación (Perfumería y farmacia, Almacén) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (6.312 búsquedas/mes)."
+      "term": "coca",
+      "searchCount": 8271,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "cocas",
+        "vtexResults": 99,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"coca\" como sinónimo de \"cocas\" en VTEX (búsqueda real que sí tiene stock) — 8.271 búsquedas/mes van hoy a una página vacía."
     },
     {
-      "term": "tomate",
-      "searchCount": 5993,
-      "status": "resultados_dispersos",
-      "vtexResults": 10,
-      "vtexResultsCapped": true,
-      "sampleProducts": [
-        "Tomate x kg.",
-        "Pizzetas de tomate 6 u.",
-        "Tomate perita x kg."
-      ],
-      "suggestion": null,
-      "categoryConsistency": 0.5,
-      "dominantCategory": "Almacén",
-      "resultCategories": [
-        "Frutas y verduras",
-        "Panadería",
-        "Almacén"
-      ],
-      "recommendation": "Trae 50% de resultados de \"Almacén\" y el resto de categorías sin relación (Frutas y verduras, Panadería) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (5.993 búsquedas/mes)."
+      "term": "jabon liquido",
+      "searchCount": 8190,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "javon liquido",
+        "vtexResults": 15,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"jabon liquido\" como sinónimo de \"javon liquido\" en VTEX (búsqueda real que sí tiene stock) — 8.190 búsquedas/mes van hoy a una página vacía."
     },
     {
-      "term": "agua",
-      "searchCount": 5588,
-      "status": "resultados_dispersos",
-      "vtexResults": 10,
-      "vtexResultsCapped": true,
-      "sampleProducts": [
-        "Agua mineral sin gas Carrefour Classic 2 lts",
-        "Dispenser de agua dino",
-        "Juego de agua Avengers"
-      ],
-      "suggestion": null,
-      "categoryConsistency": 0.5,
-      "dominantCategory": "Juguetería y Librería",
-      "resultCategories": [
-        "Bebidas",
-        "Juguetería y Librería",
-        "Hogar",
-        "Frutas y verduras"
-      ],
-      "recommendation": "Trae 50% de resultados de \"Juguetería y Librería\" y el resto de categorías sin relación (Bebidas, Hogar, Frutas y verduras) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (5.588 búsquedas/mes)."
+      "term": "lavandina",
+      "searchCount": 7640,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "labandina",
+        "vtexResults": 202,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"lavandina\" como sinónimo de \"labandina\" en VTEX (búsqueda real que sí tiene stock) — 7.640 búsquedas/mes van hoy a una página vacía."
     },
     {
-      "term": "banana",
-      "searchCount": 5287,
-      "status": "resultados_dispersos",
-      "vtexResults": 10,
-      "vtexResultsCapped": true,
-      "sampleProducts": [
-        "Chip de banana 100 g.",
-        "Chips de banana 100 g.",
-        "Banana selección x kg."
-      ],
+      "term": "harina leudante",
+      "searchCount": 7205,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
       "suggestion": null,
-      "categoryConsistency": 0.5,
-      "dominantCategory": "Desayuno y merienda",
-      "resultCategories": [
-        "Frutas y verduras",
-        "Mundo Bebé",
-        "Desayuno y merienda",
-        "Almacén"
-      ],
-      "recommendation": "Trae 50% de resultados de \"Desayuno y merienda\" y el resto de categorías sin relación (Frutas y verduras, Mundo Bebé, Almacén) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (5.287 búsquedas/mes)."
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Revisar manualmente (7.205 búsquedas/mes sin resultado y sin variante cercana con stock): puede faltar el producto en catálogo, ser una marca no vendida, o requerir un sinónimo que no es un simple error de tipeo."
     },
     {
-      "term": "cebolla",
-      "searchCount": 4485,
-      "status": "resultados_dispersos",
-      "vtexResults": 10,
-      "vtexResultsCapped": true,
-      "sampleProducts": [
-        "Papas fritas sabor a queso y cebolla Lays 77 g.",
-        "Cebolla x kg.",
-        "Cebolla de verdeo x atado"
-      ],
-      "suggestion": null,
-      "categoryConsistency": 0.5,
-      "dominantCategory": "Frutas y verduras",
-      "resultCategories": [
-        "Almacén",
-        "Frutas y verduras",
-        "Panadería"
-      ],
-      "recommendation": "Trae 50% de resultados de \"Frutas y verduras\" y el resto de categorías sin relación (Almacén, Panadería) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (4.485 búsquedas/mes)."
+      "term": "pan rallado",
+      "searchCount": 7186,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "pan rallados",
+        "vtexResults": 100,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"pan rallado\" como sinónimo de \"pan rallados\" en VTEX (búsqueda real que sí tiene stock) — 7.186 búsquedas/mes van hoy a una página vacía."
     },
     {
-      "term": "vino",
-      "searchCount": 4396,
-      "status": "resultados_dispersos",
-      "vtexResults": 10,
-      "vtexResultsCapped": true,
-      "sampleProducts": [
-        "Vinagre de vino Menoyo 1 lt",
-        "Vino Rosé Chacabuco 750 ml",
-        "Copa de vino Luminarc 470 cc"
-      ],
+      "term": "queso untable",
+      "searchCount": 7157,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "queso untavle",
+        "vtexResults": 337,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"queso untable\" como sinónimo de \"queso untavle\" en VTEX (búsqueda real que sí tiene stock) — 7.157 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "pasta dental",
+      "searchCount": 6296,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "pazta dental",
+        "vtexResults": 339,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"pasta dental\" como sinónimo de \"pazta dental\" en VTEX (búsqueda real que sí tiene stock) — 6.296 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "mermelada",
+      "searchCount": 6203,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
       "suggestion": null,
-      "categoryConsistency": 0.5,
-      "dominantCategory": "Bebidas",
-      "resultCategories": [
-        "Almacén",
-        "Bebidas",
-        "Hogar"
-      ],
-      "recommendation": "Trae 50% de resultados de \"Bebidas\" y el resto de categorías sin relación (Almacén, Hogar) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (4.396 búsquedas/mes)."
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Revisar manualmente (6.203 búsquedas/mes sin resultado y sin variante cercana con stock): puede faltar el producto en catálogo, ser una marca no vendida, o requerir un sinónimo que no es un simple error de tipeo."
+    },
+    {
+      "term": "salchichas",
+      "searchCount": 5357,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "zalchichaz",
+        "vtexResults": 113,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"salchichas\" como sinónimo de \"zalchichaz\" en VTEX (búsqueda real que sí tiene stock) — 5.357 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "azúcar",
+      "searchCount": 5079,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "asúcar",
+        "vtexResults": 2116,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"azúcar\" como sinónimo de \"asúcar\" en VTEX (búsqueda real que sí tiene stock) — 5.079 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "mate cocido",
+      "searchCount": 5049,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "mate cocidos",
+        "vtexResults": 62,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"mate cocido\" como sinónimo de \"mate cocidos\" en VTEX (búsqueda real que sí tiene stock) — 5.049 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "harina integral",
+      "searchCount": 5044,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "harina integrals",
+        "vtexResults": 250,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"harina integral\" como sinónimo de \"harina integrals\" en VTEX (búsqueda real que sí tiene stock) — 5.044 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "lavarropas",
+      "searchCount": 5040,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "labarropas",
+        "vtexResults": 667,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"lavarropas\" como sinónimo de \"labarropas\" en VTEX (búsqueda real que sí tiene stock) — 5.040 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "papa",
+      "searchCount": 4962,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Revisar manualmente (4.962 búsquedas/mes sin resultado y sin variante cercana con stock): puede faltar el producto en catálogo, ser una marca no vendida, o requerir un sinónimo que no es un simple error de tipeo."
+    },
+    {
+      "term": "casancrem",
+      "searchCount": 4962,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "cazancrem",
+        "vtexResults": 34,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"casancrem\" como sinónimo de \"cazancrem\" en VTEX (búsqueda real que sí tiene stock) — 4.962 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "te",
+      "searchCount": 4890,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "tes",
+        "vtexResults": 2,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"te\" como sinónimo de \"tes\" en VTEX (búsqueda real que sí tiene stock) — 4.890 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "levadura",
+      "searchCount": 4812,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "lebadura",
+        "vtexResults": 119,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"levadura\" como sinónimo de \"lebadura\" en VTEX (búsqueda real que sí tiene stock) — 4.812 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "chocolate",
+      "searchCount": 4698,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Revisar manualmente (4.698 búsquedas/mes sin resultado y sin variante cercana con stock): puede faltar el producto en catálogo, ser una marca no vendida, o requerir un sinónimo que no es un simple error de tipeo."
+    },
+    {
+      "term": "suavizante",
+      "searchCount": 4651,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "suabizante",
+        "vtexResults": 219,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"suavizante\" como sinónimo de \"suabizante\" en VTEX (búsqueda real que sí tiene stock) — 4.651 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "heladera",
+      "searchCount": 4555,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Revisar manualmente (4.555 búsquedas/mes sin resultado y sin variante cercana con stock): puede faltar el producto en catálogo, ser una marca no vendida, o requerir un sinónimo que no es un simple error de tipeo."
     },
     {
       "term": "sin tacc",
-      "searchCount": 4306,
-      "status": "resultados_dispersos",
-      "vtexResults": 10,
-      "vtexResultsCapped": true,
-      "sampleProducts": [
-        "Jugo Cepita del Valle Naranja Tentación 995 ml",
-        "Jugo Cepita del Valle Durazno Delicioso 995 ml",
-        "Rebozador Aglu 450 g. SIN TACC."
-      ],
+      "searchCount": 4332,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "zin tacc",
+        "vtexResults": 891,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"sin tacc\" como sinónimo de \"zin tacc\" en VTEX (búsqueda real que sí tiene stock) — 4.332 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "sal fina",
+      "searchCount": 4200,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "zal fina",
+        "vtexResults": 115,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"sal fina\" como sinónimo de \"zal fina\" en VTEX (búsqueda real que sí tiene stock) — 4.200 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "avena",
+      "searchCount": 4084,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "abena",
+        "vtexResults": 291,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"avena\" como sinónimo de \"abena\" en VTEX (búsqueda real que sí tiene stock) — 4.084 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "jamon",
+      "searchCount": 4008,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "jamons",
+        "vtexResults": 335,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"jamon\" como sinónimo de \"jamons\" en VTEX (búsqueda real que sí tiene stock) — 4.008 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "vinagre",
+      "searchCount": 3995,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "binagre",
+        "vtexResults": 552,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"vinagre\" como sinónimo de \"binagre\" en VTEX (búsqueda real que sí tiene stock) — 3.995 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "aceite girasol",
+      "searchCount": 3985,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "aceite girazol",
+        "vtexResults": 96,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"aceite girasol\" como sinónimo de \"aceite girazol\" en VTEX (búsqueda real que sí tiene stock) — 3.985 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "palta",
+      "searchCount": 3954,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "paltas",
+        "vtexResults": 38,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"palta\" como sinónimo de \"paltas\" en VTEX (búsqueda real que sí tiene stock) — 3.954 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "papas",
+      "searchCount": 3915,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "papaz",
+        "vtexResults": 597,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"papas\" como sinónimo de \"papaz\" en VTEX (búsqueda real que sí tiene stock) — 3.915 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "agua mineral",
+      "searchCount": 3786,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "agua minerals",
+        "vtexResults": 236,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"agua mineral\" como sinónimo de \"agua minerals\" en VTEX (búsqueda real que sí tiene stock) — 3.786 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "freidora de aire",
+      "searchCount": 3705,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "freidora de aires",
+        "vtexResults": 12,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"freidora de aire\" como sinónimo de \"freidora de aires\" en VTEX (búsqueda real que sí tiene stock) — 3.705 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "acondicionador",
+      "searchCount": 3601,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "acondicionadors",
+        "vtexResults": 1039,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"acondicionador\" como sinónimo de \"acondicionadors\" en VTEX (búsqueda real que sí tiene stock) — 3.601 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "aceite oliva",
+      "searchCount": 3563,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "aceite oliba",
+        "vtexResults": 312,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"aceite oliva\" como sinónimo de \"aceite oliba\" en VTEX (búsqueda real que sí tiene stock) — 3.563 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "edulcorante",
+      "searchCount": 3551,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
       "suggestion": null,
-      "categoryConsistency": 0.4,
-      "dominantCategory": "Almacén",
-      "resultCategories": [
-        "Bebidas",
-        "Almacén",
-        "Desayuno y merienda",
-        "Lácteos y productos frescos"
-      ],
-      "recommendation": "Trae 40% de resultados de \"Almacén\" y el resto de categorías sin relación (Bebidas, Desayuno y merienda, Lácteos y productos frescos) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (4.306 búsquedas/mes)."
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Revisar manualmente (3.551 búsquedas/mes sin resultado y sin variante cercana con stock): puede faltar el producto en catálogo, ser una marca no vendida, o requerir un sinónimo que no es un simple error de tipeo."
+    },
+    {
+      "term": "alfajor",
+      "searchCount": 3493,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "alfajors",
+        "vtexResults": 435,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"alfajor\" como sinónimo de \"alfajors\" en VTEX (búsqueda real que sí tiene stock) — 3.493 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "gaseosa",
+      "searchCount": 3467,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "gazeoza",
+        "vtexResults": 484,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"gaseosa\" como sinónimo de \"gazeoza\" en VTEX (búsqueda real que sí tiene stock) — 3.467 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "ketchup",
+      "searchCount": 3309,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "ketchups",
+        "vtexResults": 51,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"ketchup\" como sinónimo de \"ketchups\" en VTEX (búsqueda real que sí tiene stock) — 3.309 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "galletas de arroz",
+      "searchCount": 3294,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "galletaz de arroz",
+        "vtexResults": 186,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"galletas de arroz\" como sinónimo de \"galletaz de arroz\" en VTEX (búsqueda real que sí tiene stock) — 3.294 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "salchicha",
+      "searchCount": 3249,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "zalchicha",
+        "vtexResults": 113,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"salchicha\" como sinónimo de \"zalchicha\" en VTEX (búsqueda real que sí tiene stock) — 3.249 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "galletitas de agua",
+      "searchCount": 3216,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "galletitaz de agua",
+        "vtexResults": 225,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"galletitas de agua\" como sinónimo de \"galletitaz de agua\" en VTEX (búsqueda real que sí tiene stock) — 3.216 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "granola",
+      "searchCount": 3195,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "granolas",
+        "vtexResults": 187,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"granola\" como sinónimo de \"granolas\" en VTEX (búsqueda real que sí tiene stock) — 3.195 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "aire acondicionado",
+      "searchCount": 3179,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Revisar manualmente (3.179 búsquedas/mes sin resultado y sin variante cercana con stock): puede faltar el producto en catálogo, ser una marca no vendida, o requerir un sinónimo que no es un simple error de tipeo."
+    },
+    {
+      "term": "asado",
+      "searchCount": 3094,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "azado",
+        "vtexResults": 168,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"asado\" como sinónimo de \"azado\" en VTEX (búsqueda real que sí tiene stock) — 3.094 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "sal gruesa",
+      "searchCount": 3045,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "sal gruesas",
+        "vtexResults": 46,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"sal gruesa\" como sinónimo de \"sal gruesas\" en VTEX (búsqueda real que sí tiene stock) — 3.045 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "café",
+      "searchCount": 2918,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Revisar manualmente (2.918 búsquedas/mes sin resultado y sin variante cercana con stock): puede faltar el producto en catálogo, ser una marca no vendida, o requerir un sinónimo que no es un simple error de tipeo."
+    },
+    {
+      "term": "whisky",
+      "searchCount": 2887,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "whizky",
+        "vtexResults": 186,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"whisky\" como sinónimo de \"whizky\" en VTEX (búsqueda real que sí tiene stock) — 2.887 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "pava electrica",
+      "searchCount": 2799,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "paba electrica",
+        "vtexResults": 244,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"pava electrica\" como sinónimo de \"paba electrica\" en VTEX (búsqueda real que sí tiene stock) — 2.799 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "zanahoria",
+      "searchCount": 2763,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "sanahoria",
+        "vtexResults": 82,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"zanahoria\" como sinónimo de \"sanahoria\" en VTEX (búsqueda real que sí tiene stock) — 2.763 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "galletitas dulces",
+      "searchCount": 2755,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "galletitaz dulcez",
+        "vtexResults": 1212,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"galletitas dulces\" como sinónimo de \"galletitaz dulcez\" en VTEX (búsqueda real que sí tiene stock) — 2.755 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "mostaza",
+      "searchCount": 2745,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "moztaza",
+        "vtexResults": 190,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"mostaza\" como sinónimo de \"moztaza\" en VTEX (búsqueda real que sí tiene stock) — 2.745 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "cocina",
+      "searchCount": 2697,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Revisar manualmente (2.697 búsquedas/mes sin resultado y sin variante cercana con stock): puede faltar el producto en catálogo, ser una marca no vendida, o requerir un sinónimo que no es un simple error de tipeo."
+    },
+    {
+      "term": "servilletas",
+      "searchCount": 2663,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "serbilletas",
+        "vtexResults": 118,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"servilletas\" como sinónimo de \"serbilletas\" en VTEX (búsqueda real que sí tiene stock) — 2.663 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "cepillo de dientes",
+      "searchCount": 2663,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "cepillo de dientez",
+        "vtexResults": 290,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"cepillo de dientes\" como sinónimo de \"cepillo de dientez\" en VTEX (búsqueda real que sí tiene stock) — 2.663 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "desodorante dove",
+      "searchCount": 2640,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "desodorante dobe",
+        "vtexResults": 111,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"desodorante dove\" como sinónimo de \"desodorante dobe\" en VTEX (búsqueda real que sí tiene stock) — 2.640 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "bon o bon",
+      "searchCount": 2617,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "bon o bons",
+        "vtexResults": 70,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"bon o bon\" como sinónimo de \"bon o bons\" en VTEX (búsqueda real que sí tiene stock) — 2.617 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "rapiditas",
+      "searchCount": 2598,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "rapiditaz",
+        "vtexResults": 10,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"rapiditas\" como sinónimo de \"rapiditaz\" en VTEX (búsqueda real que sí tiene stock) — 2.598 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "alfajores",
+      "searchCount": 2470,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "alfajorez",
+        "vtexResults": 435,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"alfajores\" como sinónimo de \"alfajorez\" en VTEX (búsqueda real que sí tiene stock) — 2.470 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "vainillas",
+      "searchCount": 2399,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "bainillas",
+        "vtexResults": 1686,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"vainillas\" como sinónimo de \"bainillas\" en VTEX (búsqueda real que sí tiene stock) — 2.399 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "miel",
+      "searchCount": 2377,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "miels",
+        "vtexResults": 241,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"miel\" como sinónimo de \"miels\" en VTEX (búsqueda real que sí tiene stock) — 2.377 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "aceite de girasol",
+      "searchCount": 2353,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "aceite de girazol",
+        "vtexResults": 96,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"aceite de girasol\" como sinónimo de \"aceite de girazol\" en VTEX (búsqueda real que sí tiene stock) — 2.353 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "vino blanco",
+      "searchCount": 2328,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "vino vlanco",
+        "vtexResults": 566,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"vino blanco\" como sinónimo de \"vino vlanco\" en VTEX (búsqueda real que sí tiene stock) — 2.328 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "vino tinto",
+      "searchCount": 2293,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "bino tinto",
+        "vtexResults": 1216,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"vino tinto\" como sinónimo de \"bino tinto\" en VTEX (búsqueda real que sí tiene stock) — 2.293 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "jabón líquido",
+      "searchCount": 2249,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "javón líquido",
+        "vtexResults": 15,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"jabón líquido\" como sinónimo de \"javón líquido\" en VTEX (búsqueda real que sí tiene stock) — 2.249 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "jamon cocido",
+      "searchCount": 2232,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "jamon cocidos",
+        "vtexResults": 51,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"jamon cocido\" como sinónimo de \"jamon cocidos\" en VTEX (búsqueda real que sí tiene stock) — 2.232 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "agua saborizada",
+      "searchCount": 2231,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "agua savorizada",
+        "vtexResults": 242,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"agua saborizada\" como sinónimo de \"agua savorizada\" en VTEX (búsqueda real que sí tiene stock) — 2.231 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "cacao",
+      "searchCount": 2218,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "cacaos",
+        "vtexResults": 220,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"cacao\" como sinónimo de \"cacaos\" en VTEX (búsqueda real que sí tiene stock) — 2.218 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "shampoo dove",
+      "searchCount": 2209,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "shampoo dobe",
+        "vtexResults": 96,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"shampoo dove\" como sinónimo de \"shampoo dobe\" en VTEX (búsqueda real que sí tiene stock) — 2.209 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "pascualina",
+      "searchCount": 2192,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "pazcualina",
+        "vtexResults": 64,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"pascualina\" como sinónimo de \"pazcualina\" en VTEX (búsqueda real que sí tiene stock) — 2.192 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "atún",
+      "searchCount": 2179,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "atúns",
+        "vtexResults": 88,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"atún\" como sinónimo de \"atúns\" en VTEX (búsqueda real que sí tiene stock) — 2.179 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "aceitunas",
+      "searchCount": 2115,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "aceitunaz",
+        "vtexResults": 392,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"aceitunas\" como sinónimo de \"aceitunaz\" en VTEX (búsqueda real que sí tiene stock) — 2.115 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "morron",
+      "searchCount": 2113,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "morrons",
+        "vtexResults": 85,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"morron\" como sinónimo de \"morrons\" en VTEX (búsqueda real que sí tiene stock) — 2.113 búsquedas/mes van hoy a una página vacía."
+    },
+    {
+      "term": "fideo",
+      "searchCount": 2069,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Revisar manualmente (2.069 búsquedas/mes sin resultado y sin variante cercana con stock): puede faltar el producto en catálogo, ser una marca no vendida, o requerir un sinónimo que no es un simple error de tipeo."
+    },
+    {
+      "term": "aspiradora",
+      "searchCount": 2025,
+      "status": "sin_resultados",
+      "vtexResults": 0,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": {
+        "term": "azpiradora",
+        "vtexResults": 591,
+        "vtexResultsCapped": false
+      },
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Alta prioridad: agregar \"aspiradora\" como sinónimo de \"azpiradora\" en VTEX (búsqueda real que sí tiene stock) — 2.025 búsquedas/mes van hoy a una página vacía."
     },
     {
       "term": "bondiola",
-      "searchCount": 4095,
+      "searchCount": 4112,
       "status": "resultados_dispersos",
-      "vtexResults": 10,
-      "vtexResultsCapped": true,
+      "vtexResults": 26,
+      "vtexResultsCapped": false,
       "sampleProducts": [
         "Bondiola de cerdo x kg",
         "Bondiola congelada x kg",
-        "Bondiola Paladini x kg."
+        "Bondiola de cerdo Huella Natural x kg"
       ],
       "suggestion": null,
-      "categoryConsistency": 0.4,
-      "dominantCategory": "Carnes y pescados",
-      "resultCategories": [
-        "Carnes y pescados",
-        "Lácteos y productos frescos",
-        "Panadería",
-        "Congelados"
-      ],
-      "recommendation": "Trae 40% de resultados de \"Carnes y pescados\" y el resto de categorías sin relación (Lácteos y productos frescos, Panadería, Congelados) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (4.095 búsquedas/mes)."
-    },
-    {
-      "term": "suprema",
-      "searchCount": 3708,
-      "status": "resultados_dispersos",
-      "vtexResults": 10,
-      "vtexResultsCapped": true,
-      "sampleProducts": [
-        "Suprema congelada 2 kg",
-        "Suprema congelada x kg",
-        "Medallón de pollo Swift 4 u."
-      ],
-      "suggestion": null,
+      "nativeCorrection": null,
+      "aiRelevance": null,
       "categoryConsistency": 0.5,
       "dominantCategory": "Carnes y pescados",
       "resultCategories": [
         "Carnes y pescados",
-        "Congelados"
+        "Lácteos y productos frescos"
       ],
-      "recommendation": "Trae 50% de resultados de \"Carnes y pescados\" y el resto de categorías sin relación (Congelados) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (3.708 búsquedas/mes)."
+      "recommendation": "Trae 50% de resultados de \"Carnes y pescados\" y el resto de categorías sin relación (Lácteos y productos frescos) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (4.112 búsquedas/mes)."
+    },
+    {
+      "term": "suprema",
+      "searchCount": 3752,
+      "status": "resultados_dispersos",
+      "vtexResults": 38,
+      "vtexResultsCapped": false,
+      "sampleProducts": [
+        "Suprema congelada x kg",
+        "Suprema de pollo al vacio Que Rico x kg",
+        "Supremas de pollo Granja del Sol bolsa 360 g."
+      ],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": 0.5,
+      "dominantCategory": "Carnes y pescados",
+      "resultCategories": [
+        "Carnes y pescados",
+        "Congelados",
+        "Panadería"
+      ],
+      "recommendation": "Trae 50% de resultados de \"Carnes y pescados\" y el resto de categorías sin relación (Congelados, Panadería) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (3.752 búsquedas/mes)."
+    },
+    {
+      "term": "jabon",
+      "searchCount": 3731,
+      "status": "resultados_dispersos",
+      "vtexResults": 1392,
+      "vtexResultsCapped": false,
+      "sampleProducts": [
+        "Jabon en Barra Dove Original Individual 90 grs",
+        "Jabon líquido Ace clásico Doypack 3 lts",
+        "Jabon líquido Ace clásico Doypack 800 ml"
+      ],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "aiRelevance": null,
+      "categoryConsistency": 0.4,
+      "dominantCategory": "Perfumería y farmacia",
+      "resultCategories": [
+        "Perfumería y farmacia",
+        "Limpieza",
+        "Mundo Bebé",
+        "Hogar"
+      ],
+      "recommendation": "Trae 40% de resultados de \"Perfumería y farmacia\" y el resto de categorías sin relación (Limpieza, Mundo Bebé, Hogar) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (3.731 búsquedas/mes)."
     },
     {
       "term": "soda",
-      "searchCount": 3211,
+      "searchCount": 3263,
       "status": "resultados_dispersos",
-      "vtexResults": 10,
-      "vtexResultsCapped": true,
+      "vtexResults": 117,
+      "vtexResultsCapped": false,
       "sampleProducts": [
+        "Soda Carrefour Classic sifón 2 lts",
         "Soda Bulnez 2,25 lts",
-        "Soda Manaos sifón 2 lts",
         "Soda Carrefour Classic 2,25 lts"
       ],
       "suggestion": null,
+      "nativeCorrection": null,
+      "aiRelevance": null,
       "categoryConsistency": 0.5,
       "dominantCategory": "Bebidas",
       "resultCategories": [
         "Bebidas",
-        "Electro y tecnología"
-      ],
-      "recommendation": "Trae 50% de resultados de \"Bebidas\" y el resto de categorías sin relación (Electro y tecnología) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (3.211 búsquedas/mes)."
-    },
-    {
-      "term": "asado",
-      "searchCount": 3140,
-      "status": "resultados_dispersos",
-      "vtexResults": 10,
-      "vtexResultsCapped": true,
-      "sampleProducts": [
-        "Tapa de asado x kg",
-        "Asado Novillo x kg",
-        "Plancha de asado Novillo x kg"
-      ],
-      "suggestion": null,
-      "categoryConsistency": 0.5,
-      "dominantCategory": "Carnes y pescados",
-      "resultCategories": [
-        "Carnes y pescados",
-        "Almacén",
+        "Electro y tecnología",
         "Hogar"
       ],
-      "recommendation": "Trae 50% de resultados de \"Carnes y pescados\" y el resto de categorías sin relación (Almacén, Hogar) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (3.140 búsquedas/mes)."
+      "recommendation": "Trae 50% de resultados de \"Bebidas\" y el resto de categorías sin relación (Electro y tecnología, Hogar) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (3.263 búsquedas/mes)."
     },
     {
-      "term": "ricota",
-      "searchCount": 2967,
+      "term": "leche proteina",
+      "searchCount": 2650,
       "status": "resultados_dispersos",
-      "vtexResults": 10,
-      "vtexResultsCapped": true,
+      "vtexResults": 32,
+      "vtexResultsCapped": false,
       "sampleProducts": [
-        "Ricota Silvia 500 g.",
-        "Ravioles de ricota La salteña 450 g.",
-        "Sorrentinos Bulnez de ricota y jamón 550 g."
+        "Leche Protein La Serenisima 1L",
+        "Leche con proteina Las Tres Niñas Vida Activa 1 lt",
+        "Leche ultra descremada La Serenísima Protein sachet 1 lt"
       ],
       "suggestion": null,
+      "nativeCorrection": null,
+      "aiRelevance": null,
       "categoryConsistency": 0.5,
       "dominantCategory": "Lácteos y productos frescos",
       "resultCategories": [
         "Lácteos y productos frescos",
-        "Almacén",
-        "Panadería"
+        "Bebidas"
       ],
-      "recommendation": "Trae 50% de resultados de \"Lácteos y productos frescos\" y el resto de categorías sin relación (Almacén, Panadería) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (2.967 búsquedas/mes)."
-    },
-    {
-      "term": "zanahoria",
-      "searchCount": 2749,
-      "status": "resultados_dispersos",
-      "vtexResults": 10,
-      "vtexResultsCapped": true,
-      "sampleProducts": [
-        "Zanahoria x kg.",
-        "Zanahoria rallada Huella Natural 200 g.",
-        "Vegetales deshidratados Knorr zanahoria 100 g"
-      ],
-      "suggestion": null,
-      "categoryConsistency": 0.4,
-      "dominantCategory": "Almacén",
-      "resultCategories": [
-        "Frutas y verduras",
-        "Almacén",
-        "Congelados",
-        "Aire Libre y Ocio"
-      ],
-      "recommendation": "Trae 40% de resultados de \"Almacén\" y el resto de categorías sin relación (Frutas y verduras, Congelados, Aire Libre y Ocio) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (2.749 búsquedas/mes)."
-    },
-    {
-      "term": "cocina",
-      "searchCount": 2710,
-      "status": "resultados_dispersos",
-      "vtexResults": 10,
-      "vtexResultsCapped": true,
-      "sampleProducts": [
-        "Cocina Escorial 51 cm CANDOR S2 GN blanco.",
-        "Rollo de cocina Carrefour Essential x3 40 paños",
-        "Playset cocina avión"
-      ],
-      "suggestion": null,
-      "categoryConsistency": 0.4,
-      "dominantCategory": "Juguetería y Librería",
-      "resultCategories": [
-        "Electro y tecnología",
-        "Limpieza",
-        "Juguetería y Librería",
-        "Hogar"
-      ],
-      "recommendation": "Trae 40% de resultados de \"Juguetería y Librería\" y el resto de categorías sin relación (Electro y tecnología, Limpieza, Hogar) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (2.710 búsquedas/mes)."
-    },
-    {
-      "term": "huevo",
-      "searchCount": 2635,
-      "status": "resultados_dispersos",
-      "vtexResults": 10,
-      "vtexResultsCapped": true,
-      "sampleProducts": [
-        "Tallarines finos al huevo Carrefour 500 g.",
-        "Licor Cusenier huevo 700 cc",
-        "Kinder huevo de chocolate rosa 2 uni"
-      ],
-      "suggestion": null,
-      "categoryConsistency": 0.5,
-      "dominantCategory": "Almacén",
-      "resultCategories": [
-        "Lácteos y productos frescos",
-        "Bebidas",
-        "Desayuno y merienda",
-        "Panadería",
-        "Juguetería y Librería",
-        "Almacén"
-      ],
-      "recommendation": "Trae 50% de resultados de \"Almacén\" y el resto de categorías sin relación (Lácteos y productos frescos, Bebidas, Desayuno y merienda, Panadería, Juguetería y Librería) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (2.635 búsquedas/mes)."
-    },
-    {
-      "term": "ariel",
-      "searchCount": 2422,
-      "status": "resultados_dispersos",
-      "vtexResults": 10,
-      "vtexResultsCapped": true,
-      "sampleProducts": [
-        "Jabón concentrado Ariel Platinum Botella 500 ml",
-        "Jabón líquido para ropa Ariel Platinum Doypack 3 lts",
-        "Jabón líquido para ropa Ariel Platinum Doypack 800 ml"
-      ],
-      "suggestion": null,
-      "categoryConsistency": 0.5,
-      "dominantCategory": "Limpieza",
-      "resultCategories": [
-        "Limpieza",
-        "Juguetería y Librería"
-      ],
-      "recommendation": "Trae 50% de resultados de \"Limpieza\" y el resto de categorías sin relación (Juguetería y Librería) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (2.422 búsquedas/mes)."
+      "recommendation": "Trae 50% de resultados de \"Lácteos y productos frescos\" y el resto de categorías sin relación (Bebidas) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (2.650 búsquedas/mes)."
     },
     {
       "term": "nutella",
-      "searchCount": 2119,
+      "searchCount": 2132,
       "status": "resultados_dispersos",
       "vtexResults": 7,
       "vtexResultsCapped": false,
@@ -690,78 +2520,38 @@
         "Nutella B-Ready 132 grs"
       ],
       "suggestion": null,
+      "nativeCorrection": null,
+      "aiRelevance": null,
       "categoryConsistency": 0.5714285714285714,
       "dominantCategory": "Desayuno y merienda",
       "resultCategories": [
         "Desayuno y merienda",
         "Panadería"
       ],
-      "recommendation": "Trae 57% de resultados de \"Desayuno y merienda\" y el resto de categorías sin relación (Panadería) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (2.119 búsquedas/mes)."
-    },
-    {
-      "term": "milanesa",
-      "searchCount": 2098,
-      "status": "resultados_dispersos",
-      "vtexResults": 10,
-      "vtexResultsCapped": true,
-      "sampleProducts": [
-        "Milanesa de nalga x kg",
-        "Milanesa de carne x kg",
-        "Milanesa de cuadrada x kg"
-      ],
-      "suggestion": null,
-      "categoryConsistency": 0.5,
-      "dominantCategory": "Congelados",
-      "resultCategories": [
-        "Carnes y pescados",
-        "Panadería",
-        "Almacén",
-        "Congelados"
-      ],
-      "recommendation": "Trae 50% de resultados de \"Congelados\" y el resto de categorías sin relación (Carnes y pescados, Panadería, Almacén) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (2.098 búsquedas/mes)."
+      "recommendation": "Trae 57% de resultados de \"Desayuno y merienda\" y el resto de categorías sin relación (Panadería) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (2.132 búsquedas/mes)."
     },
     {
       "term": "manzana",
-      "searchCount": 2068,
+      "searchCount": 2061,
       "status": "resultados_dispersos",
-      "vtexResults": 10,
-      "vtexResultsCapped": true,
+      "vtexResults": 446,
+      "vtexResultsCapped": false,
       "sampleProducts": [
-        "Jugo Cepita del Valle Naranja Tentación 995 ml",
-        "Jugo Cepita del Valle Durazno Delicioso 995 ml",
-        "Manzana roja x kg."
+        "Manzana roja x kg.",
+        "Manzana granny especial x kg.",
+        "Manzana roja Huella Natural x kg."
       ],
       "suggestion": null,
-      "categoryConsistency": 0.4,
-      "dominantCategory": "Frutas y verduras",
-      "resultCategories": [
-        "Bebidas",
-        "Frutas y verduras",
-        "Hogar",
-        "Almacén",
-        "Perfumería y farmacia"
-      ],
-      "recommendation": "Trae 40% de resultados de \"Frutas y verduras\" y el resto de categorías sin relación (Bebidas, Hogar, Almacén, Perfumería y farmacia) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (2.068 búsquedas/mes)."
-    },
-    {
-      "term": "valija",
-      "searchCount": 2052,
-      "status": "resultados_dispersos",
-      "vtexResults": 10,
-      "vtexResultsCapped": true,
-      "sampleProducts": [
-        "Valija de maquillaje grande",
-        "Juego valija club de mascotas (Modelos Surtidos)",
-        "Libro Peppa - valija para jugar y pintar"
-      ],
-      "suggestion": null,
+      "nativeCorrection": null,
+      "aiRelevance": null,
       "categoryConsistency": 0.5,
-      "dominantCategory": "Juguetería y Librería",
+      "dominantCategory": "Bebidas",
       "resultCategories": [
-        "Juguetería y Librería",
-        "Aire Libre y Ocio"
+        "Frutas y verduras",
+        "Perfumería y farmacia",
+        "Bebidas"
       ],
-      "recommendation": "Trae 50% de resultados de \"Juguetería y Librería\" y el resto de categorías sin relación (Aire Libre y Ocio) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (2.052 búsquedas/mes)."
+      "recommendation": "Trae 50% de resultados de \"Bebidas\" y el resto de categorías sin relación (Frutas y verduras, Perfumería y farmacia) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (2.061 búsquedas/mes)."
     }
   ]
 }

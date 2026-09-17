@@ -31,11 +31,12 @@
   {
     "date": "2026-09-17",
     "termsAnalyzed": 200,
-    "sinResultados": 1,
+    "sinResultados": 99,
     "pocosResultados": 0,
-    "resultadosDispersos": 27,
-    "ok": 172,
-    "totalSearches": 1167769,
-    "lostSearches": 211501
+    "resultadosDispersos": 7,
+    "resultadosIrrelevantes": 0,
+    "ok": 94,
+    "totalSearches": 1173059,
+    "lostSearches": 696818
   }
 ]
