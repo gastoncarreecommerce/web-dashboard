@@ -37,17 +37,39 @@ test('el probe encuentra las rutas aunque la respuesta tenga OTRA forma que la s
 });
 
 test('la lista mas poblada gana sobre otras listas del mismo payload', () => {
-  const out = correr({ data: {
+  const out = correr({ choices: [{ variations: [{ payload: { data: {
     facets: [{ name: 'Marca' }, { name: 'Precio' }],           // 2 objetos
     items: [{ name: 'p1' }, { name: 'p2' }, { name: 'p3' }],   // 3 objetos: gana
-  }});
-  assert.match(out, /"productsPath": "data\.items"/);
+  }}}]}]});
+  assert.match(out, /"productsPath": "choices\.0\.variations\.0\.payload\.data\.items"/);
 });
 
-test('sin ninguna lista de objetos lo dice, no inventa una ruta', () => {
-  const out = correr({ choices: [] });
+test('respondio pero sin ninguna lista de productos: lo dice, no inventa una ruta', () => {
+  // choices con contenido (asi el probe avanza) pero el payload no trae ninguna
+  // lista de objetos: no hay de donde sacar productsPath.
+  const out = correr({ choices: [{ variations: [{ payload: { data: { message: 'sin resultados' } } }] }] });
   assert.match(out, /ninguna: la respuesta no trae ninguna lista de objetos/);
   assert.doesNotMatch(out, /"productsPath"/, 'no propone nada si no hay de donde');
+});
+
+test('cookies y warnings NUNCA se ofrecen como productos', () => {
+  // Esto paso de verdad en la primera corrida: choices vacio, dos cookies y un
+  // warning, y la heuristica propuso "productsPath": "cookies".
+  const pre = path.join(os.tmpdir(), `dyprobe-cook-${process.pid}.js`);
+  fs.writeFileSync(pre, `globalThis.fetch = async () => {
+    const r = { choices: [], cookies: [{name:'_dyid_server',value:'1'},{name:'_dyjsession',value:'2'}],
+                warnings: [{code:'W084',message:"The 'dyid' does not match"}] };
+    return { ok:true, status:200, text: async()=>JSON.stringify(r), json: async()=>r };
+  };`);
+  try {
+    execFileSync('node', ['-r', pre, 'src/dy-probe.js', 'leche'],
+      { cwd: R, encoding: 'utf8', env: { ...process.env, DY_API_KEY: 'falsa' } });
+    assert.fail('sin choices tiene que salir con error');
+  } catch (e) {
+    assert.doesNotMatch(e.stdout, /"productsPath": "cookies"/, 'cookies no son productos');
+    assert.match(e.stdout, /W084/, 'muestra el warning, que es la pista real');
+    assert.match(e.stdout, /API Selector Name/, 'dice que revisar');
+  } finally { fs.unlinkSync(pre); }
 });
 
 test('un error HTTP no se confunde con una respuesta vacia', () => {

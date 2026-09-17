@@ -37,12 +37,9 @@
       "returnAnalyticsMetadata": false
     },
     "user": {
-      "dyid": "webdash-diagnostico-buscador",
-      "dyid_server": "webdash-diagnostico-buscador",
+      "dyid": "7530018819271298053",
+      "dyid_server": "7530018819271298053",
       "active_consent_accepted": true
-    },
-    "session": {
-      "dy": "webdash-diagnostico-buscador"
     }
   },
   "_decisiones": [
@@ -57,14 +54,16 @@
     "diagnóstico. HOMEPAGE podría activar personalización de home y ensuciar los",
     "resultados.",
     "",
-    "`numItems` 10 coincide con PAGE_SIZE de src/search-engines.js, así que los",
-    "tres motores se juzgan con la misma cantidad de resultados a la vista.",
+    "`numItems` 10 coincide con PAGE_SIZE de src/search-engines.js.",
     "",
-    "`returnAnalyticsMetadata` false: no hace falta para medir relevancia.",
+    "El `dyid` es el que DEVOLVIÓ Dynamic Yield en la cookie _dyid_server de la",
+    "primera llamada. Antes había uno inventado ('webdash-diagnostico-buscador') y",
+    "DY respondía HTTP 200 con `choices: []` más el warning W084: \"The 'dyid' does",
+    "not match the value created by Dynamic Yield\". O sea: aceptaba el request y no",
+    "servía nada. Un id que DY no generó no le sirve.",
     "",
-    "El dyid/session es FIJO y reconocible ('webdash-diagnostico-buscador') para",
-    "que estas búsquedas se puedan identificar y excluir de los reportes de DY.",
-    "Son 200 búsquedas por corrida contra la cuenta PROD."
+    "`session` se saca: la _dyjsession que devuelve DY vence a los 30 minutos",
+    "(maxAge 1800), así que clavarla en un archivo no tiene sentido. DY crea una."
   ],
   "productsPath": "choices.0.variations.0.payload.data.slots",
   "totalPath": "choices.0.variations.0.payload.data.totalResults",

@@ -27,12 +27,29 @@ const path = require('path');
 const CONFIG_PATH = path.join(__dirname, '..', 'config', 'dy-search.json');
 const MAX_JSON_CHARS = 6000;
 
+// Listas que son parte del SOBRE de la respuesta de DY y nunca son productos.
+//
+// `cookies` y `warnings`: la primera corrida real devolvio `choices: []` con dos
+// cookies y un warning, y la heuristica propuso `"productsPath": "cookies"` —
+// plausible y completamente equivocado.
+//
+// `choices` y `choices.N.variations`: son la estructura del sobre. Son listas de
+// objetos, asi que calificaban como candidatas, pero los productos siempre
+// estan MAS ADENTRO. Ofrecerlas solo distrae.
+const RUTAS_IGNORADAS = [
+  /^(cookies|warnings|errors)(\.|$)/,
+  /^choices$/,
+  /^choices\.\d+\.variations$/,
+];
+const ignorada = (ruta) => RUTAS_IGNORADAS.some((r) => r.test(ruta));
+
 /** Todas las rutas que apuntan a una lista de objetos: cualquiera de estas
  *  puede ser la lista de productos. Se ordena por largo descendente porque la
  *  lista de resultados suele ser la más poblada. */
 function listasDeObjetos(obj, ruta = '', out = []) {
   if (Array.isArray(obj)) {
-    if (obj.length && obj.every((x) => x && typeof x === 'object' && !Array.isArray(x))) {
+    if (obj.length && !ignorada(ruta)
+        && obj.every((x) => x && typeof x === 'object' && !Array.isArray(x))) {
       out.push({ ruta, largo: obj.length, muestra: obj[0] });
     }
     obj.forEach((v, i) => listasDeObjetos(v, ruta ? `${ruta}.${i}` : String(i), out));
@@ -77,6 +94,29 @@ function camposDe(producto) {
   };
 }
 
+/** Nombres de selector a probar. `choices: []` con HTTP 200 suele significar
+ *  que ninguna campaña matchea el nombre del selector, y el nombre exacto solo
+ *  lo sabe quien armó la campaña — el panel muestra un título ("Semantic Search
+ *  API") que no necesariamente es el API Selector Name. Probar varios en una
+ *  corrida sale más barato que una ida y vuelta por cada uno. */
+function selectoresAProbar(cfg) {
+  const desdeArgv = process.argv.slice(3).filter(Boolean);
+  if (desdeArgv.length) return desdeArgv;
+  const env = (process.env.DY_SELECTORS || '').split(',').map((s) => s.trim()).filter(Boolean);
+  if (env.length) return env;
+  return [...new Set([cfg.selector, 'Semantic Search API', 'Semantic Search', 'Default Search Experience'].filter(Boolean))];
+}
+
+/** Reemplaza el nombre del selector donde sea que esté en el body. */
+function conSelector(body, nombre) {
+  const copia = JSON.parse(JSON.stringify(body));
+  if (copia.selector) {
+    if (Array.isArray(copia.selector.names)) copia.selector.names = [nombre];
+    if ('name' in copia.selector) copia.selector.name = nombre;
+  }
+  return copia;
+}
+
 async function main() {
   const termino = process.argv[2] || 'leche';
 
@@ -90,34 +130,50 @@ async function main() {
   }
   const cfg = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
 
-  const body = JSON.stringify(cfg.body).split('{{query}}').join(JSON.stringify(termino).slice(1, -1));
+  const selectores = selectoresAProbar(cfg);
   console.log(`→ POST ${cfg.endpoint}`);
-  console.log(`  selector: ${cfg.selector}  ·  término: "${termino}"\n`);
+  console.log(`  término: "${termino}"  ·  selectores a probar: ${selectores.map((s) => `"${s}"`).join(', ')}\n`);
 
-  const res = await fetch(cfg.endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'DY-API-Key': process.env.DY_API_KEY },
-    body,
-  });
+  let json = null, elegido = null;
+  for (const nombre of selectores) {
+    const body = JSON.stringify(conSelector(cfg.body, nombre))
+      .split('{{query}}').join(JSON.stringify(termino).slice(1, -1));
+    const res = await fetch(cfg.endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'DY-API-Key': process.env.DY_API_KEY },
+      body,
+    });
+    const texto = await res.text();
+    let j = null;
+    try { j = JSON.parse(texto); } catch { /* se reporta abajo */ }
 
-  const texto = await res.text();
-  console.log(`← HTTP ${res.status}\n`);
+    const choices = Array.isArray(j?.choices) ? j.choices.length : null;
+    const warns = (j?.warnings || []).map((w) => `${w.code} ${w.message}`);
+    console.log(`  "${nombre}" → HTTP ${res.status}`
+      + (choices === null ? ' (respuesta sin `choices`)' : ` · choices: ${choices}`)
+      + (warns.length ? `\n      warnings: ${warns.join(' | ')}` : ''));
 
-  let json;
-  try { json = JSON.parse(texto); }
-  catch {
-    console.log('La respuesta no es JSON:');
-    console.log(texto.slice(0, MAX_JSON_CHARS));
-    process.exit(1);
+    if (!j) { console.log(`      cuerpo: ${texto.slice(0, 300)}`); continue; }
+    // La ULTIMA respuesta parseada siempre se guarda, sirva o no. Antes solo se
+    // guardaba en el caso !res.ok, asi que un 200 con `choices: []` —justo el
+    // caso que hay que mirar— terminaba imprimiendo "null".
+    json = j;
+    if (res.ok && choices) { elegido = nombre; break; }
   }
 
-  if (!res.ok) {
-    // Un 4xx acá casi siempre es la key, el nombre del selector, o que la
-    // experiencia no está publicada. El cuerpo lo dice.
-    console.log('La llamada falló. Respuesta completa:');
+  if (!elegido) {
+    console.log('\nNingún selector devolvió resultados. Respuesta de la última prueba:');
     console.log(JSON.stringify(json, null, 2).slice(0, MAX_JSON_CHARS));
+    console.log('\nQué revisar, en este orden:');
+    console.log('  1. El API Selector Name real de la campaña (en el panel de DY).');
+    console.log('     Se puede pasar a mano: node src/dy-probe.js leche "El Nombre Exacto"');
+    console.log('  2. Que la experiencia esté PUBLICADA (no solo guardada).');
+    console.log('  3. Los warnings de arriba: W084 significa que el dyid no lo generó DY.');
+    console.log('  4. Que la API key tenga el ACL "Experience API" y sea server-side.');
     process.exit(1);
   }
+
+  console.log(`\n✓ El selector que funciona es "${elegido}"\n`);
 
   const crudo = JSON.stringify(json, null, 2);
   console.log('── Respuesta ' + (crudo.length > MAX_JSON_CHARS ? `(primeros ${MAX_JSON_CHARS} de ${crudo.length} caracteres)` : '') + ' ──');

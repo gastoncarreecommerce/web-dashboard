@@ -16,6 +16,10 @@ on:
         description: 'Término a buscar'
         required: false
         default: 'leche'
+      selectores:
+        description: 'API Selector Names a probar, separados por coma (vacío = los candidatos por defecto)'
+        required: false
+        default: ''
 
 jobs:
   probe:
@@ -28,4 +32,5 @@ jobs:
       - name: Probar Experience Search
         env:
           DY_API_KEY: ${{ secrets.DY_API_KEY }}
+          DY_SELECTORS: ${{ inputs.selectores }}
         run: node src/dy-probe.js "${{ inputs.termino }}"
