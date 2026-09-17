@@ -1,0 +1,31 @@
+# Una sola llamada real a Experience Search de Dynamic Yield, a mano, para
+# completar productsPath/totalPath en config/dy-search.json.
+#
+# Existe porque el Playground del panel de DY no llama a la API publica
+# (`choose`) sino a un endpoint interno (`preview`), asi que el response que se
+# ve ahi no es el que recibe el servidor. Esto pide el de verdad y lo imprime.
+#
+# Se corre a mano: Actions -> "DY probe" -> Run workflow. No toca ningun dato ni
+# commitea nada: imprime y termina.
+name: DY probe (una llamada a Experience Search)
+
+on:
+  workflow_dispatch:
+    inputs:
+      termino:
+        description: 'Término a buscar'
+        required: false
+        default: 'leche'
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Probar Experience Search
+        env:
+          DY_API_KEY: ${{ secrets.DY_API_KEY }}
+        run: node src/dy-probe.js "${{ inputs.termino }}"

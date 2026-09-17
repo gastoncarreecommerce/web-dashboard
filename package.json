@@ -13,7 +13,8 @@
     "inspect:channels": "node src/inspect-channels.js",
     "inspect:search": "node src/inspect-search.js",
     "inspect:search-diagnosis": "node src/inspect-search-diagnosis.js",
-    "test": "node --test \"test/**/*.test.js\""
+    "test": "node --test \"test/**/*.test.js\"",
+    "dy:probe": "node src/dy-probe.js"
   },
   "license": "UNLICENSED",
   "dependencies": {
