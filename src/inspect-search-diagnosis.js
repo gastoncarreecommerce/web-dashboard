@@ -222,6 +222,14 @@ async function findVerifiedSuggestion(term) {
 
 function recommendation(t) {
   if (t.status === 'ok') return null;
+  if (t.status === 'motor_no_indexa') {
+    const vol = `${t.searchCount.toLocaleString('es-AR')} búsquedas/mes`;
+    const quien = (t.encontradoPor || []).map((o) => `${o.id} (${o.results})`).join(', ');
+    const ej = (t.encontradoPor || [])[0]?.sample?.[0];
+    return `${MOTOR_PRIMARIO.label} devuelve 0 pero ${quien} sí encuentra productos`
+      + `${ej ? ` (ej.: "${ej}")` : ''}. El término está bien escrito: no hace falta un sinónimo, `
+      + `hay que revisar por qué esos productos no están en el índice de ${MOTOR_PRIMARIO.label} (${vol}).`;
+  }
   if (t.status === 'error_consulta') return 'No se pudo consultar VTEX para este término — reintentar en la próxima corrida.';
   const vol = `${t.searchCount.toLocaleString('es-AR')} búsquedas/mes`;
   if (t.status === 'resultados_dispersos') {
@@ -286,6 +294,24 @@ async function main() {
 
     const p = t.engines[MOTOR_PRIMARIO.id];
     t.status = p.status;
+
+    // Si el motor primario no encuentra NADA pero otro motor si, el problema no
+    // es el termino: es el indice del primario. Distinguirlo importa porque las
+    // dos cosas se arreglan en lugares distintos —un sinonimo en el buscador
+    // contra reindexar el catalogo— y porque tratarlo como "sin resultados"
+    // hace que el sugeridor proponga barbaridades: con Intelligent Search
+    // devolviendo 0 para "azucar", la busqueda de variantes encontraba que
+    // "asucar" traia 2.116 productos y lo proponia como correccion.
+    if (p.status === 'sin_resultados') {
+      const otros = Object.entries(t.engines)
+        .filter(([id, e]) => id !== MOTOR_PRIMARIO.id && (e.results || 0) > 0)
+        .map(([id, e]) => ({ id, results: e.results, sample: e.sampleProducts || [] }));
+      if (otros.length) {
+        t.status = 'motor_no_indexa';
+        t.encontradoPor = otros;
+      }
+    }
+
     t.vtexResults = p.results ?? null;
     t.vtexResultsCapped = !!p.resultsCapped;
     t.sampleProducts = p.sampleProducts || [];
@@ -327,6 +353,9 @@ async function main() {
   // La corrección NATIVA del motor: es la que de verdad va a ver el usuario en
   // el sitio, a diferencia de las variantes que este script genera a mano.
   if (MOTOR_PRIMARIO.id.startsWith('vtex')) {
+    // `motor_no_indexa` queda afuera a proposito: el termino esta bien escrito
+    // (otro motor lo encuentra), asi que buscarle una correccion no tiene
+    // sentido y ademas propone disparates.
     const conProblema = terms.filter((t) => t.status === 'sin_resultados' || t.status === 'pocos_resultados');
     await forEachLimit(conProblema, CONCURRENCY, async (t) => {
       try {
@@ -338,6 +367,7 @@ async function main() {
 
   // Sinónimo sugerido: solo vale la pena buscarlo (y gastar más consultas a
   // VTEX) para los términos que ya fallaron — son pocos frente al total.
+  // Idem: solo los que ningun motor encuentra son candidatos a error de tipeo.
   const failing = terms.filter((t) => t.status === 'sin_resultados' || t.status === 'pocos_resultados');
   await forEachLimit(failing, CONCURRENCY, async (t) => {
     t.suggestion = await findVerifiedSuggestion(t.term);
@@ -345,13 +375,13 @@ async function main() {
   for (const t of terms) t.recommendation = recommendation(t);
 
   terms.sort((a, b) => {
-    const rank = { sin_resultados: 0, error_consulta: 1, pocos_resultados: 2, resultados_irrelevantes: 3, resultados_dispersos: 4, ok: 5 };
+    const rank = { motor_no_indexa: 0, sin_resultados: 1, error_consulta: 2, pocos_resultados: 3, resultados_irrelevantes: 4, resultados_dispersos: 5, ok: 6 };
     return (rank[a.status] ?? 9) - (rank[b.status] ?? 9) || b.searchCount - a.searchCount;
   });
 
   for (const t of terms) {
     const tag = {
-      sin_resultados: '✗ SIN RESULTADOS', pocos_resultados: '⚠ pocos resultados',
+      motor_no_indexa: '✗✗ NO ESTA EN EL INDICE', sin_resultados: '✗ SIN RESULTADOS', pocos_resultados: '⚠ pocos resultados',
       resultados_dispersos: '⚠ resultados dispersos', resultados_irrelevantes: '✗ IRRELEVANTES',
       error_consulta: '? error', ok: '✓',
     }[t.status];
@@ -365,7 +395,13 @@ async function main() {
   const pocosResultados = terms.filter((t) => t.status === 'pocos_resultados');
   const resultadosDispersos = terms.filter((t) => t.status === 'resultados_dispersos');
   const resultadosIrrelevantes = terms.filter((t) => t.status === 'resultados_irrelevantes');
-  console.log(`\n${sinResultados.length} de ${terms.length} términos NO traen ningún resultado.`);
+  const motorNoIndexa = terms.filter((t) => t.status === 'motor_no_indexa');
+  if (motorNoIndexa.length) {
+    const vol = motorNoIndexa.reduce((s, t) => s + t.searchCount, 0);
+    console.log(`\n${motorNoIndexa.length} de ${terms.length} términos NO los encuentra ${MOTOR_PRIMARIO.label} pero SÍ otro motor`);
+    console.log(`  → ${vol.toLocaleString('es-AR')} búsquedas/mes. No es un problema de escritura: es el índice de ${MOTOR_PRIMARIO.label}.`);
+  }
+  console.log(`\n${sinResultados.length} de ${terms.length} términos NO trae ningún resultado NINGÚN motor.`);
   console.log(`${pocosResultados.length} de ${terms.length} traen menos de 5 resultados.`);
   console.log(`${resultadosDispersos.length} de ${terms.length} traen ≥5 resultados pero dispersos en categorías sin relación.`);
 
@@ -375,16 +411,18 @@ async function main() {
   // que pesar, en vez de licuarse como "1 de 200". Los resultados dispersos
   // cuentan acá también: no son "sin resultados", pero es la misma frustración
   // real para quien busca algo puntual y encuentra productos que no tienen que ver.
-  const lostSearches = [...sinResultados, ...pocosResultados, ...resultadosDispersos, ...resultadosIrrelevantes]
-    .reduce((s, t) => s + t.searchCount, 0);
+  const lostSearches = [...sinResultados, ...pocosResultados, ...resultadosDispersos,
+    ...resultadosIrrelevantes, ...motorNoIndexa].reduce((s, t) => s + t.searchCount, 0);
 
   const summary = {
     sinResultados: sinResultados.length,
     pocosResultados: pocosResultados.length,
     resultadosDispersos: resultadosDispersos.length,
     resultadosIrrelevantes: resultadosIrrelevantes.length,
+    motorNoIndexa: motorNoIndexa.length,
+    motorNoIndexaSearches: motorNoIndexa.reduce((s, t) => s + t.searchCount, 0),
     ok: terms.length - sinResultados.length - pocosResultados.length
-        - resultadosDispersos.length - resultadosIrrelevantes.length,
+        - resultadosDispersos.length - resultadosIrrelevantes.length - motorNoIndexa.length,
     totalSearches,
     lostSearches,
   };
@@ -505,6 +543,7 @@ function writeClientReport(report) {
       sampleProducts: t.sampleProducts || [],
       suggestion: t.suggestion || null,
       nativeCorrection: t.nativeCorrection || null,
+      encontradoPor: t.encontradoPor || null,
       aiRelevance: t.aiRelevance || null,
       categoryConsistency: t.categoryConsistency ?? null,
       dominantCategory: t.dominantCategory || null,
