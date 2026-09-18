@@ -85,10 +85,24 @@ function ofertaEnUnaLinea(o) {
   return [...vals, ...otros].join('  ') || '(sin campos de precio)';
 }
 
+/**
+ * Que canales de venta declara la tienda. Se venian probando sc=1, 2 y 3 a
+ * ciegas; Cencosud corre Jumbo, Disco y Vea en una cuenta con una politica
+ * comercial por marca, asi que sus ids no tienen por que ser esos.
+ */
+async function canales(tienda) {
+  const r = await pedir(`${tienda.dominio}/api/catalog_system/pub/saleschannel/active`);
+  if (!r.ok) { console.log(`    canales: no los lista (HTTP ${r.status || r.error})`); return []; }
+  const j = Array.isArray(r.json) ? r.json : [];
+  if (!j.length) { console.log('    canales: lista vacia'); return []; }
+  console.log(`    canales: ${j.map((c) => `${c.Id}=${c.Name || '?'}${c.IsActive === false ? ' (inactivo)' : ''}`).join(' · ')}`);
+  return j.filter((c) => c.IsActive !== false).map((c) => String(c.Id));
+}
+
 // ── H1 · el catalogo con cada politica comercial ────────────────────────────
-async function h1Catalogo(tienda, ean) {
+async function h1Catalogo(tienda, ean, scs) {
   console.log('\n    H1 · catalogo por politica comercial');
-  for (const sc of [null, 1, 2, 3]) {
+  for (const sc of [null, ...scs]) {
     const url = `${tienda.dominio}/api/catalog_system/pub/products/search`
       + `?fq=alternateIds_Ean:${encodeURIComponent(ean)}${sc ? `&sc=${sc}` : ''}`;
     const r = await pedir(url);
@@ -148,7 +162,7 @@ async function h2IntelligentSearch(tienda, ean) {
 }
 
 // ── H3 · la simulacion, variando el seller ──────────────────────────────────
-async function h3Simulacion(tienda, itemId, sellerCatalogo) {
+async function h3Simulacion(tienda, itemId, sellerCatalogo, scs) {
   console.log('\n    H3 · simulacion de carrito, variando el seller');
   // Tres formas de identificar al vendedor: el id que dio el catalogo, el "1"
   // literal (el default de VTEX), y omitir el campo para que VTEX lo resuelva.
@@ -157,7 +171,7 @@ async function h3Simulacion(tienda, itemId, sellerCatalogo) {
     { etq: 'seller=1 (default VTEX)', v: '1' },
     { etq: 'sin campo seller', v: undefined },
   ];
-  for (const sc of [null, 1]) {
+  for (const sc of [null, ...scs]) {
     for (const s of sellers) {
       if (s.v === undefined && sc === null) { /* igual se prueba */ }
       const url = `${tienda.dominio}/api/checkout/pub/orderForms/simulation`
@@ -219,9 +233,10 @@ async function main() {
         + `  ·  sellerName: ${seller.sellerName || '?'}`
         + `  ·  sellers: ${(item.sellers || []).map((s) => s.sellerId).join(', ')}`);
 
-      await h1Catalogo(tienda, ean);
+      const scs = await canales(tienda);
+      await h1Catalogo(tienda, ean, scs);
       await h2IntelligentSearch(tienda, ean);
-      if (item.itemId) await h3Simulacion(tienda, item.itemId, seller.sellerId);
+      if (item.itemId) await h3Simulacion(tienda, item.itemId, seller.sellerId, scs);
     }
   }
 
@@ -231,6 +246,10 @@ async function main() {
   console.log('Lo unico que importa: en que linea aparece el precio que muestra la ficha.');
   console.log('Abri el link de Jumbo que imprime arriba, mira el precio grande, y busca ese');
   console.log('numero en la salida. La seccion donde aparezca es la API que hay que usar.');
+  console.log('');
+  console.log('  Y mira la linea "canales:" de Jumbo. Se venian probando sc=1, 2 y 3 a ciegas,');
+  console.log('  y los 6 intentos fallaban con el mismo mensaje. Eso no descartaba el canal:');
+  console.log('  si el correcto es el 7, probar 1, 2 y 3 falla identico. Ahora se le pregunta.');
   console.log('');
   console.log('  · Si aparece en H1 con un sc distinto  -> el comparador tiene que pedir el');
   console.log('    catalogo con ese sc por tienda.');

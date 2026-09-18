@@ -99,30 +99,67 @@ function pedirConTimeout(url) {
  * Sin `sc` la API usa el canal por defecto de la tienda, que es la opcion mas
  * probable de todas y por eso va primera.
  */
-const CANALES = [null, '1', '2', '3'];
+// Los canales que se prueban cuando la tienda no quiere decir cuales tiene.
+// Es el ultimo recurso: lo correcto es PREGUNTARLE (ver canalesDe).
+const CANALES_A_CIEGAS = [null, '1', '2', '3'];
 
 // Codigo postal por defecto (CABA). Importa por dos razones distintas:
 //
 // 1. Cencosud (Jumbo, Disco) tiene CATALOGO REGIONALIZADO: su sitio te pide
 //    "Seleccioná el método de entrega" antes de mostrarte precios. El catalogo
-//    devuelve el producto igual, pero el checkout responde "Ítem no encontrado o
-//    no disponible" porque sin ubicacion no hay quien lo despache. Probar los
-//    cuatro canales de venta no alcanzo justamente por esto.
+//    devuelve el producto igual, pero el checkout puede responder "Ítem no
+//    encontrado o no disponible" porque sin ubicacion no hay quien lo despache.
 //
 // 2. Los precios de supermercado VARIAN POR ZONA. Comparar sin fijar una zona
 //    compara cosas distintas, asi que el codigo postal es parte de la pregunta,
 //    no un detalle tecnico: la pagina lo deja elegir.
 const CP_DEFECTO = process.env.COMPETENCIA_CP || '1425';
 
+/**
+ * Le pregunta a la tienda QUE CANALES DE VENTA tiene, en vez de adivinarlos.
+ *
+ * Por que hace falta. Se venian probando sc=1, 2 y 3, y en Jumbo y Disco los 6
+ * intentos fallaban con el mismo mensaje. De eso se habia concluido que el canal
+ * quedaba descartado, y ERA UNA CONCLUSION INVALIDA: si el canal correcto es el
+ * 7, probar 1, 2 y 3 falla identico. Los mensajes iguales no descartan el canal,
+ * descartan esos tres VALORES.
+ *
+ * Y adivinar no tiene sentido cuando VTEX lo expone: `saleschannel/active` lista
+ * los canales activos de la cuenta con su Id. Cencosud corre Jumbo, Disco y Vea
+ * en una sola cuenta con una politica comercial por marca, asi que sus ids no
+ * tienen por que ser 1, 2 o 3.
+ *
+ * Si el endpoint no responde (algunas cuentas lo tienen cerrado), se cae a
+ * CANALES_A_CIEGAS y la respuesta lo dice, para no hacer pasar una adivinanza
+ * por un dato.
+ */
+async function canalesDe(tienda) {
+  try {
+    const r = await pedirConTimeout(`${tienda.dominio}/api/catalog_system/pub/saleschannel/active`);
+    if (!r.ok) return { canales: CANALES_A_CIEGAS, aCiegas: `HTTP ${r.status}` };
+    const j = await r.json();
+    if (!Array.isArray(j) || !j.length) return { canales: CANALES_A_CIEGAS, aCiegas: 'lista vacia' };
+    const ids = j
+      .filter((c) => c && (c.IsActive === undefined || c.IsActive))
+      .map((c) => String(c.Id ?? c.id))
+      .filter((x) => /^\d+$/.test(x));
+    if (!ids.length) return { canales: CANALES_A_CIEGAS, aCiegas: 'sin ids usables' };
+    // El canal por defecto (sin `sc`) se prueba primero: es el que usa el sitio
+    // cuando no le decis nada, y en la mayoria de las tiendas alcanza.
+    return { canales: [null, ...ids], aCiegas: null, nombres: j.map((c) => `${c.Id}=${c.Name || '?'}`) };
+  } catch (e) {
+    return { canales: CANALES_A_CIEGAS, aCiegas: e.name === 'AbortError' ? 'timeout' : e.message };
+  }
+}
+
 /** Las combinaciones a probar, en orden de probabilidad. Se prueban UNA vez por
  *  tienda, no por producto. */
-function combinaciones(cp) {
+function combinaciones(cp, canales = CANALES_A_CIEGAS) {
   const out = [];
-  for (const sc of CANALES) {
+  for (const sc of canales) {
     out.push({ sc, cp });        // con ubicacion primero: es lo que piden las regionalizadas
     if (!sc) out.push({ sc, cp: null });
   }
-  out.push({ sc: '1', cp: null });
   // Sin duplicados, manteniendo el orden.
   const vistas = new Set();
   return out.filter((c) => {
@@ -201,15 +238,22 @@ async function simular(tienda, itemId, sellerId, combo) {
  */
 async function descubrirCombo(tienda, itemId, sellerId, cp) {
   const intentos = [];
-  for (const combo of combinaciones(cp)) {
+  const { canales, aCiegas, nombres } = await canalesDe(tienda);
+  for (const combo of combinaciones(cp, canales)) {
     const r = await simular(tienda, itemId, sellerId, combo);
-    if (!r.error) return { combo, primera: r, intentos };
+    if (!r.error) return { combo, primera: r, intentos, canales: nombres };
     intentos.push(`${comboTxt(combo)} → ${r.error.slice(0, 90)}`);
   }
+  // Que canales se probaron y de donde salio la lista: sin esto no se puede
+  // distinguir "probe los canales que la tienda dice tener y ninguno anda" de
+  // "adivine tres numeros y ninguno era".
+  intentos.push(aCiegas
+    ? `(la tienda no quiso listar sus canales: ${aCiegas} — se probaron a ciegas ${canales.map((c) => c ?? 'defecto').join(', ')})`
+    : `(canales que la tienda declara activos: ${(nombres || []).join(' · ')})`);
   // Se devuelven TODOS los intentos: con esto se ve si fallaron todos por lo
   // mismo (entonces el problema no es el canal ni la zona) o si cambia el
   // motivo, que es la pista de cual knob importa.
-  return { combo: null, intentos };
+  return { combo: null, intentos, canales: nombres };
 }
 
 /**

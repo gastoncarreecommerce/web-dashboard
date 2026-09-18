@@ -44,6 +44,10 @@ let SIMS = {};
  *  Sin entrada, IS responde sin productos. */
 let IS = {};
 
+/** Canales activos por dominio: { dominio: [{Id, Name, IsActive}] | numero }.
+ *  Sin entrada, el endpoint responde 404 y la API cae a probar a ciegas. */
+let CANALES = {};
+
 async function correr(porTienda, query) {
   const llamadas = [];
   global.fetch = async (url, init) => {
@@ -81,6 +85,14 @@ async function correr(porTienda, query) {
                   listPrice: sim.lista != null ? Math.round(sim.lista * 100) : undefined }],
         ratesAndBenefitsData: { rateAndBenefitsIdentifiers: (sim.promos || []).map((n) => ({ name: n })) },
       })};
+    }
+
+    if (u.includes('/catalog_system/pub/saleschannel/active')) {
+      const d = Object.keys(CANALES).find((x) => u.includes(x));
+      const c = CANALES[d];
+      if (c === undefined) return { ok: false, status: 404, text: async () => 'no' };
+      if (typeof c === 'number') return { ok: false, status: c, text: async () => 'no' };
+      return { ok: true, status: 200, json: async () => c };
     }
 
     if (u.includes('/intelligent-search/product_search/')) {
@@ -126,7 +138,7 @@ test('compara el mismo EAN en varias tiendas: precio, lista, descuento y promos'
     'se consulta el dominio publico de cada tienda, no un accountName adivinado');
   // La asercion aplica solo a las del catalogo: las de simulacion son POST a
   // otro path y no llevan `fq`.
-  const cat = llamadas.filter((u) => u.includes('catalog_system'));
+  const cat = llamadas.filter((u) => u.includes("/products/search"));
   assert.ok(cat.length && cat.every((u) => u.includes('fq=alternateIds_Ean')));
   assert.ok(llamadas.some((u) => u.includes('orderForms/simulation')),
     'y ademas se simula, que es de donde sale el precio real');
@@ -364,7 +376,7 @@ test('si NINGUN canal funciona, se reporta y el precio queda marcado', async () 
   const intentos = res.body.canalErrores.jumbo;
   assert.ok(Array.isArray(intentos) && intentos.length,
     'la lista de intentos, no un solo string');
-  assert.ok(intentos.every((x) => /no encontrado o no disponible/.test(x)));
+  assert.ok(intentos.filter((x) => !x.startsWith('(')).every((x) => /no encontrado o no disponible/.test(x)));
   // Y los motivos se agrupan SIN el nombre del producto: los dos fallos son UNO.
   const motivos = res.body.simulacionErrores.jumbo || {};
   assert.strictEqual(Object.keys(motivos).length, 1,
@@ -412,7 +424,7 @@ test('cuando ninguna combinacion cotiza, se devuelven TODOS los intentos', async
     'la lista completa, para ver si todos fallan por lo mismo');
   assert.ok(intentos.some((x) => x.includes('cp=1425')));
   assert.ok(intentos.some((x) => x.includes('cp=(sin)')), 'probo con y sin ubicacion');
-  assert.ok(intentos.every((x) => /no encontrado o no disponible/.test(x)));
+  assert.ok(intentos.filter((x) => !x.startsWith('(')).every((x) => /no encontrado o no disponible/.test(x)));
 });
 
 
@@ -474,4 +486,62 @@ test('IS que devuelve OTRO producto no se usa: seria el precio de otra cosa', as
   assert.strictEqual(j.precio, 3050, 'se queda con el del catalogo');
   assert.strictEqual(res.body.porIS, 0);
   assert.ok(res.body.isErrores?.jumbo, 'y queda registrado por que IS no sirvio');
+});
+
+// ── Preguntar los canales en vez de adivinarlos ─────────────────────────────
+// Se probaban sc=1, 2 y 3. En Jumbo y Disco los 6 intentos fallaban con el
+// MISMO mensaje, y de eso se habia concluido que el canal quedaba descartado.
+// La conclusion era invalida: si el canal correcto es el 7, probar 1, 2 y 3
+// falla identico. Los mensajes iguales descartan esos tres valores, no el canal.
+
+test('prueba los canales que la tienda declara, no 1-2-3 adivinados', async () => {
+  sesionOk = true;
+  CANALES = { 'www.jumbo.com.ar': [
+    { Id: 1, Name: 'Vea', IsActive: true },
+    { Id: 7, Name: 'Jumbo', IsActive: true },
+    { Id: 9, Name: 'Disco', IsActive: false },   // inactivo: no se prueba
+  ] };
+  // Solo cotiza con sc=7, que NO estaba en la lista vieja de adivinanzas.
+  SIMS = { 'www.jumbo.com.ar': { precio: 1982.5, lista: 3050, canal: '7' } };
+  const { res, llamadas } = await correr({
+    'www.jumbo.com.ar': [prod('7799155000197', 'Agua 2L Jumbo', { precio: 3050 })],
+  }, { eans: '7799155000197', tiendas: 'jumbo' });
+
+  const j = res.body.resultados['7799155000197'].jumbo;
+  assert.strictEqual(j.precio, 1982.5, 'con el canal correcto sale el precio de la ficha');
+  assert.strictEqual(j.fuentePrecio, 'simulacion');
+  assert.match(res.body.comboPorTienda.jumbo, /sc=7/);
+  assert.ok(llamadas.some((u) => u.includes('saleschannel/active')),
+    'se le pregunto a la tienda que canales tiene');
+  assert.ok(!llamadas.some((u) => /[?&]sc=9(&|$)/.test(u)),
+    'el canal inactivo no se prueba');
+});
+
+test('si la tienda no lista sus canales, se prueba a ciegas y se DICE', async () => {
+  sesionOk = true;
+  CANALES = {};            // el endpoint responde 404
+  SIMS = {};               // y nada cotiza
+  const { res } = await correr({
+    'www.jumbo.com.ar': [prod('7799155000197', 'Agua 2L Jumbo', { precio: 3050 })],
+  }, { eans: '7799155000197', tiendas: 'jumbo' });
+
+  const intentos = res.body.canalErrores.jumbo;
+  const nota = intentos.find((x) => x.startsWith('('));
+  assert.ok(nota, 'la respuesta tiene que aclarar de donde salio la lista de canales');
+  assert.match(nota, /a ciegas/,
+    'y decir que fueron adivinados, para no hacer pasar una adivinanza por un dato');
+});
+
+test('cuando la tienda SI lista sus canales y ninguno cotiza, se distingue', async () => {
+  sesionOk = true;
+  CANALES = { 'www.jumbo.com.ar': [{ Id: 7, Name: 'Jumbo', IsActive: true }] };
+  SIMS = { 'www.jumbo.com.ar': { precio: 1, canal: '99' } };   // ninguno de los suyos anda
+  const { res } = await correr({
+    'www.jumbo.com.ar': [prod('7799155000197', 'Agua 2L Jumbo', { precio: 3050 })],
+  }, { eans: '7799155000197', tiendas: 'jumbo' });
+
+  const nota = res.body.canalErrores.jumbo.find((x) => x.startsWith('('));
+  assert.match(nota, /declara activos/);
+  assert.match(nota, /7=Jumbo/,
+    'con los canales reales a la vista, el problema ya no puede ser el canal');
 });
