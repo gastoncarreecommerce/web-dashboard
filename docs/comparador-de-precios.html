@@ -8,9 +8,9 @@
 <link rel="stylesheet" href="styles.css">
 <style>
   /* Página independiente: no entra al nav del dashboard a propósito. */
-  .cmp { max-width: 1400px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
-  .cmp h1 { font-size: 1.5rem; margin: 0 0 .25rem; }
-  .cmp .sub { color: var(--muted, #6b7280); margin: 0 0 1.5rem; font-size: .9rem; }
+  .cpx-cmp { max-width: 1400px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+  .cpx-cmp h1 { font-size: 1.5rem; margin: 0 0 .25rem; }
+  .cpx-cmp .sub { color: var(--muted, #6b7280); margin: 0 0 1.5rem; font-size: .9rem; }
 
   .panel { background: var(--card, #fff); border: 1px solid var(--line, #e5e7eb);
            border-radius: 12px; padding: 1.25rem; margin-bottom: 1.25rem; }
@@ -21,10 +21,10 @@
              font-size: .85rem; padding: .6rem; border: 1px solid var(--line, #e5e7eb);
              border-radius: 8px; background: var(--bg, #fff); color: inherit; resize: vertical; }
   .fila { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; margin-top: .75rem; }
-  .btn { background: #2a78d6; color: #fff; border: 0; border-radius: 8px;
+  .cpx-btn { background: #2a78d6; color: #fff; border: 0; border-radius: 8px;
          padding: .55rem 1.1rem; font-size: .9rem; font-weight: 600; cursor: pointer; }
-  .btn:disabled { opacity: .5; cursor: default; }
-  .btn.sec { background: transparent; color: inherit; border: 1px solid var(--line, #e5e7eb); }
+  .cpx-btn:disabled { opacity: .5; cursor: default; }
+  .cpx-btn.sec { background: transparent; color: inherit; border: 1px solid var(--line, #e5e7eb); }
   .tiendas { display: flex; gap: 1rem; flex-wrap: wrap; }
   .tiendas label { display: flex; align-items: center; gap: .4rem; font-size: .9rem; cursor: pointer; }
 
@@ -34,17 +34,17 @@
   .aviso summary { cursor: pointer; font-weight: 600; font-size: .8rem; }
   .aviso ul { margin: .4rem 0 0; padding-left: 1.1rem; max-height: 9rem; overflow-y: auto; }
   .aviso li { margin-bottom: .2rem; }
-  .aviso.info { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
-  .aviso.warn { background: #fffbeb; border-color: #fde68a; color: #92400e; }
-  .aviso.bad  { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+  .aviso.cpx-info { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
+  .aviso.cpx-warn { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+  .aviso.cpx-bad  { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
 
   .tabla-wrap { overflow-x: auto; margin: 0 -1.25rem -1.25rem; padding: 0 1.25rem 1.25rem; }
-  table.cmp-t { width: 100%; border-collapse: separate; border-spacing: 0; font-size: .85rem; }
-  table.cmp-t th, table.cmp-t td {
+  table.cpx-cmp-t { width: 100%; border-collapse: separate; border-spacing: 0; font-size: .85rem; }
+  table.cpx-cmp-t th, table.cpx-cmp-t td {
     padding: .7rem .75rem; text-align: left; vertical-align: middle;
     border-bottom: 1px solid var(--line, #eef0f3);
   }
-  table.cmp-t thead th {
+  table.cpx-cmp-t thead th {
     font-size: .68rem; text-transform: uppercase; letter-spacing: .05em;
     color: var(--muted, #6b7280); font-weight: 600; white-space: nowrap;
     position: sticky; top: 0; z-index: 2; background: var(--card, #fff);
@@ -52,14 +52,14 @@
   }
   /* Las dos primeras columnas quedan fijas: con cinco tiendas hay scroll
      horizontal y perder de vista de que producto se trata lo vuelve inutil. */
-  table.cmp-t th:nth-child(1), table.cmp-t td:nth-child(1) { position: sticky; left: 0; z-index: 1; background: var(--card, #fff); }
-  table.cmp-t th:nth-child(2), table.cmp-t td:nth-child(2) { position: sticky; left: 7.5rem; z-index: 1; background: var(--card, #fff); min-width: 16rem; }
-  table.cmp-t thead th:nth-child(1), table.cmp-t thead th:nth-child(2) { z-index: 3; }
-  table.cmp-t tbody tr:hover td { background: var(--hover, #fafbfc); }
-  table.cmp-t td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; min-width: 8.5rem; }
+  table.cpx-cmp-t th:nth-child(1), table.cpx-cmp-t td:nth-child(1) { position: sticky; left: 0; z-index: 1; background: var(--card, #fff); }
+  table.cpx-cmp-t th:nth-child(2), table.cpx-cmp-t td:nth-child(2) { position: sticky; left: 7.5rem; z-index: 1; background: var(--card, #fff); min-width: 16rem; }
+  table.cpx-cmp-t thead th:nth-child(1), table.cpx-cmp-t thead th:nth-child(2) { z-index: 3; }
+  table.cpx-cmp-t tbody tr:hover td { background: var(--hover, #fafbfc); }
+  table.cpx-cmp-t td.cpx-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; min-width: 8.5rem; }
 
   .ean { font-family: ui-monospace, monospace; font-size: .75rem; color: var(--muted, #9ca3af); }
-  .prod { font-size: .84rem; line-height: 1.35; }
+  .cpx-prod { font-size: .84rem; line-height: 1.35; }
   .precio { font-weight: 650; font-size: .95rem; display: block; }
   .antes { font-size: .74rem; color: var(--muted, #9ca3af); }
   .antes s { text-decoration: line-through; }
@@ -94,7 +94,7 @@
 </style>
 </head>
 <body>
-<div class="cmp">
+<div class="cpx-cmp">
   <h1>Comparador de competencia</h1>
   <p class="sub">Precios y promociones de una lista de EANs en las tiendas de la competencia, vía la API pública de VTEX de cada sitio.</p>
 
@@ -119,8 +119,8 @@
     <h2>2 · Las tiendas</h2>
     <div class="tiendas" id="tiendas"></div>
     <div class="fila">
-      <button class="btn" id="buscar">Comparar precios</button>
-      <button class="btn sec" id="csv" disabled>Bajar CSV</button>
+      <button class="cpx-btn" id="buscar">Comparar precios</button>
+      <button class="cpx-btn sec" id="csv" disabled>Bajar CSV</button>
       <span class="prog" id="prog"></span>
     </div>
   </div>
@@ -128,7 +128,7 @@
   <div id="avisos"></div>
   <div class="panel" id="panel-res" hidden>
     <h2 id="titulo-res">3 · Resultados</h2>
-    <div class="tabla-wrap"><table class="cmp-t" id="tabla"></table></div>
+    <div class="tabla-wrap"><table class="cpx-cmp-t" id="tabla"></table></div>
   </div>
 </div>
 
@@ -203,8 +203,8 @@
     const { validos, malos } = leerEans();
     const tiendas = tiendasElegidas();
 
-    if (!validos.length) return avisar('<div class="aviso bad">No hay ningún EAN válido. Tienen que ser de 8 a 14 dígitos.</div>');
-    if (!tiendas.length) return avisar('<div class="aviso bad">Elegí al menos una tienda.</div>');
+    if (!validos.length) return avisar('<div class="aviso cpx-bad">No hay ningún EAN válido. Tienen que ser de 8 a 14 dígitos.</div>');
+    if (!tiendas.length) return avisar('<div class="aviso cpx-bad">Elegí al menos una tienda.</div>');
 
     $('buscar').disabled = true;
     $('csv').disabled = true;
@@ -251,7 +251,7 @@
     $('prog').textContent = '';
     $('buscar').disabled = false;
 
-    if (fallo) return avisar(`<div class="aviso bad"><strong>No se pudo consultar.</strong> ${esc(fallo)}</div>`);
+    if (fallo) return avisar(`<div class="aviso cpx-bad"><strong>No se pudo consultar.</strong> ${esc(fallo)}</div>`);
 
     ultimo = juntos;
     pintar(juntos, malos);
@@ -266,12 +266,12 @@
     const eans = d.eans;
 
     const avisos = [];
-    if (d.advertencia) avisos.push(`<div class="aviso info">${esc(d.advertencia)}</div>`);
+    if (d.advertencia) avisos.push(`<div class="aviso cpx-info">${esc(d.advertencia)}</div>`);
     if (malos?.length) {
-      avisos.push(`<div class="aviso warn">${malos.length} línea(s) no tenían forma de EAN y se ignoraron:
+      avisos.push(`<div class="aviso cpx-warn">${malos.length} línea(s) no tenían forma de EAN y se ignoraron:
         <span class="ean">${esc(malos.slice(0, 8).join(', '))}${malos.length > 8 ? '…' : ''}</span></div>`);
     }
-    if (d.fuente) avisos.push(`<div class="aviso info">${esc(d.fuente)}</div>`);
+    if (d.fuente) avisos.push(`<div class="aviso cpx-info">${esc(d.fuente)}</div>`);
 
     // Fallos de simulacion AGRUPADOS por tienda y motivo. Si falla en todas las
     // celdas de una tienda, lo util es el motivo una vez —no una lista de 76
@@ -286,7 +286,7 @@
           .map(([m, n]) => `${esc(m)} (${n}×)`).join('; ');
         return `<li><strong>${esc(t?.nombre || id)}</strong>: ${total} sin simular — ${porQue}</li>`;
       }).join('');
-      avisos.push(`<div class="aviso bad">
+      avisos.push(`<div class="aviso cpx-bad">
         <strong>La simulación de carrito falló en algunas tiendas.</strong>
         Para esos productos se muestra el precio del catálogo, que puede no incluir
         promociones. Están marcados y no compiten por el "más barato".
@@ -299,7 +299,7 @@
           const t = tiendas.find((x) => x.id === id);
           return `${esc(t?.nombre || id)}: ${c ? esc(c) : '<strong>ninguna combinación funcionó</strong>'}`;
         }).join(' · ');
-      avisos.push(`<div class="aviso info">${d.simuladas} de ${d.aSimular} precios salieron de la
+      avisos.push(`<div class="aviso cpx-info">${d.simuladas} de ${d.aSimular} precios salieron de la
         simulación de carrito (con promociones aplicadas), con CP ${esc(String(d.codigoPostal || ''))}.
         ${combos ? `<br><span class="ean">${combos}</span>` : ''}</div>`);
     }
@@ -311,14 +311,14 @@
       const t = tiendas.find((x) => x.id === id);
       const lista = (Array.isArray(intentos) ? intentos : [String(intentos)])
         .map((x) => `<li><span class="ean">${esc(x)}</span></li>`).join('');
-      avisos.push(`<div class="aviso bad">
+      avisos.push(`<div class="aviso cpx-bad">
         <strong>${esc(t?.nombre || id)}: ninguna combinación de canal y zona pudo cotizar.</strong>
         <details open><summary>los ${Array.isArray(intentos) ? intentos.length : 1} intentos</summary>
         <ul>${lista}</ul></details></div>`);
     }
     for (const [id, errs] of Object.entries(d.errores || {})) {
       const t = tiendas.find((x) => x.id === id);
-      avisos.push(`<div class="aviso bad"><strong>${esc(t?.nombre || id)} no respondió a ${errs.length} consulta(s).</strong>
+      avisos.push(`<div class="aviso cpx-bad"><strong>${esc(t?.nombre || id)} no respondió a ${errs.length} consulta(s).</strong>
         Las columnas de esa tienda están incompletas, no vacías por falta de producto.
         <br><span class="ean">${esc(errs.slice(0, 3).join(' · '))}</span></div>`);
     }
@@ -341,7 +341,7 @@
           nota = `<br><span class="thnota" title="${esc(peor)}">sin simular: ${esc(peor.slice(0, 40))}${peor.length > 40 ? '…' : ''}</span>`;
         }
       }
-      return `<th class="num"${t.propia ? ' style="color:#2a78d6"' : ''}>${esc(t.nombre)}${nota}</th>`;
+      return `<th class="cpx-num"${t.propia ? ' style="color:#2a78d6"' : ''}>${esc(t.nombre)}${nota}</th>`;
     }));
 
     const filas = eans.map((ean) => {
@@ -370,7 +370,7 @@
 
       const celdas = tiendas.map((t) => {
         const x = porTienda[t.id];
-        if (!x || !x.encontrado) return '<td class="num"><span class="nada">—</span></td>';
+        if (!x || !x.encontrado) return '<td class="cpx-num"><span class="nada">—</span></td>';
 
         const malo = Boolean(x.simulacionFallo) || Boolean(x.listaSospechosa);
         const barato = min != null && x.precio === min && x.disponible && !malo;
@@ -411,12 +411,12 @@
           const resto = ps.length > 1 ? ` +${ps.length - 1}` : '';
           bits.push(`<span class="promo" title="${esc(ps.join(' · '))}">${esc(ps[0])}${resto}</span>`);
         }
-        return `<td class="num${barato ? ' barato' : ''}">${bits.join('')}</td>`;
+        return `<td class="cpx-num${barato ? ' barato' : ''}">${bits.join('')}</td>`;
       });
 
       return `<tr>
         <td class="ean">${esc(ean)}</td>
-        <td class="prod">${nombre ? esc(nombre) : '<span class="nada">sin datos</span>'}</td>
+        <td class="cpx-prod">${nombre ? esc(nombre) : '<span class="nada">sin datos</span>'}</td>
         ${celdas.join('')}
       </tr>`;
     });
