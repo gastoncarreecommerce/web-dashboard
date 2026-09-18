@@ -152,28 +152,86 @@ async function canalesDe(tienda) {
   }
 }
 
+/**
+ * Le pide a la tienda que SELLERS despachan en un codigo postal.
+ *
+ * Esto es la pieza que faltaba. Cencosud (Jumbo, Disco) tiene catalogo
+ * regionalizado: su sitio te obliga a elegir metodo de entrega antes de
+ * mostrarte precios. En ese esquema el seller del catalogo NO es el que
+ * despacha; hay que resolver una region para la direccion y usar los sellers
+ * que esa region devuelve.
+ *
+ * Los tres sintomas encajan con esto y con nada mas:
+ *
+ *   · El catalogo y Intelligent Search devuelven 3.050 en TODOS los campos,
+ *     sin teasers, mientras la ficha muestra 1.982,50. Es el precio sin region.
+ *   · La simulacion responde "Ítem no encontrado o no disponible" con seller 1.
+ *     No es que el item no exista: es que el seller 1 no despacha ahi.
+ *   · Omitir el seller da CHK0024 "Identificador de vendedor de item invalido",
+ *     o sea que el checkout SI valida sellers.
+ *   · Carrefour, Masonline y DIA cotizan con seller 1 porque no estan
+ *     regionalizadas: un solo seller sirve a todo el pais.
+ *
+ * Ademas corrige algo que se habia dado por probado: el seller nunca se habia
+ * comparado con otro valor. El `sellerId` del catalogo ES "1", el mismo que el
+ * literal, asi que probar los dos era probar uno.
+ *
+ * El `regionId` que devuelve tambien sirve para pedirle a Intelligent Search el
+ * precio de esa region, que es el que muestra la ficha.
+ */
+async function regionDe(tienda, cp) {
+  if (!cp) return { error: 'sin codigo postal no hay region que pedir' };
+  const url = `${tienda.dominio}/api/checkout/pub/regions`
+    + `?country=ARG&postalCode=${encodeURIComponent(cp)}`;
+  try {
+    const r = await pedirConTimeout(url);
+    if (!r.ok) {
+      const cuerpo = await r.text().catch(() => '');
+      return { error: `HTTP ${r.status}${cuerpo ? `: ${cuerpo.replace(/\s+/g, ' ').slice(0, 160)}` : ''}` };
+    }
+    const j = await r.json();
+    const regiones = Array.isArray(j) ? j : [];
+    // Se juntan los sellers de todas las regiones devueltas: una direccion
+    // puede tener varias (retiro en tienda, envio a domicilio) y cualquiera
+    // sirve para cotizar.
+    const sellers = [...new Set(regiones.flatMap((x) => (x?.sellers || [])
+      .map((sl) => String(sl?.id ?? sl?.sellerId ?? '')).filter(Boolean)))];
+    const regionId = regiones.find((x) => x?.id)?.id || null;
+    if (!sellers.length) return { error: 'la region no devolvio sellers', regionId };
+    return { regionId, sellers };
+  } catch (e) {
+    return { error: e.name === 'AbortError' ? 'timeout' : e.message };
+  }
+}
+
 /** Las combinaciones a probar, en orden de probabilidad. Se prueban UNA vez por
  *  tienda, no por producto. */
-function combinaciones(cp, canales = CANALES_A_CIEGAS) {
+function combinaciones(cp, canales = CANALES_A_CIEGAS, sellers = [null]) {
   const out = [];
-  for (const sc of canales) {
-    out.push({ sc, cp });        // con ubicacion primero: es lo que piden las regionalizadas
-    if (!sc) out.push({ sc, cp: null });
+  for (const seller of sellers) {
+    for (const sc of canales) {
+      out.push({ sc, cp, seller });   // con ubicacion primero: la piden las regionalizadas
+      if (!sc) out.push({ sc, cp: null, seller });
+    }
   }
   // Sin duplicados, manteniendo el orden.
   const vistas = new Set();
   return out.filter((c) => {
-    const k = `${c.sc}|${c.cp}`;
+    const k = `${c.sc}|${c.cp}|${c.seller}`;
     if (vistas.has(k)) return false;
     vistas.add(k);
     return true;
   });
 }
 
-const comboTxt = (c) => `sc=${c.sc ?? '(defecto)'} cp=${c.cp ?? '(sin)'}`;
+const comboTxt = (c) => `sc=${c.sc ?? '(defecto)'} cp=${c.cp ?? '(sin)'}`
+  + (c.seller ? ` seller=${c.seller}` : '');
 
 async function simular(tienda, itemId, sellerId, combo) {
-  const { sc, cp } = combo || {};
+  const { sc, cp, seller } = combo || {};
+  // El seller de la combinacion gana: viene de la region, que es quien sabe
+  // quien despacha. El del catalogo es el de ultimo recurso.
+  const elSeller = seller || sellerId || '1';
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   const qs = sc ? `?sc=${encodeURIComponent(sc)}` : '';
@@ -186,7 +244,7 @@ async function simular(tienda, itemId, sellerId, combo) {
         'User-Agent': 'Mozilla/5.0 (compatible; comparador-precios)',
       },
       body: JSON.stringify({
-        items: [{ id: String(itemId), quantity: 1, seller: String(sellerId || '1') }],
+        items: [{ id: String(itemId), quantity: 1, seller: String(elSeller) }],
         country: 'ARG',
         // El codigo postal es lo que le permite al checkout resolver quien
         // despacha. Sin el, una tienda regionalizada rechaza todo.
@@ -239,21 +297,29 @@ async function simular(tienda, itemId, sellerId, combo) {
 async function descubrirCombo(tienda, itemId, sellerId, cp) {
   const intentos = [];
   const { canales, aCiegas, nombres } = await canalesDe(tienda);
-  for (const combo of combinaciones(cp, canales)) {
+  // Los sellers que despachan en ese CP. Si la tienda no esta regionalizada
+  // esto falla y se usa el del catalogo, que es lo que ya funcionaba para
+  // Carrefour, Masonline y DIA.
+  const reg = await regionDe(tienda, cp);
+  const sellers = reg.sellers ? [...reg.sellers, sellerId || '1'] : [null];
+  for (const combo of combinaciones(cp, canales, sellers)) {
     const r = await simular(tienda, itemId, sellerId, combo);
-    if (!r.error) return { combo, primera: r, intentos, canales: nombres };
+    if (!r.error) return { combo, primera: r, intentos, canales: nombres, region: reg };
     intentos.push(`${comboTxt(combo)} → ${r.error.slice(0, 90)}`);
   }
   // Que canales se probaron y de donde salio la lista: sin esto no se puede
   // distinguir "probe los canales que la tienda dice tener y ninguno anda" de
   // "adivine tres numeros y ninguno era".
+  intentos.push(reg.error
+    ? `(la tienda no dio sellers para el CP ${cp}: ${reg.error})`
+    : `(sellers que despachan en el CP ${cp}: ${reg.sellers.join(', ')} · regionId ${reg.regionId || '(sin)'})`);
   intentos.push(aCiegas
     ? `(la tienda no quiso listar sus canales: ${aCiegas} — se probaron a ciegas ${canales.map((c) => c ?? 'defecto').join(', ')})`
     : `(canales que la tienda declara activos: ${(nombres || []).join(' · ')})`);
   // Se devuelven TODOS los intentos: con esto se ve si fallaron todos por lo
   // mismo (entonces el problema no es el canal ni la zona) o si cambia el
   // motivo, que es la pista de cual knob importa.
-  return { combo: null, intentos, canales: nombres };
+  return { combo: null, intentos, canales: nombres, region: reg };
 }
 
 /**

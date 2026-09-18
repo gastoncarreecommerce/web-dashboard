@@ -48,6 +48,10 @@ let IS = {};
  *  Sin entrada, el endpoint responde 404 y la API cae a probar a ciegas. */
 let CANALES = {};
 
+/** Regiones por dominio: { dominio: [{id, sellers:[{id,name}]}] | numero }.
+ *  Sin entrada, el endpoint responde 404: la tienda no esta regionalizada. */
+let REGIONES = {};
+
 async function correr(porTienda, query) {
   const llamadas = [];
   global.fetch = async (url, init) => {
@@ -71,6 +75,14 @@ async function correr(porTienda, query) {
           })};
         }
       }
+      if (sim.seller !== undefined) {
+        const body = JSON.parse(init.body);
+        if (String(body.items[0].seller) !== String(sim.seller)) {
+          return { ok: true, status: 200, json: async () => ({
+            items: [], messages: [{ text: `Ítem ${sim.nombre || 'X'} no encontrado o no disponible` }],
+          })};
+        }
+      }
       if (sim.canal !== undefined) {
         const sc = (u.match(/[?&]sc=([^&]*)/) || [, null])[1];
         if (String(sc) !== String(sim.canal)) {
@@ -85,6 +97,14 @@ async function correr(porTienda, query) {
                   listPrice: sim.lista != null ? Math.round(sim.lista * 100) : undefined }],
         ratesAndBenefitsData: { rateAndBenefitsIdentifiers: (sim.promos || []).map((n) => ({ name: n })) },
       })};
+    }
+
+    if (u.includes('/api/checkout/pub/regions')) {
+      const d = Object.keys(REGIONES).find((x) => u.includes(x));
+      const g = REGIONES[d];
+      if (g === undefined) return { ok: false, status: 404, text: async () => 'no' };
+      if (typeof g === 'number') return { ok: false, status: g, text: async () => 'no' };
+      return { ok: true, status: 200, json: async () => g };
     }
 
     if (u.includes('/catalog_system/pub/saleschannel/active')) {
@@ -526,7 +546,7 @@ test('si la tienda no lista sus canales, se prueba a ciegas y se DICE', async ()
   }, { eans: '7799155000197', tiendas: 'jumbo' });
 
   const intentos = res.body.canalErrores.jumbo;
-  const nota = intentos.find((x) => x.startsWith('('));
+  const nota = intentos.find((x) => x.includes('canales'));
   assert.ok(nota, 'la respuesta tiene que aclarar de donde salio la lista de canales');
   assert.match(nota, /a ciegas/,
     'y decir que fueron adivinados, para no hacer pasar una adivinanza por un dato');
@@ -540,8 +560,60 @@ test('cuando la tienda SI lista sus canales y ninguno cotiza, se distingue', asy
     'www.jumbo.com.ar': [prod('7799155000197', 'Agua 2L Jumbo', { precio: 3050 })],
   }, { eans: '7799155000197', tiendas: 'jumbo' });
 
-  const nota = res.body.canalErrores.jumbo.find((x) => x.startsWith('('));
+  const nota = res.body.canalErrores.jumbo.find((x) => x.includes('canales'));
   assert.match(nota, /declara activos/);
   assert.match(nota, /7=Jumbo/,
     'con los canales reales a la vista, el problema ya no puede ser el canal');
+});
+
+
+// ── Regionalizacion: los sellers que despachan en el CP ─────────────────────
+// Jumbo y Disco tienen catalogo regionalizado. El seller del catalogo (que es
+// "1" en las dos) no despacha, y por eso la simulacion rechazaba todo. Los
+// sellers reales los da /api/checkout/pub/regions para un codigo postal.
+
+test('usa los sellers de la region cuando el del catalogo no despacha', async () => {
+  sesionOk = true;
+  CANALES = {}; IS = {};
+  REGIONES = { 'www.jumbo.com.ar': [
+    { id: 'v2.ABC123', sellers: [{ id: 'jumboargentina', name: 'Jumbo' }] },
+  ] };
+  // Solo cotiza el seller de la region; el "1" del catalogo no.
+  SIMS = { 'www.jumbo.com.ar': { precio: 1982.5, lista: 3050, seller: 'jumboargentina' } };
+  const { res, llamadas } = await correr({
+    'www.jumbo.com.ar': [prod('7799155000197', 'Agua 2L Jumbo', { precio: 3050 })],
+  }, { eans: '7799155000197', tiendas: 'jumbo' });
+
+  const j = res.body.resultados['7799155000197'].jumbo;
+  assert.strictEqual(j.precio, 1982.5, 'con el seller que despacha sale el precio de la ficha');
+  assert.strictEqual(j.fuentePrecio, 'simulacion');
+  assert.match(res.body.comboPorTienda.jumbo, /seller=jumboargentina/);
+  assert.ok(llamadas.some((u) => u.includes('/api/checkout/pub/regions')),
+    'se pregunto quien despacha en ese CP');
+});
+
+test('el seller del catalogo sigue sirviendo donde no hay regionalizacion', async () => {
+  sesionOk = true;
+  CANALES = {}; IS = {}; REGIONES = {};          // 404: no esta regionalizada
+  SIMS = { 'www.masonline.com.ar': { precio: 2139, lista: 3199 } };
+  const { res } = await correr({
+    'www.masonline.com.ar': [prod('7799155000197', 'Agua 2L', { precio: 2139, lista: 3199 })],
+  }, { eans: '7799155000197', tiendas: 'masonline' });
+
+  const m = res.body.resultados['7799155000197'].masonline;
+  assert.strictEqual(m.precio, 2139);
+  assert.strictEqual(m.fuentePrecio, 'simulacion');
+});
+
+test('si la region no da sellers, se dice cual fue el motivo', async () => {
+  sesionOk = true;
+  CANALES = {}; IS = {}; SIMS = {};
+  REGIONES = { 'www.jumbo.com.ar': 500 };
+  const { res } = await correr({
+    'www.jumbo.com.ar': [prod('7799155000197', 'Agua 2L Jumbo', { precio: 3050 })],
+  }, { eans: '7799155000197', tiendas: 'jumbo' });
+
+  const nota = res.body.canalErrores.jumbo.find((x) => x.includes('sellers'));
+  assert.ok(nota, 'tiene que quedar registrado que no se pudo resolver la region');
+  assert.match(nota, /HTTP 500/);
 });
