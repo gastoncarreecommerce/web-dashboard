@@ -101,7 +101,42 @@ function pedirConTimeout(url) {
  */
 const CANALES = [null, '1', '2', '3'];
 
-async function simular(tienda, itemId, sellerId, sc) {
+// Codigo postal por defecto (CABA). Importa por dos razones distintas:
+//
+// 1. Cencosud (Jumbo, Disco) tiene CATALOGO REGIONALIZADO: su sitio te pide
+//    "Seleccioná el método de entrega" antes de mostrarte precios. El catalogo
+//    devuelve el producto igual, pero el checkout responde "Ítem no encontrado o
+//    no disponible" porque sin ubicacion no hay quien lo despache. Probar los
+//    cuatro canales de venta no alcanzo justamente por esto.
+//
+// 2. Los precios de supermercado VARIAN POR ZONA. Comparar sin fijar una zona
+//    compara cosas distintas, asi que el codigo postal es parte de la pregunta,
+//    no un detalle tecnico: la pagina lo deja elegir.
+const CP_DEFECTO = process.env.COMPETENCIA_CP || '1425';
+
+/** Las combinaciones a probar, en orden de probabilidad. Se prueban UNA vez por
+ *  tienda, no por producto. */
+function combinaciones(cp) {
+  const out = [];
+  for (const sc of CANALES) {
+    out.push({ sc, cp });        // con ubicacion primero: es lo que piden las regionalizadas
+    if (!sc) out.push({ sc, cp: null });
+  }
+  out.push({ sc: '1', cp: null });
+  // Sin duplicados, manteniendo el orden.
+  const vistas = new Set();
+  return out.filter((c) => {
+    const k = `${c.sc}|${c.cp}`;
+    if (vistas.has(k)) return false;
+    vistas.add(k);
+    return true;
+  });
+}
+
+const comboTxt = (c) => `sc=${c.sc ?? '(defecto)'} cp=${c.cp ?? '(sin)'}`;
+
+async function simular(tienda, itemId, sellerId, combo) {
+  const { sc, cp } = combo || {};
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   const qs = sc ? `?sc=${encodeURIComponent(sc)}` : '';
@@ -116,6 +151,9 @@ async function simular(tienda, itemId, sellerId, sc) {
       body: JSON.stringify({
         items: [{ id: String(itemId), quantity: 1, seller: String(sellerId || '1') }],
         country: 'ARG',
+        // El codigo postal es lo que le permite al checkout resolver quien
+        // despacha. Sin el, una tienda regionalizada rechaza todo.
+        ...(cp ? { postalCode: String(cp) } : {}),
       }),
     });
     if (!r.ok) {
@@ -161,14 +199,17 @@ async function simular(tienda, itemId, sellerId, sc) {
  * reusarlo para los otros 93 productos cuesta 3 llamadas extra en el peor caso
  * en vez de 3 por producto.
  */
-async function descubrirCanal(tienda, itemId, sellerId) {
-  let ultimo = null;
-  for (const sc of CANALES) {
-    const r = await simular(tienda, itemId, sellerId, sc);
-    if (!r.error) return { sc, primera: r };
-    ultimo = r.error;
+async function descubrirCombo(tienda, itemId, sellerId, cp) {
+  const intentos = [];
+  for (const combo of combinaciones(cp)) {
+    const r = await simular(tienda, itemId, sellerId, combo);
+    if (!r.error) return { combo, primera: r, intentos };
+    intentos.push(`${comboTxt(combo)} → ${r.error.slice(0, 90)}`);
   }
-  return { sc: undefined, error: ultimo };
+  // Se devuelven TODOS los intentos: con esto se ve si fallaron todos por lo
+  // mismo (entonces el problema no es el canal ni la zona) o si cambia el
+  // motivo, que es la pista de cual knob importa.
+  return { combo: null, intentos };
 }
 
 /** Lo que nos interesa de un producto de VTEX, aplanado. */
@@ -286,6 +327,11 @@ export default async function handler(req, res) {
     });
   }
 
+  // El codigo postal define la zona: los precios de supermercado varian, asi
+  // que forma parte de la consulta.
+  const cpCrudo = String(req.query?.cp || '').trim();
+  const cp = /^\d{4}$/.test(cpCrudo) ? cpCrudo : CP_DEFECTO;
+
   const pedidas = String(req.query?.tiendas || Object.keys(TIENDAS).join(','))
     .split(',').map((s) => s.trim()).filter(Boolean);
   const tiendas = pedidas.filter((id) => TIENDAS[id]);
@@ -345,17 +391,17 @@ export default async function handler(req, res) {
   // Primero se descubre el canal de venta de cada tienda con UN producto, y
   // despues se simula el resto con ese canal. El canal es una propiedad de la
   // cuenta, no del producto.
-  const canalDe = {};
+  const comboDe = {};
   const primeras = new Map();
   const porTiendaSim = {};
   for (const x of aSimular) (porTiendaSim[x.id] = porTiendaSim[x.id] || []).push(x);
 
   await forEachLimit(Object.keys(porTiendaSim), CONCURRENCIA, async (id) => {
     const primero = porTiendaSim[id][0];
-    const d = await descubrirCanal(TIENDAS[id], primero.fila._itemId, primero.fila._sellerId);
-    canalDe[id] = d.sc;
+    const d = await descubrirCombo(TIENDAS[id], primero.fila._itemId, primero.fila._sellerId, cp);
+    comboDe[id] = d.combo;
     if (d.primera) primeras.set(primero, d.primera);
-    else canalErrores[id] = d.error;
+    else canalErrores[id] = d.intentos;
   });
 
   const resto = aSimular.filter((x) => !primeras.has(x));
@@ -394,7 +440,7 @@ export default async function handler(req, res) {
 
   for (const [x, sim] of primeras) aplicar(x.fila, sim);
   await forEachLimit(resto, CONCURRENCIA, async ({ id, fila }) => {
-    aplicar(fila, await simular(TIENDAS[id], fila._itemId, fila._sellerId, canalDe[id]));
+    aplicar(fila, await simular(TIENDAS[id], fila._itemId, fila._sellerId, comboDe[id]));
   });
 
   // Los internos no viajan al cliente.
@@ -418,10 +464,12 @@ export default async function handler(req, res) {
     resultados,
     errores,
     simulacionErrores: simErrores,
-    // Que canal de venta funciono en cada tienda, y en cuales ninguno. `null`
-    // significa "sin sc", que es el canal por defecto de la tienda.
-    canalPorTienda: canalDe,
+    // Que combinacion de canal + codigo postal funciono en cada tienda, y en
+    // las que ninguna, TODOS los intentos con su error.
+    comboPorTienda: Object.fromEntries(Object.entries(comboDe)
+      .map(([k, c]) => [k, c ? comboTxt(c) : null])),
     canalErrores,
+    codigoPostal: cp,
     simuladas: aSimular.filter((x) => x.fila.fuentePrecio === 'simulacion').length,
     aSimular: aSimular.length,
     ...(invalidos.length ? { invalidos: invalidos.slice(0, 20) } : {}),

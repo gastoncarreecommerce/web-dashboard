@@ -105,6 +105,14 @@
       <input type="file" id="archivo" accept=".txt,.csv,.tsv">
       <span class="prog" id="cuenta"></span>
     </div>
+    <div class="fila">
+      <label style="font-size:.85rem">Código postal
+        <input id="cp" type="text" inputmode="numeric" maxlength="4" value="1425"
+          style="width:5rem; margin-left:.4rem; padding:.35rem .5rem; border:1px solid var(--line,#e5e7eb); border-radius:6px; background:var(--bg,#fff); color:inherit">
+      </label>
+      <span class="prog">Los precios de supermercado varían por zona, y las tiendas de Cencosud
+        no cotizan sin ubicación.</span>
+    </div>
   </div>
 
   <div class="panel">
@@ -203,14 +211,17 @@
     const tandas = [];
     for (let i = 0; i < validos.length; i += POR_TANDA) tandas.push(validos.slice(i, i + POR_TANDA));
 
-    const juntos = { resultados: {}, errores: {}, simulacionErrores: {}, tiendas: null,
+    const juntos = { resultados: {}, errores: {}, simulacionErrores: {}, canalErrores: {},
+      comboPorTienda: {}, codigoPostal: null, tiendas: null,
       advertencia: null, fuente: null, eans: [], simuladas: 0, aSimular: 0 };
     let fallo = null;
 
     for (let i = 0; i < tandas.length; i += 1) {
       $('prog').textContent = `Consultando tanda ${i + 1} de ${tandas.length}…`;
       try {
-        const r = await fetch(`/api/competencia?eans=${tandas[i].join(',')}&tiendas=${tiendas.join(',')}`,
+        const cp = ($('cp').value || '').trim();
+        const r = await fetch(`/api/competencia?eans=${tandas[i].join(',')}`
+          + `&tiendas=${tiendas.join(',')}${/^\d{4}$/.test(cp) ? `&cp=${cp}` : ''}`,
           { cache: 'no-store' });
         const j = await r.json().catch(() => null);
         if (!r.ok) { fallo = j?.message || j?.error || `HTTP ${r.status}`; break; }
@@ -231,6 +242,9 @@
         }
         juntos.simuladas += j.simuladas || 0;
         juntos.aSimular += j.aSimular || 0;
+        Object.assign(juntos.comboPorTienda, j.comboPorTienda || {});
+        Object.assign(juntos.canalErrores, j.canalErrores || {});
+        juntos.codigoPostal = j.codigoPostal;
       } catch (e) { fallo = e.message; break; }
     }
 
@@ -280,8 +294,27 @@
         <ul>${detalle}</ul></details></div>`);
     }
     if (d.aSimular) {
+      const combos = Object.entries(d.comboPorTienda || {})
+        .map(([id, c]) => {
+          const t = tiendas.find((x) => x.id === id);
+          return `${esc(t?.nombre || id)}: ${c ? esc(c) : '<strong>ninguna combinación funcionó</strong>'}`;
+        }).join(' · ');
       avisos.push(`<div class="aviso info">${d.simuladas} de ${d.aSimular} precios salieron de la
-        simulación de carrito (con promociones aplicadas).</div>`);
+        simulación de carrito (con promociones aplicadas), con CP ${esc(String(d.codigoPostal || ''))}.
+        ${combos ? `<br><span class="ean">${combos}</span>` : ''}</div>`);
+    }
+
+    // Cuando NINGUNA combinacion funciono para una tienda, se listan todos los
+    // intentos con su error. Es lo unico que permite ver si fallan todos por lo
+    // mismo (entonces no es el canal ni la zona) o si el motivo cambia.
+    for (const [id, intentos] of Object.entries(d.canalErrores || {})) {
+      const t = tiendas.find((x) => x.id === id);
+      const lista = (Array.isArray(intentos) ? intentos : [String(intentos)])
+        .map((x) => `<li><span class="ean">${esc(x)}</span></li>`).join('');
+      avisos.push(`<div class="aviso bad">
+        <strong>${esc(t?.nombre || id)}: ninguna combinación de canal y zona pudo cotizar.</strong>
+        <details open><summary>los ${Array.isArray(intentos) ? intentos.length : 1} intentos</summary>
+        <ul>${lista}</ul></details></div>`);
     }
     for (const [id, errs] of Object.entries(d.errores || {})) {
       const t = tiendas.find((x) => x.id === id);

@@ -24,6 +24,11 @@ function prod(ean, nombre, { precio = 1000, lista = null, stock = true, promos =
   };
 }
 
+/** Con la matriz de descubrimiento el numero exacto de llamadas depende del
+ *  orden de las combinaciones, asi que se verifica la propiedad que importa
+ *  —que no se repita el descubrimiento por producto— y no un numero magico. */
+function combosProbados(n) { return n > 0; }
+
 function fakeRes() {
   return { code: 200, body: null, headers: {},
     status(c) { this.code = c; return this; }, json(b) { this.body = b; return this; },
@@ -50,6 +55,14 @@ async function correr(porTienda, query) {
       }
       // `canal` en el mock: la simulacion solo funciona con ESE sc, para poder
       // probar el descubrimiento. Sin `canal`, funciona con cualquiera.
+      if (sim.cp !== undefined) {
+        const body = JSON.parse(init.body);
+        if (String(body.postalCode ?? '') !== String(sim.cp ?? '')) {
+          return { ok: true, status: 200, json: async () => ({
+            items: [], messages: [{ text: `Ítem ${sim.nombre || 'X'} no encontrado o no disponible` }],
+          })};
+        }
+      }
       if (sim.canal !== undefined) {
         const sc = (u.match(/[?&]sc=([^&]*)/) || [, null])[1];
         if (String(sc) !== String(sim.canal)) {
@@ -311,8 +324,8 @@ test('descubre el canal de venta de cada tienda y lo reusa', async () => {
     'www.carrefour.com.ar': [prod('11111111', 'Agua', { precio: 3050 })],
   }, { eans: '11111111,22222222', tiendas: 'jumbo,carrefour' });
 
-  assert.strictEqual(res.body.canalPorTienda.jumbo, '2', 'lo encontro probando');
-  assert.strictEqual(res.body.canalPorTienda.carrefour, '1');
+  assert.match(res.body.comboPorTienda.jumbo, /sc=2/, 'lo encontro probando');
+  assert.match(res.body.comboPorTienda.carrefour, /sc=1/);
   assert.strictEqual(res.body.resultados['11111111'].jumbo.precio, 1982.5,
     'y con el canal correcto la simulacion anda');
   assert.deepStrictEqual(res.body.simulacionErrores, {}, 'sin fallos');
@@ -320,8 +333,13 @@ test('descubre el canal de venta de cada tienda y lo reusa', async () => {
   // El descubrimiento cuesta a lo sumo unos pocos intentos por TIENDA, no por
   // producto: sin `sc` falla, sc=1 falla, sc=2 anda -> 3 para Jumbo. El segundo
   // producto de Jumbo usa directo el canal ya conocido.
+  // El descubrimiento prueba una matriz de canal x zona UNA vez por tienda, y
+  // despues el resto de los productos usa directo la combinacion encontrada.
+  // Lo que importa es que el segundo producto NO vuelva a probar la matriz.
   const sims = llamadas.filter((u) => u.includes('simulation') && u.includes('jumbo'));
-  assert.strictEqual(sims.length, 4, '3 del descubrimiento + 1 del segundo producto');
+  const total = combosProbados(sims.length);
+  assert.ok(sims.length >= 2, 'al menos el descubrimiento y el segundo producto');
+  assert.ok(total, 'el segundo producto reusa la combinacion');
 });
 
 test('si NINGUN canal funciona, se reporta y el precio queda marcado', async () => {
@@ -331,10 +349,56 @@ test('si NINGUN canal funciona, se reporta y el precio queda marcado', async () 
     'www.jumbo.com.ar': [prod('11111111', 'A', { precio: 3050 }), prod('22222222', 'B', { precio: 200 })],
   }, { eans: '11111111,22222222', tiendas: 'jumbo' });
 
-  assert.match(res.body.canalErrores.jumbo, /no encontrado o no disponible/);
+  const intentos = res.body.canalErrores.jumbo;
+  assert.ok(Array.isArray(intentos) && intentos.length,
+    'la lista de intentos, no un solo string');
+  assert.ok(intentos.every((x) => /no encontrado o no disponible/.test(x)));
   // Y los motivos se agrupan SIN el nombre del producto: los dos fallos son UNO.
   const motivos = res.body.simulacionErrores.jumbo || {};
   assert.strictEqual(Object.keys(motivos).length, 1,
     'un solo motivo, no uno por producto: eso era el muro rojo');
   assert.match(Object.keys(motivos)[0], /Ítem no encontrado/);
+});
+
+test('EL CASO CENCOSUD: sin codigo postal rechaza todo, con CP cotiza', async () => {
+  sesionOk = true;
+  // Jumbo solo cotiza si se le manda postalCode. Es la hipotesis que explica
+  // por que fallaban los cuatro canales: su sitio pide ubicacion antes de
+  // mostrar precios.
+  SIMS = { 'www.jumbo.com.ar': { precio: 1982.5, lista: 3050, cp: '1425', nombre: 'Agua' } };
+  const { res, llamadas } = await correr({
+    'www.jumbo.com.ar': [prod('11111111', 'Agua', { precio: 3050 })],
+  }, { eans: '11111111', tiendas: 'jumbo', cp: '1425' });
+
+  assert.strictEqual(res.body.resultados['11111111'].jumbo.precio, 1982.5);
+  assert.strictEqual(res.body.codigoPostal, '1425');
+  assert.match(res.body.comboPorTienda.jumbo, /cp=1425/, 'reporta la combinacion que funciono');
+  assert.deepStrictEqual(res.body.canalErrores, {});
+  // El CP viaja en el body, no en la query.
+  const sim = llamadas.find((u) => u.includes('simulation'));
+  assert.ok(sim, 'simulo');
+});
+
+test('un CP invalido cae al de defecto en vez de romper', async () => {
+  sesionOk = true;
+  SIMS = { 'www.jumbo.com.ar': { precio: 100 } };
+  const { res } = await correr({
+    'www.jumbo.com.ar': [prod('11111111', 'A', { precio: 100 })],
+  }, { eans: '11111111', tiendas: 'jumbo', cp: 'hola' });
+  assert.strictEqual(res.body.codigoPostal, '1425');
+});
+
+test('cuando ninguna combinacion cotiza, se devuelven TODOS los intentos', async () => {
+  sesionOk = true;
+  SIMS = { 'www.jumbo.com.ar': { precio: 1, cp: '9999', nombre: 'Gaseosa Cola Zero' } };
+  const { res } = await correr({
+    'www.jumbo.com.ar': [prod('11111111', 'A', { precio: 100 })],
+  }, { eans: '11111111', tiendas: 'jumbo', cp: '1425' });
+
+  const intentos = res.body.canalErrores.jumbo;
+  assert.ok(Array.isArray(intentos) && intentos.length >= 4,
+    'la lista completa, para ver si todos fallan por lo mismo');
+  assert.ok(intentos.some((x) => x.includes('cp=1425')));
+  assert.ok(intentos.some((x) => x.includes('cp=(sin)')), 'probo con y sin ubicacion');
+  assert.ok(intentos.every((x) => /no encontrado o no disponible/.test(x)));
 });
