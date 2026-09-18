@@ -272,33 +272,40 @@
     const eans = d.eans;
 
     const avisos = [];
-    if (d.advertencia) avisos.push(`<div class="aviso cpx-info">${esc(d.advertencia)}</div>`);
+
     if (malos?.length) {
       avisos.push(`<div class="aviso cpx-warn">${malos.length} línea(s) no tenían forma de EAN y se ignoraron:
         <span class="ean">${esc(malos.slice(0, 8).join(', '))}${malos.length > 8 ? '…' : ''}</span></div>`);
     }
-    if (d.fuente) avisos.push(`<div class="aviso cpx-info">${esc(d.fuente)}</div>`);
+    // Un solo cuadro de contexto. Antes la advertencia y la fuente eran dos
+    // cuadros azules distintos arriba de otro cuadro azul con el conteo: tres
+    // bloques del mismo color diciendo cosas de la misma familia.
+    const contexto = [d.fuente, d.advertencia].filter(Boolean).join(' ');
+    if (contexto) avisos.push(`<div class="aviso cpx-info">${esc(contexto)}</div>`);
 
     // Fallos de simulacion AGRUPADOS por tienda y motivo. Si falla en todas las
     // celdas de una tienda, lo util es el motivo una vez —no una lista de 76
     // celdas truncada a 6, que es lo que habia antes y no dejaba ver la causa.
     const grupos = Object.entries(d.simulacionErrores || {});
     if (grupos.length) {
-      const detalle = grupos.map(([id, motivos]) => {
+      // `simulacionErrores` ya viene filtrado por la API: son las filas que
+      // quedaron SIN precio verificado, no las que la simulacion no pudo
+      // cotizar. Antes esto avisaba en rojo por 152 productos cuando 148 ya
+      // tenian el precio bueno leido de la ficha.
+      const total = grupos.reduce((t, [, m]) => t + Object.values(m).reduce((a, b) => a + b, 0), 0);
+      const det = grupos.map(([id, motivos]) => {
         const t = tiendas.find((x) => x.id === id);
-        const total = Object.values(motivos).reduce((a, b) => a + b, 0);
-        const porQue = Object.entries(motivos)
-          .sort((a, b) => b[1] - a[1]).slice(0, 3)
-          .map(([m, n]) => `${esc(m)} (${n}×)`).join('; ');
-        return `<li><strong>${esc(t?.nombre || id)}</strong>: ${total} sin simular — ${porQue}</li>`;
+        const n = Object.values(motivos).reduce((a, b) => a + b, 0);
+        const top = Object.entries(motivos).sort((a, b) => b[1] - a[1])[0];
+        return `<li><strong>${esc(t?.nombre || id)}</strong>: ${n} — <span class="ean">${esc(top[0])}</span></li>`;
       }).join('');
-      avisos.push(`<div class="aviso cpx-bad">
-        <strong>La simulación de carrito falló en algunas tiendas.</strong>
-        Para esos productos se muestra el precio del catálogo, que puede no incluir
-        promociones. Están marcados y no compiten por el "más barato".
-        <details><summary>ver detalle</summary>
-        <ul>${detalle}</ul></details></div>`);
+      avisos.push(`<div class="aviso cpx-warn">
+        <strong>${total} precio(s) quedaron sin verificar.</strong> Para esos se muestra el del
+        catálogo, que puede no incluir promociones. Están marcados y no compiten por el
+        "más barato".
+        <ul style="margin:.35rem 0 0;padding-left:1.1rem">${det}</ul></div>`);
     }
+
     if (d.aSimular) {
       const combos = Object.entries(d.comboPorTienda || {})
         .map(([id, c]) => {

@@ -615,16 +615,6 @@ export default async function handler(req, res) {
       // el cliente. Se marca para que la pagina lo diga en vez de darlo por
       // bueno.
       fila.simulacionFallo = sim.error;
-      // Se agrupa por el motivo SIN el nombre del producto. VTEX responde
-      // "Ítem <nombre del producto> no encontrado o no disponible", asi que
-      // agrupando por el texto exacto los 76 fallos de una tienda daban 76
-      // motivos distintos y el aviso se volvia un muro ilegible.
-      const motivo = sim.error
-        .replace(/Ítem .*? no encontrado/i, 'Ítem no encontrado')
-        .replace(/Item .*? not found/i, 'Item not found')
-        .slice(0, 160);
-      const acc = (simErrores[fila._tienda] = simErrores[fila._tienda] || {});
-      acc[motivo] = (acc[motivo] || 0) + 1;
       return;
     }
     if (sim.precio != null) fila.precio = sim.precio;
@@ -685,6 +675,32 @@ export default async function handler(req, res) {
     porFicha += 1;
   });
 
+  // ── Que quedo realmente sin precio ──────────────────────────────────────
+  // Se agrupa DESPUES del plan B, no durante la simulacion. Antes se reportaba
+  // el fallo de la simulacion aunque la ficha hubiera resuelto la fila: la
+  // pagina avisaba en rojo que 152 productos mostraban el precio del catalogo
+  // sin promociones cuando 148 ya tenian el precio bueno. Un paso intermedio
+  // que falla y se recupera no es un problema del resultado.
+  for (const { fila } of aSimular) {
+    if (!fila.simulacionFallo) continue;
+    // Se agrupa por el motivo SIN el nombre del producto. VTEX responde
+    // "Ítem <nombre del producto> no encontrado o no disponible", asi que
+    // agrupando por el texto exacto los 76 fallos de una tienda daban 76
+    // motivos distintos y el aviso se volvia un muro ilegible.
+    const motivo = String(fila.simulacionFallo)
+      .replace(/Ítem .*? no encontrado/i, 'Ítem no encontrado')
+      .replace(/Item .*? not found/i, 'Item not found')
+      .slice(0, 160);
+    const acc = (simErrores[fila._tienda] = simErrores[fila._tienda] || {});
+    acc[motivo] = (acc[motivo] || 0) + 1;
+  }
+
+  // Los intentos de canal y zona son diagnostico: solo interesan si esa tienda
+  // ADEMAS quedo sin precio. Si la ficha la resolvio, no hay nada que mirar.
+  for (const id of Object.keys(canalErrores)) {
+    if (!simErrores[id]) delete canalErrores[id];
+  }
+
   // Los internos no viajan al cliente.
   for (const ean of eans) {
     for (const f of Object.values(resultados[ean])) {
@@ -722,8 +738,9 @@ export default async function handler(req, res) {
       + 'aplica las promociones. Donde la simulación no cotiza, se lee el precio del JSON-LD '
       + 'de la ficha, que es el que muestra la página: para el agua Villavicencio 2 L en Jumbo '
       + 'el catálogo da $3.050 y la ficha $1.982,50.',
-    advertencia: 'Los precios son los de la política comercial y región por defecto '
-      + 'de cada tienda. Los supermercados varían precio por zona, así que esto es el '
-      + 'precio que muestra cada sitio sin indicarle una ubicación.',
+    // Esto ya no es cierto y se corrige: ahora se pide para un codigo postal y,
+    // en las tiendas que resuelven sellers por zona, se usa el que despacha ahi.
+    advertencia: `Los precios se piden para el código postal ${cp}. Los supermercados varían `
+      + 'precio por zona, así que cambiando el CP cambian los números.',
   });
 }

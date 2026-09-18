@@ -666,3 +666,50 @@ test('si la ficha no trae JSON-LD, queda el catalogo y se dice por que', async (
   assert.ok(j.simulacionFallo, 'sigue marcado como sin verificar');
   assert.match(Object.keys(res.body.fichaErrores.jumbo)[0], /no trae JSON-LD/);
 });
+
+// ── No reportar como problema un paso intermedio que se recupero ────────────
+// La pagina avisaba en rojo que 152 productos mostraban el precio del catalogo
+// sin promociones, cuando 148 de esos ya tenian el precio bueno leido de la
+// ficha. El fallo de la simulacion se estaba reportando aunque el plan B lo
+// hubiera resuelto.
+
+test('si la ficha resolvio la fila, la simulacion fallida no se reporta', async () => {
+  sesionOk = true;
+  CANALES = {}; REGIONES = {}; SIMS = {};          // la simulacion no cotiza
+  FICHAS = { 'www.jumbo.com.ar': ficha('7799155000197', '405993', 'Agua', 1982.5) };
+  const { res } = await correr({
+    'www.jumbo.com.ar': [prod('7799155000197', 'Agua 2L Jumbo', { precio: 3050 })],
+  }, { eans: '7799155000197', tiendas: 'jumbo' });
+
+  assert.strictEqual(res.body.resultados['7799155000197'].jumbo.precio, 1982.5);
+  assert.deepStrictEqual(res.body.simulacionErrores, {},
+    'no quedo ninguna fila sin precio, asi que no hay nada que reportar');
+  assert.ok(!res.body.canalErrores?.jumbo,
+    'los intentos de canal son diagnostico: sin filas sin precio, son ruido');
+});
+
+test('si la ficha TAMPOCO pudo, ahi si se reporta', async () => {
+  sesionOk = true;
+  CANALES = {}; REGIONES = {}; SIMS = {}; FICHAS = {};   // ni simulacion ni ficha
+  const { res } = await correr({
+    'www.jumbo.com.ar': [prod('7799155000197', 'Agua 2L Jumbo', { precio: 3050 })],
+  }, { eans: '7799155000197', tiendas: 'jumbo' });
+
+  assert.strictEqual(res.body.resultados['7799155000197'].jumbo.precio, 3050);
+  assert.ok(res.body.simulacionErrores.jumbo, 'esta fila si quedo sin verificar');
+  assert.ok(res.body.canalErrores?.jumbo,
+    'y ahi los intentos de canal si sirven para entender por que');
+});
+
+test('una tienda resuelta y otra no: se reporta solo la que quedo sin precio', async () => {
+  sesionOk = true;
+  CANALES = {}; REGIONES = {}; SIMS = {};
+  FICHAS = { 'www.jumbo.com.ar': ficha('7799155000197', '405993', 'Agua', 1982.5) };
+  const { res } = await correr({
+    'www.jumbo.com.ar': [prod('7799155000197', 'Agua Jumbo', { precio: 3050 })],
+    'www.disco.com.ar': [prod('7799155000197', 'Agua Disco', { precio: 3100 })],
+  }, { eans: '7799155000197', tiendas: 'jumbo,disco' });
+
+  assert.deepStrictEqual(Object.keys(res.body.simulacionErrores), ['disco']);
+  assert.deepStrictEqual(Object.keys(res.body.canalErrores || {}), ['disco']);
+});
