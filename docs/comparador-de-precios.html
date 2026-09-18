@@ -6,6 +6,7 @@
 <title>Comparador de competencia</title>
 <link rel="icon" href="favicon.svg">
 <link rel="stylesheet" href="styles.css">
+<script src="xlsx.js"></script>
 <style>
   /* Página independiente: no entra al nav del dashboard a propósito. */
   .cpx-cmp { max-width: 1400px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
@@ -120,7 +121,8 @@
     <div class="tiendas" id="tiendas"></div>
     <div class="fila">
       <button class="cpx-btn" id="buscar">Comparar precios</button>
-      <button class="cpx-btn sec" id="csv" disabled>Bajar CSV</button>
+      <button class="cpx-btn" id="xlsx" disabled>Bajar Excel</button>
+      <button class="cpx-btn sec" id="csv" disabled>CSV</button>
       <span class="prog" id="prog"></span>
     </div>
   </div>
@@ -208,6 +210,7 @@
 
     $('buscar').disabled = true;
     $('csv').disabled = true;
+    $('xlsx').disabled = true;
     const tandas = [];
     for (let i = 0; i < validos.length; i += POR_TANDA) tandas.push(validos.slice(i, i + POR_TANDA));
 
@@ -262,6 +265,7 @@
     ultimo = juntos;
     pintar(juntos, malos);
     $('csv').disabled = false;
+    $('xlsx').disabled = false;
   }
 
   $('buscar').addEventListener('click', buscar);
@@ -461,6 +465,191 @@
     $('titulo-res').textContent = `3 · Resultados — ${cobertura}`;
     $('panel-res').hidden = false;
   }
+
+  // ── Excel ──────────────────────────────────────────────────────────────────
+  /**
+   * Tres hojas, cada una para algo distinto:
+   *
+   *   Comparación · una fila por EAN y una columna por tienda. Es la que se
+   *                 mira: el más barato en verde, los sin verificar en ámbar.
+   *   Detalle     · una fila por EAN y tienda, con todos los campos. Es la que
+   *                 se filtra y se tabula.
+   *   Resumen     · una fila por tienda, con cobertura y cuántos productos nos
+   *                 gana cada una. Es la que se muestra.
+   *
+   * Los números van como números (no como texto con "$" pegado adelante), así
+   * Excel los puede sumar y promediar. Los porcentajes van como fracción, que
+   * es lo que espera el formato de porcentaje de Excel.
+   */
+  function hojasExcel(d) {
+    const E = W.XLSX_ESTILO;
+    // 0 -> A, 25 -> Z, 26 -> AA. fromCharCode(65+n) se rompe pasando la Z.
+    const colLetra = (n) => {
+      let out = '';
+      for (let x = n + 1; x > 0; x = Math.floor((x - 1) / 26)) {
+        out = String.fromCharCode(65 + ((x - 1) % 26)) + out;
+      }
+      return out;
+    };
+    const tiendas = d.tiendas || [];
+    const eans = d.eans || [];
+    const nuestra = tiendas.find((t) => t.propia);
+    const nombreDe = (ean) => tiendas.map((t) => d.resultados[ean]?.[t.id])
+      .find((x) => x?.nombre)?.nombre || '';
+    // Un precio solo cuenta para comparar si esta verificado y hay stock:
+    // comparar contra un precio sin verificar o sin stock es comparar con algo
+    // que el cliente no puede comprar a ese precio.
+    const comparable = (x) => x && x.encontrado && x.disponible
+      && x.precio != null && !x.simulacionFallo && !x.listaSospechosa;
+
+    // ── Hoja 1: Comparación ─────────────────────────────────────────────────
+    const est1 = [];
+    const filas1 = [];
+    const push1 = (fila, estilos) => { filas1.push(fila); est1.push(estilos || []); };
+
+    push1([`Comparador de competencia`], [E.titulo]);
+    push1([`Generado el ${new Date().toLocaleString('es-AR')} · código postal ${d.codigoPostal || '—'}`
+      + ` · ${eans.length} EAN(s) · ${d.simuladas || 0} precios de simulación de carrito`
+      + ` y ${d.porFicha || 0} de la ficha de cada tienda`], [E.nota]);
+    push1([]);
+    push1(['EAN', 'Producto', ...tiendas.map((t) => t.nombre + (t.propia ? ' (nuestra)' : '')),
+      'Más barato', 'Nuestra dif. vs el más barato'],
+      new Array(tiendas.length + 4).fill(E.encabezado));
+
+    for (const ean of eans) {
+      const porTienda = d.resultados[ean] || {};
+      const precios = tiendas.map((t) => porTienda[t.id]);
+      const validos = precios.filter(comparable).map((x) => x.precio);
+      const min = validos.length ? Math.min(...validos) : null;
+      const nuestro = comparable(porTienda[nuestra?.id]) ? porTienda[nuestra.id].precio : null;
+
+      const fila = [ean, nombreDe(ean)];
+      const est = [E.ean, E.normal];
+      for (const x of precios) {
+        if (!x || !x.encontrado) { fila.push(null); est.push(E.normal); continue; }
+        fila.push(x.precio ?? null);
+        // Ámbar el que no se pudo verificar; verde el más barato de la fila.
+        est.push((x.simulacionFallo || x.listaSospechosa) ? E.monedaDudosa
+          : (min != null && x.precio === min && x.disponible) ? E.monedaBarata
+            : E.moneda);
+      }
+      // Quién gana esta fila, y por cuánto perdemos.
+      const gana = min == null ? '' : tiendas
+        .filter((t) => comparable(porTienda[t.id]) && porTienda[t.id].precio === min)
+        .map((t) => t.nombre).join(' / ');
+      fila.push(gana);
+      est.push(E.normal);
+      if (nuestro != null && min != null && min > 0) {
+        const dif = nuestro / min - 1;
+        fila.push(dif);
+        est.push(dif > 0 ? E.deltaMala : E.deltaBuena);
+      } else { fila.push(null); est.push(E.delta); }
+      push1(fila, est);
+    }
+
+    const hoja1 = {
+      name: 'Comparación',
+      rows: filas1,
+      filaEncabezado: 4,
+      columnasFijas: 2,
+      widths: [16, 46, ...tiendas.map(() => 15), 20, 16],
+      estiloDe: (f, c) => est1[f - 1]?.[c] ?? null,
+      merges: [`A1:${colLetra(tiendas.length + 3)}1`, `A2:${colLetra(tiendas.length + 3)}2`],
+    };
+
+    // ── Hoja 2: Detalle ─────────────────────────────────────────────────────
+    const est2 = [];
+    const filas2 = [['EAN', 'Producto', 'Tienda', 'Precio', 'Precio anterior', 'Descuento',
+      'Dif. vs nosotros', 'Stock', 'Promociones', 'De dónde sale el precio', 'Link']];
+    est2.push(new Array(11).fill(E.encabezado));
+
+    for (const ean of eans) {
+      const porTienda = d.resultados[ean] || {};
+      const base = comparable(porTienda[nuestra?.id]) ? porTienda[nuestra.id].precio : null;
+      for (const t of tiendas) {
+        const x = porTienda[t.id];
+        if (!x || !x.encontrado) continue;
+        const dif = (base != null && !t.propia && comparable(x)) ? x.precio / base - 1 : null;
+        const fuente = x.simulacionFallo ? 'catálogo (sin verificar)'
+          : x.fuentePrecio === 'ficha' ? 'JSON-LD de la ficha'
+            : x.fuentePrecio === 'simulacion' ? 'simulación de carrito' : 'catálogo';
+        filas2.push([ean, x.nombre || nombreDe(ean), t.nombre,
+          x.precio ?? null, x.precioLista ?? null,
+          x.descuentoPct != null ? x.descuentoPct / 100 : null,
+          dif, x.disponible ? 'Sí' : 'No', (x.promos || []).join(' · '), fuente, x.url || '']);
+        est2.push([E.ean, E.normal, E.normal,
+          x.simulacionFallo ? E.monedaDudosa : E.moneda, E.moneda, E.pct1,
+          dif == null ? E.delta : dif < 0 ? E.deltaMala : E.deltaBuena,
+          E.normal, E.envuelto, E.normal, E.normal]);
+      }
+    }
+
+    const hoja2 = {
+      name: 'Detalle',
+      rows: filas2,
+      columnasFijas: 3,
+      widths: [16, 40, 14, 14, 15, 11, 14, 8, 38, 24, 50],
+      estiloDe: (f, c) => est2[f - 1]?.[c] ?? null,
+    };
+
+    // ── Hoja 3: Resumen ─────────────────────────────────────────────────────
+    const est3 = [];
+    const filas3 = [['Tienda', 'Productos encontrados', 'Cobertura del listado', 'Con stock',
+      'Más baratos que nosotros', 'Más caros que nosotros', 'Dif. de precio promedio',
+      'Precios sin verificar']];
+    est3.push(new Array(8).fill(E.encabezado));
+
+    for (const t of tiendas) {
+      let hallados = 0, conStock = 0, gana = 0, pierde = 0, sinVerificar = 0;
+      const difs = [];
+      for (const ean of eans) {
+        const porTienda = d.resultados[ean] || {};
+        const x = porTienda[t.id];
+        if (!x || !x.encontrado) continue;
+        hallados += 1;
+        if (x.disponible) conStock += 1;
+        if (x.simulacionFallo || x.listaSospechosa) sinVerificar += 1;
+        const base = comparable(porTienda[nuestra?.id]) ? porTienda[nuestra.id].precio : null;
+        if (t.propia || base == null || !comparable(x)) continue;
+        const dif = x.precio / base - 1;
+        difs.push(dif);
+        if (dif < 0) gana += 1; else if (dif > 0) pierde += 1;
+      }
+      // El promedio se calcula solo sobre los productos que las dos tiendas
+      // tienen comparables: promediar contra los que a una le faltan daria un
+      // numero que no significa nada.
+      const prom = difs.length ? difs.reduce((a, b) => a + b, 0) / difs.length : null;
+      filas3.push([t.nombre + (t.propia ? ' (nuestra)' : ''), hallados,
+        eans.length ? hallados / eans.length : null, conStock,
+        t.propia ? null : gana, t.propia ? null : pierde, prom, sinVerificar]);
+      est3.push([t.propia ? E.subtitulo : E.normal, E.entero, E.pct1, E.entero, E.entero, E.entero,
+        prom == null ? E.delta : prom < 0 ? E.deltaMala : E.deltaBuena, E.entero]);
+    }
+
+    filas3.push([]);
+    est3.push([]);
+    filas3.push(['"Más baratos que nosotros" cuenta los productos donde esa tienda tiene un precio '
+      + 'verificado y con stock por debajo del nuestro. La diferencia promedio se calcula solo '
+      + 'sobre los productos comparables de las dos tiendas.']);
+    est3.push([E.nota]);
+
+    const hoja3 = {
+      name: 'Resumen',
+      rows: filas3,
+      widths: [24, 20, 20, 12, 22, 22, 20, 18],
+      filtro: false,
+      estiloDe: (f, c) => est3[f - 1]?.[c] ?? null,
+      merges: [`A${filas3.length}:H${filas3.length}`],
+    };
+
+    return [hoja3, hoja1, hoja2];
+  }
+
+  $('xlsx').addEventListener('click', () => {
+    if (!ultimo) return;
+    W.downloadXLSX(`comparador-competencia-${new Date().toISOString().slice(0, 10)}.xlsx`,
+      hojasExcel(ultimo));
+  });
 
   // ── CSV ────────────────────────────────────────────────────────────────────
   $('csv').addEventListener('click', () => {
