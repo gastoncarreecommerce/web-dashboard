@@ -1,25 +1,39 @@
 'use strict';
 
 /**
- * Muestra TODOS los campos de precio que devuelve cada tienda para unos pocos
- * EANs, para saber cuál hay que leer en vez de adivinar.
+ * Averigua DE DONDE saca cada tienda el precio que muestra en su ficha.
  *
- * Por qué existe. El comparador mostraba, para Jumbo y Disco, un precio de lista
- * de $252.066 con un −98,8% de descuento en un agua de 2 litros. Eso no es una
- * promoción: es el campo equivocado. Estaba leyendo `ListPrice`, que en esas
- * cuentas (Jumbo y Disco son Cencosud, mismo backend) contiene otra cosa —
- * mientras que en Masonline y DIA daba valores plausibles (−33%, −30%).
+ * Estado del problema. El comparador toma el precio de la simulacion de carrito,
+ * que es donde VTEX aplica las promociones, y eso funciona para Carrefour,
+ * Masonline y DIA. Para Jumbo y Disco (las dos de Cencosud) la simulacion
+ * rechaza el item con "no encontrado o no disponible" en las 6 combinaciones de
+ * canal de venta y codigo postal que se probaron, todas con el mismo mensaje.
+ * Que el mensaje sea IDENTICO en las 6 descarta canal y zona: si alguno de esos
+ * dos fuera el problema, al menos una combinacion daria un error distinto.
  *
- * VTEX devuelve varios campos de precio por oferta y no todos significan lo
- * mismo en todas las cuentas: `Price`, `ListPrice`, `PriceWithoutDiscount`,
- * `SellingPrice`, `spotPrice`, y a veces `PriceValidUntil` o `Installments`.
- * Este script los imprime todos, por seller, para poder compararlos con lo que
- * muestra la ficha del producto en el sitio y elegir el correcto por tienda.
+ * Y el catalogo tampoco sirve para esas dos: para el agua de 2 L en Jumbo TODOS
+ * los campos de precio del catalogo valen 3.050 mientras la ficha muestra
+ * 1.982,50 con -35%.
  *
- * También imprime el `link` de cada producto, así se puede abrir la ficha real y
- * comparar contra lo que se ve en pantalla. Eso es el paso que no se puede
- * saltear: el campo correcto es el que coincide con el sitio, no el que parece
- * razonable.
+ * Asi que quedan tres hipotesis, y esta corrida prueba LAS TRES A LA VEZ para no
+ * gastar una corrida por cada una:
+ *
+ *   H1 · El precio del catalogo cambia segun la politica comercial. El catalogo
+ *        sin `sc` devuelve la politica por defecto; la ficha del sitio puede
+ *        estar usando otra. Se pide el catalogo con sc=1,2,3 y se compara.
+ *
+ *   H2 · La ficha no lee el catalogo. Los storefronts VTEX modernos renderizan
+ *        con Intelligent Search, no con catalog_system, y el precio que IS
+ *        devuelve puede venir ya con la promocion aplicada. Si 1.982,50 esta en
+ *        algun lado, lo mas probable es que sea aca: es la API que alimenta la
+ *        pagina que el usuario nos mostro.
+ *
+ *   H3 · El seller que se le manda a la simulacion no es el correcto. Se prueba
+ *        el sellerId del catalogo, el "1" literal, y SIN campo seller.
+ *
+ * El criterio de exito es uno solo y no se negocia: que aparezca el numero que
+ * muestra la ficha. Por eso imprime el `link` de cada producto — el campo bueno
+ * es el que coincide con el sitio, no el que parece razonable.
  *
  * No escribe nada: imprime y sale.
  *
@@ -34,161 +48,201 @@ const TIENDAS = {
   dia: { nombre: 'DIA', dominio: 'https://diaonline.supermercadosdia.com.ar' },
 };
 
-// Los que interesan para decidir. Se listan explícitamente para que el reporte
-// tenga columnas estables, y aparte se muestra cualquier otro campo numérico
-// que traiga la oferta, por si alguna cuenta usa uno propio.
-const CAMPOS = ['Price', 'ListPrice', 'PriceWithoutDiscount', 'SellingPrice', 'spotPrice', 'priceWithoutDiscount'];
-
+const CAMPOS = ['Price', 'ListPrice', 'PriceWithoutDiscount', 'FullSellingPrice', 'SellingPrice', 'spotPrice'];
 const POR_DEFECTO = ['7799155000197', '7792799000097', '7792798014019'];
 const TIMEOUT_MS = 20000;
+const CP = process.env.COMPETENCIA_CP || '1425';
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
 
-/**
- * La simulacion de carrito de VTEX. Es el unico lugar donde aparecen las
- * promociones aplicadas.
- *
- * Por que hace falta: la corrida anterior mostro que en Jumbo TODOS los campos
- * de precio del catalogo valen 3.050 (Price, PriceWithoutDiscount,
- * FullSellingPrice) mientras la ficha muestra $1.982,50 con -35%. O sea que el
- * precio promocional NO esta en la API de catalogo. En VTEX las promociones las
- * calcula el motor de checkout, no el catalogo: Carrefour las expone como
- * `Teasers` y por eso se veian, pero Jumbo no manda ninguno.
- *
- * OJO con las unidades: la simulacion devuelve los precios en CENTAVOS (enteros),
- * al contrario del catalogo que los da en pesos. Por eso se divide por 100 al
- * mostrar; confundir las dos escalas daria precios 100 veces mas grandes.
- */
-async function simular(tienda, itemId, sellerId) {
-  const url = `${tienda.dominio}/api/checkout/pub/orderForms/simulation?sc=1`;
+const plata = (n) => (typeof n === 'number'
+  ? n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  : String(n));
+
+async function pedir(url, opts = {}) {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   try {
     const r = await fetch(url, {
-      method: 'POST',
+      ...opts,
       signal: ctrl.signal,
-      headers: {
-        'Content-Type': 'application/json', Accept: 'application/json',
-        'User-Agent': 'Mozilla/5.0 (compatible; comparador-probe)',
-      },
-      body: JSON.stringify({
-        items: [{ id: String(itemId), quantity: 1, seller: String(sellerId || '1') }],
-        country: 'ARG',
-      }),
+      headers: { Accept: 'application/json', 'User-Agent': UA, ...(opts.headers || {}) },
     });
-    if (!r.ok) {
-      const cuerpo = await r.text().catch(() => '');
-      return { error: `HTTP ${r.status}${cuerpo ? `: ${cuerpo.slice(0, 160)}` : ''}` };
-    }
-    return await r.json();
+    const txt = await r.text();
+    let json = null;
+    try { json = JSON.parse(txt); } catch { /* no era json */ }
+    return { ok: r.ok, status: r.status, json, txt };
   } catch (e) {
-    return { error: e.name === 'AbortError' ? 'timeout' : e.message };
+    return { ok: false, status: 0, error: e.name === 'AbortError' ? 'timeout' : e.message };
   } finally { clearTimeout(t); }
 }
 
-function pedir(url) {
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
-  return fetch(url, {
-    signal: ctrl.signal,
-    headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0 (compatible; comparador-probe)' },
-  }).finally(() => clearTimeout(t));
+/** Todos los campos de precio de una oferta, en una linea. */
+function ofertaEnUnaLinea(o) {
+  const vals = CAMPOS.filter((c) => o[c] !== undefined).map((c) => `${c}=${plata(o[c])}`);
+  const otros = Object.entries(o)
+    .filter(([k, v]) => typeof v === 'number' && !CAMPOS.includes(k) && /price|value/i.test(k))
+    .map(([k, v]) => `${k}=${plata(v)}`);
+  return [...vals, ...otros].join('  ') || '(sin campos de precio)';
 }
 
-const plata = (n) => (typeof n === 'number' ? n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : String(n));
+// ── H1 · el catalogo con cada politica comercial ────────────────────────────
+async function h1Catalogo(tienda, ean) {
+  console.log('\n    H1 · catalogo por politica comercial');
+  for (const sc of [null, 1, 2, 3]) {
+    const url = `${tienda.dominio}/api/catalog_system/pub/products/search`
+      + `?fq=alternateIds_Ean:${encodeURIComponent(ean)}${sc ? `&sc=${sc}` : ''}`;
+    const r = await pedir(url);
+    const etq = `sc=${sc ?? '(defecto)'}`.padEnd(13);
+    if (!r.ok) { console.log(`      ${etq} HTTP ${r.status || r.error}`); continue; }
+    const p = (r.json || [])[0];
+    if (!p) { console.log(`      ${etq} no lo tiene`); continue; }
+    for (const item of (p.items || []).slice(0, 1)) {
+      for (const s of (item.sellers || [])) {
+        const o = s.commertialOffer || {};
+        console.log(`      ${etq} seller=${s.sellerId} (${s.sellerName || '?'})`
+          + `${o.IsAvailable ? '' : ' SIN-STOCK'}  ${ofertaEnUnaLinea(o)}`);
+        const teasers = [...(o.Teasers || []), ...(o.PromotionTeasers || [])].map((x) => x?.Name).filter(Boolean);
+        if (teasers.length) console.log(`      ${' '.repeat(13)} teasers: ${teasers.join(' | ')}`);
+      }
+    }
+  }
+}
+
+// ── H2 · Intelligent Search, que es lo que renderiza la ficha ───────────────
+async function h2IntelligentSearch(tienda, ean) {
+  console.log('\n    H2 · Intelligent Search (la API que usa el storefront)');
+  // La barra final es obligatoria: el segmento de facets va vacio pero tiene
+  // que estar. Se prueban dos formas de pedirlo porque no todas las cuentas
+  // indexan el EAN como texto buscable.
+  const urls = [
+    `${tienda.dominio}/api/io/_v/api/intelligent-search/product_search/?query=${encodeURIComponent(ean)}&count=3`,
+    `${tienda.dominio}/api/io/_v/api/intelligent-search/product_search/alternateIds_Ean/${encodeURIComponent(ean)}?count=3`,
+  ];
+  for (const url of urls) {
+    const r = await pedir(url);
+    const etq = url.includes('?query=') ? 'query=ean  ' : 'facet=ean   ';
+    if (!r.ok) {
+      console.log(`      ${etq} HTTP ${r.status || r.error}`
+        + (r.txt ? `: ${String(r.txt).replace(/\s+/g, ' ').slice(0, 120)}` : ''));
+      continue;
+    }
+    const prods = r.json?.products || [];
+    console.log(`      ${etq} ${r.json?.recordsFiltered ?? prods.length} resultado(s)`);
+    for (const p of prods.slice(0, 1)) {
+      console.log(`      ${' '.repeat(12)} "${p.productName}"  link=${p.link || p.linkText || '?'}`);
+      for (const item of (p.items || []).slice(0, 1)) {
+        for (const s of (item.sellers || [])) {
+          const o = s.commertialOffer || {};
+          console.log(`      ${' '.repeat(12)} seller=${s.sellerId}  ${ofertaEnUnaLinea(o)}`);
+          const tz = (o.teasers || o.Teasers || []).map((x) => x?.name || x?.Name).filter(Boolean);
+          if (tz.length) console.log(`      ${' '.repeat(12)} teasers: ${tz.join(' | ')}`);
+        }
+      }
+      // priceRange es lo que el storefront usa para el "desde/hasta" de la ficha.
+      if (p.priceRange) {
+        const pr = p.priceRange;
+        console.log(`      ${' '.repeat(12)} priceRange: selling=${JSON.stringify(pr.sellingPrice)} list=${JSON.stringify(pr.listPrice)}`);
+      }
+    }
+  }
+}
+
+// ── H3 · la simulacion, variando el seller ──────────────────────────────────
+async function h3Simulacion(tienda, itemId, sellerCatalogo) {
+  console.log('\n    H3 · simulacion de carrito, variando el seller');
+  // Tres formas de identificar al vendedor: el id que dio el catalogo, el "1"
+  // literal (el default de VTEX), y omitir el campo para que VTEX lo resuelva.
+  const sellers = [
+    { etq: `seller=${sellerCatalogo} (catalogo)`, v: sellerCatalogo },
+    { etq: 'seller=1 (default VTEX)', v: '1' },
+    { etq: 'sin campo seller', v: undefined },
+  ];
+  for (const sc of [null, 1]) {
+    for (const s of sellers) {
+      if (s.v === undefined && sc === null) { /* igual se prueba */ }
+      const url = `${tienda.dominio}/api/checkout/pub/orderForms/simulation`
+        + (sc ? `?sc=${sc}` : '');
+      const item = { id: String(itemId), quantity: 1 };
+      if (s.v !== undefined && s.v !== null) item.seller = String(s.v);
+      const r = await pedir(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: [item], country: 'ARG', postalCode: CP }),
+      });
+      const etq = `      sc=${String(sc ?? '(def)').padEnd(5)} ${s.etq.padEnd(28)}`;
+      if (!r.ok) {
+        console.log(`${etq} HTTP ${r.status || r.error}`
+          + (r.txt ? `: ${String(r.txt).replace(/\s+/g, ' ').slice(0, 140)}` : ''));
+        continue;
+      }
+      const it = (r.json?.items || [])[0];
+      if (!it) {
+        const msgs = (r.json?.messages || []).map((m) => m?.text || m?.code).filter(Boolean);
+        console.log(`${etq} 200 sin item — ${msgs.length ? msgs.join(' | ').slice(0, 140) : '(sin messages)'}`);
+        continue;
+      }
+      // La simulacion devuelve CENTAVOS, al contrario del catalogo que da pesos.
+      const c = (v) => (typeof v === 'number' ? plata(v / 100) : String(v));
+      const campos = ['price', 'listPrice', 'sellingPrice', 'priceWithoutDiscount']
+        .filter((k) => it[k] !== undefined).map((k) => `${k}=${c(it[k])}`).join('  ');
+      const benes = (r.json?.ratesAndBenefitsData?.rateAndBenefitsIdentifiers || [])
+        .map((b) => b?.name).filter(Boolean);
+      console.log(`${etq} OK  ${campos}${benes.length ? `  promos: ${benes.join(' | ')}` : ''}`);
+    }
+  }
+}
 
 async function main() {
   const eans = process.argv.slice(2).filter((x) => /^\d{8,14}$/.test(x));
   const lista = eans.length ? eans : POR_DEFECTO;
+  console.log(`Codigo postal: ${CP}  ·  EANs: ${lista.join(', ')}`);
 
   for (const ean of lista) {
     console.log(`\n${'='.repeat(78)}\nEAN ${ean}`);
 
-    for (const [id, tienda] of Object.entries(TIENDAS)) {
-      const url = `${tienda.dominio}/api/catalog_system/pub/products/search`
-        + `?fq=alternateIds_Ean:${encodeURIComponent(ean)}`;
-      let productos;
-      try {
-        const r = await pedir(url);
-        if (!r.ok) { console.log(`\n  ${tienda.nombre}: HTTP ${r.status}`); continue; }
-        productos = await r.json();
-      } catch (e) { console.log(`\n  ${tienda.nombre}: ${e.name === 'AbortError' ? 'timeout' : e.message}`); continue; }
+    for (const tienda of Object.values(TIENDAS)) {
+      console.log(`\n  ${'─'.repeat(70)}\n  ${tienda.nombre}`);
 
-      if (!Array.isArray(productos) || !productos.length) {
-        console.log(`\n  ${tienda.nombre}: no lo tiene`);
-        continue;
-      }
+      // Primero el catalogo pelado, para tener itemId, sellerId y el link de la
+      // ficha. Sin esto no se puede simular nada.
+      const r = await pedir(`${tienda.dominio}/api/catalog_system/pub/products/search`
+        + `?fq=alternateIds_Ean:${encodeURIComponent(ean)}`);
+      const p = (r.json || [])[0];
+      if (!r.ok) { console.log(`    catalogo: HTTP ${r.status || r.error}`); continue; }
+      if (!p) { console.log('    no lo tiene'); continue; }
+      const item = (p.items || [])[0] || {};
+      const seller = (item.sellers || []).find((s) => s?.commertialOffer?.IsAvailable)
+        || (item.sellers || [])[0] || {};
+      console.log(`    "${p.productName}"`);
+      console.log(`    ficha:  ${p.link || '(sin link)'}`);
+      console.log(`    itemId: ${item.itemId}  ·  sellerId: ${seller.sellerId}`
+        + `  ·  sellerName: ${seller.sellerName || '?'}`
+        + `  ·  sellers: ${(item.sellers || []).map((s) => s.sellerId).join(', ')}`);
 
-      const p = productos[0];
-      console.log(`\n  ${tienda.nombre} — ${p.productName}`);
-      console.log(`    ficha: ${p.link || '(sin link)'}`);
-
-      for (const item of (p.items || []).slice(0, 2)) {
-        console.log(`    item ${item.itemId || ''} ${item.name || ''}`
-          + `  unitMultiplier=${item.unitMultiplier} medida=${item.measurementUnit || '?'}`);
-
-        for (const s of (item.sellers || [])) {
-          const o = s.commertialOffer || {};
-          const dis = o.IsAvailable ? `stock ${o.AvailableQuantity}` : 'SIN STOCK';
-          console.log(`      seller "${s.sellerName || s.sellerId}" (${dis})${s.sellerDefault ? ' [default]' : ''}`);
-
-          for (const c of CAMPOS) {
-            if (o[c] !== undefined) console.log(`         ${c.padEnd(22)} ${plata(o[c])}`);
-          }
-          // Cualquier otro campo numérico de la oferta, por si alguna cuenta usa
-          // un nombre que no está en la lista de arriba.
-          const otros = Object.entries(o)
-            .filter(([k, v]) => typeof v === 'number' && !CAMPOS.includes(k) && /price|value|cost/i.test(k));
-          for (const [k, v] of otros) console.log(`         ${(k + ' (extra)').padEnd(22)} ${plata(v)}`);
-
-          const teasers = [...(o.Teasers || []), ...(o.PromotionTeasers || [])].map((t) => t?.Name).filter(Boolean);
-          console.log(`         teasers del catalogo: ${teasers.length ? teasers.join(' | ') : '(ninguno)'}`);
-
-          // ── La simulacion, que es donde viven las promociones ──────────────
-          const sim = await simular(tienda, item.itemId, s.sellerId);
-          if (sim.error) { console.log(`         SIMULACION: ${sim.error}`); continue; }
-
-          const it = (sim.items || [])[0];
-          if (!it) {
-            const msgs = (sim.messages || []).map((m) => m?.text || m?.code).filter(Boolean);
-            console.log(`         SIMULACION: respondio 200 pero sin el item`
-              + (msgs.length ? ` — ${msgs.join(' | ')}` : ' (y sin messages)'));
-            console.log(`            claves de la respuesta: ${Object.keys(sim).join(', ')}`);
-            continue;
-          }
-          // Centavos -> pesos.
-          const c = (v) => (typeof v === 'number' ? plata(v / 100) : String(v));
-          console.log('         SIMULACION (los precios vienen en centavos, se dividen por 100):');
-          for (const k of ['price', 'listPrice', 'sellingPrice', 'priceWithoutDiscount']) {
-            if (it[k] !== undefined) console.log(`            ${k.padEnd(20)} ${c(it[k])}`);
-          }
-          if (it.priceDefinition) {
-            const pd = it.priceDefinition;
-            if (pd.calculatedSellingPrice !== undefined) console.log(`            calculatedSellingPrice ${c(pd.calculatedSellingPrice)}`);
-            if (pd.total !== undefined) console.log(`            total                ${c(pd.total)}`);
-          }
-          const benes = (sim.ratesAndBenefitsData?.rateAndBenefitsIdentifiers || [])
-            .map((b) => b?.name).filter(Boolean);
-          console.log(`            promociones aplicadas: ${benes.length ? benes.join(' | ') : '(ninguna)'}`);
-          const desc = (sim.totals || []).find((x) => x.id === 'Discounts');
-          if (desc && desc.value) console.log(`            descuento total      ${c(desc.value)}`);
-        }
-      }
+      await h1Catalogo(tienda, ean);
+      await h2IntelligentSearch(tienda, ean);
+      if (item.itemId) await h3Simulacion(tienda, item.itemId, seller.sellerId);
     }
   }
 
   console.log(`\n${'='.repeat(78)}`);
-  console.log('Qué buscar: el precio que muestra la ficha del sitio.');
+  console.log('COMO LEER ESTO');
   console.log('');
-  console.log('La corrida anterior mostró que en Jumbo TODOS los campos de precio del');
-  console.log('catálogo valen $3.050, mientras la ficha muestra $1.982,50 con −35%. O sea');
-  console.log('que el precio promocional NO está en el catálogo: en VTEX las promociones');
-  console.log('las calcula el motor de checkout. Por eso ahora se simula el carrito.');
+  console.log('Lo unico que importa: en que linea aparece el precio que muestra la ficha.');
+  console.log('Abri el link de Jumbo que imprime arriba, mira el precio grande, y busca ese');
+  console.log('numero en la salida. La seccion donde aparezca es la API que hay que usar.');
   console.log('');
-  console.log('Si la SIMULACIÓN de Jumbo devuelve 1982,50 en alguno de sus campos, ese es');
-  console.log('el precio que hay que mostrar, y el comparador tiene que simular además de');
-  console.log('consultar el catálogo. Si tampoco aparece, el descuento se aplica más');
-  console.log('adelante (carrito o medio de pago) y entonces no hay forma de obtenerlo');
-  console.log('por API: habría que decirlo en la página en vez de mostrar un precio que');
-  console.log('no es el que ve el cliente.');
+  console.log('  · Si aparece en H1 con un sc distinto  -> el comparador tiene que pedir el');
+  console.log('    catalogo con ese sc por tienda.');
+  console.log('  · Si aparece en H2 (Intelligent Search) -> la ficha no lee el catalogo, y el');
+  console.log('    comparador tiene que leer IS. Es la hipotesis mas probable para Cencosud:');
+  console.log('    es la API que alimenta la pagina que se ve en pantalla.');
+  console.log('  · Si aparece en H3 con algun seller    -> era el seller, y alcanza con');
+  console.log('    corregir como se elige.');
+  console.log('  · Si NO aparece en ninguna -> el descuento se aplica mas adelante (carrito,');
+  console.log('    medio de pago o precio por zona con geocoordenadas) y entonces no se puede');
+  console.log('    obtener por API. En ese caso el comparador tiene que DECIRLO en vez de');
+  console.log('    mostrar un precio que no es el que ve el cliente.');
 }
 
-main().catch((e) => { console.error('competencia-probe falló:', e.message); process.exit(1); });
+main().catch((e) => { console.error('competencia-probe fallo:', e.message); process.exit(1); });

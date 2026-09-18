@@ -1,12 +1,17 @@
-# Muestra TODOS los campos de precio que devuelve cada tienda para unos pocos
-# EANs, para saber cual leer en vez de adivinar.
+# Averigua de DONDE saca cada tienda el precio que muestra en su ficha.
 #
-# Existe porque el comparador mostraba, en Jumbo y Disco, un precio de lista de
-# $252.066 con un -98,8% en un agua de 2 litros: el campo `ListPrice` no
-# significa lo mismo en todas las cuentas de VTEX.
+# Para Carrefour, Masonline y DIA el comparador ya lo resuelve con la simulacion
+# de carrito. Para Jumbo y Disco (Cencosud) la simulacion rechaza el item en
+# todas las combinaciones de canal y codigo postal, con el mismo mensaje, y el
+# catalogo devuelve 3.050 cuando la ficha muestra 1.982,50.
+#
+# Esta corrida prueba las TRES hipotesis que quedan de una sola vez:
+#   H1 · el catalogo con otra politica comercial (sc=1/2/3)
+#   H2 · Intelligent Search, que es la API que renderiza la ficha
+#   H3 · la simulacion variando el seller
 #
 # Se corre a mano. No toca ningun dato ni commitea nada: imprime y termina.
-name: Competencia probe (que campo de precio leer en cada tienda)
+name: Competencia probe (de donde sale el precio de la ficha)
 
 on:
   workflow_dispatch:
@@ -15,6 +20,10 @@ on:
         description: 'EANs separados por espacio (vacío = tres de la corrida que falló)'
         required: false
         default: ''
+      cp:
+        description: 'Código postal para la simulación'
+        required: false
+        default: '1425'
 
 jobs:
   probe:
@@ -24,5 +33,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Volcar los campos de precio de cada tienda
+      - name: Probar las tres hipotesis de precio
+        env:
+          COMPETENCIA_CP: ${{ inputs.cp }}
         run: node src/competencia-probe.js ${{ inputs.eans }}

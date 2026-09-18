@@ -213,7 +213,7 @@
 
     const juntos = { resultados: {}, errores: {}, simulacionErrores: {}, canalErrores: {},
       comboPorTienda: {}, codigoPostal: null, tiendas: null,
-      advertencia: null, fuente: null, eans: [], simuladas: 0, aSimular: 0 };
+      advertencia: null, fuente: null, eans: [], simuladas: 0, porIS: 0, aSimular: 0 };
     let fallo = null;
 
     for (let i = 0; i < tandas.length; i += 1) {
@@ -241,6 +241,7 @@
           for (const [m, n] of Object.entries(motivos)) acc[m] = (acc[m] || 0) + n;
         }
         juntos.simuladas += j.simuladas || 0;
+        juntos.porIS += j.porIS || 0;
         juntos.aSimular += j.aSimular || 0;
         Object.assign(juntos.comboPorTienda, j.comboPorTienda || {});
         Object.assign(juntos.canalErrores, j.canalErrores || {});
@@ -299,8 +300,12 @@
           const t = tiendas.find((x) => x.id === id);
           return `${esc(t?.nombre || id)}: ${c ? esc(c) : '<strong>ninguna combinación funcionó</strong>'}`;
         }).join(' · ');
+      const deIS = d.porIS
+        ? ` Otros ${d.porIS} salieron de Intelligent Search, que es la API con la que
+            la tienda dibuja su propia ficha.`
+        : '';
       avisos.push(`<div class="aviso cpx-info">${d.simuladas} de ${d.aSimular} precios salieron de la
-        simulación de carrito (con promociones aplicadas), con CP ${esc(String(d.codigoPostal || ''))}.
+        simulación de carrito (con promociones aplicadas), con CP ${esc(String(d.codigoPostal || ''))}.${deIS}
         ${combos ? `<br><span class="ean">${combos}</span>` : ''}</div>`);
     }
 

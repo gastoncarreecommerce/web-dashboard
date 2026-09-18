@@ -40,6 +40,10 @@ function fakeRes() {
  *  catalogo — que es justo el caso que hay que poder distinguir. */
 let SIMS = {};
 
+/** Respuestas de Intelligent Search por dominio: { dominio: [producto, ...] }.
+ *  Sin entrada, IS responde sin productos. */
+let IS = {};
+
 async function correr(porTienda, query) {
   const llamadas = [];
   global.fetch = async (url, init) => {
@@ -77,6 +81,14 @@ async function correr(porTienda, query) {
                   listPrice: sim.lista != null ? Math.round(sim.lista * 100) : undefined }],
         ratesAndBenefitsData: { rateAndBenefitsIdentifiers: (sim.promos || []).map((n) => ({ name: n })) },
       })};
+    }
+
+    if (u.includes('/intelligent-search/product_search/')) {
+      const d = Object.keys(IS).find((x) => u.includes(x));
+      const prods = IS[d];
+      if (prods === undefined) return { ok: true, status: 200, json: async () => ({ products: [] }) };
+      if (typeof prods === 'number') return { ok: false, status: prods, text: async () => 'IS caida' };
+      return { ok: true, status: 200, json: async () => ({ products: prods }) };
     }
 
     const d = Object.keys(porTienda).find((x) => u.includes(x));
@@ -401,4 +413,65 @@ test('cuando ninguna combinacion cotiza, se devuelven TODOS los intentos', async
   assert.ok(intentos.some((x) => x.includes('cp=1425')));
   assert.ok(intentos.some((x) => x.includes('cp=(sin)')), 'probo con y sin ubicacion');
   assert.ok(intentos.every((x) => /no encontrado o no disponible/.test(x)));
+});
+
+
+// ── Intelligent Search como plan B ──────────────────────────────────────────
+// Para Jumbo y Disco la simulacion rechaza el item en todas las combinaciones de
+// canal y zona, siempre con el mismo mensaje, y el catalogo da el precio base
+// sin la promo. IS es la API con la que la tienda dibuja su propia ficha, asi
+// que es la candidata a tener el numero que ve el cliente.
+
+test('cuando la simulacion falla, el precio sale de Intelligent Search', async () => {
+  sesionOk = true;
+  SIMS = { 'www.carrefour.com.ar': { precio: 1850 } };   // Jumbo no simula
+  IS = {
+    'www.jumbo.com.ar': [prod('7799155000197', 'Agua 2L Jumbo',
+      { precio: 1982.5, lista: 3050, promos: ['2da unidad 70%'] })],
+  };
+  const { res } = await correr({
+    'www.carrefour.com.ar': [prod('7799155000197', 'Agua 2L', { precio: 1850 })],
+    'www.jumbo.com.ar': [prod('7799155000197', 'Agua 2L Jumbo', { precio: 3050 })],
+  }, { eans: '7799155000197', tiendas: 'carrefour,jumbo' });
+
+  const j = res.body.resultados['7799155000197'].jumbo;
+  assert.strictEqual(j.precio, 1982.5, 'tiene que ser el precio de la ficha, no el 3050 del catalogo');
+  assert.strictEqual(j.precioLista, 3050);
+  assert.strictEqual(j.descuentoPct, 35);
+  assert.strictEqual(j.fuentePrecio, 'intelligent-search');
+  assert.ok(!j.simulacionFallo, 'si IS lo rescato, ya no queda marcado como sin verificar');
+  assert.strictEqual(res.body.porIS, 1);
+});
+
+test('si IS repite el precio del catalogo, la fila sigue marcada como sin verificar', async () => {
+  sesionOk = true;
+  SIMS = {};
+  // Mismo 3050 que el catalogo: no aporta nada, y decir que esta verificado
+  // seria mentir.
+  IS = { 'www.jumbo.com.ar': [prod('7799155000197', 'Agua 2L Jumbo', { precio: 3050 })] };
+  const { res } = await correr({
+    'www.jumbo.com.ar': [prod('7799155000197', 'Agua 2L Jumbo', { precio: 3050 })],
+  }, { eans: '7799155000197', tiendas: 'jumbo' });
+
+  const j = res.body.resultados['7799155000197'].jumbo;
+  assert.strictEqual(j.precio, 3050);
+  assert.ok(j.simulacionFallo, 'sigue sin verificar');
+  assert.notStrictEqual(j.fuentePrecio, 'intelligent-search');
+  assert.strictEqual(res.body.porIS, 0);
+});
+
+test('IS que devuelve OTRO producto no se usa: seria el precio de otra cosa', async () => {
+  sesionOk = true;
+  SIMS = {};
+  // Buscar el EAN como texto puede traer productos parecidos. Mostrar el precio
+  // de un producto que no es el pedido es peor que no mostrar nada.
+  IS = { 'www.jumbo.com.ar': [prod('7790000000001', 'Agua 500ml (otro)', { precio: 900 })] };
+  const { res } = await correr({
+    'www.jumbo.com.ar': [prod('7799155000197', 'Agua 2L Jumbo', { precio: 3050 })],
+  }, { eans: '7799155000197', tiendas: 'jumbo' });
+
+  const j = res.body.resultados['7799155000197'].jumbo;
+  assert.strictEqual(j.precio, 3050, 'se queda con el del catalogo');
+  assert.strictEqual(res.body.porIS, 0);
+  assert.ok(res.body.isErrores?.jumbo, 'y queda registrado por que IS no sirvio');
 });

@@ -212,6 +212,59 @@ async function descubrirCombo(tienda, itemId, sellerId, cp) {
   return { combo: null, intentos };
 }
 
+/**
+ * El precio segun Intelligent Search, que es la API con la que los storefronts
+ * VTEX modernos renderizan la ficha.
+ *
+ * Por que se consulta ademas del catalogo. Para Jumbo y Disco la simulacion de
+ * carrito rechaza el item en todas las combinaciones de canal y codigo postal
+ * —siempre con el mismo mensaje, lo que descarta esos dos knobs— y el catalogo
+ * devuelve el precio base sin la promo: $3.050 para un agua que la ficha muestra
+ * a $1.982,50. Si la pagina que el cliente ve muestra $1.982,50, ese numero
+ * tiene que salir de alguna API publica, y la candidata natural es la que
+ * alimenta esa pagina.
+ *
+ * Se usa solo como PLAN B, cuando la simulacion falla. Si la simulacion anda, su
+ * precio es mejor: es el unico que garantiza tener las promociones aplicadas.
+ *
+ * La barra final de `product_search/` es obligatoria: el segmento de facets va
+ * vacio pero tiene que estar.
+ */
+async function precioDeIS(tienda, ean) {
+  const url = `${tienda.dominio}/api/io/_v/api/intelligent-search/product_search/`
+    + `?query=${encodeURIComponent(ean)}&count=5`;
+  let j;
+  try {
+    const r = await pedirConTimeout(url);
+    if (!r.ok) {
+      const cuerpo = await r.text().catch(() => '');
+      return { error: `HTTP ${r.status}${cuerpo ? `: ${cuerpo.replace(/\s+/g, ' ').slice(0, 160)}` : ''}` };
+    }
+    j = await r.json();
+  } catch (e) {
+    return { error: e.name === 'AbortError' ? 'timeout' : e.message };
+  }
+
+  // Buscar por texto puede traer otros productos: se queda solo con el que
+  // realmente tiene ese EAN. Sin este filtro el comparador mostraria el precio
+  // de un producto parecido, que es peor que no mostrar nada.
+  const prod = (j?.products || []).find((p) => eansDe(p).includes(String(ean)));
+  if (!prod) return { error: 'IS no devolvio ese EAN' };
+
+  const item = prod.items?.[0] || {};
+  const sellers = Array.isArray(item.sellers) ? item.sellers : [];
+  const seller = sellers.find((x) => x?.commertialOffer?.IsAvailable) || sellers[0] || {};
+  const o = seller.commertialOffer || {};
+  const precio = Number.isFinite(o.Price) ? o.Price : null;
+  if (precio == null) return { error: 'IS no trajo precio' };
+  const lista = Number.isFinite(o.ListPrice) ? o.ListPrice : null;
+  const promos = [
+    ...(o.teasers || []).map((t) => t?.name).filter(Boolean),
+    ...(o.Teasers || []).map((t) => t?.Name).filter(Boolean),
+  ];
+  return { precio, lista, promos: [...new Set(promos)] };
+}
+
 /** Lo que nos interesa de un producto de VTEX, aplanado. */
 function normalizar(producto) {
   const item = producto?.items?.[0] || {};
@@ -443,6 +496,34 @@ export default async function handler(req, res) {
     aplicar(fila, await simular(TIENDAS[id], fila._itemId, fila._sellerId, comboDe[id]));
   });
 
+  // ── Plan B para las filas que la simulacion no pudo cotizar ──────────────
+  // Se pregunta a Intelligent Search, que es la API con la que el storefront
+  // dibuja la ficha. Si trae un precio DISTINTO al del catalogo, es porque el
+  // catalogo no es la fuente de esa pagina y ese es el numero que ve el cliente.
+  // Si trae el mismo, no se gana nada y la fila sigue marcada como sin verificar.
+  const conFalla = aSimular.filter(({ fila }) => fila.simulacionFallo);
+  let porIS = 0;
+  const isErrores = {};
+  await forEachLimit(conFalla, CONCURRENCIA, async ({ id, ean, fila }) => {
+    const r = await precioDeIS(TIENDAS[id], ean);
+    if (r.error) {
+      const acc = (isErrores[id] = isErrores[id] || {});
+      acc[r.error.slice(0, 160)] = (acc[r.error.slice(0, 160)] || 0) + 1;
+      return;
+    }
+    if (r.precio === fila.precioCatalogo) return;  // misma info, no aporta
+    fila.precio = r.precio;
+    if (r.lista != null && r.lista > r.precio) {
+      fila.precioLista = r.lista;
+      fila.descuentoPct = Math.round((1 - r.precio / r.lista) * 1000) / 10;
+      delete fila.listaSospechosa;
+    }
+    if (r.promos.length) fila.promos = [...new Set([...r.promos, ...(fila.promos || [])])];
+    fila.fuentePrecio = 'intelligent-search';
+    delete fila.simulacionFallo;
+    porIS += 1;
+  });
+
   // Los internos no viajan al cliente.
   for (const ean of eans) {
     for (const f of Object.values(resultados[ean])) {
@@ -471,6 +552,8 @@ export default async function handler(req, res) {
     canalErrores,
     codigoPostal: cp,
     simuladas: aSimular.filter((x) => x.fila.fuentePrecio === 'simulacion').length,
+    porIS,
+    ...(Object.keys(isErrores).length ? { isErrores } : {}),
     aSimular: aSimular.length,
     ...(invalidos.length ? { invalidos: invalidos.slice(0, 20) } : {}),
     ...(desconocidas.length ? { tiendasDesconocidas: desconocidas } : {}),
