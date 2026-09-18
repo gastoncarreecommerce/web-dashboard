@@ -55,12 +55,19 @@ export const TIENDAS = {
   dia: { nombre: 'DIA', dominio: 'https://diaonline.supermercadosdia.com.ar' },
 };
 
-function pedirConTimeout(url) {
+function pedirConTimeout(url, extra = {}) {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   return fetch(url, {
     signal: ctrl.signal,
-    headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0 (compatible; comparador-precios)' },
+    headers: {
+      Accept: 'application/json',
+      // Un User-Agent de navegador de verdad: pidiendo el HTML de la ficha,
+      // algunos storefronts responden distinto (o no responden) a un UA raro.
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        + ' (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+      ...extra,
+    },
   }).finally(() => clearTimeout(t));
 }
 
@@ -323,56 +330,89 @@ async function descubrirCombo(tienda, itemId, sellerId, cp) {
 }
 
 /**
- * El precio segun Intelligent Search, que es la API con la que los storefronts
- * VTEX modernos renderizan la ficha.
+ * El precio que MUESTRA la ficha, leido del JSON-LD de la propia pagina.
  *
- * Por que se consulta ademas del catalogo. Para Jumbo y Disco la simulacion de
- * carrito rechaza el item en todas las combinaciones de canal y codigo postal
- * —siempre con el mismo mensaje, lo que descarta esos dos knobs— y el catalogo
- * devuelve el precio base sin la promo: $3.050 para un agua que la ficha muestra
- * a $1.982,50. Si la pagina que el cliente ve muestra $1.982,50, ese numero
- * tiene que salir de alguna API publica, y la candidata natural es la que
- * alimenta esa pagina.
+ * Esta es la fuente correcta, y se tardo en encontrarla porque no es una API.
  *
- * Se usa solo como PLAN B, cuando la simulacion falla. Si la simulacion anda, su
- * precio es mejor: es el unico que garantiza tener las promociones aplicadas.
+ * El recorrido: para Jumbo y Disco el catalogo, Intelligent Search y la
+ * simulacion devuelven 3.050 en todos sus campos —tambien con las cookies del
+ * navegador— mientras la ficha muestra $1.982,5 con -35%. No era regional (sin
+ * ubicacion elegida el precio se muestra igual) ni cuestion de sesion. Buscando
+ * el numero DENTRO de los datos de la pagina aparecio en un solo lugar: el
+ * bloque <script type="application/ld+json"> que VTEX renderiza para los
+ * buscadores, con la forma de schema.org:
  *
- * La barra final de `product_search/` es obligatoria: el segmento de facets va
- * vacio pero tiene que estar.
+ *     {"sku":"405993","gtin":"7799155000197",
+ *      "offers":{"@type":"Offer","price":1982.5,"priceCurrency":"ARS"}}
+ *
+ * `offers.price` ES el precio que ve el cliente. Y no es una particularidad de
+ * Cencosud: el JSON-LD lo renderizan todas las tiendas VTEX, asi que sirve
+ * igual para cualquiera.
+ *
+ * Se verifica el `gtin` o el `sku` contra lo pedido: la ficha trae mas
+ * productos (relacionados, gondola) y leer el precio de otro seria peor que no
+ * mostrar nada.
+ *
+ * Cuesta una descarga de HTML por producto, asi que se usa solo donde la
+ * simulacion no pudo cotizar.
  */
-async function precioDeIS(tienda, ean) {
-  const url = `${tienda.dominio}/api/io/_v/api/intelligent-search/product_search/`
-    + `?query=${encodeURIComponent(ean)}&count=5`;
-  let j;
+async function precioDeFicha(tienda, url, ean, itemId) {
+  if (!url) return { error: 'el catalogo no dio el link de la ficha' };
+  const abs = url.startsWith('http')
+    ? url
+    : `${tienda.dominio}${url.startsWith('/') ? '' : '/'}${url}`;
+  let html;
   try {
-    const r = await pedirConTimeout(url);
-    if (!r.ok) {
-      const cuerpo = await r.text().catch(() => '');
-      return { error: `HTTP ${r.status}${cuerpo ? `: ${cuerpo.replace(/\s+/g, ' ').slice(0, 160)}` : ''}` };
-    }
-    j = await r.json();
+    const r = await pedirConTimeout(abs, { Accept: 'text/html,application/xhtml+xml' });
+    if (!r.ok) return { error: `HTTP ${r.status} al pedir la ficha` };
+    html = await r.text();
   } catch (e) {
-    return { error: e.name === 'AbortError' ? 'timeout' : e.message };
+    return { error: e.name === 'AbortError' ? 'timeout al pedir la ficha' : e.message };
   }
 
-  // Buscar por texto puede traer otros productos: se queda solo con el que
-  // realmente tiene ese EAN. Sin este filtro el comparador mostraria el precio
-  // de un producto parecido, que es peor que no mostrar nada.
-  const prod = (j?.products || []).find((p) => eansDe(p).includes(String(ean)));
-  if (!prod) return { error: 'IS no devolvio ese EAN' };
+  const bloques = [...html.matchAll(/<script[^>]+application\/ld\+json[^>]*>([\s\S]*?)<\/script>/gi)]
+    .map((m) => { try { return JSON.parse(m[1]); } catch { return null; } })
+    .filter(Boolean);
+  if (!bloques.length) return { error: 'la ficha no trae JSON-LD' };
 
-  const item = prod.items?.[0] || {};
-  const sellers = Array.isArray(item.sellers) ? item.sellers : [];
-  const seller = sellers.find((x) => x?.commertialOffer?.IsAvailable) || sellers[0] || {};
-  const o = seller.commertialOffer || {};
-  const precio = Number.isFinite(o.Price) ? o.Price : null;
-  if (precio == null) return { error: 'IS no trajo precio' };
-  const lista = Number.isFinite(o.ListPrice) ? o.ListPrice : null;
-  const promos = [
-    ...(o.teasers || []).map((t) => t?.name).filter(Boolean),
-    ...(o.Teasers || []).map((t) => t?.Name).filter(Boolean),
-  ];
-  return { precio, lista, promos: [...new Set(promos)] };
+  // Un JSON-LD puede venir como objeto, como lista, o envuelto en @graph.
+  const candidatos = [];
+  const juntar = (x) => {
+    if (Array.isArray(x)) return x.forEach(juntar);
+    if (!x || typeof x !== 'object') return;
+    candidatos.push(x);
+    if (x['@graph']) juntar(x['@graph']);
+  };
+  bloques.forEach(juntar);
+
+  const esNuestro = (p) => {
+    const gt = String(p.gtin || p.gtin13 || p.gtin14 || p.ean || '');
+    const sk = String(p.sku || p.productID || '');
+    if (gt && gt === String(ean)) return true;
+    if (sk && itemId && sk === String(itemId)) return true;
+    return false;
+  };
+
+  const productos = candidatos.filter((x) => /product/i.test(String(x['@type'] || '')));
+  // El del EAN pedido; si ninguno se identifica y hay uno solo, ese es el
+  // principal de la ficha.
+  const prod = productos.find(esNuestro) || (productos.length === 1 ? productos[0] : null);
+  if (!prod) {
+    return { error: productos.length
+      ? `la ficha trae ${productos.length} productos y ninguno coincide con el EAN ni el SKU`
+      : 'la ficha no trae un Product en el JSON-LD' };
+  }
+
+  // `offers` puede ser Offer (price) o AggregateOffer (lowPrice/highPrice).
+  const ofertas = (Array.isArray(prod.offers) ? prod.offers : [prod.offers]).filter(Boolean);
+  let precio = null;
+  for (const o of ofertas) {
+    const v = [o.price, o.lowPrice, o.priceSpecification?.price]
+      .map(Number).find((x) => Number.isFinite(x) && x > 0);
+    if (v != null) { precio = v; break; }
+  }
+  if (precio == null) return { error: 'el JSON-LD no trae precio en offers' };
+  return { precio, nombre: prod.name || null };
 }
 
 /** Lo que nos interesa de un producto de VTEX, aplanado. */
@@ -606,32 +646,43 @@ export default async function handler(req, res) {
     aplicar(fila, await simular(TIENDAS[id], fila._itemId, fila._sellerId, comboDe[id]));
   });
 
-  // ── Plan B para las filas que la simulacion no pudo cotizar ──────────────
-  // Se pregunta a Intelligent Search, que es la API con la que el storefront
-  // dibuja la ficha. Si trae un precio DISTINTO al del catalogo, es porque el
-  // catalogo no es la fuente de esa pagina y ese es el numero que ve el cliente.
-  // Si trae el mismo, no se gana nada y la fila sigue marcada como sin verificar.
+  // ── Plan B: el precio que muestra la ficha ──────────────────────────────
+  // Para las filas que la simulacion no pudo cotizar se lee el JSON-LD de la
+  // ficha, que es donde esta el precio que ve el cliente.
+  //
+  // Antes aca se consultaba Intelligent Search. Se saco: devolvia exactamente
+  // los mismos campos que el catalogo en las cinco tiendas —incluso con las
+  // cookies del navegador— asi que rescataba 1 fila de 152 y costaba una
+  // llamada por cada una.
   const conFalla = aSimular.filter(({ fila }) => fila.simulacionFallo);
-  let porIS = 0;
-  const isErrores = {};
+  let porFicha = 0;
+  const fichaErrores = {};
   await forEachLimit(conFalla, CONCURRENCIA, async ({ id, ean, fila }) => {
-    const r = await precioDeIS(TIENDAS[id], ean);
+    const r = await precioDeFicha(TIENDAS[id], fila.url, ean, fila._itemId);
     if (r.error) {
-      const acc = (isErrores[id] = isErrores[id] || {});
+      const acc = (fichaErrores[id] = fichaErrores[id] || {});
       acc[r.error.slice(0, 160)] = (acc[r.error.slice(0, 160)] || 0) + 1;
       return;
     }
-    if (r.precio === fila.precioCatalogo) return;  // misma info, no aporta
     fila.precio = r.precio;
-    if (r.lista != null && r.lista > r.precio) {
-      fila.precioLista = r.lista;
-      fila.descuentoPct = Math.round((1 - r.precio / r.lista) * 1000) / 10;
-      delete fila.listaSospechosa;
+    // El `Price` del catalogo pasa a ser el precio TACHADO: para el agua de
+    // Jumbo el catalogo daba 3.050 y la ficha muestra 1.982,5 tachando 3.050.
+    // Eso da el -35% que se ve en pantalla.
+    const base = fila.precioCatalogo;
+    if (Number.isFinite(base) && base > r.precio) {
+      fila.precioLista = base;
+      fila.descuentoPct = Math.round((1 - r.precio / base) * 1000) / 10;
+    } else {
+      fila.precioLista = null;
+      fila.descuentoPct = null;
     }
-    if (r.promos.length) fila.promos = [...new Set([...r.promos, ...(fila.promos || [])])];
-    fila.fuentePrecio = 'intelligent-search';
+    // `ListPrice` de Cencosud no es un precio de lista: la ficha dice "PRECIO
+    // SIN IMPUESTOS NACIONALES: $2.520,66" y el campo traia 252.066, o sea el
+    // mismo numero en centavos. Por eso daba -98,8%. No se usa nunca mas.
+    delete fila.listaSospechosa;
     delete fila.simulacionFallo;
-    porIS += 1;
+    fila.fuentePrecio = 'ficha';
+    porFicha += 1;
   });
 
   // Los internos no viajan al cliente.
@@ -662,15 +713,15 @@ export default async function handler(req, res) {
     canalErrores,
     codigoPostal: cp,
     simuladas: aSimular.filter((x) => x.fila.fuentePrecio === 'simulacion').length,
-    porIS,
-    ...(Object.keys(isErrores).length ? { isErrores } : {}),
+    porFicha,
+    ...(Object.keys(fichaErrores).length ? { fichaErrores } : {}),
     aSimular: aSimular.length,
     ...(invalidos.length ? { invalidos: invalidos.slice(0, 20) } : {}),
     ...(desconocidas.length ? { tiendasDesconocidas: desconocidas } : {}),
-    fuente: 'El precio sale de la simulación de carrito de cada tienda (una por producto, '
-      + 'de a una unidad), que es donde VTEX aplica las promociones. El catálogo solo da el '
-      + 'precio base: para el agua Villavicencio 2 L en Jumbo daba $3.050 cuando la ficha '
-      + 'muestra $1.982,50.',
+    fuente: 'El precio sale de la simulación de carrito de cada tienda, que es donde VTEX '
+      + 'aplica las promociones. Donde la simulación no cotiza, se lee el precio del JSON-LD '
+      + 'de la ficha, que es el que muestra la página: para el agua Villavicencio 2 L en Jumbo '
+      + 'el catálogo da $3.050 y la ficha $1.982,50.',
     advertencia: 'Los precios son los de la política comercial y región por defecto '
       + 'de cada tienda. Los supermercados varían precio por zona, así que esto es el '
       + 'precio que muestra cada sitio sin indicarle una ubicación.',

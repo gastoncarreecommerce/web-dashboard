@@ -161,6 +161,45 @@ async function h2IntelligentSearch(tienda, ean) {
   }
 }
 
+// ── H4 · el JSON-LD de la ficha, que es donde estaba ────────────────────────
+/**
+ * El precio que renderiza la pagina, leido de su marcado schema.org.
+ *
+ * Aca estaba el numero. Las tres hipotesis anteriores fallaron porque ninguna
+ * era una API: VTEX escribe en cada ficha un <script type="application/ld+json">
+ * con {sku, gtin, offers:{price}}, y ese `price` es el precio que ve el cliente
+ * —$1.982,5 para el agua de Jumbo, cuando todas las APIs decian $3.050.
+ */
+async function h4Ficha(tienda, link, ean, itemId) {
+  console.log('\n    H4 · JSON-LD de la ficha (schema.org)');
+  if (!link) { console.log('      (el catalogo no dio link)'); return; }
+  const abs = link.startsWith('http') ? link : `${tienda.dominio}${link.startsWith('/') ? '' : '/'}${link}`;
+  const r = await pedir(abs, { headers: { Accept: 'text/html' } });
+  if (!r.ok) { console.log(`      HTTP ${r.status || r.error}`); return; }
+  const bloques = [...String(r.txt).matchAll(/<script[^>]+application\/ld\+json[^>]*>([\s\S]*?)<\/script>/gi)]
+    .map((m) => { try { return JSON.parse(m[1]); } catch { return null; } }).filter(Boolean);
+  console.log(`      ${bloques.length} bloque(s) JSON-LD`);
+  const todos = [];
+  const juntar = (x) => {
+    if (Array.isArray(x)) return x.forEach(juntar);
+    if (!x || typeof x !== 'object') return;
+    todos.push(x);
+    if (x['@graph']) juntar(x['@graph']);
+  };
+  bloques.forEach(juntar);
+  const prods = todos.filter((x) => /product/i.test(String(x['@type'] || '')));
+  if (!prods.length) { console.log('      no hay ningun Product'); return; }
+  for (const p of prods.slice(0, 3)) {
+    const ofs = (Array.isArray(p.offers) ? p.offers : [p.offers]).filter(Boolean);
+    const precios = ofs.map((o) => [o.price, o.lowPrice, o.highPrice, o.priceSpecification?.price]
+      .filter((v) => Number.isFinite(Number(v))).map((v) => plata(Number(v))).join('/')).join(' · ');
+    const mio = String(p.gtin || p.gtin13 || '') === String(ean) || String(p.sku || '') === String(itemId);
+    console.log(`      ${mio ? '>>' : '  '} gtin=${p.gtin || '?'} sku=${p.sku || '?'}`
+      + `  offers.price=${precios || '(sin precio)'}  "${String(p.name || '').slice(0, 40)}"`);
+  }
+  console.log('      (">>" marca el que coincide con el EAN o el SKU pedido)');
+}
+
 // ── H3 · la simulacion, variando el seller ──────────────────────────────────
 async function h3Simulacion(tienda, itemId, sellerCatalogo, scs) {
   console.log('\n    H3 · simulacion de carrito, variando el seller');
@@ -236,6 +275,7 @@ async function main() {
       const scs = await canales(tienda);
       await h1Catalogo(tienda, ean, scs);
       await h2IntelligentSearch(tienda, ean);
+      await h4Ficha(tienda, p.link, ean, item.itemId);
       if (item.itemId) await h3Simulacion(tienda, item.itemId, seller.sellerId, scs);
     }
   }
@@ -258,10 +298,12 @@ async function main() {
   console.log('    es la API que alimenta la pagina que se ve en pantalla.');
   console.log('  · Si aparece en H3 con algun seller    -> era el seller, y alcanza con');
   console.log('    corregir como se elige.');
-  console.log('  · Si NO aparece en ninguna -> el descuento se aplica mas adelante (carrito,');
-  console.log('    medio de pago o precio por zona con geocoordenadas) y entonces no se puede');
-  console.log('    obtener por API. En ese caso el comparador tiene que DECIRLO en vez de');
-  console.log('    mostrar un precio que no es el que ve el cliente.');
+  console.log('  · H4 (JSON-LD de la ficha) es donde estaba para Jumbo y Disco: offers.price');
+  console.log('    trae $1.982,5 mientras las tres APIs traen $3.050. Es el marcado que VTEX');
+  console.log('    renderiza para los buscadores, y lo tienen todas las tiendas VTEX.');
+  console.log('  · Si no apareciera en ninguna -> el descuento se aplica mas adelante (carrito');
+  console.log('    o medio de pago) y no se puede obtener. En ese caso el comparador tiene que');
+  console.log('    DECIRLO en vez de mostrar un precio que no es el que ve el cliente.');
 }
 
 main().catch((e) => { console.error('competencia-probe fallo:', e.message); process.exit(1); });

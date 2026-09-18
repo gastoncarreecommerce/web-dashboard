@@ -213,8 +213,8 @@
 
     const juntos = { resultados: {}, errores: {}, simulacionErrores: {}, canalErrores: {},
       comboPorTienda: {}, codigoPostal: null, tiendas: null,
-      advertencia: null, fuente: null, eans: [], simuladas: 0, porIS: 0, aSimular: 0,
-      isErrores: {} };
+      advertencia: null, fuente: null, eans: [], simuladas: 0, porFicha: 0, aSimular: 0,
+      fichaErrores: {} };
     let fallo = null;
 
     for (let i = 0; i < tandas.length; i += 1) {
@@ -237,8 +237,8 @@
           (juntos.errores[id] = juntos.errores[id] || []).push(...errs);
         }
         // Los contadores se SUMAN entre tandas, no se sobreescriben.
-        for (const [id, motivos] of Object.entries(j.isErrores || {})) {
-          const acc = (juntos.isErrores[id] = juntos.isErrores[id] || {});
+        for (const [id, motivos] of Object.entries(j.fichaErrores || {})) {
+          const acc = (juntos.fichaErrores[id] = juntos.fichaErrores[id] || {});
           for (const [m, n] of Object.entries(motivos)) acc[m] = (acc[m] || 0) + n;
         }
         for (const [id, motivos] of Object.entries(j.simulacionErrores || {})) {
@@ -246,7 +246,7 @@
           for (const [m, n] of Object.entries(motivos)) acc[m] = (acc[m] || 0) + n;
         }
         juntos.simuladas += j.simuladas || 0;
-        juntos.porIS += j.porIS || 0;
+        juntos.porFicha += j.porFicha || 0;
         juntos.aSimular += j.aSimular || 0;
         Object.assign(juntos.comboPorTienda, j.comboPorTienda || {});
         Object.assign(juntos.canalErrores, j.canalErrores || {});
@@ -305,24 +305,24 @@
           const t = tiendas.find((x) => x.id === id);
           return `${esc(t?.nombre || id)}: ${c ? esc(c) : '<strong>ninguna combinación funcionó</strong>'}`;
         }).join(' · ');
-      const deIS = d.porIS
-        ? ` Otros ${d.porIS} salieron de Intelligent Search, que es la API con la que
-            la tienda dibuja su propia ficha.`
+      const deFicha = d.porFicha
+        ? ` Otros ${d.porFicha} se leyeron del JSON-LD de la ficha de cada tienda,
+            que es el precio que muestra la página.`
         : '';
       avisos.push(`<div class="aviso cpx-info">${d.simuladas} de ${d.aSimular} precios salieron de la
-        simulación de carrito (con promociones aplicadas), con CP ${esc(String(d.codigoPostal || ''))}.${deIS}
+        simulación de carrito (con promociones aplicadas), con CP ${esc(String(d.codigoPostal || ''))}.${deFicha}
         ${combos ? `<br><span class="ean">${combos}</span>` : ''}</div>`);
     }
 
     // Por que Intelligent Search tampoco pudo. Sin esto, un "0 de 152 salieron
     // de IS" no dice si IS esta caida, si no indexa el EAN, o si devuelve el
     // mismo precio del catalogo y por eso no aporta.
-    for (const [id, motivos] of Object.entries(d.isErrores || {})) {
+    for (const [id, motivos] of Object.entries(d.fichaErrores || {})) {
       const t = tiendas.find((x) => x.id === id);
       const items = Object.entries(motivos).sort((a, b) => b[1] - a[1]).slice(0, 4)
         .map(([m, n]) => `<li><span class="ean">${esc(m)}</span> (${n}×)</li>`).join('');
       avisos.push(`<div class="aviso cpx-warn">
-        <strong>${esc(t?.nombre || id)}: Intelligent Search tampoco pudo dar el precio.</strong>
+        <strong>${esc(t?.nombre || id)}: tampoco se pudo leer el precio de la ficha.</strong>
         <ul style="margin:.35rem 0 0;padding-left:1.1rem">${items}</ul></div>`);
     }
 
