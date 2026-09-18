@@ -30,6 +30,10 @@
 
   .aviso { border-radius: 8px; padding: .7rem .9rem; font-size: .85rem; margin-bottom: .75rem;
            border: 1px solid; line-height: 1.45; }
+  .aviso details { margin-top: .35rem; }
+  .aviso summary { cursor: pointer; font-weight: 600; font-size: .8rem; }
+  .aviso ul { margin: .4rem 0 0; padding-left: 1.1rem; max-height: 9rem; overflow-y: auto; }
+  .aviso li { margin-bottom: .2rem; }
   .aviso.info { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
   .aviso.warn { background: #fffbeb; border-color: #fde68a; color: #92400e; }
   .aviso.bad  { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
@@ -83,15 +87,10 @@
             text-transform: none; letter-spacing: 0; cursor: help; max-width: 9rem;
             margin-left: auto; white-space: normal; line-height: 1.25; }
   .prog { font-size: .85rem; color: var(--muted, #6b7280); }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) .aviso.info { background: #16233a; border-color: #1e3a5f; color: #93c5fd; }
-    :root:not([data-theme="light"]) .aviso.warn { background: #2a2113; border-color: #4d3c14; color: #fcd34d; }
-    :root:not([data-theme="light"]) .aviso.bad  { background: #2b1618; border-color: #532025; color: #fca5a5; }
-    :root:not([data-theme="light"]) td.barato { background: #0f2419 !important; box-shadow: inset 2px 0 0 #16a34a; }
-    :root:not([data-theme="light"]) td.barato .precio { color: #34d399; }
-    :root:not([data-theme="light"]) .off { color: #34d399; }
-    :root:not([data-theme="light"]) table.cmp-t tbody tr:hover td { background: #161a20; }
-  }
+  /* Sin @media (prefers-color-scheme: dark) a proposito: el resto del
+     dashboard no tiene modo oscuro, asi que con el sistema en oscuro esta
+     pagina se pintaba mitad clara y mitad oscura —las celdas del ganador
+     quedaban en verde oscuro sobre fondo blanco. */
 </style>
 </head>
 <body>
@@ -269,15 +268,16 @@
         const t = tiendas.find((x) => x.id === id);
         const total = Object.values(motivos).reduce((a, b) => a + b, 0);
         const porQue = Object.entries(motivos)
-          .sort((a, b) => b[1] - a[1])
-          .map(([m, n]) => `${esc(m)} (${n}×)`).join(', ');
+          .sort((a, b) => b[1] - a[1]).slice(0, 3)
+          .map(([m, n]) => `${esc(m)} (${n}×)`).join('; ');
         return `<li><strong>${esc(t?.nombre || id)}</strong>: ${total} sin simular — ${porQue}</li>`;
       }).join('');
       avisos.push(`<div class="aviso bad">
         <strong>La simulación de carrito falló en algunas tiendas.</strong>
         Para esos productos se muestra el precio del catálogo, que puede no incluir
         promociones. Están marcados y no compiten por el "más barato".
-        <ul style="margin:.4rem 0 0 1.1rem; padding:0">${detalle}</ul></div>`);
+        <details><summary>ver detalle</summary>
+        <ul>${detalle}</ul></details></div>`);
     }
     if (d.aSimular) {
       avisos.push(`<div class="aviso info">${d.simuladas} de ${d.aSimular} precios salieron de la
@@ -370,8 +370,13 @@
           bits.push(`<span class="ojo" title="${esc(por)}">precio sin verificar</span>`);
         }
 
-        for (const p of (x.promos || []).slice(0, 2)) {
-          bits.push(`<span class="promo" title="${esc(p)}">${esc(p)}</span>`);
+        // UNA promo visible y el resto en un contador. Carrefour declara varias
+        // por producto ("Tarjeta Carrefour 15%", "Cuenta Digital 15% Off...") y
+        // apilarlas hacia filas de cuatro renglones de alto.
+        const ps = x.promos || [];
+        if (ps.length) {
+          const resto = ps.length > 1 ? ` +${ps.length - 1}` : '';
+          bits.push(`<span class="promo" title="${esc(ps.join(' · '))}">${esc(ps[0])}${resto}</span>`);
         }
         return `<td class="num${barato ? ' barato' : ''}">${bits.join('')}</td>`;
       });

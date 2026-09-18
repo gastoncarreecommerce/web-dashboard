@@ -89,11 +89,24 @@ function pedirConTimeout(url) {
  *    se quiere comparar. Un comparador mas lento y correcto le gana a uno rapido
  *    con precios que dependen de que mas habia en la lista.
  */
-async function simular(tienda, itemId, sellerId) {
+/**
+ * Canales de venta a probar, en orden. El `sc=1` estaba hardcodeado y era una
+ * SUPOSICION mia: Jumbo y Disco rechazaban todos los items con "Ítem <nombre> no
+ * encontrado o no disponible", que es justo lo que contesta VTEX cuando el item
+ * no existe en el canal que se le pide. Carrefour, Masonline y DIA si funcionan
+ * con 1, asi que el canal no es el mismo en todas las cuentas.
+ *
+ * Sin `sc` la API usa el canal por defecto de la tienda, que es la opcion mas
+ * probable de todas y por eso va primera.
+ */
+const CANALES = [null, '1', '2', '3'];
+
+async function simular(tienda, itemId, sellerId, sc) {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+  const qs = sc ? `?sc=${encodeURIComponent(sc)}` : '';
   try {
-    const r = await fetch(`${tienda.dominio}/api/checkout/pub/orderForms/simulation?sc=1`, {
+    const r = await fetch(`${tienda.dominio}/api/checkout/pub/orderForms/simulation${qs}`, {
       method: 'POST',
       signal: ctrl.signal,
       headers: {
@@ -138,6 +151,24 @@ async function simular(tienda, itemId, sellerId) {
   } catch (e) {
     return { error: e.name === 'AbortError' ? 'timeout' : e.message };
   } finally { clearTimeout(t); }
+}
+
+/**
+ * Prueba los canales hasta que uno funcione, y devuelve cual fue.
+ *
+ * Se hace UNA sola vez por tienda y por request: el canal correcto es una
+ * propiedad de la cuenta, no del producto, asi que descubrirlo una vez y
+ * reusarlo para los otros 93 productos cuesta 3 llamadas extra en el peor caso
+ * en vez de 3 por producto.
+ */
+async function descubrirCanal(tienda, itemId, sellerId) {
+  let ultimo = null;
+  for (const sc of CANALES) {
+    const r = await simular(tienda, itemId, sellerId, sc);
+    if (!r.error) return { sc, primera: r };
+    ultimo = r.error;
+  }
+  return { sc: undefined, error: ultimo };
 }
 
 /** Lo que nos interesa de un producto de VTEX, aplanado. */
@@ -270,6 +301,7 @@ export default async function handler(req, res) {
   const resultados = Object.fromEntries(eans.map((e) => [e, {}]));
   const errores = {};
   const simErrores = {};   // simErrores[tiendaId][motivo] = cuantas veces
+  const canalErrores = {}; // tiendas donde NINGUN canal funciono
 
   const lotes = [];
   for (const id of tiendas) {
@@ -292,6 +324,7 @@ export default async function handler(req, res) {
         for (const ean of eansDe(p)) {
           if (resultados[ean] && !resultados[ean][id]) {
             resultados[ean][id] = fila;
+            fila._tienda = id;
             if (fila._itemId) aSimular.push({ ean, id, fila });
           }
         }
@@ -309,20 +342,42 @@ export default async function handler(req, res) {
   // falta es el motivo una vez, no una lista de 76 celdas.
   // El precio del catalogo queda como `precioCatalogo` para poder ver la
   // diferencia, pero el que se muestra es el simulado.
-  await forEachLimit(aSimular, CONCURRENCIA, async ({ id, fila }) => {
-    const sim = await simular(TIENDAS[id], fila._itemId, fila._sellerId);
-    fila.precioCatalogo = fila.precio;
+  // Primero se descubre el canal de venta de cada tienda con UN producto, y
+  // despues se simula el resto con ese canal. El canal es una propiedad de la
+  // cuenta, no del producto.
+  const canalDe = {};
+  const primeras = new Map();
+  const porTiendaSim = {};
+  for (const x of aSimular) (porTiendaSim[x.id] = porTiendaSim[x.id] || []).push(x);
 
+  await forEachLimit(Object.keys(porTiendaSim), CONCURRENCIA, async (id) => {
+    const primero = porTiendaSim[id][0];
+    const d = await descubrirCanal(TIENDAS[id], primero.fila._itemId, primero.fila._sellerId);
+    canalDe[id] = d.sc;
+    if (d.primera) primeras.set(primero, d.primera);
+    else canalErrores[id] = d.error;
+  });
+
+  const resto = aSimular.filter((x) => !primeras.has(x));
+  const aplicar = (fila, sim) => {
+    fila.precioCatalogo = fila.precio;
     if (sim.error) {
       // Sin simulacion queda el precio del catalogo, que puede NO ser el que ve
       // el cliente. Se marca para que la pagina lo diga en vez de darlo por
       // bueno.
       fila.simulacionFallo = sim.error;
-      const porTienda = (simErrores[id] = simErrores[id] || {});
-      porTienda[sim.error] = (porTienda[sim.error] || 0) + 1;
+      // Se agrupa por el motivo SIN el nombre del producto. VTEX responde
+      // "Ítem <nombre del producto> no encontrado o no disponible", asi que
+      // agrupando por el texto exacto los 76 fallos de una tienda daban 76
+      // motivos distintos y el aviso se volvia un muro ilegible.
+      const motivo = sim.error
+        .replace(/Ítem .*? no encontrado/i, 'Ítem no encontrado')
+        .replace(/Item .*? not found/i, 'Item not found')
+        .slice(0, 160);
+      const acc = (simErrores[fila._tienda] = simErrores[fila._tienda] || {});
+      acc[motivo] = (acc[motivo] || 0) + 1;
       return;
     }
-
     if (sim.precio != null) fila.precio = sim.precio;
     if (sim.lista != null) {
       // La lista de la simulacion reemplaza a la del catalogo: en Cencosud esa
@@ -335,12 +390,17 @@ export default async function handler(req, res) {
     }
     if (sim.promos.length) fila.promos = [...new Set([...sim.promos, ...(fila.promos || [])])];
     fila.fuentePrecio = 'simulacion';
+  };
+
+  for (const [x, sim] of primeras) aplicar(x.fila, sim);
+  await forEachLimit(resto, CONCURRENCIA, async ({ id, fila }) => {
+    aplicar(fila, await simular(TIENDAS[id], fila._itemId, fila._sellerId, canalDe[id]));
   });
 
   // Los internos no viajan al cliente.
   for (const ean of eans) {
     for (const f of Object.values(resultados[ean])) {
-      if (f && typeof f === 'object') { delete f._itemId; delete f._sellerId; }
+      if (f && typeof f === 'object') { delete f._itemId; delete f._sellerId; delete f._tienda; }
     }
   }
 
@@ -358,6 +418,10 @@ export default async function handler(req, res) {
     resultados,
     errores,
     simulacionErrores: simErrores,
+    // Que canal de venta funciono en cada tienda, y en cuales ninguno. `null`
+    // significa "sin sc", que es el canal por defecto de la tienda.
+    canalPorTienda: canalDe,
+    canalErrores,
     simuladas: aSimular.filter((x) => x.fila.fuentePrecio === 'simulacion').length,
     aSimular: aSimular.length,
     ...(invalidos.length ? { invalidos: invalidos.slice(0, 20) } : {}),

@@ -48,6 +48,16 @@ async function correr(porTienda, query) {
       if (typeof sim === 'number') {
         return { ok: false, status: sim, text: async () => '{"error":{"message":"Sales channel not found"}}' };
       }
+      // `canal` en el mock: la simulacion solo funciona con ESE sc, para poder
+      // probar el descubrimiento. Sin `canal`, funciona con cualquiera.
+      if (sim.canal !== undefined) {
+        const sc = (u.match(/[?&]sc=([^&]*)/) || [, null])[1];
+        if (String(sc) !== String(sim.canal)) {
+          return { ok: true, status: 200, json: async () => ({
+            items: [], messages: [{ text: `Ítem ${sim.nombre || 'X'} no encontrado o no disponible` }],
+          })};
+        }
+      }
       return { ok: true, status: 200, json: async () => ({
         // La simulacion habla en CENTAVOS: x100.
         items: [{ sellingPrice: Math.round(sim.precio * 100), price: Math.round(sim.precio * 100),
@@ -286,4 +296,45 @@ test('una simulacion que responde 200 sin el item reporta el motivo de VTEX', as
   const x = res.body.resultados['11111111'].jumbo;
   assert.match(x.simulacionFallo, /rechazado: Item sin stock/,
     'el motivo de VTEX, no un "no devolvio el item" que no dice nada');
+});
+
+test('descubre el canal de venta de cada tienda y lo reusa', async () => {
+  sesionOk = true;
+  // Jumbo solo simula con sc=2; Carrefour con sc=1. Es el caso real: `sc=1`
+  // estaba hardcodeado y Jumbo rechazaba TODOS los items.
+  SIMS = {
+    'www.jumbo.com.ar': { precio: 1982.5, lista: 3050, canal: '2', nombre: 'Agua' },
+    'www.carrefour.com.ar': { precio: 3050, canal: '1' },
+  };
+  const { res, llamadas } = await correr({
+    'www.jumbo.com.ar': [prod('11111111', 'Agua', { precio: 3050 }), prod('22222222', 'B', { precio: 100 })],
+    'www.carrefour.com.ar': [prod('11111111', 'Agua', { precio: 3050 })],
+  }, { eans: '11111111,22222222', tiendas: 'jumbo,carrefour' });
+
+  assert.strictEqual(res.body.canalPorTienda.jumbo, '2', 'lo encontro probando');
+  assert.strictEqual(res.body.canalPorTienda.carrefour, '1');
+  assert.strictEqual(res.body.resultados['11111111'].jumbo.precio, 1982.5,
+    'y con el canal correcto la simulacion anda');
+  assert.deepStrictEqual(res.body.simulacionErrores, {}, 'sin fallos');
+
+  // El descubrimiento cuesta a lo sumo unos pocos intentos por TIENDA, no por
+  // producto: sin `sc` falla, sc=1 falla, sc=2 anda -> 3 para Jumbo. El segundo
+  // producto de Jumbo usa directo el canal ya conocido.
+  const sims = llamadas.filter((u) => u.includes('simulation') && u.includes('jumbo'));
+  assert.strictEqual(sims.length, 4, '3 del descubrimiento + 1 del segundo producto');
+});
+
+test('si NINGUN canal funciona, se reporta y el precio queda marcado', async () => {
+  sesionOk = true;
+  SIMS = { 'www.jumbo.com.ar': { precio: 1, canal: '99', nombre: 'Gaseosa Cola Zero 2,25 Lts' } };
+  const { res } = await correr({
+    'www.jumbo.com.ar': [prod('11111111', 'A', { precio: 3050 }), prod('22222222', 'B', { precio: 200 })],
+  }, { eans: '11111111,22222222', tiendas: 'jumbo' });
+
+  assert.match(res.body.canalErrores.jumbo, /no encontrado o no disponible/);
+  // Y los motivos se agrupan SIN el nombre del producto: los dos fallos son UNO.
+  const motivos = res.body.simulacionErrores.jumbo || {};
+  assert.strictEqual(Object.keys(motivos).length, 1,
+    'un solo motivo, no uno por producto: eso era el muro rojo');
+  assert.match(Object.keys(motivos)[0], /Ítem no encontrado/);
 });
