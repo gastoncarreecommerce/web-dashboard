@@ -1,90 +1,96 @@
 /* ───────────────────────────────────────────────────────────────────────────
-   PARA PEGAR EN LA CONSOLA DEL NAVEGADOR, ESTANDO EN www.jumbo.com.ar
+   PARA PEGAR EN LA CONSOLA DEL NAVEGADOR, EN LA FICHA DE JUMBO
 
-   Que averigua: de donde saca la ficha de Jumbo el precio con promo. Desde el
-   navegador la sesion ya tiene la ubicacion elegida, asi que las mismas APIs
-   que desde un servidor devuelven el precio base pueden devolver aca el precio
-   real. Si es asi, la diferencia es la region, y eso se puede reproducir.
+   Busca el precio que muestra la ficha ($1.982,5) DENTRO de los datos que
+   cargo la pagina, y dice en que campo esta.
+
+   Por que este enfoque. Las tres APIs publicas de VTEX devuelven 3.050 en
+   todos sus campos, incluso con la sesion del navegador, y la ficha igual
+   muestra 1.982,5 con -35%. Tambien se descarto que sea regional: no hay
+   cookie vtex_segment (ninguna ubicacion elegida) y el precio se muestra
+   igual. Pero el numero ESTA en la pantalla, asi que esta en los datos de la
+   pagina. En vez de adivinar que endpoint lo trae, se busca el valor y se
+   reporta el camino: eso dice el nombre del campo y de que consulta vino.
+
+   Los storefronts VTEX IO dejan su estado en window.__STATE__ (cache de
+   Apollo). Si no esta, se busca en el HTML del servidor.
 
    Como usarlo:
-     1. Abrir la ficha del producto (la que muestra el precio con descuento).
-     2. F12 -> pestana "Console".
+     1. Estar en la ficha del producto que muestra el precio con descuento.
+     2. F12 -> Console.
      3. Pegar TODO esto y Enter.
      4. Copiar lo que imprime.
 
-   No cambia nada: solo lee. No manda nada a ningun lado.
+   Solo lee. No cambia nada ni manda nada a ningun lado.
    ─────────────────────────────────────────────────────────────────────────── */
 (async () => {
-  const EAN = '7799155000197';          // agua Villavicencio 2 L
-  const CP = '1425';
-  const log = (...a) => console.log('%c[precio]', 'color:#2a78d6;font-weight:bold', ...a);
-  const bien = (n) => (typeof n === 'number' ? n.toLocaleString('es-AR') : String(n));
-  const get = async (u) => {
-    const r = await fetch(u, { credentials: 'include' });
-    return { ok: r.ok, status: r.status, body: await r.text() };
-  };
-  const json = (x) => { try { return JSON.parse(x.body); } catch { return null; } };
+  const log = (...a) => console.log('%c[buscar-precio]', 'color:#2a78d6;font-weight:bold', ...a);
 
-  // ── 1. Que dice la cookie de sesion de VTEX ──────────────────────────────
-  // vtex_segment es base64 de un JSON con regionId, canal y politica comercial.
-  // Es LA respuesta a "que le esta diciendo el navegador a VTEX que yo no digo".
-  const seg = document.cookie.split('; ').find((c) => c.startsWith('vtex_segment='));
-  if (seg) {
-    try {
-      const d = JSON.parse(atob(decodeURIComponent(seg.split('=')[1])));
-      log('SESION:', { regionId: d.regionId, channel: d.channel, cultureInfo: d.cultureInfo });
-    } catch (e) { log('SESION: la cookie esta pero no se pudo leer:', e.message); }
-  } else {
-    log('SESION: no hay cookie vtex_segment. Elegi una direccion o sucursal y volve a correr esto.');
+  // El precio de la ficha y sus formas posibles: en pesos, en centavos, con
+  // coma, con punto. No se sabe en que escala lo guarda, asi que se buscan
+  // todas.
+  const OBJETIVO = 1982.5;
+  const FORMAS = [OBJETIVO, OBJETIVO * 100, Math.round(OBJETIVO), '1982.5', '1982,5', '198250', '1982'];
+
+  /** Recorre un objeto entero y devuelve los caminos donde aparece el valor. */
+  function buscar(raiz, formas, maxProf = 14) {
+    const hallados = [];
+    const vistos = new WeakSet();
+    (function ir(v, camino, prof) {
+      if (hallados.length > 40 || prof > maxProf || v == null) return;
+      if (typeof v === 'number' || typeof v === 'string') {
+        const s = String(v);
+        if (formas.some((f) => (typeof f === 'number' ? v === f : s === f || s.includes(f)))) {
+          hallados.push({ camino, valor: v });
+        }
+        return;
+      }
+      if (typeof v !== 'object') return;
+      if (vistos.has(v)) return;
+      vistos.add(v);
+      for (const k of Object.keys(v)) {
+        let hijo; try { hijo = v[k]; } catch { continue; }
+        ir(hijo, `${camino}.${k}`, prof + 1);
+      }
+    })(raiz, '', 0);
+    return hallados;
   }
 
-  // ── 2. Quien despacha en el CP ───────────────────────────────────────────
-  const reg = await get(`/api/checkout/pub/regions?country=ARG&postalCode=${CP}`);
-  const regJ = json(reg);
-  log(`REGIONES (HTTP ${reg.status}):`, Array.isArray(regJ)
-    ? regJ.map((x) => ({ regionId: x.id, sellers: (x.sellers || []).map((s) => s.id) }))
-    : reg.body.slice(0, 200));
-  const sellers = Array.isArray(regJ)
-    ? [...new Set(regJ.flatMap((x) => (x.sellers || []).map((s) => String(s.id))))]
-    : [];
-
-  // ── 3. El catalogo, CON la sesion del navegador ──────────────────────────
-  const cat = json(await get(`/api/catalog_system/pub/products/search?fq=alternateIds_Ean:${EAN}`));
-  const item = cat?.[0]?.items?.[0];
-  const oferta = item?.sellers?.[0]?.commertialOffer;
-  log('CATALOGO con sesion:', oferta
-    ? { Price: bien(oferta.Price), ListPrice: bien(oferta.ListPrice),
-        teasers: (oferta.Teasers || []).map((t) => t.Name) }
-    : '(no devolvio el producto)');
-  log('   itemId:', item?.itemId, ' sellers del catalogo:', item?.sellers?.map((s) => s.sellerId));
-
-  // ── 4. Intelligent Search, CON la sesion ─────────────────────────────────
-  const is = json(await get(`/api/io/_v/api/intelligent-search/product_search/?query=${EAN}&count=1`));
-  const isOf = is?.products?.[0]?.items?.[0]?.sellers?.[0]?.commertialOffer;
-  log('INTELLIGENT SEARCH con sesion:', isOf
-    ? { Price: bien(isOf.Price), ListPrice: bien(isOf.ListPrice), spotPrice: bien(isOf.spotPrice),
-        teasers: (isOf.teasers || isOf.Teasers || []).map((t) => t.name || t.Name) }
-    : '(no devolvio el producto)');
-
-  // ── 5. La simulacion, probando cada seller que aparecio ──────────────────
-  const candidatos = [...new Set([...sellers, ...(item?.sellers || []).map((s) => String(s.sellerId))])];
-  log('SIMULACION — sellers a probar:', candidatos);
-  for (const sl of candidatos) {
-    const r = await fetch('/api/checkout/pub/orderForms/simulation', {
-      method: 'POST', credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        items: [{ id: String(item?.itemId), quantity: 1, seller: sl }],
-        country: 'ARG', postalCode: CP,
-      }),
-    });
-    const j = await r.json().catch(() => null);
-    const it = j?.items?.[0];
-    log(`   seller=${sl} (HTTP ${r.status}):`, it
-      ? { sellingPrice: bien(it.sellingPrice / 100), listPrice: bien(it.listPrice / 100),
-          promos: (j.ratesAndBenefitsData?.rateAndBenefitsIdentifiers || []).map((b) => b.name) }
-      : (j?.messages || []).map((m) => m.text).join(' | ') || '(sin item y sin motivo)');
+  // ── 1. El estado que la pagina tiene en memoria ──────────────────────────
+  const globales = ['__STATE__', '__RUNTIME__', '__APOLLO_STATE__', '__NEXT_DATA__', 'dataLayer'];
+  let encontroAlgo = false;
+  for (const g of globales) {
+    if (!window[g]) continue;
+    const h = buscar(window[g], FORMAS);
+    log(`window.${g}: ${h.length ? `${h.length} coincidencia(s)` : 'no tiene el numero'}`);
+    for (const x of h.slice(0, 12)) log(`   window.${g}${x.camino}  =  ${x.valor}`);
+    if (h.length) encontroAlgo = true;
+  }
+  if (!globales.some((g) => window[g])) {
+    log('La pagina no expone __STATE__ ni __RUNTIME__. Se busca en el HTML del servidor.');
   }
 
-  log('LISTO. El precio que muestra la ficha arriba: ¿aparece en alguna de estas lineas?');
+  // ── 2. El HTML que sirvio el servidor ────────────────────────────────────
+  // Si el numero viene renderizado del servidor, esta ahi con el nombre de su
+  // campo al lado, que es justo lo que hace falta saber.
+  const html = await (await fetch(location.href, { credentials: 'include' })).text();
+  const hits = [];
+  for (const m of html.matchAll(/1982[.,]?5?/g)) {
+    hits.push(html.slice(Math.max(0, m.index - 160), m.index + 60).replace(/\s+/g, ' '));
+    if (hits.length >= 6) break;
+  }
+  log(`HTML del servidor: ${hits.length ? `${hits.length} aparicion(es) de 1982` : 'NO contiene 1982'}`);
+  hits.forEach((h, i) => log(`   [${i + 1}] …${h}…`));
+
+  // ── 3. Los campos de precio que la pagina muestra, tal cual ──────────────
+  // Sirve de control: confirma que se esta mirando la ficha correcta.
+  const texto = document.body.innerText;
+  const lineas = texto.split('\n').filter((l) => /\$\s?[\d.]+/.test(l)).slice(0, 10);
+  log('Lineas con precio en la pantalla:'); lineas.forEach((l) => log(`   ${l.trim()}`));
+
+  if (!encontroAlgo && !hits.length) {
+    log('El numero no esta ni en el estado ni en el HTML: lo trae una llamada posterior.');
+    log('Entonces: abri la pestana Network, filtra por "1982" en el buscador de respuestas');
+    log('(Network -> lupa/Search -> escribir 1982) y decime que request aparece.');
+  }
 })();
