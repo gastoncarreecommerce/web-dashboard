@@ -69,6 +69,10 @@ async function getJson(url, init) {
 const vtexLegacy = {
   id: 'vtex-legacy',
   label: 'VTEX Search (legacy)',
+  // Motor de palabras: busca el termino y devuelve lo que matchea. El total
+  // dice algo, y se puede comparar contra otro motor de palabras.
+  clase: 'palabras',
+  cuentaComparable: true,
   disponible: () => Boolean(process.env.VTEX_ACCOUNT_NAME),
   async search(term) {
     const url = `${vtexBase()}/api/catalog_system/pub/products/search`
@@ -97,6 +101,8 @@ const vtexLegacy = {
 const vtexIS = {
   id: 'vtex-is',
   label: 'VTEX Intelligent Search',
+  clase: 'palabras',
+  cuentaComparable: true,
   disponible: () => Boolean(process.env.VTEX_ACCOUNT_NAME),
   async search(term) {
     const url = `${vtexBase()}/api/io/_v/api/intelligent-search/product_search/`
@@ -161,6 +167,21 @@ function dyConfig() {
 const dynamicYield = {
   id: 'dy',
   label: 'Dynamic Yield Experience Search',
+  // MOTOR SEMANTICO, y eso cambia como se lo mide.
+  //
+  // DY no filtra: rankea. Trabaja por embeddings, asi que para cualquier
+  // consulta le puede poner un puntaje de similitud a TODO el catalogo y
+  // devolver "1000 resultados". Ese numero no son 1000 productos relevantes:
+  // es "aca esta todo, ordenado". Comparar ese total contra los 10 de un motor
+  // de palabras y concluir que DY gana es un error de medicion: la corrida que
+  // mostraba "IS devuelve 0 pero dy (1000) si encuentra productos" estaba
+  // haciendo exactamente eso, con un DY cuyo top-3 para "azucar" era agua
+  // mineral.
+  //
+  // A un motor semantico se lo juzga por la precision de las PRIMERAS
+  // posiciones, que es lo unico que ve el cliente.
+  clase: 'semantico',
+  cuentaComparable: false,
   disponible() {
     const cfg = dyConfig();
     return Boolean(process.env.DY_API_KEY && cfg?.endpoint && cfg?.body);
@@ -289,6 +310,7 @@ async function vtexAutocomplete(term) {
 
 module.exports = {
   ENGINES,
+  vtexBase,
   motoresActivos,
   vtexLegacy,
   vtexIS,

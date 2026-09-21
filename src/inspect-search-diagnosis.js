@@ -52,7 +52,7 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { motoresActivos, vtexCorrection } = require('./search-engines');
+const { motoresActivos, vtexCorrection, vtexBase } = require('./search-engines');
 const relevanciaIA = require('./search-relevance-ai');
 
 const IN_PATH = path.join(__dirname, '..', 'config', 'search-inspect.report.json');
@@ -73,6 +73,11 @@ const MAX_CANDIDATES_TRIED = 5;
 // de marcas dentro del mismo rubro.
 const DISPERSION_MIN_SAMPLE = 3;
 const DISPERSION_THRESHOLD = 0.6;
+// Debajo de esta fraccion de resultados que mencionan lo buscado, el top se
+// considera irrelevante. 0,4 es holgado a proposito: se busca detectar el caso
+// grosero (0% para "aceite") sin castigar a un motor que trae un par de
+// productos de marca propia sin la palabra en el nombre.
+const UMBRAL_PRECISION = 0.4;
 
 function baseUrl() {
   const account = process.env.VTEX_ACCOUNT_NAME;
@@ -139,6 +144,19 @@ function candidateCorrections(term) {
  * Con la lista cargada, esos terminos salen del cubo de "roto" y pasan a tener
  * su propia pregunta, que es otra: si la PLP de destino es la correcta.
  */
+// Palabras que no aportan nada para decidir si un producto tiene que ver con
+// lo que se busco.
+const VACIAS = new Set(['de', 'del', 'la', 'el', 'los', 'las', 'con', 'sin', 'para',
+  'por', 'y', 'o', 'a', 'en', 'un', 'una', 'al', 'x']);
+
+const sinTildes = (x) => String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+/** Las palabras con contenido de una consulta. "papel higienico" -> [papel, higienico] */
+function palabrasDe(term) {
+  return sinTildes(term).split(/[^a-z0-9]+/)
+    .filter((w) => w.length >= 3 && !VACIAS.has(w));
+}
+
 function cargarRedirects() {
   if (!fs.existsSync(REDIRECTS_PATH)) return new Map();
   let data;
@@ -151,6 +169,60 @@ function cargarRedirects() {
     if (t) m.set(t, r.url || r.destino || null);
   }
   return m;
+}
+
+/**
+ * Le pregunta AL SITIO que hace con cada termino: mostrar resultados, o
+ * redirigir a una categoria.
+ *
+ * Por que pasa a estar aca y no en un workflow aparte. La deteccion de
+ * redirects existia en src/redirect-probe.js, como una corrida manual que
+ * escribia config/search-redirects.json. Ese archivo nunca se genero, asi que
+ * TODAS las corridas del diagnostico vinieron marcando los terminos con
+ * redirect como si el cliente hubiera caido en una pagina vacia: "papel
+ * higienico", con 26.748 busquedas/mes, aparecia como "no esta en el indice"
+ * cuando el cliente llega perfecto a la PLP de papel higienico.
+ *
+ * Un dato que el diagnostico necesita para no mentir no puede depender de que
+ * alguien se acuerde de correr otra cosa. Ahora se mide en la misma corrida.
+ *
+ * Como se mide: se le pide la URL sin seguir el redirect y se mira el status.
+ * 301/302 con cabecera Location significa que el termino esta redirigido. Se
+ * prueban las dos formas de URL porque no sabemos cual usa el buscador del
+ * sitio: la ruta pelada (donde se definen los redirects de VTEX) y la URL de
+ * busqueda (a donde va la caja de busqueda).
+ *
+ * config/search-redirects.json sigue mandando si existe: sirve para anotar a
+ * mano un redirect que el sitio resuelve por JavaScript y no por HTTP.
+ */
+async function detectarRedirects(terms) {
+  const base = vtexBase();
+  const slug = (t) => sinTildes(t).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+  const pedir = async (url) => {
+    try {
+      const r = await fetch(url, {
+        redirect: 'manual',
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; WebDash-diagnostico)', Accept: 'text/html' },
+      });
+      return { status: r.status, location: r.headers.get('location') || null };
+    } catch { return { status: 0, location: null }; }
+  };
+  const esRedirect = (r) => r.status >= 300 && r.status < 400 && r.location;
+
+  const hallados = new Map();
+  let fallados = 0;
+  await forEachLimit(terms, CONCURRENCY, async (t) => {
+    const s = slug(t.term);
+    if (!s) return;
+    const ruta = await pedir(`${base}/${s}`);
+    const busq = esRedirect(ruta) ? null
+      : await pedir(`${base}/${s}?_q=${encodeURIComponent(t.term)}&map=ft`);
+    if (esRedirect(ruta)) hallados.set(t.term, { url: ruta.location, via: 'ruta' });
+    else if (busq && esRedirect(busq)) hallados.set(t.term, { url: busq.location, via: 'busqueda' });
+    else if (ruta.status === 0 && (!busq || busq.status === 0)) fallados += 1;
+  });
+  return { hallados, fallados };
 }
 
 function topSearchTerms(report, n) {
@@ -205,18 +277,69 @@ async function buscarEn(motor, term) {
 
 /** El veredicto sobre un resultado, separado del bucle para poder aplicarlo
  *  IGUAL a cada motor y después comparar manzanas con manzanas. */
-function clasificar(r) {
+/**
+ * Que fraccion de los primeros resultados MENCIONA lo que se busco.
+ *
+ * Por que hace falta. El diagnostico juzgaba a los motores por cantidad de
+ * resultados, y con ese criterio la corrida reportaba: "VTEX Intelligent Search
+ * devuelve 0 pero vtex-legacy (10) si encuentra productos (ej.: 'Papas fritas
+ * sabor a jamon serrano Lays 77 g.')" para el termino "aceite", y "Figacitas de
+ * manteca x 8 uni" para "manteca". O sea que los 10 resultados del legacy no
+ * eran prueba de que los productos existan y no esten indexados: eran matches
+ * por substring que no tienen nada que ver.
+ *
+ * LIMITE DE ESTA MEDIDA, que hay que tener presente al leerla: mide si el
+ * NOMBRE del producto menciona alguna palabra de la busqueda. Es un piso, no
+ * relevancia. "Figacitas de manteca" cuenta como acierto para "manteca" aunque
+ * el producto sea otra cosa, porque la manteca ahi es un ingrediente. Sirve
+ * para detectar el caso grosero —el 0% de "aceite" contra papas fritas— y no
+ * para afinar. Lo que si juzga relevancia de verdad es src/search-relevance-ai.js,
+ * que necesita ANTHROPIC_API_KEY y hoy esta apagado.
+ */
+function precisionDelTop(term, sample) {
+  const productos = (sample || []).filter(Boolean);
+  if (!productos.length) return null;
+  const palabras = palabrasDe(term);
+  if (!palabras.length) return null;
+  const aciertos = productos.filter((p) => {
+    const texto = sinTildes(typeof p === 'string' ? p : `${p.name || ''} ${(p.categories || []).join(' ')}`);
+    return palabras.some((w) => texto.includes(w));
+  }).length;
+  return aciertos / productos.length;
+}
+
+function clasificar(r, motor, term) {
   if (r.total === 0) return { status: 'sin_resultados' };
-  if (r.total < 5) return { status: 'pocos_resultados' };
+
+  // La precision del top se mide SIEMPRE, y para un motor semantico es el
+  // unico criterio: DY no filtra, rankea, asi que "pocos resultados" no le
+  // puede pasar nunca y su total no dice nada.
+  const precision = precisionDelTop(term, r.sample);
+  const extra = precision == null ? {} : { precisionTop: precision };
+
+  if (motor && motor.cuentaComparable === false) {
+    if (precision != null && precision < UMBRAL_PRECISION) {
+      return { status: 'top_irrelevante', ...extra };
+    }
+    return { status: 'ok', ...extra };
+  }
+
+  if (r.total < 5) return { status: 'pocos_resultados', ...extra };
+  // Un motor de palabras que devuelve mucho pero con el top sin relacion esta
+  // rellenando con coincidencias debiles. Es el caso de "aceite" en el legacy.
+  if (precision != null && precision < UMBRAL_PRECISION) {
+    return { status: 'top_irrelevante', ...extra };
+  }
   if (r.dispersion && r.dispersion.consistency < DISPERSION_THRESHOLD) {
     return {
       status: 'resultados_dispersos',
       categoryConsistency: r.dispersion.consistency,
       dominantCategory: r.dispersion.dominant,
       resultCategories: r.dispersion.categories,
+      ...extra,
     };
   }
-  return { status: 'ok' };
+  return { status: 'ok', ...extra };
 }
 
 async function forEachLimit(items, limit, fn) {
@@ -258,16 +381,42 @@ function recommendation(t) {
   }
   if (t.status === 'motor_no_indexa') {
     const vol = `${t.searchCount.toLocaleString('es-AR')} búsquedas/mes`;
-    const quien = (t.encontradoPor || []).map((o) => `${o.id} (${o.results})`).join(', ');
-    const ej = (t.encontradoPor || [])[0]?.sample?.[0];
-    return `${MOTOR_PRIMARIO.label} devuelve 0 pero ${quien} sí encuentra productos`
-      + `${ej ? ` (ej.: "${ej}")` : ''}. El término está bien escrito: no hace falta un sinónimo, `
-      + `hay que revisar por qué esos productos no están en el índice de ${MOTOR_PRIMARIO.label} (${vol}).`;
+    // Solo los motores cuyo top MENCIONA lo buscado llegan hasta aca, asi que
+    // el ejemplo que se muestra es uno creible. El total solo se cita si el
+    // motor filtra: en uno semantico, "1000 resultados" es todo el catalogo
+    // rankeado y no prueba nada.
+    const quien = (t.encontradoPor || [])
+      .map((o) => o.cuentaComparable ? `${o.id} (${o.results})` : `${o.id}`).join(', ');
+    const nombreDe = (p) => (typeof p === 'string' ? p : p?.name) || null;
+    const ej = nombreDe((t.encontradoPor || [])[0]?.sample?.[0]);
+    return `${MOTOR_PRIMARIO.label} devuelve 0 y ${quien} sí trae productos que mencionan el término`
+      + `${ej ? ` (ej.: "${ej}")` : ''}. El término está bien escrito, así que no es un sinónimo: `
+      + `el catálogo tiene esos productos y el índice de ${MOTOR_PRIMARIO.label} no los está `
+      + `devolviendo (${vol}).`;
+  }
+  if (t.status === 'top_irrelevante') {
+    const vol = `${t.searchCount.toLocaleString('es-AR')} búsquedas/mes`;
+    const pct = t.precisionTop != null ? `${Math.round(t.precisionTop * 100)}%` : '?';
+    const ejs = (t.sampleProducts || []).slice(0, 2)
+      .map((p) => `"${(typeof p === 'string' ? p : p?.name) || '?'}"`).join(', ');
+    return `Devuelve resultados pero el principio de la lista no tiene que ver con lo buscado: `
+      + `solo ${pct} de los primeros productos menciona el término${ejs ? ` (trae ${ejs})` : ''}. `
+      + `El cliente ve una página llena de cosas que no pidió, que es peor que una vacía porque `
+      + `parece que funcionó (${vol}).`;
   }
   if (t.status === 'error_consulta') return 'No se pudo consultar VTEX para este término — reintentar en la próxima corrida.';
   const vol = `${t.searchCount.toLocaleString('es-AR')} búsquedas/mes`;
   if (t.status === 'resultados_dispersos') {
     return `Trae ${Math.round(t.categoryConsistency * 100)}% de resultados de "${t.dominantCategory}" y el resto de categorías sin relación (${(t.resultCategories || []).filter((c) => c !== t.dominantCategory).join(', ')}) — revisar si el buscador está completando con coincidencias débiles en vez de lo que la gente busca (${vol}).`;
+  }
+  if (t.status === 'sin_resultados' && t.otrosMotoresIrrelevantes && !t.suggestion) {
+    const quien = t.otrosMotoresIrrelevantes.map((o) => o.id).join(', ');
+    const ej = t.otrosMotoresIrrelevantes[0]?.sample?.[0];
+    const nom = (typeof ej === 'string' ? ej : ej?.name) || null;
+    return `Ningún motor lo resuelve. ${MOTOR_PRIMARIO.label} devuelve 0, y ${quien} devuelve `
+      + `productos que no tienen relación${nom ? ` (ej.: "${nom}")` : ''}, así que tampoco sirven `
+      + `de prueba de que el producto exista en el catálogo. Antes de tocar el índice, confirmar `
+      + `a mano si Carrefour vende esto (${vol}).`;
   }
   if (t.suggestion) {
     return t.status === 'sin_resultados'
@@ -298,7 +447,7 @@ async function main() {
   MOTORES = activos;
   REDIRECTS = cargarRedirects();
   if (REDIRECTS.size) console.log(`${REDIRECTS.size} redirects manuales cargados: esos terminos no se juzgan por cantidad de resultados.`);
-  else console.log('Sin config/search-redirects.json: los terminos con redirect manual se van a reportar como si mostraran resultados de busqueda (ver el .ejemplo).');
+  else console.log('Sin config/search-redirects.json: los redirects se detectan preguntandole al sitio en esta misma corrida.');
   MOTOR_PRIMARIO = activos[0];
   console.log(`Motor primario: ${MOTOR_PRIMARIO.label}`);
   if (activos.length > 1) console.log(`Comparando contra: ${activos.slice(1).map((e) => e.label).join(', ')}`);
@@ -310,7 +459,23 @@ async function main() {
     console.log('⚠ El reporte de GA4 no tiene términos de búsqueda para diagnosticar.');
     return;
   }
-  console.log(`Diagnosticando ${terms.length} términos (top búsquedas reales, ya normalizados) contra VTEX...\n`);
+  // Los redirects se miden ANTES de diagnosticar: un termino que redirige no se
+  // juzga por cantidad de resultados, y saberlo cambia su veredicto.
+  console.log(`Preguntandole al sitio que hace con cada uno de los ${terms.length} terminos...`);
+  const red = await detectarRedirects(terms);
+  for (const [term, info] of red.hallados) {
+    // El archivo manual gana: puede tener redirects que el sitio resuelve por
+    // JavaScript y no con un 301.
+    if (!REDIRECTS.has(term)) REDIRECTS.set(term, info.url);
+  }
+  const volRedir = terms.filter((t) => REDIRECTS.has(t.term)).reduce((a, t) => a + t.searchCount, 0);
+  const volTotal = terms.reduce((a, t) => a + t.searchCount, 0);
+  console.log(`  ${red.hallados.size} redirigen a una categoria`
+    + ` (${volTotal ? (volRedir / volTotal * 100).toFixed(1) : '0'}% del volumen de busqueda):`
+    + ' esos no se juzgan por cantidad de resultados, el cliente llega a una PLP.');
+  if (red.fallados) console.log(`  ${red.fallados} no respondieron: de esos no se puede concluir nada.`);
+
+  console.log(`\nDiagnosticando ${terms.length} términos (top búsquedas reales, ya normalizados) contra VTEX...\n`);
 
   await forEachLimit(terms, CONCURRENCY, async (t) => {
     // Cada motor se consulta por separado y se juzga con el MISMO criterio.
@@ -320,7 +485,7 @@ async function main() {
     for (const motor of MOTORES) {
       try {
         const r = await buscarEn(motor, t.term);
-        const v = clasificar(r);
+        const v = clasificar(r, motor, t.term);
         t.engines[motor.id] = {
           results: r.total, resultsCapped: r.capped, sampleProducts: r.sample, ...v,
         };
@@ -350,10 +515,27 @@ async function main() {
     if (p.status === 'sin_resultados') {
       const otros = Object.entries(t.engines)
         .filter(([id, e]) => id !== MOTOR_PRIMARIO.id && (e.results || 0) > 0)
-        .map(([id, e]) => ({ id, results: e.results, sample: e.sampleProducts || [] }));
-      if (otros.length) {
+        .map(([id, e]) => ({
+          id, results: e.results, sample: e.sampleProducts || [],
+          precisionTop: e.precisionTop ?? null,
+          cuentaComparable: (MOTORES.find((m) => m.id === id) || {}).cuentaComparable !== false,
+        }));
+
+      // Que otro motor devuelva ALGO no alcanza para decir "el producto existe
+      // y el primario no lo indexa". Antes se concluia eso con cualquier
+      // resultado, y por eso la corrida decia que para "aceite" habia que
+      // revisar el indice de IS mostrando como prueba "Papas fritas Lays":
+      // matches por substring, no el producto buscado. Se exige que el otro
+      // motor traiga un top que al menos MENCIONE lo buscado.
+      const creibles = otros.filter((o) => o.precisionTop == null || o.precisionTop >= UMBRAL_PRECISION);
+      if (creibles.length) {
         t.status = 'motor_no_indexa';
-        t.encontradoPor = otros;
+        t.encontradoPor = creibles;
+        t.encontradoPorDudoso = otros.filter((o) => !creibles.includes(o));
+      } else if (otros.length) {
+        // Sigue sin resultados, pero se deja anotado que los otros motores
+        // devuelven cosas sin relacion: es un dato sobre ESOS motores.
+        t.otrosMotoresIrrelevantes = otros;
       }
     }
 
@@ -420,13 +602,14 @@ async function main() {
   for (const t of terms) t.recommendation = recommendation(t);
 
   terms.sort((a, b) => {
-    const rank = { motor_no_indexa: 0, redirige_a_plp: 7, sin_resultados: 1, error_consulta: 2, pocos_resultados: 3, resultados_irrelevantes: 4, resultados_dispersos: 5, ok: 6 };
+    const rank = { motor_no_indexa: 0, redirige_a_plp: 8, sin_resultados: 1, error_consulta: 2, pocos_resultados: 3, top_irrelevante: 4, resultados_irrelevantes: 5, resultados_dispersos: 6, ok: 7 };
     return (rank[a.status] ?? 9) - (rank[b.status] ?? 9) || b.searchCount - a.searchCount;
   });
 
   for (const t of terms) {
     const tag = {
       redirige_a_plp: '→ redirige a PLP', motor_no_indexa: '✗✗ NO ESTA EN EL INDICE', sin_resultados: '✗ SIN RESULTADOS', pocos_resultados: '⚠ pocos resultados',
+      top_irrelevante: '⚠ top sin relacion',
       resultados_dispersos: '⚠ resultados dispersos', resultados_irrelevantes: '✗ IRRELEVANTES',
       error_consulta: '? error', ok: '✓',
     }[t.status];
@@ -518,18 +701,38 @@ async function main() {
  */
 function compararMotores(terms) {
   if (MOTORES.length < 2) return null;
-  const malo = (st) => st === 'sin_resultados' || st === 'pocos_resultados' || st === 'resultados_dispersos';
+  // `top_irrelevante` cuenta como malo: un motor que devuelve 1000 productos
+  // con el top sin relacion no esta resolviendo la busqueda. Sin esto, un motor
+  // semantico nunca podia quedar mal y ganaba el bake-off por defecto.
+  const malo = (st) => st === 'sin_resultados' || st === 'pocos_resultados'
+    || st === 'resultados_dispersos' || st === 'top_irrelevante';
   const out = { primario: MOTOR_PRIMARIO.id, motores: {} };
 
   for (const motor of MOTORES) {
-    const conteo = { ok: 0, sin_resultados: 0, pocos_resultados: 0, resultados_dispersos: 0, error_consulta: 0 };
+    const conteo = { ok: 0, sin_resultados: 0, pocos_resultados: 0, resultados_dispersos: 0,
+      top_irrelevante: 0, error_consulta: 0 };
     let busquedasMalas = 0;
+    // La precision se promedia PONDERADA POR VOLUMEN: un termino con 26.748
+    // busquedas/mes y otro con 40 no pesan lo mismo, y promediar por termino
+    // licuaria el problema.
+    let precNum = 0, precDen = 0;
     for (const t of terms) {
-      const st = t.engines?.[motor.id]?.status;
+      const e = t.engines?.[motor.id];
+      const st = e?.status;
       if (st in conteo) conteo[st] += 1;
       if (malo(st)) busquedasMalas += t.searchCount;
+      if (e?.precisionTop != null) { precNum += e.precisionTop * t.searchCount; precDen += t.searchCount; }
     }
-    out.motores[motor.id] = { label: motor.label, ...conteo, busquedasMalas };
+    out.motores[motor.id] = {
+      label: motor.label,
+      clase: motor.clase || 'palabras',
+      // Se dice explicitamente si el total de este motor se puede comparar con
+      // el de otro: el de DY no, porque no filtra.
+      cuentaComparable: motor.cuentaComparable !== false,
+      precisionTop: precDen ? precNum / precDen : null,
+      ...conteo,
+      busquedasMalas,
+    };
   }
 
   for (const motor of MOTORES) {
