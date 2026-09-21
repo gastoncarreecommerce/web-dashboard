@@ -31,7 +31,13 @@
 const fs = require('fs');
 const path = require('path');
 
-const DY_CONFIG_PATH = path.join(__dirname, '..', 'config', 'dy-search.json');
+// La config de DY. La ruta es sobreescribible por env var para que los tests
+// no tengan que tocar el archivo del repo: al hacerlo, y como `node --test`
+// corre los archivos de test EN PARALELO, un test que borraba esta config
+// mientras otro la leia hacia fallar la corrida 1 de cada 30 veces, sin que
+// nada hubiera cambiado.
+const DY_CONFIG_PATH = process.env.DY_SEARCH_CONFIG
+  || path.join(__dirname, '..', 'config', 'dy-search.json');
 const PAGE_SIZE = 10; // cuántos productos se traen para juzgar relevancia
 
 function vtexBase() {

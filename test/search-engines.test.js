@@ -3,6 +3,7 @@ const assert = require('node:assert');
 const fs = require('fs');
 process.env.VTEX_ACCOUNT_NAME = 'carrefourar';
 const path=require('path');
+const os = require('os');
 const R = path.join(__dirname,'..');
 
 // respuestas tal como las documenta el OpenAPI de VTEX
@@ -68,17 +69,19 @@ test('DY: sin configurar dice QUE falta, no falla mudo', () => {
   assert.match(E.dynamicYield.porQueNo(), /DY_API_KEY/);
 
   // Y sin el archivo tampoco, nombra las dos cosas.
-  const p = path.join(R, 'config', 'dy-search.json');
-  const previo = fs.readFileSync(p, 'utf8');
-  fs.unlinkSync(p);
+  //
+  // Se apunta a una ruta que NO EXISTE en vez de borrar la config del repo.
+  // Borrarla hacia fallar la corrida 1 de cada 30: `node --test` corre los
+  // archivos de test en paralelo, y otro test leia esa config justo en los
+  // milisegundos en que no estaba.
+  process.env.DY_SEARCH_CONFIG = path.join(R, 'config', 'no-existe-a-proposito.json');
   try {
     delete require.cache[require.resolve(path.join(R,'src','search-engines.js'))];
     const E2 = require(path.join(R,'src','search-engines.js'));
     const por = E2.dynamicYield.porQueNo();
     assert.match(por, /DY_API_KEY/);
     assert.match(por, /dy-search\.json/);
-    console.log('   motivo sin nada configurado:', por);
-  } finally { fs.writeFileSync(p, previo); }
+  } finally { delete process.env.DY_SEARCH_CONFIG; }
 });
 
 test('DY: con config puesta, sustituye {{query}} y manda la key en el header', async () => {
@@ -90,12 +93,14 @@ test('DY: con config puesta, sustituye {{query}} y manda la key en el header', a
     totalPath: 'choices.0.variations.0.payload.data.totalResults',
     nameKey: 'sku.name', categoriesKey: 'sku.categories',
   };
-  // OJO: este test escribe en la MISMA ruta que usa el proyecto de verdad.
-  // Antes hacia unlinkSync al terminar y eso BORRABA la config real de DY.
-  // Ahora se respalda y se restaura.
-  const p = path.join(R,'config','dy-search.json');
-  const previo = fs.existsSync(p) ? fs.readFileSync(p,'utf8') : null;
+  // La config de prueba va a un archivo TEMPORAL propio de este test, y el
+  // modulo la toma por DY_SEARCH_CONFIG. Antes se escribia sobre la config real
+  // del repo respaldandola y restaurandola, lo que funcionaba de a uno pero no
+  // con los archivos de test corriendo en paralelo: otro test que leyera la
+  // config en ese momento veia la de prueba, o el archivo a medio escribir.
+  const p = path.join(os.tmpdir(), `dy-search-test-${process.pid}.json`);
   fs.writeFileSync(p, JSON.stringify(cfg));
+  process.env.DY_SEARCH_CONFIG = p;
   process.env.DY_API_KEY = 'secreta';
   try {
     delete require.cache[require.resolve(path.join(R,'src','search-engines.js'))];
@@ -113,7 +118,8 @@ test('DY: con config puesta, sustituye {{query}} y manda la key en el header', a
     assert.strictEqual(r.total, 12);
     assert.deepStrictEqual(r.products[0], { name:'Palta Hass', categories:['Frutas'] });
   } finally {
-    if (previo === null) fs.unlinkSync(p); else fs.writeFileSync(p, previo);
+    fs.unlinkSync(p);
+    delete process.env.DY_SEARCH_CONFIG;
     delete process.env.DY_API_KEY;
   }
 });
