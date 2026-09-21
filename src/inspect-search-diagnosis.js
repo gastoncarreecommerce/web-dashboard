@@ -239,6 +239,46 @@ async function detectarRedirects(terms) {
   return { hallados, fallados, porVia };
 }
 
+/**
+ * Cuanta gente usa el buscador y cuanta llega a ver resultados, desde los
+ * eventos que GA4 ya devolvio en la corrida de inspect:search.
+ *
+ * El dato que importa y que se ve de una: `search` lo disparan 517.218
+ * usuarios y `view_search_results` solo 52.659. Uno de cada diez. La
+ * explicacion mas probable no es que el buscador falle, sino los terminos con
+ * redireccion: mandan al cliente a una categoria, y una categoria no dispara
+ * view_search_results. Por eso el numero se muestra al lado de los redirects.
+ *
+ * LO QUE NO SE PUEDE SACAR DE ACA, y el modulo lo dice: la conversion de los
+ * que buscaron. Separar "compraron los que buscaron" de "compraron los que no"
+ * necesita segmentos por sesion, y la API de datos de GA4 no los expone. Los
+ * eventos vienen sueltos, cada uno con su conteo de usuarios, sin forma de
+ * cruzarlos por sesion. Preferible no tener el numero antes que inventarlo.
+ */
+function embudoDeUso(report) {
+  const de = (nombre) => (report.events || []).find((e) => e.event === nombre) || null;
+  const sesion = de('session_start');
+  const busca = de('search');
+  const resultados = de('view_search_results');
+  const compra = de('purchase');
+  if (!busca) return null;
+  return {
+    usuariosTotales: sesion?.users ?? null,
+    usuariosBuscaron: busca.users ?? null,
+    busquedas: busca.count ?? null,
+    busquedasPorUsuario: busca.users ? busca.count / busca.users : null,
+    usuariosVieronResultados: resultados?.users ?? null,
+    vistasDeResultados: resultados?.count ?? null,
+    compras: compra?.count ?? null,
+    usuariosCompraron: compra?.users ?? null,
+    ventana: `${report.days || 30} días`,
+    // Se anota la limitacion en el dato mismo, no solo en la pantalla: si
+    // alguien lee el JSON tiene que encontrarla ahi.
+    _sinConversionDeBuscador: 'GA4 no expone segmentos por sesión en su API de datos, '
+      + 'así que no se puede separar la compra de quien buscó de la de quien no.',
+  };
+}
+
 function topSearchTerms(report, n) {
   const searchAttempt = report.searchTermAttempts?.find((a) => a.eventName === 'search' && a.ok && a.sample?.length);
   if (!searchAttempt) return [];
@@ -704,6 +744,8 @@ async function main() {
     enginesCompared: MOTORES.map((e) => ({ id: e.id, label: e.label })),
     termsAnalyzed: terms.length,
     summary,
+    // Cuanta gente usa el buscador y cuanta llega a ver resultados.
+    funnel: embudoDeUso(inputReport),
     comparison: compararMotores(terms),
     ai: {
       activa: relevanciaIA.habilitado(),
@@ -850,6 +892,7 @@ function writeClientReport(report) {
     ai: report.ai,
     termsAnalyzed: report.termsAnalyzed,
     summary: report.summary,
+    funnel: report.funnel,
     recommendations: globalRecommendations(report.summary),
     topTerms,
     problems,
