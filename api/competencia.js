@@ -52,6 +52,11 @@ const UMBRAL_PCT = 70;
 // verdad. Lo que si atrapa es el caso que aparecio: $201 cuando las otras tres
 // tiendas decian $2.739, $2.800 y $2.800.
 const UMBRAL_DISPAR = 0.35;
+// Debajo de esta fraccion del precio de CATALOGO, una cotizacion de la
+// simulacion no se cree: el catalogo es el precio base y una promo no lo baja
+// al 7%. 0,25 deja pasar hasta un 75% de descuento, que es mas de lo que hace
+// cualquier supermercado en una unidad.
+const UMBRAL_SIM = 0.25;
 
 export const TIENDAS = {
   carrefour: { nombre: 'Carrefour', dominio: 'https://www.carrefour.com.ar', propia: true },
@@ -307,16 +312,37 @@ async function simular(tienda, itemId, sellerId, combo) {
  * reusarlo para los otros 93 productos cuesta 3 llamadas extra en el peor caso
  * en vez de 3 por producto.
  */
-async function descubrirCombo(tienda, itemId, sellerId, cp) {
+async function descubrirCombo(tienda, itemId, sellerId, cp, precioCatalogo) {
   const intentos = [];
   const { canales, aCiegas, nombres } = await canalesDe(tienda);
-  // Los sellers que despachan en ese CP. Si la tienda no esta regionalizada
-  // esto falla y se usa el del catalogo, que es lo que ya funcionaba para
-  // Carrefour, Masonline y DIA.
+  // EL SELLER DEL CATALOGO VA PRIMERO. Los de la region quedan como respaldo.
+  //
+  // Estaban al reves, y eso rompio Masonline: paso a cotizar con
+  // `masonlineprod0006` (el seller que devuelve la region para el CP 1425) en
+  // vez del `1` del catalogo, y ese seller tiene otra lista de precios. En 29
+  // productos devolvio entre el 5% y el 18% del precio real —el jabon Dove a
+  // $201 cuando la ficha dice $2.739— con el nombre del producto correcto, asi
+  // que no era un problema de mapeo.
+  //
+  // El seller del catalogo es el que la tienda muestra en su propia ficha, que
+  // es justamente el precio que se quiere comparar. Los de la region solo
+  // sirven si ese no puede cotizar.
   const reg = await regionDe(tienda, cp);
-  const sellers = reg.sellers ? [...reg.sellers, sellerId || '1'] : [null];
+  const sellers = reg.sellers ? [sellerId || '1', ...reg.sellers] : [null];
   for (const combo of combinaciones(cp, canales, sellers)) {
     const r = await simular(tienda, itemId, sellerId, combo);
+    // UNA COMBINACION QUE COTIZA UN PRECIO IMPOSIBLE NO SIRVE.
+    //
+    // El precio del catalogo es el base: una promocion lo baja, pero no al 7%.
+    // Si la simulacion devuelve muchisimo menos, ese seller o ese canal esta
+    // mirando otra lista de precios, y hay que seguir probando en vez de
+    // quedarse con el primero que responda 200.
+    if (!r.error && precioCatalogo > 0 && r.precio != null
+      && r.precio < precioCatalogo * UMBRAL_SIM) {
+      intentos.push(`${comboTxt(combo)} → cotizó ${r.precio} con el catálogo en ${precioCatalogo}`
+        + ` (${Math.round(r.precio / precioCatalogo * 100)}%): otra lista de precios`);
+      continue;
+    }
     if (!r.error) return { combo, primera: r, intentos, canales: nombres, region: reg };
     intentos.push(`${comboTxt(combo)} → ${r.error.slice(0, 90)}`);
   }
@@ -437,12 +463,16 @@ function normalizar(producto, eanPedido) {
   const seller = conStock || sellers[0] || {};
   const o = seller.commertialOffer || {};
 
-  // `Teasers` son las promos que VTEX muestra en la ficha ("2do al 70%", etc.).
+  // Las promos que VTEX muestra en la ficha ("2do al 70%", "Tarjeta Carrefour
+  // 15%"). Se leen las dos formas de cada campo: el catalogo las devuelve con
+  // la clave en mayuscula y otras APIs de VTEX en minuscula, y quedarse con una
+  // sola perdia promos sin motivo.
+  const nombreDePromo = (x) => x?.Name || x?.name || x?.Title || x?.title || null;
   const promos = [
-    ...(o.Teasers || []).map((t) => t?.Name).filter(Boolean),
-    ...(o.PromotionTeasers || []).map((t) => t?.Name).filter(Boolean),
-    ...(o.DiscountHighLight || []).map((d) => d?.Name || d?.name).filter(Boolean),
-  ];
+    ...(o.Teasers || o.teasers || []).map(nombreDePromo),
+    ...(o.PromotionTeasers || o.promotionTeasers || []).map(nombreDePromo),
+    ...(o.DiscountHighLight || o.discountHighlight || o.discountHighLight || []).map(nombreDePromo),
+  ].filter(Boolean);
 
   const precio = Number.isFinite(o.Price) ? o.Price : null;
   const lista = Number.isFinite(o.ListPrice) ? o.ListPrice : null;
@@ -688,7 +718,10 @@ export default async function handler(req, res) {
 
   await forEachLimit(Object.keys(porTiendaSim), CONCURRENCIA, async (id) => {
     const primero = porTiendaSim[id][0];
-    const d = await descubrirCombo(TIENDAS[id], primero.fila._itemId, primero.fila._sellerId, cp);
+    // Se le pasa el precio del catalogo para que pueda descartar una
+    // combinacion que cotiza un precio imposible.
+    const d = await descubrirCombo(TIENDAS[id], primero.fila._itemId,
+      primero.fila._sellerId, cp, primero.fila.precio);
     comboDe[id] = d.combo;
     if (d.primera) primeras.set(primero, d.primera);
     else canalErrores[id] = d.intentos;
@@ -702,6 +735,16 @@ export default async function handler(req, res) {
       // el cliente. Se marca para que la pagina lo diga en vez de darlo por
       // bueno.
       fila.simulacionFallo = sim.error;
+      return;
+    }
+    // La misma guarda, por fila. El descubrimiento valida la combinacion con UN
+    // producto y las otras 93 la reusan, asi que si en alguna la simulacion
+    // cotiza un precio imposible hay que atajarlo aca tambien: es la red que
+    // habria evitado las 29 filas de Masonline a un decimo del precio.
+    if (sim.precio != null && fila.precioCatalogo > 0
+      && sim.precio < fila.precioCatalogo * UMBRAL_SIM) {
+      fila.simulacionFallo = `la simulación cotizó ${sim.precio} con el catálogo en `
+        + `${fila.precioCatalogo} (${Math.round(sim.precio / fila.precioCatalogo * 100)}%)`;
       return;
     }
     if (sim.precio != null) fila.precio = sim.precio;
@@ -762,6 +805,18 @@ export default async function handler(req, res) {
     delete fila.listaSospechosa;
     delete fila.simulacionFallo;
     fila.fuentePrecio = 'ficha';
+    // El NOMBRE de la promocion no esta en ninguna API publica de estas
+    // cuentas: el catalogo de Cencosud no manda teasers y el JSON-LD de la
+    // ficha solo trae el precio. Pero que HAY una promo, y de cuanto, si se
+    // puede decir: es la diferencia entre el precio de la ficha y el del
+    // catalogo. Se deja anotado asi en vez de dejar la celda de promos vacia,
+    // que se leia como "esta tienda no tiene promociones".
+    if (Number.isFinite(base) && base > r.precio) {
+      const off = Math.round((1 - r.precio / base) * 100);
+      fila.promos = [...new Set([`−${off}% en la ficha (la tienda no publica el nombre)`,
+        ...(fila.promos || [])])];
+      fila.promoSinNombre = true;
+    }
     porFicha += 1;
     porFichaDe[id] = (porFichaDe[id] || 0) + 1;
   });

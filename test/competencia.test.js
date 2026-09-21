@@ -91,6 +91,21 @@ async function correr(porTienda, query) {
           })};
         }
       }
+      // `porSeller`: {seller: precio}. Sirve para el caso de un seller que
+      // cotiza otra lista de precios.
+      if (sim.porSeller) {
+        const body = JSON.parse(init.body);
+        const pr = sim.porSeller[String(body.items[0].seller)];
+        if (pr === undefined) {
+          return { ok: true, status: 200, json: async () => ({
+            items: [], messages: [{ text: 'Ítem no encontrado o no disponible' }],
+          })};
+        }
+        return { ok: true, status: 200, json: async () => ({
+          items: [{ sellingPrice: Math.round(pr * 100), price: Math.round(pr * 100) }],
+          ratesAndBenefitsData: { rateAndBenefitsIdentifiers: (sim.promos || []).map((n) => ({ name: n })) },
+        })};
+      }
       if (sim.seller !== undefined) {
         const body = JSON.parse(init.body);
         if (String(body.items[0].seller) !== String(sim.seller)) {
@@ -895,4 +910,88 @@ test('si de a uno tampoco aparece, no se inventa: encontrado false', async () =>
   }, { eans: '7891150019560', tiendas: 'masonline' });
 
   assert.strictEqual(res.body.resultados['7891150019560'].masonline.encontrado, false);
+});
+
+// ── El seller del catalogo manda ────────────────────────────────────────────
+// Los sellers de la region se habian puesto ANTES que el del catalogo, y eso
+// rompio Masonline: paso a cotizar con `masonlineprod0006` (el que devuelve la
+// region para el CP 1425), que tiene otra lista de precios. En 29 productos
+// devolvio entre el 5% y el 18% del precio real, con el nombre del producto
+// correcto — el jabon Dove a $201 cuando la ficha dice $2.739.
+
+test('cotiza con el seller del catalogo, no con el de la region', async () => {
+  sesionOk = true;
+  CANALES = {}; FICHAS = {};
+  REGIONES = { 'www.masonline.com.ar': [
+    { id: 'v2.X', sellers: [{ id: 'masonlineprod0006', name: 'MasOnline regional' }] },
+  ] };
+  SIMS = { 'www.masonline.com.ar': { porSeller: { 1: 2739, masonlineprod0006: 201 } } };
+  const { res } = await correr({
+    'www.masonline.com.ar': [prod('7891150019560', 'Jabón Dove 90 g', { precio: 2739 })],
+  }, { eans: '7891150019560', tiendas: 'masonline' });
+
+  const m = res.body.resultados['7891150019560'].masonline;
+  assert.strictEqual(m.precio, 2739, 'el precio que muestra la ficha de la tienda');
+  assert.match(res.body.comboPorTienda.masonline, /seller=1/);
+});
+
+test('si el del catalogo cotiza un precio imposible, se descarta y se sigue', async () => {
+  sesionOk = true;
+  CANALES = {}; FICHAS = {};
+  REGIONES = { 'www.masonline.com.ar': [
+    { id: 'v2.X', sellers: [{ id: 'otro-seller', name: 'otro' }] },
+  ] };
+  // Ahora el malo es el del catalogo y el bueno el de la region: la regla no es
+  // "confiar en el seller 1", es "no creer una cotizacion imposible".
+  SIMS = { 'www.masonline.com.ar': { porSeller: { 1: 201, 'otro-seller': 2739 } } };
+  const { res } = await correr({
+    'www.masonline.com.ar': [prod('7891150019560', 'Jabón Dove 90 g', { precio: 2739 })],
+  }, { eans: '7891150019560', tiendas: 'masonline' });
+
+  const m = res.body.resultados['7891150019560'].masonline;
+  assert.strictEqual(m.precio, 2739);
+  assert.match(res.body.comboPorTienda.masonline, /seller=otro-seller/);
+});
+
+test('una promo real de -60% sobre el catalogo SI se acepta', async () => {
+  sesionOk = true;
+  CANALES = {}; REGIONES = {}; FICHAS = {};
+  SIMS = { 'www.dia.com.ar': { precio: 1200 }, 'diaonline.supermercadosdia.com.ar': { precio: 1200 } };
+  const { res } = await correr({
+    'diaonline.supermercadosdia.com.ar': [prod('7891150019560', 'Jabón', { precio: 3000 })],
+  }, { eans: '7891150019560', tiendas: 'dia' });
+
+  assert.strictEqual(res.body.resultados['7891150019560'].dia.precio, 1200,
+    '40% del catálogo está arriba del umbral: es una oferta creíble');
+});
+
+// ── Las promos de los competidores ─────────────────────────────────────────
+
+test('lee los teasers del catalogo en minuscula tambien', async () => {
+  sesionOk = true;
+  CANALES = {}; REGIONES = {}; FICHAS = {}; SIMS = {};
+  const p = prod('7891150019560', 'Jabón', { precio: 2739 });
+  // Algunas APIs de VTEX devuelven la clave en minuscula. Antes se leia solo
+  // `Name` y estas promos se perdian.
+  p.items[0].sellers[0].commertialOffer.Teasers = [{ name: '2do al 50%' }];
+  const { res } = await correr({ 'www.masonline.com.ar': [p] },
+    { eans: '7891150019560', tiendas: 'masonline' });
+
+  assert.deepStrictEqual(res.body.resultados['7891150019560'].masonline.promos, ['2do al 50%']);
+});
+
+test('cuando el precio sale de la ficha, se dice el descuento aunque no haya nombre', async () => {
+  sesionOk = true;
+  CANALES = {}; REGIONES = {}; SIMS = {};     // la simulacion no cotiza
+  FICHAS = { 'www.jumbo.com.ar': ficha('7799155000197', '405993', 'Agua 2 L', 1982.5) };
+  const { res } = await correr({
+    'www.jumbo.com.ar': [prod('7799155000197', 'Agua 2L Jumbo', { precio: 3050 })],
+  }, { eans: '7799155000197', tiendas: 'jumbo' });
+
+  const j = res.body.resultados['7799155000197'].jumbo;
+  assert.strictEqual(j.promos.length, 1);
+  assert.match(j.promos[0], /−35%/, 'el tamaño del descuento sí se puede saber');
+  assert.match(j.promos[0], /no publica el nombre/,
+    'y se dice por qué no hay nombre, en vez de dejar la celda vacía');
+  assert.strictEqual(j.promoSinNombre, true);
 });

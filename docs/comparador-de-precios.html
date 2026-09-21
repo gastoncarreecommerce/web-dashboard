@@ -600,9 +600,14 @@
 
     // ── Hoja 2: Detalle ─────────────────────────────────────────────────────
     const est2 = [];
-    const filas2 = [['EAN', 'Producto', 'Tienda', 'Precio', 'Precio anterior', 'Descuento',
-      'Dif. vs nosotros', 'Stock', 'Promociones', 'De dónde sale el precio', 'Link']];
-    est2.push(new Array(11).fill(E.encabezado));
+    // `Precio de catálogo` va al lado del precio: es el contraste que permite
+    // ver de una si la simulación cotizó algo imposible. Sin esa columna, las
+    // 29 filas de Masonline a un décimo del precio no se podían auditar desde
+    // el Excel.
+    const filas2 = [['EAN', 'Producto', 'Tienda', 'Precio', 'Precio de catálogo',
+      'Precio anterior', 'Descuento', 'Dif. vs nosotros', 'Stock', 'Promociones',
+      'De dónde sale el precio', 'Link']];
+    est2.push(new Array(12).fill(E.encabezado));
 
     for (const ean of eans) {
       const porTienda = d.resultados[ean] || {};
@@ -617,11 +622,11 @@
           : x.fuentePrecio === 'ficha' ? 'JSON-LD de la ficha'
             : x.fuentePrecio === 'simulacion' ? 'simulación de carrito' : 'catálogo';
         filas2.push([ean, x.nombre || nombreDe(ean), t.nombre,
-          x.precio ?? null, x.precioLista ?? null,
+          x.precio ?? null, x.precioCatalogo ?? null, x.precioLista ?? null,
           x.descuentoPct != null ? x.descuentoPct / 100 : null,
           dif, x.disponible ? 'Sí' : 'No', (x.promos || []).join(' · '), fuente, x.url || '']);
         est2.push([E.ean, E.normal, E.normal,
-          x.simulacionFallo ? E.monedaDudosa : E.moneda, E.moneda, E.pct1,
+          x.simulacionFallo ? E.monedaDudosa : E.moneda, E.moneda, E.moneda, E.pct1,
           dif == null ? E.delta : dif < 0 ? E.deltaMala : E.deltaBuena,
           E.normal, E.envuelto, E.normal, E.normal]);
       }
@@ -631,7 +636,7 @@
       name: 'Detalle',
       rows: filas2,
       columnasFijas: 3,
-      widths: [16, 40, 14, 14, 15, 11, 14, 8, 38, 24, 50],
+      widths: [16, 40, 14, 14, 16, 15, 11, 14, 8, 38, 26, 50],
       estiloDe: (f, c) => est2[f - 1]?.[c] ?? null,
     };
 
