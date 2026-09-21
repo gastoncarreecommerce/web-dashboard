@@ -1,3 +1,47 @@
+async function detectarRedirects(terms) {
+  const base = vtexBase();
+  const slug = (t) => sinTildes(t).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+  const pedir = async (url) => {
+    try {
+      const r = await fetch(url, {
+        redirect: 'manual',
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; WebDash-diagnostico)', Accept: 'text/html' },
+      });
+      return { status: r.status, location: r.headers.get('location') || null };
+    } catch { return { status: 0, location: null }; }
+  };
+  const esRedirect = (r) => r.status >= 300 && r.status < 400 && r.location;
+
+  const hallados = new Map();
+  const porVia = {};
+  let fallados = 0;
+  await forEachLimit(terms, CONCURRENCY, async (t) => {
+    const anotar = (url, via) => {
+      hallados.set(t.term, { url, via });
+      porVia[via] = (porVia[via] || 0) + 1;
+    };
+
+    // 1. El endpoint de redirects de Intelligent Search. Es la fuente
+    //    autoritativa: es lo mismo que consulta el storefront.
+    try {
+      const r = await vtexSearchRedirect(t.term);
+      if (r) return anotar(r.destino, `IS (${r.via})`);
+    } catch { /* se sigue con las otras señales */ }
+
+    // 2. Un 301/302 del servidor sobre la ruta pelada o la URL de busqueda.
+    //    Cubre los redirects definidos a nivel de ruta en VTEX.
+    const s = slug(t.term);
+    if (!s) return;
+    const ruta = await pedir(`${base}/${s}`);
+    if (esRedirect(ruta)) return anotar(ruta.location, 'HTTP 301 en la ruta');
+    const busq = await pedir(`${base}/${s}?_q=${encodeURIComponent(t.term)}&map=ft`);
+    if (esRedirect(busq)) return anotar(busq.location, 'HTTP 301 en la busqueda');
+    if (ruta.status === 0 && busq.status === 0) fallados += 1;
+  });
+  return { hallados, fallados, porVia };
+}
+
 'use strict';
 
 /**
@@ -52,7 +96,7 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { motoresActivos, vtexCorrection, vtexBase } = require('./search-engines');
+const { motoresActivos, vtexCorrection, vtexBase, vtexSearchRedirect } = require('./search-engines');
 const relevanciaIA = require('./search-relevance-ai');
 
 const IN_PATH = path.join(__dirname, '..', 'config', 'search-inspect.report.json');
@@ -375,9 +419,16 @@ async function findVerifiedSuggestion(term) {
 function recommendation(t) {
   if (t.status === 'ok') return null;
   if (t.status === 'redirige_a_plp') {
-    return `Redirige a ${t.redirectUrl || 'una PLP'}: el cliente no ve resultados de búsqueda, `
-      + `así que la cantidad de productos que devuelva la API no lo afecta. `
-      + `Lo que hay que revisar es si esa categoría es el destino correcto para este término.`;
+    // Que el motor devuelva 0 para un termino redirigido es lo ESPERADO, no un
+    // problema: cuando hay redireccion configurada, IS responde 0 productos y
+    // el destino. Decirlo explicitamente porque este mismo termino venia
+    // reportado como "no esta en el indice".
+    const cero = Object.values(t.engines || {}).some((e) => (e.results || 0) === 0);
+    return `Redirige a ${t.redirectUrl || 'una categoría'}: el cliente no ve una página de `
+      + `resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta.`
+      + (cero ? ' Los 0 resultados del motor son lo esperado en un término redirigido, no una'
+        + ' falla de índice.' : '')
+      + ` Lo que hay que revisar es si esa categoría es el destino correcto para este término.`;
   }
   if (t.status === 'motor_no_indexa') {
     const vol = `${t.searchCount.toLocaleString('es-AR')} búsquedas/mes`;
@@ -470,6 +521,7 @@ async function main() {
   }
   const volRedir = terms.filter((t) => REDIRECTS.has(t.term)).reduce((a, t) => a + t.searchCount, 0);
   const volTotal = terms.reduce((a, t) => a + t.searchCount, 0);
+  for (const [via, n] of Object.entries(red.porVia)) console.log(`     ${n} detectados por: ${via}`);
   console.log(`  ${red.hallados.size} redirigen a una categoria`
     + ` (${volTotal ? (volRedir / volTotal * 100).toFixed(1) : '0'}% del volumen de busqueda):`
     + ' esos no se juzgan por cantidad de resultados, el cliente llega a una PLP.');
@@ -488,6 +540,7 @@ async function main() {
         const v = clasificar(r, motor, t.term);
         t.engines[motor.id] = {
           results: r.total, resultsCapped: r.capped, sampleProducts: r.sample, ...v,
+          ...(r.redirect ? { redirect: r.redirect } : {}),
         };
       } catch (e) {
         t.engines[motor.id] = { status: 'error_consulta', error: e.message };
@@ -506,9 +559,17 @@ async function main() {
     // "asucar" traia 2.116 productos y lo proponia como correccion.
     // Un termino con redirect no se juzga por cantidad de resultados: el cliente
     // va a una PLP. Se marca como tal y se sale.
+    // El redirect puede venir de tres lugares. El de la propia respuesta de
+    // busqueda es el mas directo: IS devuelve 0 productos Y el destino en la
+    // MISMA llamada, asi que un termino redirigido nunca deberia haber quedado
+    // como "no esta en el indice".
+    const delMotor = Object.values(t.engines).map((e) => e.redirect).find(Boolean);
+    if (delMotor && !REDIRECTS.has(t.term)) REDIRECTS.set(t.term, delMotor);
+
     if (REDIRECTS.has(t.term)) {
       t.status = 'redirige_a_plp';
       t.redirectUrl = REDIRECTS.get(t.term);
+      if (delMotor) t.redirectDetectadoEn = 'la respuesta de búsqueda del motor';
       return;
     }
 

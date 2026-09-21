@@ -109,3 +109,51 @@ test('sin sample no se inventa una precision', () => {
   assert.strictEqual(r.precisionTop, undefined, 'preferir no medir antes que medir mal');
   assert.strictEqual(r.status, 'ok');
 });
+
+// ── El redirect que viene en la respuesta de busqueda ───────────────────────
+// Buscar "aceite" en el sitio lleva a /almacen/aceites-y-vinagres, con
+// initialQuery y searchState en la URL: el redirect lo hace el navegador, no un
+// 301 del servidor. En VTEX eso significa que Intelligent Search devolvio 0
+// productos Y el destino en la misma respuesta. El adaptador tiraba ese campo,
+// y por eso "aceite" (24.444 busquedas/mes) figuraba como "no esta en el indice".
+
+test('el adaptador de IS devuelve el redirect que trae la respuesta', async () => {
+  const { vtexIS } = require(path.join(__dirname, '..', 'src', 'search-engines.js'));
+  const previo = { cuenta: process.env.VTEX_ACCOUNT_NAME, fetch: global.fetch };
+  process.env.VTEX_ACCOUNT_NAME = 'carrefourar';
+  global.fetch = async () => ({
+    ok: true, status: 200,
+    json: async () => ({ products: [], recordsFiltered: 0, redirect: '/almacen/aceites-y-vinagres' }),
+    text: async () => '{}',
+    headers: { get: () => 'application/json' },
+  });
+  try {
+    const r = await vtexIS.search('aceite');
+    assert.strictEqual(r.total, 0, 'IS devuelve 0 productos, eso es cierto');
+    assert.strictEqual(r.redirect, '/almacen/aceites-y-vinagres',
+      'y en la MISMA respuesta dice a donde manda al cliente');
+  } finally {
+    process.env.VTEX_ACCOUNT_NAME = previo.cuenta;
+    global.fetch = previo.fetch;
+  }
+});
+
+test('sin redirect configurado, el campo queda en null y no se inventa', async () => {
+  const { vtexIS } = require(path.join(__dirname, '..', 'src', 'search-engines.js'));
+  const previo = { cuenta: process.env.VTEX_ACCOUNT_NAME, fetch: global.fetch };
+  process.env.VTEX_ACCOUNT_NAME = 'carrefourar';
+  global.fetch = async () => ({
+    ok: true, status: 200,
+    json: async () => ({ products: [{ productName: 'Aceite Natura' }], recordsFiltered: 12 }),
+    text: async () => '{}',
+    headers: { get: () => 'application/json' },
+  });
+  try {
+    const r = await vtexIS.search('aceite');
+    assert.strictEqual(r.redirect, null);
+    assert.strictEqual(r.total, 12);
+  } finally {
+    process.env.VTEX_ACCOUNT_NAME = previo.cuenta;
+    global.fetch = previo.fetch;
+  }
+});

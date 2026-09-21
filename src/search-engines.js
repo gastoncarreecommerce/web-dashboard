@@ -118,6 +118,17 @@ const vtexIS = {
       total: Number.isFinite(total) ? total : products.length,
       capped: !Number.isFinite(total) && products.length >= PAGE_SIZE,
       products: products.map(normalizeVtexProduct),
+      // EL CAMPO QUE SE VENIA TIRANDO A LA BASURA.
+      //
+      // Cuando el termino tiene una redireccion configurada, IS devuelve 0
+      // productos Y el destino de la redireccion. Leyendo solo `products` el
+      // diagnostico concluia "el termino no esta en el indice" para "aceite"
+      // (24.444 busquedas/mes) cuando en el sitio te lleva derecho a
+      // /almacen/aceites-y-vinagres. El storefront usa este campo para navegar,
+      // y por eso la URL final trae initialQuery y searchState: la redireccion
+      // la hace el navegador, no un 301 del servidor, asi que buscarla con un
+      // HEAD tampoco la encontraba.
+      redirect: typeof body?.redirect === 'string' && body.redirect ? body.redirect : null,
       raw: body,
     };
   },
@@ -249,6 +260,37 @@ const dynamicYield = {
   },
 };
 
+/**
+ * El destino de la redireccion configurada para un termino, segun Intelligent
+ * Search.
+ *
+ * Se prueban dos rutas porque la documentacion publica de IS no nombra esta con
+ * claridad y no se puede confirmar sin pegarle a la cuenta: la primera que
+ * responda 200 con un destino gana, y se devuelve CUAL funciono para que el
+ * reporte no haga pasar una ruta adivinada por un dato.
+ *
+ * Igual no es la fuente principal: `product_search` ya trae el campo
+ * `redirect` en la misma llamada que se hace para contar productos, asi que
+ * esto es un segundo camino por si alguna cuenta no lo incluye ahi.
+ */
+async function vtexSearchRedirect(term) {
+  const rutas = [
+    `${vtexBase()}/api/io/_v/api/intelligent-search/search_redirect/?query=${encodeURIComponent(term)}`,
+    `${vtexBase()}/api/io/_v/api/intelligent-search/redirect/?query=${encodeURIComponent(term)}`,
+  ];
+  for (const url of rutas) {
+    try {
+      const { body } = await getJson(url);
+      // La respuesta puede ser {redirect}, {url} o una lista de reglas.
+      const destino = body?.redirect || body?.url
+        || (Array.isArray(body?.redirects) ? body.redirects[0]?.url : null)
+        || (Array.isArray(body) ? body[0]?.url || body[0]?.redirect : null);
+      if (typeof destino === 'string' && destino) return { destino, via: url.split('/api/')[1] };
+    } catch { /* esa ruta no existe en esta cuenta: se prueba la siguiente */ }
+  }
+  return null;
+}
+
 const ENGINES = { [vtexLegacy.id]: vtexLegacy, [vtexIS.id]: vtexIS, [dynamicYield.id]: dynamicYield };
 
 /** Los motores pedidos por env (SEARCH_ENGINES="vtex-is,dy"), quedándose solo
@@ -311,6 +353,7 @@ async function vtexAutocomplete(term) {
 module.exports = {
   ENGINES,
   vtexBase,
+  vtexSearchRedirect,
   motoresActivos,
   vtexLegacy,
   vtexIS,
