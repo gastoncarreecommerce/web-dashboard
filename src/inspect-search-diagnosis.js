@@ -1,47 +1,3 @@
-async function detectarRedirects(terms) {
-  const base = vtexBase();
-  const slug = (t) => sinTildes(t).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-
-  const pedir = async (url) => {
-    try {
-      const r = await fetch(url, {
-        redirect: 'manual',
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; WebDash-diagnostico)', Accept: 'text/html' },
-      });
-      return { status: r.status, location: r.headers.get('location') || null };
-    } catch { return { status: 0, location: null }; }
-  };
-  const esRedirect = (r) => r.status >= 300 && r.status < 400 && r.location;
-
-  const hallados = new Map();
-  const porVia = {};
-  let fallados = 0;
-  await forEachLimit(terms, CONCURRENCY, async (t) => {
-    const anotar = (url, via) => {
-      hallados.set(t.term, { url, via });
-      porVia[via] = (porVia[via] || 0) + 1;
-    };
-
-    // 1. El endpoint de redirects de Intelligent Search. Es la fuente
-    //    autoritativa: es lo mismo que consulta el storefront.
-    try {
-      const r = await vtexSearchRedirect(t.term);
-      if (r) return anotar(r.destino, `IS (${r.via})`);
-    } catch { /* se sigue con las otras señales */ }
-
-    // 2. Un 301/302 del servidor sobre la ruta pelada o la URL de busqueda.
-    //    Cubre los redirects definidos a nivel de ruta en VTEX.
-    const s = slug(t.term);
-    if (!s) return;
-    const ruta = await pedir(`${base}/${s}`);
-    if (esRedirect(ruta)) return anotar(ruta.location, 'HTTP 301 en la ruta');
-    const busq = await pedir(`${base}/${s}?_q=${encodeURIComponent(t.term)}&map=ft`);
-    if (esRedirect(busq)) return anotar(busq.location, 'HTTP 301 en la busqueda');
-    if (ruta.status === 0 && busq.status === 0) fallados += 1;
-  });
-  return { hallados, fallados, porVia };
-}
-
 'use strict';
 
 /**
@@ -255,18 +211,32 @@ async function detectarRedirects(terms) {
   const esRedirect = (r) => r.status >= 300 && r.status < 400 && r.location;
 
   const hallados = new Map();
+  const porVia = {};
   let fallados = 0;
   await forEachLimit(terms, CONCURRENCY, async (t) => {
+    const anotar = (url, via) => {
+      hallados.set(t.term, { url, via });
+      porVia[via] = (porVia[via] || 0) + 1;
+    };
+
+    // 1. El endpoint de redirects de Intelligent Search. Es la fuente
+    //    autoritativa: es lo mismo que consulta el storefront.
+    try {
+      const r = await vtexSearchRedirect(t.term);
+      if (r) return anotar(r.destino, `IS (${r.via})`);
+    } catch { /* se sigue con las otras señales */ }
+
+    // 2. Un 301/302 del servidor sobre la ruta pelada o la URL de busqueda.
+    //    Cubre los redirects definidos a nivel de ruta en VTEX.
     const s = slug(t.term);
     if (!s) return;
     const ruta = await pedir(`${base}/${s}`);
-    const busq = esRedirect(ruta) ? null
-      : await pedir(`${base}/${s}?_q=${encodeURIComponent(t.term)}&map=ft`);
-    if (esRedirect(ruta)) hallados.set(t.term, { url: ruta.location, via: 'ruta' });
-    else if (busq && esRedirect(busq)) hallados.set(t.term, { url: busq.location, via: 'busqueda' });
-    else if (ruta.status === 0 && (!busq || busq.status === 0)) fallados += 1;
+    if (esRedirect(ruta)) return anotar(ruta.location, 'HTTP 301 en la ruta');
+    const busq = await pedir(`${base}/${s}?_q=${encodeURIComponent(t.term)}&map=ft`);
+    if (esRedirect(busq)) return anotar(busq.location, 'HTTP 301 en la busqueda');
+    if (ruta.status === 0 && busq.status === 0) fallados += 1;
   });
-  return { hallados, fallados };
+  return { hallados, fallados, porVia };
 }
 
 function topSearchTerms(report, n) {
@@ -907,6 +877,6 @@ function updateHistory(summary, termsAnalyzed) {
 }
 
 main().catch((err) => {
-  console.error('inspect-search-diagnosis falló:', err.message);
+  console.error('inspect-search-diagnosis falló:', err.stack || err.message);
   process.exit(1);
 });
