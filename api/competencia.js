@@ -503,8 +503,29 @@ function normalizar(producto, eanPedido) {
     ...(o.DiscountHighLight || o.discountHighlight || o.discountHighLight || []).map(nombreDePromo),
   ].filter(Boolean);
 
-  const precio = Number.isFinite(o.Price) ? o.Price : null;
-  const lista = Number.isFinite(o.ListPrice) ? o.ListPrice : null;
+  const hayStock = Boolean(o.IsAvailable && (o.AvailableQuantity || 0) > 0);
+
+  // UN PRECIO DE UN PRODUCTO SIN STOCK NO ES UN PRECIO.
+  //
+  // Reportado con la gaseosa Manaos 2,25 L (EAN 7798113300010): Jumbo y Disco
+  // devolvian $32,49 y Masonline $0, contra $2.420 de Carrefour y $2.400 de
+  // DIA. Las tres que daban un numero absurdo eran exactamente las tres SIN
+  // STOCK. Cuando un SKU no esta disponible, VTEX devuelve en `Price` un valor
+  // residual o directamente 0, y se estaba tomando como precio.
+  //
+  // (Y corrige un diagnostico anterior: ese $32,49 se habia atribuido a un
+  // precio mal cargado en Cencosud. No era eso.)
+  //
+  // El producto se sigue reportando —la tienda lo tiene publicado, y "sin
+  // stock" es informacion util— pero sin precio, que es lo unico honesto: no
+  // hay ningun precio al que se pueda comprar.
+  const precioCrudo = Number.isFinite(o.Price) ? o.Price : null;
+  const precio = (hayStock && precioCrudo > 0) ? precioCrudo : null;
+  const lista = (precio != null && Number.isFinite(o.ListPrice)) ? o.ListPrice : null;
+  const sinPrecio = precio == null
+    ? (!hayStock ? 'sin stock: la tienda no publica un precio de venta'
+      : 'la tienda devolvió precio 0')
+    : null;
 
   // Cuánto descuento implica la lista, si la cuenta da.
   const pct = (precio != null && lista != null && lista > precio)
@@ -534,7 +555,8 @@ function normalizar(producto, eanPedido) {
     precioLista: sospechosa ? null : lista,
     descuentoPct: sospechosa ? null : pct,
     ...(sospechosa ? { listaSospechosa: { valor: lista, pctImplicado: pct } } : {}),
-    disponible: Boolean(o.IsAvailable && (o.AvailableQuantity || 0) > 0),
+    disponible: hayStock,
+    ...(sinPrecio ? { sinPrecio } : {}),
     promos: [...new Set(promos)],
     unidad: item.unitMultiplier && item.unitMultiplier !== 1 ? item.unitMultiplier : null,
     medida: item.measurementUnit || null,
@@ -683,7 +705,9 @@ export default async function handler(req, res) {
             if (fila.url && fila.url.startsWith('/')) fila.url = tienda.dominio + fila.url;
             resultados[ean][id] = fila;
             fila._tienda = id;
-            if (fila._itemId) aSimular.push({ ean, id, fila });
+            // Sin stock no se simula: no hay precio que cotizar, y la
+            // simulacion de un item no disponible devuelve 0 o falla.
+            if (fila._itemId && fila.precio != null) aSimular.push({ ean, id, fila });
           }
         }
       }
@@ -724,7 +748,7 @@ export default async function handler(req, res) {
       fila.porConsultaIndividual = true;
       resultados[ean][id] = fila;
       fila._tienda = id;
-      if (fila._itemId) aSimular.push({ ean, id, fila });
+      if (fila._itemId && fila.precio != null) aSimular.push({ ean, id, fila });
       recuperados += 1;
     } catch (e) {
       (errores[id] = errores[id] || []).push(`EAN ${ean}: ${e.message}`);
@@ -774,6 +798,11 @@ export default async function handler(req, res) {
       && sim.precio < fila.precioCatalogo * UMBRAL_SIM) {
       fila.simulacionFallo = `la simulación cotizó ${sim.precio} con el catálogo en `
         + `${fila.precioCatalogo} (${Math.round(sim.precio / fila.precioCatalogo * 100)}%)`;
+      return;
+    }
+    // Una cotizacion de 0 no es un precio: pasa con items sin stock.
+    if (sim.precio != null && sim.precio <= 0) {
+      fila.sinPrecio = 'la simulación cotizó 0';
       return;
     }
     if (sim.precio != null) fila.precio = sim.precio;

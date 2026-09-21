@@ -1045,3 +1045,67 @@ test('un producto por peso no se rechaza por la guarda del 25%', async () => {
   assert.strictEqual(cf.precio, 1250, 'la cotizacion se acepta');
   assert.ok(!cf.simulacionFallo, 'y no queda marcada como sin verificar');
 });
+
+// ── Un precio de un producto sin stock no es un precio ─────────────────────
+// Reportado con la gaseosa Manaos 2,25 L (EAN 7798113300010): Jumbo y Disco
+// devolvian $32,49 y Masonline $0, contra $2.420 de Carrefour y $2.400 de DIA.
+// Las tres que daban un numero absurdo eran exactamente las tres SIN STOCK:
+// VTEX devuelve en `Price` un valor residual cuando el SKU no esta disponible.
+
+test('sin stock, el producto se reporta pero SIN precio', async () => {
+  sesionOk = true;
+  CANALES = {}; REGIONES = {}; FICHAS = {}; SIMS = {};
+  const { res } = await correr({
+    'www.jumbo.com.ar': [prod('7798113300010', 'Gaseosa Manaos 2,25 L',
+      { precio: 32.49, stock: false })],
+  }, { eans: '7798113300010', tiendas: 'jumbo' });
+
+  const j = res.body.resultados['7798113300010'].jumbo;
+  assert.strictEqual(j.encontrado, true, 'la tienda lo tiene publicado: eso es info util');
+  assert.strictEqual(j.disponible, false);
+  assert.strictEqual(j.precio, null, '$32,49 no es un precio al que se pueda comprar');
+  assert.match(j.sinPrecio, /sin stock/);
+});
+
+test('un precio 0 tampoco se toma, aunque diga que hay stock', async () => {
+  sesionOk = true;
+  CANALES = {}; REGIONES = {}; FICHAS = {}; SIMS = {};
+  const { res } = await correr({
+    'www.masonline.com.ar': [prod('7798113300010', 'Gaseosa Manaos Cola 2.25 L', { precio: 0 })],
+  }, { eans: '7798113300010', tiendas: 'masonline' });
+
+  const m = res.body.resultados['7798113300010'].masonline;
+  assert.strictEqual(m.precio, null);
+  assert.match(m.sinPrecio, /precio 0/);
+});
+
+test('sin precio no se simula: no hay nada que cotizar', async () => {
+  sesionOk = true;
+  CANALES = {}; REGIONES = {}; FICHAS = {};
+  SIMS = { 'www.jumbo.com.ar': { precio: 999 } };
+  const { res, llamadas } = await correr({
+    'www.jumbo.com.ar': [prod('7798113300010', 'Manaos', { precio: 32.49, stock: false })],
+  }, { eans: '7798113300010', tiendas: 'jumbo' });
+
+  assert.strictEqual(res.body.resultados['7798113300010'].jumbo.precio, null);
+  assert.ok(!llamadas.some((u) => u.includes('orderForms/simulation')),
+    'se ahorra la llamada y se evita que una cotizacion de 0 entre como precio');
+});
+
+test('el que SI tiene stock conserva su precio y gana normalmente', async () => {
+  sesionOk = true;
+  CANALES = {}; REGIONES = {}; FICHAS = {};
+  SIMS = { 'www.carrefour.com.ar': { precio: 2420 }, 'diaonline.supermercadosdia.com.ar': { precio: 2400 } };
+  const { res } = await correr({
+    'www.carrefour.com.ar': [prod('7798113300010', 'Manaos', { precio: 2420 })],
+    'www.jumbo.com.ar': [prod('7798113300010', 'Manaos', { precio: 32.49, stock: false })],
+    'diaonline.supermercadosdia.com.ar': [prod('7798113300010', 'Manaos', { precio: 2400 })],
+  }, { eans: '7798113300010', tiendas: 'carrefour,jumbo,dia' });
+
+  const r = res.body.resultados['7798113300010'];
+  assert.strictEqual(r.carrefour.precio, 2420);
+  assert.strictEqual(r.dia.precio, 2400);
+  assert.strictEqual(r.jumbo.precio, null);
+  // Y sin el 32,49 ensuciando la mediana, nadie queda marcado como no creible.
+  assert.ok(!r.dia.precioDisparatado);
+});

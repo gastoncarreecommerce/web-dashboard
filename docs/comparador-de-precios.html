@@ -426,7 +426,12 @@
           || Boolean(x.precioDisparatado) || Boolean(x.eanNoCoincide);
         const barato = min != null && x.precio === min && x.disponible && !malo;
 
-        const bits = [`<span class="precio">${plata(x.precio)}</span>`];
+        // Sin precio se muestra un guion y el motivo, no un numero. La gaseosa
+        // Manaos aparecia a $32,49 en Jumbo y $0 en Masonline: las dos sin
+        // stock, con un precio residual que VTEX devuelve igual.
+        const bits = x.precio == null
+          ? [`<span class="nada">—</span>`]
+          : [`<span class="precio">${plata(x.precio)}</span>`];
 
         // Antes / descuento, en un solo renglon.
         if (x.precioLista != null && x.descuentoPct) {
@@ -442,7 +447,12 @@
           }
         }
 
-        if (!x.disponible) bits.push('<span class="ojo" title="La tienda lo tiene publicado pero sin stock.">sin stock</span>');
+        if (!x.disponible) {
+          bits.push(`<span class="ojo" title="${esc(x.sinPrecio
+            || 'La tienda lo tiene publicado pero sin stock.')}">sin stock</span>`);
+        } else if (x.sinPrecio) {
+          bits.push(`<span class="ojo" title="${esc(x.sinPrecio)}">sin precio</span>`);
+        }
 
         // El nombre que encontró ESTA tienda, cuando no es el mismo de la fila.
         // La fila muestra un solo nombre —el de la primera tienda que tenga el
@@ -618,7 +628,8 @@
         const x = porTienda[t.id];
         if (!x || !x.encontrado) continue;
         const dif = (base != null && !t.propia && comparable(x)) ? x.precio / base - 1 : null;
-        const fuente = x.eanNoCoincide ? 'el SKU no declara ese EAN'
+        const fuente = x.sinPrecio ? x.sinPrecio
+          : x.eanNoCoincide ? 'el SKU no declara ese EAN'
           : x.precioDisparatado ? `no creíble: ${x.precioDisparatado.pctDeLaMediana}% de la mediana`
             : x.simulacionFallo ? 'catálogo (sin verificar)'
           : x.fuentePrecio === 'ficha' ? 'JSON-LD de la ficha'
