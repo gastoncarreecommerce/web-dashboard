@@ -1,0 +1,104 @@
+'use strict';
+const { test } = require('node:test');
+const assert = require('node:assert');
+const path = require('path');
+
+const W = require(path.join(__dirname, '..', 'docs', 'xlsx.js'));
+const sheetXml = W._sheetXml;
+
+/** Los splits y el panel activo declarados en el XML de una hoja. */
+function panel(xml) {
+  const m = xml.match(/<pane([^>]*)\/>/);
+  if (!m) return null;
+  const at = (k) => (m[1].match(new RegExp(`${k}="([^"]*)"`)) || [, null])[1];
+  return { xSplit: at('xSplit'), ySplit: at('ySplit'), activePane: at('activePane'),
+    topLeftCell: at('topLeftCell') };
+}
+
+const filas = [['a', 'b', 'c'], [1, 2, 3], [4, 5, 6]];
+
+// ── El panel activo ─────────────────────────────────────────────────────────
+// Excel abria el archivo con "contenido que no se puede leer" y lo reparaba
+// quitando la vista de la hoja. El motivo: con solo ySplit los paneles que
+// existen son topLeft y bottomLeft, y se escribia activePane="bottomRight",
+// que nombra un panel inexistente. openpyxl lo perdonaba, Excel no.
+
+test('con solo fila congelada, el panel activo es bottomLeft', () => {
+  const p = panel(sheetXml({ rows: filas }));
+  assert.strictEqual(p.ySplit, '1');
+  assert.strictEqual(p.xSplit, null);
+  assert.strictEqual(p.activePane, 'bottomLeft',
+    'bottomRight nombraria un panel que no existe y Excel repara el archivo');
+});
+
+test('con fila y columnas congeladas, es bottomRight', () => {
+  const p = panel(sheetXml({ rows: filas, columnasFijas: 2 }));
+  assert.strictEqual(p.xSplit, '2');
+  assert.strictEqual(p.ySplit, '1');
+  assert.strictEqual(p.activePane, 'bottomRight');
+});
+
+test('con solo columnas congeladas, es topRight', () => {
+  const p = panel(sheetXml({ rows: filas, columnasFijas: 2, fijarEncabezado: false }));
+  assert.strictEqual(p.xSplit, '2');
+  assert.strictEqual(p.ySplit, null);
+  assert.strictEqual(p.activePane, 'topRight');
+});
+
+test('la seleccion apunta al MISMO panel que activePane', () => {
+  for (const hoja of [{ rows: filas }, { rows: filas, columnasFijas: 2 },
+    { rows: filas, columnasFijas: 1, fijarEncabezado: false }]) {
+    const xml = sheetXml(hoja);
+    const p = panel(xml);
+    assert.ok(xml.includes(`<selection pane="${p.activePane}"/>`),
+      `la seleccion tiene que nombrar ${p.activePane}`);
+  }
+});
+
+test('sin panel fijo no se escribe <pane> vacio', () => {
+  const xml = sheetXml({ rows: filas, fijarEncabezado: false });
+  assert.strictEqual(panel(xml), null);
+  assert.ok(!xml.includes('<pane'), 'un pane sin splits tambien es invalido');
+});
+
+// ── El resto de la estructura ───────────────────────────────────────────────
+
+test('el autofiltro cubre del encabezado a la ultima fila', () => {
+  const xml = sheetXml({ rows: filas });
+  assert.ok(xml.includes('<autoFilter ref="A1:C3"/>'), xml);
+});
+
+test('el autofiltro arranca en la fila del encabezado, no en la 1', () => {
+  const conTitulo = [['Título'], [], ['a', 'b'], [1, 2]];
+  const xml = sheetXml({ rows: conTitulo, filaEncabezado: 3 });
+  assert.ok(xml.includes('<autoFilter ref="A3:B4"/>'), xml);
+});
+
+test('sin filas de datos no se pone autofiltro', () => {
+  const xml = sheetXml({ rows: [['a', 'b']] });
+  assert.ok(!xml.includes('autoFilter'), 'un filtro sobre una sola fila no filtra nada');
+});
+
+test('el orden de los elementos es el que exige el esquema', () => {
+  // sheetViews < cols < sheetData < autoFilter < mergeCells. Con los elementos
+  // al revés Excel no abre el archivo.
+  const xml = sheetXml({ rows: filas, widths: [10, 10, 10], merges: ['A1:C1'] });
+  const orden = ['<sheetViews', '<cols>', '<sheetData>', '<autoFilter', '<mergeCells'];
+  const pos = orden.map((t) => xml.indexOf(t));
+  assert.ok(pos.every((x) => x > 0), `faltan elementos: ${JSON.stringify(pos)}`);
+  for (let i = 1; i < pos.length; i++) {
+    assert.ok(pos[i] > pos[i - 1], `${orden[i]} tiene que ir despues de ${orden[i - 1]}`);
+  }
+});
+
+test('los numeros van como numeros y el encabezado con su estilo', () => {
+  const xml = sheetXml({ rows: filas });
+  assert.ok(xml.includes('<c r="A2"'), xml);
+  assert.ok(!/<c r="B2"[^>]*t="inlineStr"/.test(xml), 'un numero no puede ir como texto');
+  assert.ok(/<c r="A1" s="1"/.test(xml), 'el encabezado lleva el estilo 1');
+});
+
+test('el rango de la hoja cubre todas las columnas de la fila mas larga', () => {
+  const desparejas = [['a', 'b', 'c', 'd'], [1, 2]];
+  assert.ok(sheetXml({ rows: desparejas }).includes('<dimension ref="A1:D2"/>'));
+});

@@ -17,7 +17,12 @@
  * formato sin que nadie lo pidiera. Los nuevos se agregan del 5 en adelante.
  */
 (function () {
-  const W = (window.W = window.W || {});
+  // En el navegador esto es `window`. Se resuelve asi para que el archivo
+  // tambien se pueda cargar en node y testear el XML que genera: el bug del
+  // panel activo paso la revision porque openpyxl lo perdona y Excel no, o sea
+  // que mirar el archivo con un lector tolerante no alcanza.
+  const raiz = typeof window !== 'undefined' ? window : globalThis;
+  const W = (raiz.W = raiz.W || {});
 
   // ── CRC32 (lo exige el formato ZIP) ───────────────────────────────────────
   const CRC_TABLE = (() => {
@@ -186,10 +191,21 @@
     // entre poder leerla y no.
     const xs = hoja.columnasFijas || 0;
     const ys = hoja.fijarEncabezado === false ? 0 : hEnc;
+    // EL PANEL ACTIVO DEPENDE DE QUE SPLITS HAY, y no siempre es bottomRight.
+    //
+    // Con solo ySplit los paneles que existen son topLeft y bottomLeft, asi que
+    // activePane="bottomRight" nombra un panel que no existe. Excel no lo
+    // acepta: abre el archivo con "contenido que no se puede leer" y lo repara
+    // quitando la vista de la hoja. openpyxl lo perdonaba, y por eso la
+    // verificacion no lo habia detectado.
+    //
+    // Afectaba a TODAS las exportaciones del dashboard, que congelan solo la
+    // fila del encabezado, no solo a las del comparador.
+    const panelActivo = xs && ys ? 'bottomRight' : ys ? 'bottomLeft' : 'topRight';
     const pane = (xs || ys)
       ? `<pane${xs ? ` xSplit="${xs}"` : ''}${ys ? ` ySplit="${ys}"` : ''}`
-        + ` topLeftCell="${colName(xs)}${ys + 1}" activePane="bottomRight" state="frozen"/>`
-        + '<selection pane="bottomRight"/>'
+        + ` topLeftCell="${colName(xs)}${ys + 1}" activePane="${panelActivo}" state="frozen"/>`
+        + `<selection pane="${panelActivo}"/>`
       : '';
     const vistas = `<sheetViews><sheetView workbookViewId="0"${hoja.zoom ? ` zoomScale="${hoja.zoom}"` : ''}>`
       + `${pane}</sheetView></sheetViews>`;
@@ -229,6 +245,9 @@
    *   zoom             % de zoom inicial
    *   estiloDe(f,c,v)  nombre de W.XLSX_ESTILO o índice, por celda (f es 1-based)
    */
+  // Se expone para los tests: es la funcion que armaba mal el panel activo.
+  W._sheetXml = sheetXml;
+
   W.downloadXLSX = function (filename, sheets) {
     const list = sheets.filter((s) => s.rows && s.rows.length);
     if (!list.length) {
@@ -323,3 +342,5 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 })();
+
+if (typeof module !== 'undefined' && module.exports) module.exports = globalThis.W;
