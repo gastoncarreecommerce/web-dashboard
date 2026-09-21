@@ -216,7 +216,7 @@
 
     const juntos = { resultados: {}, errores: {}, simulacionErrores: {}, canalErrores: {},
       comboPorTienda: {}, codigoPostal: null, tiendas: null,
-      advertencia: null, fuente: null, eans: [], simuladas: 0, porFicha: 0, aSimular: 0,
+      advertencia: null, fuente: null, eans: [], simuladas: 0, porFicha: 0, porFichaPorTienda: {}, aSimular: 0,
       fichaErrores: {} };
     let fallo = null;
 
@@ -250,6 +250,9 @@
         }
         juntos.simuladas += j.simuladas || 0;
         juntos.porFicha += j.porFicha || 0;
+        for (const [id, n] of Object.entries(j.porFichaPorTienda || {})) {
+          juntos.porFichaPorTienda[id] = (juntos.porFichaPorTienda[id] || 0) + n;
+        }
         juntos.aSimular += j.aSimular || 0;
         Object.assign(juntos.comboPorTienda, j.comboPorTienda || {});
         Object.assign(juntos.canalErrores, j.canalErrores || {});
@@ -344,11 +347,25 @@
       const t = tiendas.find((x) => x.id === id);
       const lista = (Array.isArray(intentos) ? intentos : [String(intentos)])
         .map((x) => `<li><span class="ean">${esc(x)}</span></li>`).join('');
-      avisos.push(`<div class="aviso cpx-bad">
-        <strong>${esc(t?.nombre || id)}: ninguna combinación de canal y zona pudo cotizar.</strong>
-        <details open><summary>los ${Array.isArray(intentos) ? intentos.length : 1} intentos</summary>
-        <ul>${lista}</ul></details></div>`);
+      // Cuantos precios de ESTA tienda salieron de la ficha, y cuantos quedaron
+      // sin ninguna fuente. Antes esto decia "ninguna combinación de canal y
+      // zona pudo cotizar" con siete intentos en rojo, y se leia como que la
+      // tienda entera habia fallado — cuando la ficha le habia resuelto 147
+      // precios y solo quedaba 1 sin cubrir.
+      const deFicha = d.porFichaPorTienda?.[id] || 0;
+      const sinPrecio = Object.values(d.simulacionErrores?.[id] || {})
+        .reduce((a, b) => a + b, 0);
+      const cubierta = deFicha > 0;
+      avisos.push(`<div class="aviso ${cubierta ? 'cpx-warn' : 'cpx-bad'}">
+        <strong>${esc(t?.nombre || id)}: la simulación de carrito no cotiza en esta tienda.</strong>
+        ${cubierta
+    ? `Sus precios salen del JSON-LD de la ficha, que es el que muestra la página:
+       ${deFicha} resuelto(s) así${sinPrecio ? ` y ${sinPrecio} sin precio` : ', ninguno sin precio'}.`
+    : 'Y tampoco se pudo leer la ficha, así que sus precios son los del catálogo.'}
+        <details><summary>por qué no cotiza (${(Array.isArray(intentos) ? intentos : []).length} intentos)</summary>
+        <ul style="margin:.35rem 0 0;padding-left:1.1rem">${lista}</ul></details></div>`);
     }
+
     for (const [id, errs] of Object.entries(d.errores || {})) {
       const t = tiendas.find((x) => x.id === id);
       avisos.push(`<div class="aviso cpx-bad"><strong>${esc(t?.nombre || id)} no respondió a ${errs.length} consulta(s).</strong>

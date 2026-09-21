@@ -733,6 +733,9 @@ export default async function handler(req, res) {
   // llamada por cada una.
   const conFalla = aSimular.filter(({ fila }) => fila.simulacionFallo);
   let porFicha = 0;
+  // Por tienda, no solo el total: sin esto la pagina no puede distinguir "esta
+  // tienda no cotiza pero la ficha la cubre" de "esta tienda quedo sin precios".
+  const porFichaDe = {};
   const fichaErrores = {};
   await forEachLimit(conFalla, CONCURRENCIA, async ({ id, ean, fila }) => {
     const r = await precioDeFicha(TIENDAS[id], fila.url, ean, fila._itemId);
@@ -760,6 +763,7 @@ export default async function handler(req, res) {
     delete fila.simulacionFallo;
     fila.fuentePrecio = 'ficha';
     porFicha += 1;
+    porFichaDe[id] = (porFichaDe[id] || 0) + 1;
   });
 
   // ── Precios que no se sostienen al lado de los demas ────────────────────
@@ -844,6 +848,7 @@ export default async function handler(req, res) {
     codigoPostal: cp,
     simuladas: aSimular.filter((x) => x.fila.fuentePrecio === 'simulacion').length,
     porFicha,
+    porFichaPorTienda: porFichaDe,
     recuperadosIndividual: recuperados,
     ...(Object.keys(fichaErrores).length ? { fichaErrores } : {}),
     aSimular: aSimular.length,
