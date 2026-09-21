@@ -995,3 +995,53 @@ test('cuando el precio sale de la ficha, se dice el descuento aunque no haya nom
     'y se dice por qué no hay nombre, en vez de dejar la celda vacía');
   assert.strictEqual(j.promoSinNombre, true);
 });
+
+
+// ── Descuento sin nombre, en cualquier tienda ───────────────────────────────
+// Masonline devolvia 10 productos con precio anterior y un descuento real del
+// 25% al 46%, y la columna de promociones vacia en sus 65 filas. Se leia como
+// "esta tienda no tiene promociones", cuando lo que pasa es que no publica los
+// nombres.
+
+test('con descuento y sin nombre de promo, se describe el descuento', async () => {
+  sesionOk = true;
+  CANALES = {}; REGIONES = {}; FICHAS = {};
+  // La simulacion cotiza con precio anterior pero sin ratesAndBenefitsData.
+  SIMS = { 'www.masonline.com.ar': { precio: 2139, lista: 3199 } };
+  const { res } = await correr({
+    'www.masonline.com.ar': [prod('7799155000197', 'Agua 2 L', { precio: 2139, lista: 3199 })],
+  }, { eans: '7799155000197', tiendas: 'masonline' });
+
+  const m = res.body.resultados['7799155000197'].masonline;
+  assert.strictEqual(m.promos.length, 1);
+  assert.match(m.promos[0], /−33%/);
+  assert.strictEqual(m.promoSinNombre, true);
+});
+
+test('si la tienda SI publica el nombre, no se lo reemplaza por el porcentaje', async () => {
+  sesionOk = true;
+  CANALES = {}; REGIONES = {}; FICHAS = {};
+  SIMS = { 'diaonline.supermercadosdia.com.ar': { precio: 2139, lista: 3199, promos: ['2do al 50%'] } };
+  const { res } = await correr({
+    'diaonline.supermercadosdia.com.ar': [prod('7799155000197', 'Agua', { precio: 2139, lista: 3199 })],
+  }, { eans: '7799155000197', tiendas: 'dia' });
+
+  assert.deepStrictEqual(res.body.resultados['7799155000197'].dia.promos, ['2do al 50%'],
+    'el nombre real vale mas que el porcentaje derivado');
+});
+
+test('un producto por peso no se rechaza por la guarda del 25%', async () => {
+  sesionOk = true;
+  CANALES = {}; REGIONES = {}; FICHAS = {};
+  // Catalogo por kilo, simulacion de la unidad minima: comparar los dos numeros
+  // no compara lo mismo. Rechazaba "Manzana roja x kg" de Carrefour.
+  const porPeso = prod('2000000000017', 'Manzana roja x kg', { precio: 4999 });
+  porPeso.items[0].unitMultiplier = 0.25;
+  SIMS = { 'www.carrefour.com.ar': { precio: 1250 } };
+  const { res } = await correr({ 'www.carrefour.com.ar': [porPeso] },
+    { eans: '2000000000017', tiendas: 'carrefour' });
+
+  const cf = res.body.resultados['2000000000017'].carrefour;
+  assert.strictEqual(cf.precio, 1250, 'la cotizacion se acepta');
+  assert.ok(!cf.simulacionFallo, 'y no queda marcada como sin verificar');
+});

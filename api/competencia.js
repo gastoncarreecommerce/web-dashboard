@@ -312,7 +312,7 @@ async function simular(tienda, itemId, sellerId, combo) {
  * reusarlo para los otros 93 productos cuesta 3 llamadas extra en el peor caso
  * en vez de 3 por producto.
  */
-async function descubrirCombo(tienda, itemId, sellerId, cp, precioCatalogo) {
+async function descubrirCombo(tienda, itemId, sellerId, cp, precioCatalogo, porPeso) {
   const intentos = [];
   const { canales, aCiegas, nombres } = await canalesDe(tienda);
   // EL SELLER DEL CATALOGO VA PRIMERO. Los de la region quedan como respaldo.
@@ -337,7 +337,11 @@ async function descubrirCombo(tienda, itemId, sellerId, cp, precioCatalogo) {
     // Si la simulacion devuelve muchisimo menos, ese seller o ese canal esta
     // mirando otra lista de precios, y hay que seguir probando en vez de
     // quedarse con el primero que responda 200.
-    if (!r.error && precioCatalogo > 0 && r.precio != null
+    // Los productos por peso quedan afuera: su precio de catalogo es POR KILO
+    // y la simulacion cotiza la unidad minima, asi que comparar los dos numeros
+    // no compara lo mismo. Rechazaba "Manzana roja x kg" y "Queso cremoso horma
+    // x kg" de Carrefour, que estaban bien.
+    if (!r.error && precioCatalogo > 0 && r.precio != null && !porPeso
       && r.precio < precioCatalogo * UMBRAL_SIM) {
       intentos.push(`${comboTxt(combo)} → cotizó ${r.precio} con el catálogo en ${precioCatalogo}`
         + ` (${Math.round(r.precio / precioCatalogo * 100)}%): otra lista de precios`);
@@ -445,6 +449,31 @@ async function precioDeFicha(tienda, url, ean, itemId) {
   }
   if (precio == null) return { error: 'el JSON-LD no trae precio en offers' };
   return { precio, nombre: prod.name || null };
+}
+
+/**
+ * Cuando hay descuento pero la tienda no publica el nombre de la promocion, se
+ * describe el descuento.
+ *
+ * Por que hace falta para todas las tiendas y no solo para las que se resuelven
+ * por la ficha: Masonline devolvia 10 productos con precio anterior y un
+ * descuento real del 25% al 46%, y la columna de promociones vacia en las 65
+ * filas. Se leia como "esta tienda no tiene promociones", cuando lo que pasa es
+ * que no publica los nombres: su simulacion no manda
+ * `ratesAndBenefitsData` y su catalogo no manda teasers. Jumbo y Disco estan
+ * igual.
+ *
+ * Decir "−33%" no es lo mismo que decir "2do al 50%", y se aclara: el tamano
+ * del descuento es un hecho, el nombre no lo tenemos.
+ */
+function describirPromoSinNombre(fila) {
+  if ((fila.promos || []).length) return;            // ya tiene nombre de verdad
+  const antes = fila.precioLista;
+  if (!Number.isFinite(antes) || !Number.isFinite(fila.precio) || antes <= fila.precio) return;
+  const off = Math.round((1 - fila.precio / antes) * 100);
+  if (off < 1) return;
+  fila.promos = [`−${off}% (la tienda no publica el nombre)`];
+  fila.promoSinNombre = true;
 }
 
 /** Lo que nos interesa de un producto de VTEX, aplanado. */
@@ -721,7 +750,7 @@ export default async function handler(req, res) {
     // Se le pasa el precio del catalogo para que pueda descartar una
     // combinacion que cotiza un precio imposible.
     const d = await descubrirCombo(TIENDAS[id], primero.fila._itemId,
-      primero.fila._sellerId, cp, primero.fila.precio);
+      primero.fila._sellerId, cp, primero.fila.precio, Boolean(primero.fila.unidad));
     comboDe[id] = d.combo;
     if (d.primera) primeras.set(primero, d.primera);
     else canalErrores[id] = d.intentos;
@@ -741,7 +770,7 @@ export default async function handler(req, res) {
     // producto y las otras 93 la reusan, asi que si en alguna la simulacion
     // cotiza un precio imposible hay que atajarlo aca tambien: es la red que
     // habria evitado las 29 filas de Masonline a un decimo del precio.
-    if (sim.precio != null && fila.precioCatalogo > 0
+    if (sim.precio != null && fila.precioCatalogo > 0 && !fila.unidad
       && sim.precio < fila.precioCatalogo * UMBRAL_SIM) {
       fila.simulacionFallo = `la simulación cotizó ${sim.precio} con el catálogo en `
         + `${fila.precioCatalogo} (${Math.round(sim.precio / fila.precioCatalogo * 100)}%)`;
@@ -759,6 +788,7 @@ export default async function handler(req, res) {
     }
     if (sim.promos.length) fila.promos = [...new Set([...sim.promos, ...(fila.promos || [])])];
     fila.fuentePrecio = 'simulacion';
+    describirPromoSinNombre(fila);
   };
 
   for (const [x, sim] of primeras) aplicar(x.fila, sim);
@@ -811,12 +841,7 @@ export default async function handler(req, res) {
     // puede decir: es la diferencia entre el precio de la ficha y el del
     // catalogo. Se deja anotado asi en vez de dejar la celda de promos vacia,
     // que se leia como "esta tienda no tiene promociones".
-    if (Number.isFinite(base) && base > r.precio) {
-      const off = Math.round((1 - r.precio / base) * 100);
-      fila.promos = [...new Set([`−${off}% en la ficha (la tienda no publica el nombre)`,
-        ...(fila.promos || [])])];
-      fila.promoSinNombre = true;
-    }
+    describirPromoSinNombre(fila);
     porFicha += 1;
     porFichaDe[id] = (porFichaDe[id] || 0) + 1;
   });
