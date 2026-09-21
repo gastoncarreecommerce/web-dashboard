@@ -447,6 +447,13 @@
           }
         }
 
+        // Para los vendidos por peso, el precio por kilo al lado: es lo unico
+        // comparable entre una tienda que cobra por kilo y otra por horma.
+        if (x.precioPorMedida != null && x.unidad) {
+          bits.push(`<span class="cat" title="${esc(x.baseComparable || '')}">${
+            plata(x.precioPorMedida)} / ${esc(x.medida || 'un')}</span>`);
+        }
+
         if (!x.disponible) {
           bits.push(`<span class="ojo" title="${esc(x.sinPrecio
             || 'La tienda lo tiene publicado pero sin stock.')}">sin stock</span>`);
@@ -618,8 +625,8 @@
     // catálogo es por kilo y no se compara igual que el de una unidad.
     const filas2 = [['EAN', 'Producto', 'Tienda', 'Precio', 'Precio de catálogo',
       'Precio anterior', 'Descuento', 'Dif. vs nosotros', 'Stock', 'Se vende por',
-      'Promociones', 'De dónde sale el precio', 'Link']];
-    est2.push(new Array(13).fill(E.encabezado));
+      'Precio por unidad de medida', 'Promociones', 'De dónde sale el precio', 'Link']];
+    est2.push(new Array(14).fill(E.encabezado));
 
     for (const ean of eans) {
       const porTienda = d.resultados[ean] || {};
@@ -639,11 +646,12 @@
           x.descuentoPct != null ? x.descuentoPct / 100 : null,
           dif, x.disponible ? 'Sí' : 'No',
           x.unidad ? `peso/volumen (×${x.unidad} ${x.medida || ''})`.trim() : 'unidad',
+          x.precioPorMedida ?? null,
           (x.promos || []).join(' · '), fuente, x.url || '']);
         est2.push([E.ean, E.normal, E.normal,
           x.simulacionFallo ? E.monedaDudosa : E.moneda, E.moneda, E.moneda, E.pct1,
           dif == null ? E.delta : dif < 0 ? E.deltaMala : E.deltaBuena,
-          E.normal, E.normal, E.envuelto, E.normal, E.normal]);
+          E.normal, E.normal, E.moneda, E.envuelto, E.normal, E.normal]);
       }
     }
 
@@ -651,7 +659,7 @@
       name: 'Detalle',
       rows: filas2,
       columnasFijas: 3,
-      widths: [16, 40, 14, 14, 16, 15, 11, 14, 8, 18, 38, 26, 50],
+      widths: [16, 40, 14, 14, 16, 15, 11, 14, 8, 18, 20, 38, 26, 50],
       estiloDe: (f, c) => est2[f - 1]?.[c] ?? null,
     };
 

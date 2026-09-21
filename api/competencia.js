@@ -476,6 +476,34 @@ function describirPromoSinNombre(fila) {
   fila.promoSinNombre = true;
 }
 
+/**
+ * Pone en orden un producto vendido por peso o volumen.
+ *
+ * El caso: "Queso cremoso Punta del Agua horma x kg" salia con precio $2.700,
+ * precio anterior $13.500 y un descuento del 80%. Y "Manzana roja x kg" con
+ * $999,80 contra $4.999, tambien 80%. Los dos numeros estaban bien y el
+ * descuento era mentira: el catalogo cotiza POR KILO y la simulacion cotiza la
+ * FRACCION MINIMA DE VENTA (unitMultiplier = 0,2 kg). 13.500 x 0,2 = 2.700
+ * exacto. Restar dos numeros que estan en unidades distintas no da un
+ * descuento, da un artefacto.
+ *
+ * Asi que para estos productos:
+ *
+ *  · Se tira el precio anterior y el descuento. No se puede saber si hay promo
+ *    comparando cosas en bases distintas, y preferimos no decirlo antes que
+ *    decir un 80% que no existe.
+ *  · Se calcula el precio POR UNIDAD DE MEDIDA, que es lo unico que se puede
+ *    comparar entre tiendas: una cobra por kilo y otra por horma.
+ */
+function normalizarPorPeso(fila) {
+  if (!fila.unidad || !Number.isFinite(fila.precio)) return;
+  fila.precioLista = null;
+  fila.descuentoPct = null;
+  delete fila.listaSospechosa;
+  fila.precioPorMedida = Math.round(fila.precio / fila.unidad * 100) / 100;
+  fila.baseComparable = `${fila.precio} por ${fila.unidad} ${fila.medida || 'un'}`;
+}
+
 /** Lo que nos interesa de un producto de VTEX, aplanado. */
 function normalizar(producto, eanPedido) {
   // EL ITEM DEL EAN PEDIDO, no el primero. Un producto de VTEX puede tener
@@ -817,6 +845,7 @@ export default async function handler(req, res) {
     }
     if (sim.promos.length) fila.promos = [...new Set([...sim.promos, ...(fila.promos || [])])];
     fila.fuentePrecio = 'simulacion';
+    normalizarPorPeso(fila);
     describirPromoSinNombre(fila);
   };
 
@@ -864,6 +893,7 @@ export default async function handler(req, res) {
     delete fila.listaSospechosa;
     delete fila.simulacionFallo;
     fila.fuentePrecio = 'ficha';
+    normalizarPorPeso(fila);
     // El NOMBRE de la promocion no esta en ninguna API publica de estas
     // cuentas: el catalogo de Cencosud no manda teasers y el JSON-LD de la
     // ficha solo trae el precio. Pero que HAY una promo, y de cuanto, si se

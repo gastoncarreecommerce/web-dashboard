@@ -1109,3 +1109,60 @@ test('el que SI tiene stock conserva su precio y gana normalmente', async () => 
   // Y sin el 32,49 ensuciando la mediana, nadie queda marcado como no creible.
   assert.ok(!r.dia.precioDisparatado);
 });
+
+// ── Productos vendidos por peso ─────────────────────────────────────────────
+// "Queso cremoso Punta del Agua horma x kg" salia con precio $2.700, precio
+// anterior $13.500 y un descuento del 80%. Los dos numeros estaban bien: el
+// catalogo cotiza POR KILO y la simulacion la fraccion minima de venta
+// (unitMultiplier 0,2 kg). 13.500 × 0,2 = 2.700 exacto. Restar dos numeros en
+// unidades distintas no da un descuento.
+
+function porPeso(ean, nombre, precioPorKg, mult, medida = 'kg') {
+  const p = prod(ean, nombre, { precio: precioPorKg });
+  p.items[0].unitMultiplier = mult;
+  p.items[0].measurementUnit = medida;
+  return p;
+}
+
+test('un producto por peso no inventa un descuento del 80%', async () => {
+  sesionOk = true;
+  CANALES = {}; REGIONES = {}; FICHAS = {};
+  // La simulacion cotiza la fraccion (13.500 × 0,2) y devuelve la lista por kilo.
+  SIMS = { 'www.carrefour.com.ar': { precio: 2700, lista: 13500 } };
+  const { res } = await correr({
+    'www.carrefour.com.ar': [porPeso('2505310000002', 'Queso cremoso horma x kg', 13500, 0.2)],
+  }, { eans: '2505310000002', tiendas: 'carrefour' });
+
+  const cf = res.body.resultados['2505310000002'].carrefour;
+  assert.strictEqual(cf.precio, 2700);
+  assert.strictEqual(cf.precioLista, null, 'el precio por kilo no es un "precio anterior"');
+  assert.strictEqual(cf.descuentoPct, null, 'y la diferencia no es un descuento');
+});
+
+test('y calcula el precio por unidad de medida, que es lo comparable', async () => {
+  sesionOk = true;
+  CANALES = {}; REGIONES = {}; FICHAS = {};
+  SIMS = { 'www.carrefour.com.ar': { precio: 999.8, lista: 4999 } };
+  const { res } = await correr({
+    'www.carrefour.com.ar': [porPeso('2300397000002', 'Manzana roja x kg', 4999, 0.2)],
+  }, { eans: '2300397000002', tiendas: 'carrefour' });
+
+  const cf = res.body.resultados['2300397000002'].carrefour;
+  assert.strictEqual(cf.precioPorMedida, 4999, '999,80 por 0,2 kg = 4.999 por kg');
+  assert.strictEqual(cf.medida, 'kg');
+  assert.match(cf.baseComparable, /999\.8 por 0\.2 kg/);
+});
+
+test('un producto por unidad conserva su precio anterior y su descuento', async () => {
+  sesionOk = true;
+  CANALES = {}; REGIONES = {}; FICHAS = {};
+  SIMS = { 'www.carrefour.com.ar': { precio: 2290, lista: 2790 } };
+  const { res } = await correr({
+    'www.carrefour.com.ar': [prod('7790742358608', 'Leche 1L', { precio: 2290, lista: 2790 })],
+  }, { eans: '7790742358608', tiendas: 'carrefour' });
+
+  const cf = res.body.resultados['7790742358608'].carrefour;
+  assert.strictEqual(cf.precioLista, 2790, 'acá sí es un precio anterior de verdad');
+  assert.strictEqual(cf.descuentoPct, 17.9);
+  assert.strictEqual(cf.precioPorMedida, undefined, 'no aplica a lo vendido por unidad');
+});
