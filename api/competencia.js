@@ -46,6 +46,12 @@ const TIMEOUT_MS = 20000;
 // reales de supermercado —2do al 70%, 50% en la segunda unidad— dan descuentos
 // efectivos por unidad bastante menores.
 const UMBRAL_PCT = 70;
+// Un precio por debajo de esta fraccion de la MEDIANA de las otras tiendas se
+// marca como no creible. 35% es holgado a proposito: una promo real de "50% en
+// la segunda unidad" no baja de ahi, asi que no se castiga una oferta de
+// verdad. Lo que si atrapa es el caso que aparecio: $201 cuando las otras tres
+// tiendas decian $2.739, $2.800 y $2.800.
+const UMBRAL_DISPAR = 0.35;
 
 export const TIENDAS = {
   carrefour: { nombre: 'Carrefour', dominio: 'https://www.carrefour.com.ar', propia: true },
@@ -416,8 +422,13 @@ async function precioDeFicha(tienda, url, ean, itemId) {
 }
 
 /** Lo que nos interesa de un producto de VTEX, aplanado. */
-function normalizar(producto) {
-  const item = producto?.items?.[0] || {};
+function normalizar(producto, eanPedido) {
+  // EL ITEM DEL EAN PEDIDO, no el primero. Un producto de VTEX puede tener
+  // varios SKUs (la unidad y el pack de 3, tamanos distintos), cada uno con su
+  // EAN y su precio. Leyendo siempre items[0] se mostraba el precio de la
+  // variante que la tienda pusiera primero, que no es necesariamente la que se
+  // pidio.
+  const item = (eanPedido && itemDelEan(producto, eanPedido)) || producto?.items?.[0] || {};
   // Se elige el seller con oferta disponible; si ninguno está disponible, el
   // primero, para poder mostrar "sin stock" en vez de "no encontrado".
   const sellers = Array.isArray(item.sellers) ? item.sellers : [];
@@ -470,22 +481,61 @@ function normalizar(producto) {
     medida: item.measurementUnit || null,
     url: producto.link || (producto.linkText ? `/${producto.linkText}/p` : null),
     sellerNombre: seller.sellerName || null,
+    // Si el EAN pedido no aparece en ningun SKU y se uso el primero, la fila
+    // queda marcada: es la diferencia entre "este es el precio de lo que
+    // pediste" y "este es el precio de algo parecido".
+    ...(eanPedido && !itemDelEan(producto, eanPedido)
+      ? { eanNoCoincide: `Ningún SKU de este producto declara el EAN ${eanPedido}` }
+      : {}),
     // Para la simulacion, que es la que trae el precio de verdad.
     _itemId: item.itemId || null,
     _sellerId: seller.sellerId || null,
   };
 }
 
-/** EAN del producto devuelto, para poder mapear la respuesta al pedido: VTEX no
- *  garantiza el orden ni devuelve un producto por cada `fq` pedido. */
+/**
+ * Los EANs de un producto, para poder mapear la respuesta al pedido: VTEX no
+ * garantiza el orden ni devuelve un producto por cada `fq` pedido.
+ *
+ * ACA ESTABA EL BUG DE LOS PRECIOS RAROS. Antes esto aceptaba, como si fuera un
+ * EAN, cualquier `referenceId` de 6 a 14 digitos:
+ *
+ *     for (const ean of [item.ean, ...(item.referenceId || []).map((r) => r?.Value)])
+ *
+ * `referenceId` en VTEX NO es el EAN: es el codigo interno de referencia de la
+ * tienda, y en muchas cuentas es un numero de largo parecido. Asi que un
+ * producto cualquiera cuyo codigo interno coincidiera con un EAN pedido se
+ * quedaba con esa fila, y el comparador mostraba el precio REAL pero DE OTRO
+ * PRODUCTO. Por eso el numero se veia coherente —$201 con $233 tachado y
+ * -13,7%— mientras la ficha de la tienda decia $2.739: no era un error de
+ * escala, era otro producto.
+ *
+ * Ahora solo cuenta `item.ean`, mas las entradas de `referenceId` cuya CLAVE
+ * dice explicitamente que es un EAN. Un codigo interno sin etiqueta se ignora:
+ * preferible no encontrar el producto y decirlo, antes que mostrar el precio de
+ * otra cosa.
+ */
 function eansDe(producto) {
   const out = new Set();
+  const valido = (x) => x && /^\d{8,14}$/.test(String(x));
   for (const item of producto?.items || []) {
-    for (const ean of [item.ean, ...(item.referenceId || []).map((r) => r?.Value)]) {
-      if (ean && /^\d{6,14}$/.test(String(ean))) out.add(String(ean));
+    if (valido(item.ean)) out.add(String(item.ean));
+    for (const r of item.referenceId || []) {
+      if (/ean|gtin/i.test(String(r?.Key || '')) && valido(r?.Value)) out.add(String(r.Value));
     }
   }
   return [...out];
+}
+
+/** El item (SKU) que tiene ese EAN. Null si ninguno lo tiene. */
+function itemDelEan(producto, ean) {
+  const buscado = String(ean);
+  for (const item of producto?.items || []) {
+    if (String(item.ean || '') === buscado) return item;
+    if ((item.referenceId || []).some((r) => /ean|gtin/i.test(String(r?.Key || ''))
+      && String(r?.Value || '') === buscado)) return item;
+  }
+  return null;
 }
 
 async function buscarLote(tienda, eans) {
@@ -566,12 +616,12 @@ export default async function handler(req, res) {
     try {
       const productos = await buscarLote(tienda, grupo);
       for (const p of productos) {
-        const fila = normalizar(p);
-        if (fila.url && fila.url.startsWith('/')) fila.url = tienda.dominio + fila.url;
-        // Un producto puede traer varios EANs (packs, variantes): se asigna a
-        // todos los que hayamos pedido.
+        // Se normaliza UNA VEZ POR EAN, no una vez por producto: el SKU
+        // correcto —y por lo tanto el precio— depende de cual se pidio.
         for (const ean of eansDe(p)) {
           if (resultados[ean] && !resultados[ean][id]) {
+            const fila = normalizar(p, ean);
+            if (fila.url && fila.url.startsWith('/')) fila.url = tienda.dominio + fila.url;
             resultados[ean][id] = fila;
             fila._tienda = id;
             if (fila._itemId) aSimular.push({ ean, id, fila });
@@ -582,6 +632,43 @@ export default async function handler(req, res) {
       // El error se guarda por tienda: que Jumbo falle no tiene que tirar abajo
       // la comparación con las demás.
       (errores[id] = errores[id] || []).push(`${grupo.length} EANs: ${e.message}`);
+    }
+  });
+
+  // ── Segunda pasada: los que el lote no pudo mapear ──────────────────────
+  // El lote pide varios EANs juntos y despues hay que adivinar cual producto
+  // corresponde a cual EAN, leyendolo del producto. Eso falla cuando la tienda
+  // tiene el EAN SOLO en `alternateIds` y no en el campo `ean` del SKU: VTEX lo
+  // encuentra igual (la consulta es por alternateIds_Ean) pero la respuesta no
+  // lo dice, y con la regla estricta nueva ese producto se descarta.
+  //
+  // Preguntando de a un EAN el mapeo es inequivoco: lo que vuelva es de ese
+  // EAN y de ningun otro. Solo se hace para los que faltan, asi que en el caso
+  // normal no cuesta ninguna llamada extra.
+  const faltantes = [];
+  for (const ean of eans) {
+    for (const id of tiendas) {
+      if (!resultados[ean][id]) faltantes.push({ ean, id });
+    }
+  }
+  let recuperados = 0;
+  await forEachLimit(faltantes, CONCURRENCIA, async ({ ean, id }) => {
+    const tienda = TIENDAS[id];
+    try {
+      const productos = await buscarLote(tienda, [ean]);
+      const p = productos[0];
+      if (!p) return;                       // esa tienda no lo tiene, y ya esta
+      const fila = normalizar(p, ean);
+      if (fila.url && fila.url.startsWith('/')) fila.url = tienda.dominio + fila.url;
+      // Se anota como recuperado por consulta individual: si el SKU no declara
+      // el EAN, `normalizar` ya lo dejo marcado con eanNoCoincide.
+      fila.porConsultaIndividual = true;
+      resultados[ean][id] = fila;
+      fila._tienda = id;
+      if (fila._itemId) aSimular.push({ ean, id, fila });
+      recuperados += 1;
+    } catch (e) {
+      (errores[id] = errores[id] || []).push(`EAN ${ean}: ${e.message}`);
     }
   });
 
@@ -675,6 +762,33 @@ export default async function handler(req, res) {
     porFicha += 1;
   });
 
+  // ── Precios que no se sostienen al lado de los demas ────────────────────
+  // Un precio muchisimo mas bajo que el de todas las otras tiendas casi nunca
+  // es una promocion: es el precio de otro producto, o un campo mal leido. Se
+  // marca y no compite por el "mas barato", en vez de coronarlo ganador.
+  //
+  // Esto es una RED, no el arreglo: el arreglo es que el EAN mapee al SKU
+  // correcto (ver eansDe e itemDelEan). Existe porque el caso que lo destapo
+  // —Masonline a $201 contra $2.739, $2.800 y $2.800— pasaba por todas las
+  // validaciones anteriores: el precio y su descuento eran coherentes entre si,
+  // solo que de otro producto.
+  for (const ean of eans) {
+    const filas = tiendas.map((id) => resultados[ean]?.[id])
+      .filter((f) => f && f.encontrado && Number.isFinite(f.precio) && f.precio > 0);
+    if (filas.length < 3) continue;   // con dos tiendas no hay mediana que valga
+    const ordenados = filas.map((f) => f.precio).sort((a, b) => a - b);
+    const mediana = ordenados.length % 2
+      ? ordenados[(ordenados.length - 1) / 2]
+      : (ordenados[ordenados.length / 2 - 1] + ordenados[ordenados.length / 2]) / 2;
+    for (const f of filas) {
+      if (f.precio >= mediana * UMBRAL_DISPAR) continue;
+      f.precioDisparatado = {
+        mediana,
+        pctDeLaMediana: Math.round(f.precio / mediana * 1000) / 10,
+      };
+    }
+  }
+
   // ── Que quedo realmente sin precio ──────────────────────────────────────
   // Se agrupa DESPUES del plan B, no durante la simulacion. Antes se reportaba
   // el fallo de la simulacion aunque la ficha hubiera resuelto la fila: la
@@ -730,6 +844,7 @@ export default async function handler(req, res) {
     codigoPostal: cp,
     simuladas: aSimular.filter((x) => x.fila.fuentePrecio === 'simulacion').length,
     porFicha,
+    recuperadosIndividual: recuperados,
     ...(Object.keys(fichaErrores).length ? { fichaErrores } : {}),
     aSimular: aSimular.length,
     ...(invalidos.length ? { invalidos: invalidos.slice(0, 20) } : {}),

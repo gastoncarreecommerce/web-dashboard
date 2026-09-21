@@ -143,7 +143,30 @@ async function correr(porTienda, query) {
     const d = Object.keys(porTienda).find((x) => u.includes(x));
     const r = porTienda[d];
     if (typeof r === 'number') return { ok: false, status: r, text: async () => 'boom' };
-    return { ok: true, status: 200, json: async () => r, text: async () => JSON.stringify(r) };
+
+    // El mock FILTRA por los EANs pedidos, como hace VTEX: `alternateIds_Ean`
+    // es un filtro exacto, asi que la tienda solo puede devolver productos que
+    // tengan registrado ese EAN. Sin esto el mock devolvia todo para cualquier
+    // consulta, y no se podia distinguir "el producto tiene ese EAN" de "el
+    // mapeo se lo adjudico".
+    //
+    // Los EANs que un producto tiene REGISTRADOS son `_alternateEans` si el
+    // fixture lo declara (el caso de una tienda que lo guarda solo en
+    // alternateIds), y si no, los `ean` de sus SKUs.
+    const pedidos = [...u.matchAll(/alternateIds_Ean:(\d+)/g)].map((m) => m[1]);
+    const filtrado = (Array.isArray(r) && pedidos.length)
+      ? r.filter((p) => {
+        const propios = p._alternateEans || (p.items || []).flatMap((it) => [
+          String(it.ean || ''),
+          // Un referenceId ETIQUETADO como EAN tambien es un EAN registrado, y
+          // VTEX lo tendria en alternateIds.
+          ...(it.referenceId || []).filter((x) => /ean|gtin/i.test(String(x?.Key || '')))
+            .map((x) => String(x.Value || '')),
+        ]).filter(Boolean);
+        return propios.some((e) => pedidos.includes(String(e)));
+      })
+      : r;
+    return { ok: true, status: 200, json: async () => filtrado, text: async () => JSON.stringify(filtrado) };
   };
   const handler = await handlerP;
   const res = fakeRes();
@@ -712,4 +735,164 @@ test('una tienda resuelta y otra no: se reporta solo la que quedo sin precio', a
 
   assert.deepStrictEqual(Object.keys(res.body.simulacionErrores), ['disco']);
   assert.deepStrictEqual(Object.keys(res.body.canalErrores || {}), ['disco']);
+});
+
+// ── El EAN tiene que mapear al producto y al SKU correctos ──────────────────
+// Caso real: para el EAN 7891150019560 (jabón Dove 90 g) el comparador mostraba
+// Masonline a $201 con $233 tachado y −13,7%, mientras la ficha de Masonline
+// decía $2.739 igual que Carrefour. El precio y su descuento eran coherentes
+// entre sí: era el precio REAL de OTRO producto.
+//
+// La causa: eansDe aceptaba como EAN cualquier `referenceId` de 6 a 14 dígitos,
+// y en VTEX referenceId es el código interno de la tienda, no el EAN.
+
+/** Producto con un referenceId interno que coincide con un EAN pedido. */
+function prodConRefInterno(eanPropio, refInterno, nombre, precio) {
+  return {
+    productName: nombre, brand: 'X', link: `/${nombre.replace(/\s+/g, '-')}/p`, linkText: nombre,
+    items: [{
+      ean: eanPropio, itemId: '999', measurementUnit: 'un', unitMultiplier: 1,
+      // La clave NO dice que sea un EAN: es el código de referencia interno.
+      referenceId: [{ Key: 'RefId', Value: refInterno }],
+      sellers: [{ sellerId: '1', sellerName: 's', commertialOffer: {
+        Price: precio, ListPrice: null, IsAvailable: true, AvailableQuantity: 5, Teasers: [],
+      } }],
+    }],
+  };
+}
+
+test('un referenceId interno NO se toma como EAN', async () => {
+  sesionOk = true;
+  CANALES = {}; REGIONES = {}; FICHAS = {};
+  SIMS = { 'www.masonline.com.ar': { precio: 201 } };
+  const { res } = await correr({
+    // El producto de Masonline es otro (jabón de $201) y lo único que lo liga
+    // al EAN pedido es su código interno.
+    'www.masonline.com.ar': [prodConRefInterno('7790000000001', '7891150019560', 'Otra cosa barata', 201)],
+  }, { eans: '7891150019560', tiendas: 'masonline' });
+
+  const m = res.body.resultados['7891150019560'].masonline;
+  assert.strictEqual(m.encontrado, false,
+    'antes se quedaba con esta fila y mostraba $201 como si fuera el jabón Dove');
+});
+
+test('un referenceId ETIQUETADO como EAN sí se toma', async () => {
+  sesionOk = true;
+  CANALES = {}; REGIONES = {}; FICHAS = {};
+  SIMS = { 'www.masonline.com.ar': { precio: 2739 } };
+  const p = prodConRefInterno('7790000000001', '7891150019560', 'Jabón Dove 90 g', 2739);
+  p.items[0].referenceId = [{ Key: 'EAN', Value: '7891150019560' }];
+  const { res } = await correr({ 'www.masonline.com.ar': [p] },
+    { eans: '7891150019560', tiendas: 'masonline' });
+
+  assert.strictEqual(res.body.resultados['7891150019560'].masonline.precio, 2739);
+});
+
+test('se lee el SKU del EAN pedido, no siempre el primero', async () => {
+  sesionOk = true;
+  CANALES = {}; REGIONES = {}; FICHAS = {}; SIMS = {};
+  // Un producto con dos SKUs: el pack de 3 primero y la unidad despues. Antes
+  // se leia items[0] y se mostraba el precio del pack para el EAN de la unidad.
+  const conDosSkus = {
+    productName: 'Jabón Dove Karité', brand: 'Dove', link: '/dove/p', linkText: 'dove',
+    items: [
+      { ean: '7891150000003', itemId: 'pack3', unitMultiplier: 1, sellers: [{ sellerId: '1',
+        commertialOffer: { Price: 7500, IsAvailable: true, AvailableQuantity: 5 } }] },
+      { ean: '7891150019560', itemId: 'unidad', unitMultiplier: 1, sellers: [{ sellerId: '1',
+        commertialOffer: { Price: 2739, IsAvailable: true, AvailableQuantity: 5 } }] },
+    ],
+  };
+  const { res } = await correr({ 'www.masonline.com.ar': [conDosSkus] },
+    { eans: '7891150019560', tiendas: 'masonline' });
+
+  const m = res.body.resultados['7891150019560'].masonline;
+  assert.strictEqual(m.precio, 2739, 'el precio de la unidad, que es lo que se pidio');
+});
+
+// ── La red: un precio que no se sostiene al lado de los demas ──────────────
+
+test('un precio 13 veces mas barato que el resto no gana el "mas barato"', async () => {
+  sesionOk = true;
+  CANALES = {}; REGIONES = {}; FICHAS = {};
+  SIMS = {
+    'www.carrefour.com.ar': { precio: 2739 },
+    'www.jumbo.com.ar': { precio: 2800 },
+    'www.disco.com.ar': { precio: 2800 },
+    'www.masonline.com.ar': { precio: 201 },
+  };
+  const { res } = await correr({
+    'www.carrefour.com.ar': [prod('7891150019560', 'Dove 90g', { precio: 2739 })],
+    'www.jumbo.com.ar': [prod('7891150019560', 'Dove 90g', { precio: 2800 })],
+    'www.disco.com.ar': [prod('7891150019560', 'Dove 90g', { precio: 2800 })],
+    'www.masonline.com.ar': [prod('7891150019560', 'Dove 90g', { precio: 201 })],
+  }, { eans: '7891150019560', tiendas: 'carrefour,jumbo,disco,masonline' });
+
+  const m = res.body.resultados['7891150019560'].masonline;
+  assert.ok(m.precioDisparatado, 'queda marcado como no creible');
+  assert.strictEqual(m.precioDisparatado.mediana, 2769.5);
+  assert.ok(m.precioDisparatado.pctDeLaMediana < 10);
+  assert.strictEqual(m.precio, 201, 'el precio se sigue mostrando: se marca, no se esconde');
+});
+
+test('una promo real de -50% NO se marca como no creible', async () => {
+  sesionOk = true;
+  CANALES = {}; REGIONES = {}; FICHAS = {};
+  SIMS = {
+    'www.carrefour.com.ar': { precio: 2739 },
+    'www.jumbo.com.ar': { precio: 2800 },
+    'www.masonline.com.ar': { precio: 1400 },   // mitad de precio: es una oferta
+  };
+  const { res } = await correr({
+    'www.carrefour.com.ar': [prod('7891150019560', 'Dove', { precio: 2739 })],
+    'www.jumbo.com.ar': [prod('7891150019560', 'Dove', { precio: 2800 })],
+    'www.masonline.com.ar': [prod('7891150019560', 'Dove', { precio: 1400 })],
+  }, { eans: '7891150019560', tiendas: 'carrefour,jumbo,masonline' });
+
+  assert.ok(!res.body.resultados['7891150019560'].masonline.precioDisparatado,
+    'la red no puede tapar una oferta de verdad');
+});
+
+test('con dos tiendas no se marca nada: no hay mediana que valga', async () => {
+  sesionOk = true;
+  CANALES = {}; REGIONES = {}; FICHAS = {};
+  SIMS = { 'www.carrefour.com.ar': { precio: 2739 }, 'www.masonline.com.ar': { precio: 201 } };
+  const { res } = await correr({
+    'www.carrefour.com.ar': [prod('7891150019560', 'Dove', { precio: 2739 })],
+    'www.masonline.com.ar': [prod('7891150019560', 'Dove', { precio: 201 })],
+  }, { eans: '7891150019560', tiendas: 'carrefour,masonline' });
+
+  assert.ok(!res.body.resultados['7891150019560'].masonline.precioDisparatado,
+    'con una sola tienda de referencia no se puede saber quien es el raro');
+});
+
+
+test('recupera el producto cuando la tienda guarda el EAN solo en alternateIds', async () => {
+  sesionOk = true;
+  CANALES = {}; REGIONES = {}; FICHAS = {};
+  SIMS = { 'www.masonline.com.ar': { precio: 2739 } };
+  // VTEX lo encuentra (la consulta es por alternateIds_Ean) pero la respuesta
+  // no dice ese EAN en ningun SKU, asi que el lote no lo puede mapear. La
+  // consulta individual si, porque lo que vuelve solo puede ser de ese EAN.
+  const p = prod('7790000000099', 'Jabón Dove 90 g', { precio: 2739 });
+  p._alternateEans = ['7891150019560'];
+  const { res, llamadas } = await correr({ 'www.masonline.com.ar': [p] },
+    { eans: '7891150019560', tiendas: 'masonline' });
+
+  const m = res.body.resultados['7891150019560'].masonline;
+  assert.strictEqual(m.precio, 2739, 'no se pierde el producto por la regla estricta');
+  assert.strictEqual(m.porConsultaIndividual, true);
+  assert.ok(m.eanNoCoincide, 'y queda dicho que ningun SKU declara ese EAN');
+  assert.strictEqual(res.body.recuperadosIndividual, 1);
+  const individuales = llamadas.filter((x) => /products\/search\?fq=alternateIds_Ean:7891150019560&_from/.test(x));
+  assert.ok(individuales.length >= 1, 'se pregunto de a un EAN');
+});
+
+test('si de a uno tampoco aparece, no se inventa: encontrado false', async () => {
+  sesionOk = true;
+  CANALES = {}; REGIONES = {}; FICHAS = {}; SIMS = {};
+  const { res } = await correr({
+    'www.masonline.com.ar': [prodConRefInterno('7790000000001', '7891150019560', 'Otra cosa', 201)],
+  }, { eans: '7891150019560', tiendas: 'masonline' });
+
+  assert.strictEqual(res.body.resultados['7891150019560'].masonline.encontrado, false);
 });

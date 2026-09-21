@@ -405,7 +405,8 @@
         const x = porTienda[t.id];
         if (!x || !x.encontrado) return '<td class="cpx-num"><span class="nada">—</span></td>';
 
-        const malo = Boolean(x.simulacionFallo) || Boolean(x.listaSospechosa);
+        const malo = Boolean(x.simulacionFallo) || Boolean(x.listaSospechosa)
+          || Boolean(x.precioDisparatado) || Boolean(x.eanNoCoincide);
         const barato = min != null && x.precio === min && x.disponible && !malo;
 
         const bits = [`<span class="precio">${plata(x.precio)}</span>`];
@@ -426,14 +427,34 @@
 
         if (!x.disponible) bits.push('<span class="ojo" title="La tienda lo tiene publicado pero sin stock.">sin stock</span>');
 
+        // El nombre que encontró ESTA tienda, cuando no es el mismo de la fila.
+        // La fila muestra un solo nombre —el de la primera tienda que tenga el
+        // producto— así que un producto equivocado en otra tienda no se veía.
+        if (x.nombre && nombre && x.nombre.trim() !== nombre.trim()) {
+          bits.push(`<span class="thnota" title="${esc(x.nombre)}">${esc(x.nombre.slice(0, 34))}${x.nombre.length > 34 ? '…' : ''}</span>`);
+        }
+
         // UN solo renglon para el problema, con el detalle en el tooltip. Antes
         // se apilaban "sin promos aplicadas" y "precio de lista dudoso" y la
         // celda se volvia ilegible.
         if (malo) {
-          const por = x.simulacionFallo
-            ? `No se pudo simular el carrito (${x.simulacionFallo}), así que este es el precio del catálogo y puede no incluir promociones.`
-            : `La tienda devolvió ${plata(x.listaSospechosa.valor)} como precio anterior, que implicaría −${x.listaSospechosa.pctImplicado}%. No es creíble, así que no se muestra.`;
-          bits.push(`<span class="ojo" title="${esc(por)}">precio sin verificar</span>`);
+          // Un motivo por celda, el más grave primero. Antes se apilaban y la
+          // celda quedaba ilegible.
+          let por, etiqueta = 'precio sin verificar';
+          if (x.eanNoCoincide) {
+            por = `${x.eanNoCoincide}. Puede ser otro producto, así que el precio no se compara.`;
+            etiqueta = 'EAN no coincide';
+          } else if (x.precioDisparatado) {
+            por = `${plata(x.precio)} es el ${x.precioDisparatado.pctDeLaMediana}% de lo que cobran `
+              + `las demás tiendas (mediana ${plata(x.precioDisparatado.mediana)}). Un precio así `
+              + `casi nunca es una promoción: suele ser otro producto. No compite por el más barato.`;
+            etiqueta = 'precio no creíble';
+          } else if (x.simulacionFallo) {
+            por = `No se pudo simular el carrito (${x.simulacionFallo}), así que este es el precio del catálogo y puede no incluir promociones.`;
+          } else {
+            por = `La tienda devolvió ${plata(x.listaSospechosa.valor)} como precio anterior, que implicaría −${x.listaSospechosa.pctImplicado}%. No es creíble, así que no se muestra.`;
+          }
+          bits.push(`<span class="ojo" title="${esc(por)}">${etiqueta}</span>`);
         }
 
         // UNA promo visible y el resto en un contador. Carrefour declara varias
@@ -500,7 +521,10 @@
     // comparar contra un precio sin verificar o sin stock es comparar con algo
     // que el cliente no puede comprar a ese precio.
     const comparable = (x) => x && x.encontrado && x.disponible
-      && x.precio != null && !x.simulacionFallo && !x.listaSospechosa;
+      && x.precio != null && !x.simulacionFallo && !x.listaSospechosa
+      // Un precio que no se sostiene al lado de los demas, o de un SKU que no
+      // declara el EAN pedido, no puede entrar en promedios ni ganar nada.
+      && !x.precioDisparatado && !x.eanNoCoincide;
 
     // ── Hoja 1: Comparación ─────────────────────────────────────────────────
     const est1 = [];
@@ -570,7 +594,9 @@
         const x = porTienda[t.id];
         if (!x || !x.encontrado) continue;
         const dif = (base != null && !t.propia && comparable(x)) ? x.precio / base - 1 : null;
-        const fuente = x.simulacionFallo ? 'catálogo (sin verificar)'
+        const fuente = x.eanNoCoincide ? 'el SKU no declara ese EAN'
+          : x.precioDisparatado ? `no creíble: ${x.precioDisparatado.pctDeLaMediana}% de la mediana`
+            : x.simulacionFallo ? 'catálogo (sin verificar)'
           : x.fuentePrecio === 'ficha' ? 'JSON-LD de la ficha'
             : x.fuentePrecio === 'simulacion' ? 'simulación de carrito' : 'catálogo';
         filas2.push([ean, x.nombre || nombreDe(ean), t.nombre,
