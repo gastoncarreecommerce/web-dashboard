@@ -154,6 +154,14 @@
       return;
     }
 
+    // Las fotos de los visibles, en paralelo. W.productImg cachea los fallos,
+    // asi que un EAN que VTEX no tiene no se vuelve a pedir en cada re-render.
+    //
+    // Va DESPUES del chequeo de vacio: sin filas no hay fotos que pedir. Al
+    // mover el chequeo para arriba quedo sin reponer esta linea y la vista
+    // moria con "fotos is not defined".
+    const fotos = await Promise.all(visibles.map((r) => W.productImg(r.sku)));
+
     // ── Cabecera: totales del ranking, con su mix ──────────────────────────
     const skusApp = filas.filter((r) => r.app[metric] > 0).length;
     const soloApp = filas.filter((r) => r.app[metric] > 0 && r.web[metric] === 0).length;
