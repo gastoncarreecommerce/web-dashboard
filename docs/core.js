@@ -144,12 +144,16 @@
   W.productImg = async function (sku) {
     const k = String(sku || '');
     if (imgCache.has(k)) return imgCache.get(k);
-    if (!/^\d{8,14}$/.test(k)) { imgCache.set(k, null); return null; }
+    // Antes esto descartaba todo lo que no fueran 8-14 digitos, asi que los
+    // productos de MARKETPLACE —cuyo identificador es el codigo del seller,
+    // "LTDRI0714PB0-DRN"— nunca se consultaban y salian todos con el cuadrito
+    // gris. El servidor ahora sabe buscar por codigo de referencia tambien.
+    if (!k || k.length > 60 || /[\s"']/.test(k)) { imgCache.set(k, null); return null; }
     let url = null;
     try {
       const ctrl = new AbortController();
       const to = setTimeout(() => ctrl.abort(), 3000);
-      const res = await fetch(`/api/product-image?ean=${encodeURIComponent(k)}`, { signal: ctrl.signal });
+      const res = await fetch(`/api/product-image?sku=${encodeURIComponent(k)}`, { signal: ctrl.signal });
       clearTimeout(to);
       if (res.ok) url = (await res.json())?.image || null;
     } catch { /* sin red, timeout, o VTEX no lo tiene: se sigue sin imagen */ }
@@ -731,6 +735,44 @@
    * con datos de todo el dataset, y cuando se genero. Con eso el shell decide
    * si puede pintar numeros o tiene que decir que no los tiene.
    */
+  /**
+   * El esqueleto que se muestra mientras se traen los numeros de hoy.
+   *
+   * Por que existe: al elegir "Hoy", la vista se pintaba con lo ultimo
+   * guardado —que puede ser de hace horas— y un segundo despues los numeros
+   * saltaban a los reales. Ese salto se lee como si los datos hubieran
+   * cambiado, cuando lo que cambio fue que llegaron.
+   *
+   * Tiene la FORMA de lo que va a aparecer, no un spinner centrado: asi la
+   * pagina no da un salto de layout cuando llegan los datos, y se entiende que
+   * viene una fila de KPIs y dos tarjetas y no otra cosa.
+   */
+  W.esqueleto = function (vista) {
+    const kpi = () => `<div class="kpi sk"><div class="sk-b" style="width:2.2rem;height:2.2rem;border-radius:10px"></div>
+      <div class="sk-b" style="width:60%;height:1.6rem;margin-top:.6rem"></div>
+      <div class="sk-b" style="width:45%;height:.7rem;margin-top:.45rem"></div>
+      <div class="sk-b" style="width:70%;height:.6rem;margin-top:.35rem"></div></div>`;
+    const card = (alto) => `<div class="card sk"><div class="card-h">
+      <div><div class="sk-b" style="width:9rem;height:.95rem"></div>
+      <div class="sk-b" style="width:14rem;height:.65rem;margin-top:.4rem"></div></div></div>
+      <div class="sk-b" style="height:${alto}px;margin:.2rem 0 .4rem"></div></div>`;
+    const filas = (n) => `<div class="card sk"><div class="card-h">
+      <div><div class="sk-b" style="width:8rem;height:.95rem"></div></div></div>
+      ${Array.from({ length: n }, (_, i) => `<div class="sk-row">
+        <div class="sk-b" style="width:2rem;height:2rem;border-radius:8px"></div>
+        <div style="flex:1"><div class="sk-b" style="width:${70 - i * 4}%;height:.8rem"></div>
+        <div class="sk-b" style="width:30%;height:.6rem;margin-top:.35rem"></div></div>
+        <div class="sk-b" style="width:4rem;height:.8rem"></div></div>`).join('')}</div>`;
+
+    const cuantos = { dashboard: 4, canales: 4, productos: 0, analytics: 4, tiendas: 3, marketing: 4, coupons: 4 };
+    const n = cuantos[vista] ?? 4;
+    return `<div class="sk-wrap" aria-busy="true" aria-live="polite">
+      <span class="sr-only">Trayendo los números de hoy…</span>
+      ${n ? `<div class="kpis">${Array.from({ length: n }, kpi).join('')}</div>` : ''}
+      ${vista === 'productos' ? filas(6) : card(220) + card(160)}
+    </div>`;
+  };
+
   W.coberturaCanal = function (daily, range) {
     const dias = (daily && daily.days) || [];
     const pedidosDe = (d) => Object.values(d?.segments || {})

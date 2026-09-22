@@ -16,6 +16,8 @@
   let startDate = null;
   let exportsBag = {};
   let avisoCobertura = null;
+  // Si el primer sondeo del vivo ya termino en esta sesion (bien o mal).
+  let primerSondeoHecho = false;
   let meta = null;
 
   // ── "Hoy en vivo" ──────────────────────────────────────────────────────
@@ -66,7 +68,15 @@
   async function pollLiveToday() {
     try {
       const res = await fetch('/api/today-live', { cache: 'no-store' });
-      if (!res.ok) { warnLiveUnavailable(res); return; } // se reintenta el próximo tick
+      if (!res.ok) {
+        // El primer sondeo TERMINO, aunque haya sido mal: hay que salir del
+        // esqueleto igual, o la pantalla se queda cargando para siempre cuando
+        // el endpoint no responde.
+        primerSondeoHecho = true;
+        warnLiveUnavailable(res);
+        if (LIVE_VIEWS.includes(state.view)) W.render();
+        return;
+      }
       const live = await res.json();
 
       // El vivo ahora trae los DOS canales del mismo escaneo de VTEX
@@ -99,8 +109,15 @@
       W.invalidateMerged();
       if (!days.includes(live.date)) { days.push(live.date); days.sort(); }
       liveQueriedAt = live.queriedAt;
+      primerSondeoHecho = true;
       if (LIVE_VIEWS.includes(state.view)) W.render();
-    } catch { /* red intermitente: se reintenta en el próximo tick, sin romper la pantalla */ }
+    } catch {
+      // Red intermitente: se reintenta en el proximo tick, sin romper la
+      // pantalla. Pero se sale del esqueleto: mejor los ultimos datos guardados
+      // que un esqueleto eterno.
+      primerSondeoHecho = true;
+      if (LIVE_VIEWS.includes(state.view)) W.render();
+    }
   }
 
   function startLive() {
@@ -352,6 +369,20 @@
     if (todayInRange && LIVE_VIEWS.includes(state.view)) startLive();
     else stopLive();
 
+    // ── Esqueleto mientras se traen los numeros de hoy ─────────────────────
+    // Al elegir "Hoy" la vista se pintaba con lo ultimo guardado —que puede ser
+    // de hace horas— y un segundo despues los numeros saltaban a los reales.
+    // Ese salto se lee como si los datos hubieran cambiado, cuando lo que
+    // cambio fue que llegaron. El esqueleto dice "esto todavia no esta", que es
+    // la verdad, en vez de mostrar un numero viejo como si fuera el de ahora.
+    //
+    // Solo la PRIMERA vez: despues, los refrescos de cada 15 segundos actualizan
+    // en su lugar sin parpadear, porque ahi si hay un numero real que mostrar.
+    if (todayInRange && LIVE_VIEWS.includes(state.view) && !primerSondeoHecho) {
+      $('content').innerHTML = W.esqueleto(state.view);
+      return;
+    }
+
     try {
       if (state.view === 'dashboard') await W.viewDashboard(ctx);
       else if (state.view === 'canales') await W.viewCanales(ctx);
@@ -511,6 +542,31 @@
     // el botón se queda "actualizando" y consulta solo, cada 15s, si ya
     // apareció información más nueva. Cuando aparece, recarga la pantalla
     // sola. Nada de esto se cuenta: para quien lo usa es solo "actualizar".
+    // ── Exportar el período ────────────────────────────────────────────────
+    // Un solo archivo con todo lo del rango que se está viendo, en vez de una
+    // tabla por vista. Respeta el canal y el segmento activos: el Excel tiene
+    // que dar lo mismo que la pantalla, o no sirve.
+    const expBtn = $('export-periodo');
+    if (expBtn) {
+      const ico = expBtn.querySelector('.ri');
+      const lbl = expBtn.querySelector('.rl');
+      ico.innerHTML = W.icon('download', 14);
+      let bajando = false;
+      expBtn.addEventListener('click', async () => {
+        if (bajando) return;
+        if (!state.range) { W.toast('Elegí un período para exportar.', 'bad'); return; }
+        bajando = true; expBtn.disabled = true; lbl.textContent = 'Armando…';
+        try {
+          const n = await W.exportarPeriodo({ range: state.range, bucket: state.bucket });
+          W.toast(`Listo: ${n} hojas con todo el período.`, 'ok');
+        } catch (e) {
+          W.toast(`No se pudo exportar: ${e.message}`, 'bad');
+        } finally {
+          bajando = false; expBtn.disabled = false; lbl.textContent = 'Exportar';
+        }
+      });
+    }
+
     const refreshBtn = $('refresh-today');
     if (refreshBtn) {
       const icon = refreshBtn.querySelector('.ri');
