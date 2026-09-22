@@ -102,3 +102,43 @@ test('el rango de la hoja cubre todas las columnas de la fila mas larga', () => 
   const desparejas = [['a', 'b', 'c', 'd'], [1, 2]];
   assert.ok(sheetXml({ rows: desparejas }).includes('<dimension ref="A1:D2"/>'));
 });
+
+// ── Compresión ─────────────────────────────────────────────────────────────
+// El archivo se armaba sin comprimir, porque para unas pocas tablas no se
+// notaba. Con una hoja de un renglón por PEDIDO son ~100.000 filas por mes: sin
+// comprimir daba 44,5 MB. Un xlsx es un ZIP de XML, o sea texto, que comprime
+// como diez a uno.
+
+test('el archivo sale comprimido con deflate', async () => {
+  const zlib = require('zlib');
+  const filas = [['a', 'b', 'c'], ...Array.from({ length: 300 }, (_, i) => [`fila ${i}`, i, i * 2])];
+  const blob = await new Promise((resolve) => {
+    // downloadXLSX toca el DOM: se prueba el zip a través de él capturando el
+    // Blob que arma, con stubs mínimos del navegador.
+    const urls = [];
+    global.URL = { createObjectURL: (b) => { urls.push(b); return 'blob:x'; }, revokeObjectURL() {} };
+    global.document = { createElement: () => ({ click() {}, style: {}, set href(v) {}, set download(v) {} }),
+      body: { appendChild() {}, removeChild() {} } };
+    W.downloadXLSX('x.xlsx', [{ name: 'Datos', rows: filas }]).then(() => resolve(urls[0]));
+  });
+  const buf = Buffer.from(await blob.arrayBuffer());
+
+  // En el encabezado local de la primera entrada, el método está en el byte 8.
+  const metodo = buf.readUInt16LE(8);
+  assert.strictEqual(metodo, 8, 'método 8 es deflate; 0 sería sin comprimir');
+
+  // Y el tamaño comprimido tiene que ser menor que el original, que son los
+  // dos campos siguientes del mismo encabezado.
+  const comprimido = buf.readUInt32LE(18);
+  const original = buf.readUInt32LE(22);
+  assert.ok(comprimido < original, `${comprimido} tiene que ser menor que ${original}`);
+
+  // Y lo comprimido tiene que descomprimir a lo original: un ZIP con el CRC o
+  // los tamaños mal declarados no lo abre nadie.
+  const nombreLen = buf.readUInt16LE(26);
+  const extraLen = buf.readUInt16LE(28);
+  const datos = buf.subarray(30 + nombreLen + extraLen, 30 + nombreLen + extraLen + comprimido);
+  const crudo = zlib.inflateRawSync(datos);
+  assert.strictEqual(crudo.length, original, 'el tamaño original declarado tiene que ser el real');
+  assert.ok(crudo.toString('utf8').startsWith('<?xml'), 'y descomprimir a XML válido');
+});

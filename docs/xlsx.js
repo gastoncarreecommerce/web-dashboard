@@ -43,24 +43,53 @@
 
   const enc = new TextEncoder();
 
-  function zip(files) {
+  /**
+   * Comprime con DEFLATE usando la compresion nativa del navegador.
+   *
+   * Por que ahora importa: el archivo se armaba "stored" —sin comprimir— porque
+   * para unas pocas tablas la diferencia no se notaba. Con una hoja de un
+   * renglon por PEDIDO son ~100.000 filas por mes, y sin comprimir eso da
+   * decenas de MB. Un xlsx es un ZIP de XML, o sea texto, que comprime como
+   * diez a uno.
+   *
+   * CompressionStream es parte del navegador, no una libreria: no viola la CSP
+   * del sitio, que es lo que obligo a escribir este archivo a mano. Si no esta
+   * disponible se vuelve a "stored", que sigue abriendo igual, solo que pesado.
+   */
+  async function deflate(bytes) {
+    if (typeof CompressionStream !== 'function') return null;
+    try {
+      const cs = new CompressionStream('deflate-raw');
+      const stream = new Blob([bytes]).stream().pipeThrough(cs);
+      return new Uint8Array(await new Response(stream).arrayBuffer());
+    } catch { return null; }
+  }
+
+  async function zip(files) {
     const chunks = [];
     const central = [];
     let offset = 0;
 
     for (const f of files) {
       const nameBytes = enc.encode(f.name);
-      const data = enc.encode(f.content);
-      const crc = crc32(data);
+      const cruda = enc.encode(f.content);
+      const crc = crc32(cruda);
+      // El CRC y el tamaño sin comprimir se declaran SIEMPRE sobre el original;
+      // solo cambia lo que se escribe y el método. Confundir los dos tamaños
+      // deja un ZIP que no abre.
+      const comprimida = await deflate(cruda);
+      const usaDeflate = Boolean(comprimida && comprimida.length < cruda.length);
+      const data = usaDeflate ? comprimida : cruda;
+      const metodo = usaDeflate ? 8 : 0;
 
       const local = new DataView(new ArrayBuffer(30));
       local.setUint32(0, 0x04034b50, true);   // firma
       local.setUint16(4, 20, true);           // versión necesaria
       local.setUint16(6, 0x0800, true);       // flag: nombres en UTF-8
-      local.setUint16(8, 0, true);            // método: stored
+      local.setUint16(8, metodo, true);
       local.setUint32(14, crc, true);
-      local.setUint32(18, data.length, true);
-      local.setUint32(22, data.length, true);
+      local.setUint32(18, data.length, true);      // comprimido
+      local.setUint32(22, cruda.length, true);     // original
       local.setUint16(26, nameBytes.length, true);
       chunks.push(new Uint8Array(local.buffer), nameBytes, data);
 
@@ -69,10 +98,10 @@
       cd.setUint16(4, 20, true);
       cd.setUint16(6, 20, true);
       cd.setUint16(8, 0x0800, true);
-      cd.setUint16(10, 0, true);
+      cd.setUint16(10, metodo, true);
       cd.setUint32(16, crc, true);
       cd.setUint32(20, data.length, true);
-      cd.setUint32(24, data.length, true);
+      cd.setUint32(24, cruda.length, true);
       cd.setUint16(28, nameBytes.length, true);
       cd.setUint32(42, offset, true);
       central.push(new Uint8Array(cd.buffer), nameBytes);
@@ -248,7 +277,7 @@
   // Se expone para los tests: es la funcion que armaba mal el panel activo.
   W._sheetXml = sheetXml;
 
-  W.downloadXLSX = function (filename, sheets) {
+  W.downloadXLSX = async function (filename, sheets) {
     const list = sheets.filter((s) => s.rows && s.rows.length);
     if (!list.length) {
       // El comparador es una pagina independiente y no carga core.js, asi que
@@ -332,7 +361,7 @@
       ...list.map((s, i) => ({ name: `xl/worksheets/sheet${i + 1}.xml`, content: sheetXml(s) })),
     ];
 
-    const url = URL.createObjectURL(zip(files));
+    const url = URL.createObjectURL(await zip(files));
     const a = document.createElement('a');
     a.href = url;
     a.download = filename.endsWith('.xlsx') ? filename : `${filename}.xlsx`;

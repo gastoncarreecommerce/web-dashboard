@@ -192,6 +192,63 @@
   }
 
   /**
+   * Una fila por PEDIDO, que es lo que pedía el informe: no un agregado, la
+   * lista cruda para filtrar y tabular en Excel.
+   *
+   * De dónde sale: docs/data/web/order-index/<mes>.json, un archivo por mes con
+   * todos los pedidos sin sus items. No viaja en el deploy (son ~12 MB por mes)
+   * — lo trae api/archive desde la rama del histórico, a pedido.
+   *
+   * QUÉ NO TIENE, y hay que decirlo porque el informe de la app sí los trae:
+   *
+   *  · UTM (source / medium / campaign). La atribución se guarda agregada por
+   *    fuente, no por pedido.
+   *  · Productos y unidades del pedido. El índice es "sin items" a propósito:
+   *    guardarlos multiplicaría el archivo por el tamaño del carrito.
+   *  · El estado viene vacío en los pedidos anteriores a que se empezara a
+   *    guardar. No es un hueco de esta exportación: no está en el dato.
+   *
+   * Los tres se pueden sumar, pero es un cambio en el pipeline y solo aplicaría
+   * de ahí en adelante.
+   */
+  async function hojaPedidos(range, bucket, tiendas, emails) {
+    const meses = [];
+    let m = range.from.slice(0, 7);
+    const fin = range.to.slice(0, 7);
+    while (m <= fin) {
+      meses.push(m);
+      const [y, mm] = m.split('-').map(Number);
+      m = mm === 12 ? `${y + 1}-01` : `${y}-${String(mm + 1).padStart(2, '0')}`;
+    }
+
+    const listas = await Promise.all(meses.map((ym) => W.load(`order-index/${ym}`).catch(() => [])));
+    const segs = bucket === 'all' ? null : new Set([bucket]);
+    const filas = [];
+    for (const lista of listas) {
+      for (const o of (lista || [])) {
+        const fecha = String(o.t || '').slice(0, 10);
+        if (fecha < range.from || fecha > range.to) continue;
+        if (segs && !segs.has(o.sg)) continue;
+        filas.push([
+          o.id,
+          // Fecha y hora como texto ISO recortado: comparable y ordenable sin
+          // depender de la configuración regional de quien lo abre.
+          String(o.t || '').replace('T', ' ').slice(0, 19),
+          o.st || '',
+          o.g ?? null,
+          W.SEGMENT_LABEL[o.sg] || o.sg || '',
+          o.s || '',
+          tiendas?.[o.s]?.name || '',
+          o.cp || '',
+          emails?.get?.(o.h) || o.h || '',
+        ]);
+      }
+    }
+    filas.sort((a, b) => (a[1] < b[1] ? 1 : a[1] > b[1] ? -1 : 0));  // del más nuevo al más viejo
+    return filas;
+  }
+
+  /**
    * Arma y baja el archivo. Se le pasa el contexto del dashboard tal como está
    * en pantalla.
    */
@@ -235,6 +292,45 @@
     } catch { /* sin ranking de productos, el resto del archivo sirve igual */ }
 
     const hojas = libro({ acc, prev, range, bucket, canal, productos, meses });
+
+    // ── Pedidos, uno por fila ───────────────────────────────────────────────
+    // Va al final porque es la más pesada: si falla (el archivo del histórico
+    // no está configurado), el resto del libro sirve igual.
+    try {
+      const [geo, emails] = await Promise.all([
+        W.load('geo').catch(() => null),
+        W.loadEmailMap ? W.loadEmailMap().catch(() => null) : null,
+      ]);
+      const filas = await hojaPedidos(range, bucket, geo?.stores, emails);
+      if (filas.length) {
+        const E2 = W.XLSX_ESTILO;
+        hojas.splice(2, 0, {
+          name: 'Pedidos',
+          rows: [
+            [`Pedidos, uno por fila — ${W.fmtDayLong(range.from)} a ${W.fmtDayLong(range.to)} · ${canal}`
+              + ` · ${filas.length.toLocaleString('es-AR')} pedidos`],
+            ['Sin UTM ni cantidad de productos: no se guardan por pedido.'
+              + ' El estado viene vacío en los pedidos más viejos.'
+              + (emails ? ' La columna Cliente trae el email: es información personal.' : '')],
+            [],
+            ['Order ID', 'Fecha', 'Estado', 'Total', 'Segmento', 'Código de tienda',
+              'Tienda', 'Cupón', 'Cliente'],
+            ...filas,
+          ],
+          filaEncabezado: 4,
+          columnasFijas: 2,
+          widths: [22, 20, 20, 14, 16, 16, 30, 20, 34],
+          merges: ['A1:I1', 'A2:I2'],
+          estiloDe: (f, c) => {
+            if (f === 1) return E2.titulo;
+            if (f === 2) return E2.nota;
+            if (f === 4) return E2.encabezado;
+            if (f < 4) return null;
+            return c === 3 ? E2.moneda : null;
+          },
+        });
+      }
+    } catch { /* sin el histórico, el resto del libro va igual */ }
     const nombre = `webdash-${W.channel}-${range.from}_a_${range.to}.xlsx`;
     W.downloadXLSX(nombre, hojas);
     return hojas.length;
