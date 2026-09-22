@@ -123,13 +123,34 @@
     const visibles = filas.slice(0, tope);
     const max = visibles.length ? (visibles[0][metric] || 1) : 1;
 
-    // Las fotos de los visibles, en paralelo. W.productImg cachea los fallos, asi
-    // que un EAN que VTEX no tiene no se vuelve a pedir en cada re-render.
-    const fotos = await Promise.all(visibles.map((r) => W.productImg(r.sku)));
-
+    // El chequeo de vacio va ANTES de pedir las fotos: sin filas no hay fotos
+    // que pedir, y pedirlas era trabajo al vacio en el unico caso donde la
+    // vista no muestra nada.
     if (!porSku.size) {
+      // POR QUE NO HAY NADA, no solo que no hay nada.
+      //
+      // El mensaje anterior decia "el rango elegido no cae en ningún mes con
+      // datos" y eso no le sirve a nadie: con el canal App y un rango de enero
+      // se leia como que el dashboard estaba roto. Lo que pasa es que el
+      // historico de App arranca despues que el de Web, y eso hay que decirlo
+      // con el mes puesto.
+      const cubiertos = (file.months || []).slice().sort();
+      const desde = cubiertos[0];
+      const hasta = cubiertos[cubiertos.length - 1];
+      const canal = W.channel === 'app' ? 'App' : W.channel === 'web' ? 'Web' : 'App + Web';
+      const antes = desde && meses[meses.length - 1] < desde;
+      const despues = hasta && meses[0] > hasta;
+
       el.innerHTML = `<div class="empty"><h2>Sin productos en el período</h2>
-        <p>El ranking se corta por mes; el rango elegido no cae en ningún mes con datos.</p></div>`;
+        <p>El ranking de <b>${W.esc(canal)}</b> ${cubiertos.length
+    ? `va de <b>${W.esc(W.fmtMonthLong(desde))}</b> a <b>${W.esc(W.fmtMonthLong(hasta))}</b>`
+    : 'no tiene ningún mes cargado'}, y el rango elegido
+          ${antes ? 'es <b>anterior</b> a eso' : despues ? 'es <b>posterior</b> a eso' : 'no lo toca'}.</p>
+        ${W.channel === 'app' && antes ? `<p>El histórico de la App arranca después que el de la Web:
+          para comparar un período anterior hay que usar el canal <b>Web</b> o <b>App + Web</b>.</p>` : ''}
+        ${cubiertos.length ? `<p class="muted" style="font-size:.8rem">Meses con datos:
+          ${cubiertos.map((m) => W.esc(W.fmtMonthLong(m))).join(' · ')}</p>` : ''}
+      </div>`;
       return;
     }
 

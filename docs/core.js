@@ -108,7 +108,15 @@
     const min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
     if (min < 1) return 'recién';
     if (min < 60) return `hace ${min} min`;
-    return `hace ${Math.round(min / 60)} h`;
+    const h = Math.round(min / 60);
+    if (h < 48) return `hace ${h} h`;
+    // Pasadas las 48 h, en dias: "hace 138 h" obliga a dividir mentalmente para
+    // entender que el dato tiene casi una semana, y es justo el caso en que
+    // importa que se entienda de una.
+    const d = Math.round(h / 24);
+    if (d < 30) return `hace ${d} días`;
+    const me = Math.round(d / 30);
+    return me < 2 ? 'hace más de un mes' : `hace ${me} meses`;
   };
   W.fmtMonth = (m) => new Date(`${m}-01T00:00:00Z`).toLocaleDateString('es-AR', { timeZone: 'UTC', month: 'short', year: '2-digit' });
   /** Mes en palabras: "septiembre de 2026". En una frase, "sept 26" se lee como
@@ -705,6 +713,53 @@
    * vista unificada y las vistas de un solo canal no pueden divergir en los
    * numeros.
    */
+  /**
+   * Hasta donde llegan los datos del canal activo, y cuanto de eso cubre el
+   * rango pedido.
+   *
+   * POR QUE HACE FALTA. Con el canal App y el rango "Ayer", el dashboard
+   * mostraba GMV $0, 0 pedidos, 0 clientes y un "↓100,0% vs. ant." en rojo en
+   * cada KPI, comparando contra 1,1 K pedidos del periodo anterior. O sea que
+   * anunciaba que la App se habia caido del todo.
+   *
+   * Lo que pasaba es otra cosa: el agregado de App se genera a mano y estaba
+   * cortado seis dias antes, asi que ese dia NO EXISTE en el dataset. "0" y "no
+   * tengo el dato" son cosas distintas y el dashboard las estaba mostrando
+   * igual. Un 0 con un -100% al lado es la peor forma de decir "falta el dato".
+   *
+   * Devuelve los dias del rango que el dataset tiene CON pedidos, el ultimo dia
+   * con datos de todo el dataset, y cuando se genero. Con eso el shell decide
+   * si puede pintar numeros o tiene que decir que no los tiene.
+   */
+  W.coberturaCanal = function (daily, range) {
+    const dias = (daily && daily.days) || [];
+    const pedidosDe = (d) => Object.values(d?.segments || {})
+      .reduce((t, sg) => t + ((sg && sg.orders) || 0), 0);
+    const conDato = dias.filter((d) => pedidosDe(d) > 0);
+    const ultimo = conDato.length ? conDato[conDato.length - 1].date : null;
+    if (!range) return { enRango: 0, pedidos: 0, ultimo, generatedAt: daily && daily.generatedAt };
+    const enRango = conDato.filter((d) => d.date >= range.from && d.date <= range.to);
+    const total = W.daysBetween(range.from, range.to);
+    return {
+      enRango: enRango.length,
+      diasPedidos: total,
+      pedidos: enRango.reduce((t, d) => t + pedidosDe(d), 0),
+      ultimo,
+      generatedAt: daily && daily.generatedAt,
+      // El rango arranca despues del ultimo dia con datos: no es que no hubo
+      // ventas, es que el dataset no llega hasta ahi.
+      porDelante: Boolean(ultimo && range.from > ultimo),
+      // EL ULTIMO DIA DEL DATASET PUEDE ESTAR A MEDIAS. Si la corrida que lo
+      // genero fue ESE MISMO dia, capturo solo hasta esa hora. Con el canal Web
+      // y el rango "Ayer" eso daba "175 pedidos, ↓95,9% vs. ant." contra 1.465
+      // del dia anterior: una caida inventada por la hora de corte, no por las
+      // ventas. Comparar medio dia contra uno entero no compara nada.
+      ultimoParcial: Boolean(ultimo && daily && daily.generatedAt
+        && String(daily.generatedAt).slice(0, 10) === ultimo
+        && range.to >= ultimo),
+    };
+  };
+
   W.channelMatrix = function (channels, range) {
     const porCanal = {};
     for (const ch of W.CHANNELS) porCanal[ch] = W.sumRange(channels[ch].data, 'all', range);

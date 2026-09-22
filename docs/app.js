@@ -15,6 +15,7 @@
   let days = [];
   let startDate = null;
   let exportsBag = {};
+  let avisoCobertura = null;
   let meta = null;
 
   // ── "Hoy en vivo" ──────────────────────────────────────────────────────
@@ -261,6 +262,23 @@
       bits.push(`${W.fmtNum(days.length)} días de historial`);
       bits.push(`${W.fmtDayShort(days[0])} → ${W.fmtDayShort(days[days.length - 1])}`);
     }
+    // Cobertura parcial del canal activo. Es el caso mas enganoso de los dos:
+    // los numeros que se pintan son reales, pero incompletos, y la comparacion
+    // contra el periodo anterior compara un rango al que le faltan dias contra
+    // uno entero — o sea que inventa una caida.
+    if (avisoCobertura) {
+      const c = avisoCobertura;
+      const faltan = c.diasPedidos - c.enRango;
+      if (faltan > 0) {
+        bits.push(`⚠ faltan ${faltan} de ${c.diasPedidos} días en este canal`
+          + ` (llega hasta ${W.fmtDayShort(c.ultimo)}): los totales están incompletos`
+          + ` y la comparación contra el período anterior no es válida`);
+      } else if (c.ultimoParcial) {
+        bits.push(`⚠ ${W.fmtDayShort(c.ultimo)} está incompleto: la última corrida fue`
+          + ` ese mismo día, así que capturó solo hasta esa hora.`
+          + ` La caída contra el período anterior es del corte, no de las ventas`);
+      }
+    }
     $('meta').innerHTML = bits.map((b) => `<span>${W.esc(b)}</span>`).join('');
   }
 
@@ -288,6 +306,44 @@
         <p>Corré el backfill inicial para poblar el historial (ver README).</p></div>`;
       return;
     }
+
+    // ── El canal activo, llega hasta donde llega ──────────────────────────
+    // Antes, con el canal App y el rango "Ayer", el dashboard mostraba GMV $0,
+    // 0 pedidos y un "↓100,0% vs. ant." en rojo en cada KPI: anunciaba que la
+    // App se habia caido del todo. Lo que pasaba es que el agregado de App se
+    // genera a mano y estaba cortado seis dias antes, asi que ese dia no existe
+    // en el dataset. "0" y "no tengo el dato" son cosas distintas.
+    //
+    // Va en el shell y no en cada vista a proposito: el problema es el mismo en
+    // todas, y un numero inventado en Analitica engana igual que en el Resumen.
+    const VISTAS_CON_RANGO = !['audiences', 'buscador', 'mensual'].includes(state.view);
+    if (VISTAS_CON_RANGO && state.range) {
+      let cob = null;
+      try { cob = W.coberturaCanal(await W.load('daily-summary'), state.range); } catch { /* sin dataset, cada vista avisa */ }
+      if (cob && cob.enRango === 0 && cob.ultimo) {
+        const canal = W.channel === 'app' ? 'App' : W.channel === 'web' ? 'Web' : 'App + Web';
+        $('content').innerHTML = `<div class="empty">
+          <h2>No hay datos de ${W.esc(canal)} para este período</h2>
+          <p>Los datos de <b>${W.esc(canal)}</b> llegan hasta el
+            <b>${W.esc(W.fmtDayLong(cob.ultimo))}</b>${cob.generatedAt
+    ? ` (última actualización ${W.esc(W.timeAgo(cob.generatedAt))})` : ''},
+            y el rango elegido ${cob.porDelante ? 'es posterior a eso' : 'no lo toca'}.</p>
+          <p>No es que no hubo ventas: <b>ese día no está cargado</b>. Se muestra esto en vez de
+            un 0 con una caída del 100%, que es lo que decía antes.</p>
+          ${W.channel !== 'web' ? '<p class="muted">El canal <b>Web</b> sí está al día: se actualiza solo cada 30 minutos.</p>' : ''}
+        </div>`;
+        $('meta').innerHTML = '';
+        return;
+      }
+      // Cobertura parcial: se pintan los numeros, pero se avisa que faltan dias
+      // —y sobre todo que la comparacion contra el periodo anterior no vale,
+      // porque compara un rango incompleto contra uno completo.
+      avisoCobertura = (cob && cob.enRango > 0
+        && (cob.enRango < cob.diasPedidos || cob.ultimoParcial)) ? cob : null;
+      // pintarPie() ya corrio mas arriba, antes de saber la cobertura: se
+      // repinta para que el aviso entre.
+      if (avisoCobertura) pintarPie();
+    } else avisoCobertura = null;
 
     exportsBag = {};
     const ctx = { range: state.range, bucket: state.bucket, compare: state.compare, el: $('content'), exports: exportsBag };
