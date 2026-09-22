@@ -204,7 +204,17 @@
         const style = styleIdx ? ` s="${styleIdx}"` : '';
         // Los números van sin t="inlineStr" para que Excel los trate como número.
         if (isNum) return `<c r="${ref}"${style}><v>${v}</v></c>`;
-        const text = v == null ? '' : String(v);
+        // UN OBJETO EN UNA CELDA ES SIEMPRE UN ERROR DE QUIEN ARMA LA HOJA,
+        // pero String() lo convierte en "[object Object]", que no dice nada y
+        // se descubre recien al abrir el archivo. Paso dos veces: en el
+        // comparador de precios y en la columna Cliente del export, esa con
+        // 73.000 filas asi.
+        //
+        // Se serializa a JSON: sigue estando mal, pero se VE que dato es y de
+        // donde salio, que es la diferencia entre un bug de diez minutos y uno
+        // de una tarde.
+        const text = v == null ? ''
+          : (typeof v === 'object' ? JSON.stringify(v) : String(v));
         if (!text) return `<c r="${ref}"${style}/>`;
         return `<c r="${ref}"${style} t="inlineStr"><is><t xml:space="preserve">${esc(text)}</t></is></c>`;
       }).join('');

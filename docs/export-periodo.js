@@ -229,6 +229,7 @@
         const fecha = String(o.t || '').slice(0, 10);
         if (fecha < range.from || fecha > range.to) continue;
         if (segs && !segs.has(o.sg)) continue;
+        const cliente = emails?.get?.(o.h) || null;
         filas.push([
           o.id,
           // Fecha y hora como texto ISO recortado: comparable y ordenable sin
@@ -239,8 +240,17 @@
           W.SEGMENT_LABEL[o.sg] || o.sg || '',
           o.s || '',
           tiendas?.[o.s]?.name || '',
-          o.cp || '',
-          emails?.get?.(o.h) || o.h || '',
+          // Un pedido puede llevar varios cupones: el campo es una lista.
+          // Sin esto la celda mostraba el JSON del array.
+          Array.isArray(o.cp) ? o.cp.join(' · ') : (o.cp || ''),
+          // El mapa es hash -> { email, dni }, no hash -> email. Poner el
+          // objeto en la celda daba "[object Object]" en las 73.000 filas.
+          cliente?.email || '',
+          cliente?.dni || '',
+          // El hash va SIEMPRE, en su propia columna: sin el, una fila sin
+          // email queda sin forma de identificar al cliente, y con el se puede
+          // cruzar contra Audiencias.
+          o.h || '',
         ]);
       }
     }
@@ -311,22 +321,22 @@
               + ` · ${filas.length.toLocaleString('es-AR')} pedidos`],
             ['Sin UTM ni cantidad de productos: no se guardan por pedido.'
               + ' El estado viene vacío en los pedidos más viejos.'
-              + (emails ? ' La columna Cliente trae el email: es información personal.' : '')],
+              + (emails ? ' Las columnas Email y DNI traen datos personales.' : '')],
             [],
             ['Order ID', 'Fecha', 'Estado', 'Total', 'Segmento', 'Código de tienda',
-              'Tienda', 'Cupón', 'Cliente'],
+              'Tienda', 'Cupón', 'Email', 'DNI', 'ID de cliente'],
             ...filas,
           ],
           filaEncabezado: 4,
           columnasFijas: 2,
-          widths: [22, 20, 20, 14, 16, 16, 30, 20, 34],
-          merges: ['A1:I1', 'A2:I2'],
+          widths: [22, 20, 20, 14, 16, 16, 30, 20, 34, 14, 20],
+          merges: ['A1:K1', 'A2:K2'],
           estiloDe: (f, c) => {
             if (f === 1) return E2.titulo;
             if (f === 2) return E2.nota;
             if (f === 4) return E2.encabezado;
             if (f < 4) return null;
-            return c === 3 ? E2.moneda : null;
+            return c === 3 ? E2.moneda : c === 10 ? E2.ean : null;
           },
         });
       }

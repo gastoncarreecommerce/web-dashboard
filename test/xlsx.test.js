@@ -142,3 +142,26 @@ test('el archivo sale comprimido con deflate', async () => {
   assert.strictEqual(crudo.length, original, 'el tamaño original declarado tiene que ser el real');
   assert.ok(crudo.toString('utf8').startsWith('<?xml'), 'y descomprimir a XML válido');
 });
+
+test('un objeto en una celda se serializa, no queda "[object Object]"', () => {
+  // Pasó dos veces: en el comparador de precios y en la columna Cliente del
+  // export, esa con 73.000 filas así. String() de un objeto no dice nada y el
+  // error se descubre recién al abrir el archivo.
+  const xml = sheetXml({ rows: [['a'], [{ email: 'x@y.com', dni: '123' }]] });
+  assert.ok(!xml.includes('[object Object]'), xml.slice(0, 300));
+  assert.ok(xml.includes('x@y.com'), 'se tiene que poder ver qué dato era');
+});
+
+test('una fecha en una celda sale legible y no como objeto', () => {
+  const xml = sheetXml({ rows: [['a'], [new Date('2026-09-22T10:00:00Z')]] });
+  assert.ok(!xml.includes('[object Object]'));
+});
+
+test('una lista en una celda se serializa visible, no como [object Object]', () => {
+  // Un pedido puede llevar varios cupones y el campo es una lista. Con
+  // String() daba "[object Object]"; ahora se ve qué había, que es lo que
+  // permitió encontrarlo al primer archivo generado.
+  const xml = sheetXml({ rows: [['a'], [['cupon-1', 'cupon-2']]] });
+  assert.ok(!xml.includes('[object Object]'));
+  assert.ok(xml.includes('cupon-1'));
+});
