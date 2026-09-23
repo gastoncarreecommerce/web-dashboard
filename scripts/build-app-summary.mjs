@@ -28,6 +28,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 
 function arg(nombre, def) {
   const i = process.argv.indexOf(`--${nombre}`);
@@ -35,10 +36,16 @@ function arg(nombre, def) {
 }
 const APPDASH = arg('appdash', process.env.APPDASH_DIR || '../vtex-utm-audit');
 const PRIVADO = arg('private', process.env.PRIVATE_DATA_DIR || '../appdash-private-data');
+// order-index es pesado (uno por pedido, todo el historico) — igual que
+// docs/data/web/order-index, vive en la rama `data-raw` para no sumarle peso
+// al deploy. Default '.' deja el comportamiento de siempre para correrlo a
+// mano (todo bajo docs/data/app/, sin separar).
+const ARCHIVE_ROOT = arg('archive-root', process.env.APP_ARCHIVE_ROOT || '.');
 
 const AGG = path.join(APPDASH, 'docs', 'data', 'daily');
 const ROWS = path.join(PRIVADO, 'daily');
 const OUT_DIR = path.join('docs', 'data', 'app');
+const ORDER_INDEX_DIR = path.join(ARCHIVE_ROOT, 'docs', 'data', 'app', 'order-index');
 
 for (const [d, q] of [[AGG, 'agregados de AppDash'], [ROWS, 'rows del repo privado']]) {
   if (!fs.existsSync(d)) {
@@ -61,6 +68,29 @@ const estadoIncluido = (estado) => statusFilter.includeStatuses.includes(estado)
 
 /** Igual que realEmail() en AppDash: saca el sufijo por pedido que agrega VTEX. */
 const normEmail = (e) => (e ? String(e).replace(/-[^-@]*\.ct\.vtex\.com\.br$/i, '').toLowerCase() || null : null);
+
+// Mismo hash que src/customer-key.js#customerHash (sha256 del email real,
+// truncado a 64 bits) para que un mismo cliente comparta la misma clave
+// entre el order-index de Web y el de App — el export cruza contra el mapa
+// hash->email/DNI de audiencias sin importar de qué canal vino el pedido.
+const customerHash = (mailNorm) => (mailNorm
+  ? crypto.createHash('sha256').update(mailNorm).digest('hex').slice(0, 16)
+  : null);
+
+// r.fecha ya viene en hora de pared AR ("15/9/2026, 19:23:41", ver
+// formatFechaAR en vtex-utm-audit/fetch-orders.js) — a diferencia de
+// full.creationDate en el pipeline Web, que es UTC crudo. order-index.t tiene
+// que guardar lo mismo en los dos canales (UTC real) para que W.arDateOf /
+// W.arDateTimeOf en el dashboard lo conviertan bien sin importar el canal:
+// por eso se SUMAN 3h acá (al revés del -3h que hace el front) para volver a
+// UTC antes de guardar.
+function arLocalToUtcIso(fecha) {
+  const m = typeof fecha === 'string'
+    && fecha.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4}),\s*(\d{1,2}):(\d{2}):(\d{2})$/);
+  if (!m) return null;
+  const [d, mo, y, h, mi, s] = m.slice(1).map(Number);
+  return new Date(Date.UTC(y, mo - 1, d, h, mi, s) + 3 * 60 * 60 * 1000).toISOString();
+}
 
 /** "15/9/2026, 19:23:41" -> 19. Es el formato que escribe fetch-orders.js. */
 function horaDe(fecha) {
@@ -91,6 +121,13 @@ const productos = {};          // `${seg}|${ym}|${sku}` -> {sku, name, qty, gmv,
 const vistos = new Set();      // emails ya vistos en dias anteriores -> clientes nuevos
 let sinFecha = 0, sinSegmento = 0, excluidosPorEstado = 0;
 
+// Indice liviano por pedido (sin items, sin email) — mismo shape que
+// docs/data/web/order-index del canal Web (src/aggregate.js), para que la
+// hoja "Pedidos" del export pueda mostrar los dos canales juntos. Incluye
+// TODO estado (cancelados tambien): es el mismo criterio que Web, que lo usa
+// para las pestañas por estado y el detalle de cupones.
+const orderIndexByMonth = {}; // 'YYYY-MM' -> [{id,t,sg,h,g,st,cp}]
+
 for (const f of archivos) {
   const date = f.slice(0, 10);
 
@@ -116,6 +153,7 @@ for (const f of archivos) {
     const segRaw = r.segment;
     const seg = SEG_MAP[segRaw] || (SEGMENTS.includes(segRaw) ? segRaw : null);
     if (!seg) { sinSegmento++; continue; }
+    const ym = date.slice(0, 7);
 
     // statusStats mide TODO lo que llegó (igual que el listado crudo del canal
     // Web), cancelados incluidos: es lo que deja ver la tasa de cancelación.
@@ -123,6 +161,17 @@ for (const f of archivos) {
     const st = r.estado || 'sin-estado';
     const e = (statusStats[st] = statusStats[st] || { orders: 0, gmv: 0 });
     e.orders += 1; e.gmv += gmv;
+
+    const mailIdx = normEmail(r.email);
+    (orderIndexByMonth[ym] = orderIndexByMonth[ym] || []).push({
+      id: r.order_id,
+      t: arLocalToUtcIso(r.fecha) || r.fecha,
+      sg: seg,
+      h: customerHash(mailIdx),
+      g: Math.round(gmv),
+      st,
+      cp: r.coupon ? [r.coupon] : undefined,
+    });
 
     if (!estadoIncluido(st)) { excluidosPorEstado++; continue; }
 
@@ -149,7 +198,6 @@ for (const f of archivos) {
       if (!vistos.has(mail)) { vistos.add(mail); nuevos += 1; }
     }
 
-    const ym = date.slice(0, 7);
     for (const i of items) {
       const sku = i.sku || i.id || i.name;
       if (!sku) continue;
@@ -258,6 +306,15 @@ const salida = {
 fs.mkdirSync(OUT_DIR, { recursive: true });
 fs.writeFileSync(path.join(OUT_DIR, 'daily-summary.json'), JSON.stringify(salida));
 
+fs.mkdirSync(ORDER_INDEX_DIR, { recursive: true });
+let orderIndexBytesTotal = 0;
+for (const [ym, list] of Object.entries(orderIndexByMonth)) {
+  list.sort((a, b) => (a.t < b.t ? -1 : a.t > b.t ? 1 : 0));
+  const buf = JSON.stringify(list);
+  fs.writeFileSync(path.join(ORDER_INDEX_DIR, `${ym}.json`), buf);
+  orderIndexBytesTotal += buf.length;
+}
+
 // products.json con el schema del canal web: segments[segmento][mes] = top 150.
 // El corte por mes mantiene el archivo manejable y el top evita publicar la cola
 // larga de SKUs de una sola venta. `dept` queda vacio: los rows de App no traen
@@ -293,6 +350,7 @@ const tot = (k) => days.reduce((t, d) => t + SEGMENTS.reduce((a, s) => a + d.seg
 console.log(`daily-summary.json · ${days.length} dias · ${tot('orders').toLocaleString('es-AR')} pedidos · ${tot('units').toLocaleString('es-AR')} unidades · ${kb('daily-summary.json')} KB`);
 const nProd = Object.values(segments).reduce((t, m) => t + Object.values(m).reduce((a, arr) => a + arr.length, 0), 0);
 console.log(`products.json     · ${nProd} filas (top ${TOP_POR_MES} x segmento x mes) de ${new Set(Object.values(productos).map((v) => v.sku)).size} skus · ${kb('products.json')} KB`);
+console.log(`order-index       · ${(orderIndexBytesTotal / 1048576).toFixed(1)}MB (${Object.keys(orderIndexByMonth).length} meses) en ${ORDER_INDEX_DIR}`);
 console.log(`clientes unicos en todo el historial: ${vistos.size.toLocaleString('es-AR')}`);
 console.log(`frescura del dato: ${dataFreshAt || 'n/d'}`);
 if (excluidosPorEstado) console.log(`(${excluidosPorEstado} pedido(s) cancelados/pendientes, excluidos de las metricas de negocio — igual que el canal Web)`);

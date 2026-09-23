@@ -40,13 +40,14 @@ const DEFAULT_REF = 'data-raw';
  * distintas) se rechaza con 400 antes de tocar la red.
  *
  *   order-index/2026-09.json
+ *   app/order-index/2026-09.json             (mismo índice, canal App)
  *   orders/<código de tienda>/2026-09.json   (y el viejo 2026-H2.json)
  *
  * El código de tienda puede ser numérico ("0009") o alfanumérico ("QX",
  * "GrupoOLTradicional"), así que se permite [A-Za-z0-9_-] sin puntos ni
  * barras — eso es lo que impide escapar del directorio.
  */
-const SAFE_PATH = /^(?:order-index\/\d{4}-\d{2}|orders\/[A-Za-z0-9_-]{1,64}\/\d{4}-(?:\d{2}|H[12]))\.json$/;
+const SAFE_PATH = /^(?:(?:app\/)?order-index\/\d{4}-\d{2}|orders\/[A-Za-z0-9_-]{1,64}\/\d{4}-(?:\d{2}|H[12]))\.json$/;
 
 /** El mes que representa la ruta, para decidir cuánto puede cachear el browser. */
 function monthOf(p) {
@@ -98,7 +99,12 @@ export default async function handler(req, res) {
   }
 
   const ref = process.env.ARCHIVE_REF || DEFAULT_REF;
-  const url = `https://api.github.com/repos/${repo}/contents/docs/data/web/${path}?ref=${encodeURIComponent(ref)}`;
+  // "app/order-index/…" vive bajo docs/data/app/, todo lo demás bajo
+  // docs/data/web/ — es la misma separación que ya existe para el resto del
+  // dataset de cada canal, solo que este archivo también viaja en data-raw.
+  const isApp = path.startsWith('app/');
+  const repoPath = isApp ? `docs/data/${path}` : `docs/data/web/${path}`;
+  const url = `https://api.github.com/repos/${repo}/contents/${repoPath}?ref=${encodeURIComponent(ref)}`;
 
   let gh;
   try {

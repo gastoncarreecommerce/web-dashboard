@@ -195,9 +195,10 @@
    * Una fila por PEDIDO, que es lo que pedía el informe: no un agregado, la
    * lista cruda para filtrar y tabular en Excel.
    *
-   * De dónde sale: docs/data/web/order-index/<mes>.json, un archivo por mes con
-   * todos los pedidos sin sus items. No viaja en el deploy (son ~12 MB por mes)
-   * — lo trae api/archive desde la rama del histórico, a pedido.
+   * De dónde sale: docs/data/web/order-index/<mes>.json y, si el canal elegido
+   * lo pide, docs/data/app/order-index/<mes>.json — un archivo por mes y por
+   * canal, con todos los pedidos sin sus items. No viajan en el deploy (~12 MB
+   * por mes) — los trae api/archive desde la rama del histórico, a pedido.
    *
    * QUÉ NO TIENE, y hay que decirlo porque el informe de la app sí los trae:
    *
@@ -221,16 +222,34 @@
       m = mm === 12 ? `${y + 1}-01` : `${y}-${String(mm + 1).padStart(2, '0')}`;
     }
 
-    const listas = await Promise.all(meses.map((ym) => W.load(`order-index/${ym}`).catch(() => [])));
+    // Qué canales pedir: mismo criterio que el resto del dashboard (W.channel).
+    // App no tiene código de tienda (esa columna queda vacía en sus filas) ni
+    // UTM/productos por pedido — lo mismo que ya le falta a Web en este índice.
+    const ch = W.channel || 'total';
+    const fuentes = [];
+    if (ch !== 'app') fuentes.push({ canal: 'Web', prefijo: 'order-index' });
+    if (ch !== 'web') fuentes.push({ canal: 'App', prefijo: 'app/order-index' });
+
+    const cargas = [];
+    for (const { canal, prefijo } of fuentes) {
+      for (const ym of meses) {
+        cargas.push(
+          W.load(`${prefijo}/${ym}`).catch(() => []).then((lista) => ({ canal, lista: lista || [] }))
+        );
+      }
+    }
+    const listas = await Promise.all(cargas);
+
     const segs = bucket === 'all' ? null : new Set([bucket]);
     const filas = [];
-    for (const lista of listas) {
-      for (const o of (lista || [])) {
-        // o.t es el creationDate crudo de VTEX, en UTC. Compararlo tal cual
-        // (o cortarlo con slice) corre la ventana del día ~3 horas: un pedido
-        // de las 21-23:59 AR ya cruzó medianoche en UTC y caía en el día
-        // siguiente, y uno de 00:00-02:59 AR caía en el día anterior. Mismo
-        // bug, mismo arreglo que ya usa Analítica (W.arDateOf).
+    for (const { canal, lista } of listas) {
+      for (const o of lista) {
+        // o.t es el creationDate crudo de VTEX, en UTC (App lo convierte a UTC
+        // al armar su order-index para que quede en el mismo formato que Web).
+        // Compararlo tal cual (o cortarlo con slice) corre la ventana del día
+        // ~3 horas: un pedido de las 21-23:59 AR ya cruzó medianoche en UTC y
+        // caía en el día siguiente, y uno de 00:00-02:59 AR caía en el día
+        // anterior. Mismo bug, mismo arreglo que ya usa Analítica (W.arDateOf).
         const fecha = W.arDateOf(o.t);
         if (!fecha || fecha < range.from || fecha > range.to) continue;
         if (segs && !segs.has(o.sg)) continue;
@@ -240,6 +259,7 @@
           // Fecha y hora en pared AR (no la hora UTC cruda de VTEX), como
           // texto comparable y ordenable sin depender de la config regional.
           W.arDateTimeOf(o.t),
+          canal,
           o.st || '',
           o.g ?? null,
           W.SEGMENT_LABEL[o.sg] || o.sg || '',
@@ -319,38 +339,36 @@
       const filas = await hojaPedidos(range, bucket, geo?.stores, emails);
       if (filas.length) {
         const E2 = W.XLSX_ESTILO;
-        // Esta hoja sale de docs/data/web/order-index — SOLO canal Web, sin
-        // importar qué canal esté elegido en pantalla. Decir "App + Web" acá
-        // (como hacen las demás hojas, que sí suman los dos) era mentira: un
-        // pedido de App nunca iba a aparecer aunque el usuario lo buscara,
-        // y no había forma de saberlo sin abrir este archivo.
+        // App no tiene código de tienda por pedido (esa columna queda vacía
+        // en sus filas) — se avisa una vez acá en vez de que parezca un dato
+        // faltante.
         const notaCanal = canal === 'Web'
           ? ''
-          : ' Esta hoja es SOLO canal Web: los pedidos de App todavía no tienen detalle pedido-a-pedido exportable.';
+          : ' Los pedidos de App no traen código de tienda ni UTM por pedido (columnas vacías en esas filas).';
         hojas.splice(2, 0, {
           name: 'Pedidos',
           rows: [
-            [`Pedidos, uno por fila — ${W.fmtDayLong(range.from)} a ${W.fmtDayLong(range.to)} · Web`
+            [`Pedidos, uno por fila — ${W.fmtDayLong(range.from)} a ${W.fmtDayLong(range.to)} · ${canal}`
               + ` · ${filas.length.toLocaleString('es-AR')} pedidos`],
             ['Sin UTM ni cantidad de productos: no se guardan por pedido.'
               + ' El estado viene vacío en los pedidos más viejos.'
               + (emails ? ' Las columnas Email y DNI traen datos personales.' : '')
               + notaCanal],
             [],
-            ['Order ID', 'Fecha', 'Estado', 'Total', 'Segmento', 'Código de tienda',
+            ['Order ID', 'Fecha', 'Canal', 'Estado', 'Total', 'Segmento', 'Código de tienda',
               'Tienda', 'Cupón', 'Email', 'DNI', 'ID de cliente'],
             ...filas,
           ],
           filaEncabezado: 4,
-          columnasFijas: 2,
-          widths: [22, 20, 20, 14, 16, 16, 30, 20, 34, 14, 20],
-          merges: ['A1:K1', 'A2:K2'],
+          columnasFijas: 3,
+          widths: [22, 20, 10, 20, 14, 16, 16, 30, 20, 34, 14, 20],
+          merges: ['A1:L1', 'A2:L2'],
           estiloDe: (f, c) => {
             if (f === 1) return E2.titulo;
             if (f === 2) return E2.nota;
             if (f === 4) return E2.encabezado;
             if (f < 4) return null;
-            return c === 3 ? E2.moneda : c === 10 ? E2.ean : null;
+            return c === 4 ? E2.moneda : c === 11 ? E2.ean : null;
           },
         });
       }
