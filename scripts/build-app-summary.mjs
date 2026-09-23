@@ -51,6 +51,14 @@ for (const [d, q] of [[AGG, 'agregados de AppDash'], [ROWS, 'rows del repo priva
 const SEG_MAP = { food: 'food', non_food: 'non-food', marketplace: 'marketplace', quickcommerce: 'quickcommerce' };
 const SEGMENTS = ['food', 'non-food', 'marketplace', 'quickcommerce'];
 
+// Misma politica que el canal Web (config/status-filter.json, src/classify.js
+// isIncludedStatus): un pedido cancelado no es un "pedido" para las metricas
+// de negocio. Antes esto NO se aplicaba aca, asi que el total de App incluia
+// sus cancelados mientras el de Web no — el dashboard nunca iba a cuadrar
+// contra "pedidos totales" de VTEX de forma consistente entre canales.
+const statusFilter = JSON.parse(fs.readFileSync(new URL('../config/status-filter.json', import.meta.url)));
+const estadoIncluido = (estado) => statusFilter.includeStatuses.includes(estado);
+
 /** Igual que realEmail() en AppDash: saca el sufijo por pedido que agrega VTEX. */
 const normEmail = (e) => (e ? String(e).replace(/-[^-@]*\.ct\.vtex\.com\.br$/i, '').toLowerCase() || null : null);
 
@@ -81,7 +89,7 @@ const days = [];
 // cuando existe (el nombre cambia de escritura entre pedidos).
 const productos = {};          // `${seg}|${ym}|${sku}` -> {sku, name, qty, gmv, orders}
 const vistos = new Set();      // emails ya vistos en dias anteriores -> clientes nuevos
-let sinFecha = 0, sinSegmento = 0;
+let sinFecha = 0, sinSegmento = 0, excluidosPorEstado = 0;
 
 for (const f of archivos) {
   const date = f.slice(0, 10);
@@ -109,7 +117,15 @@ for (const f of archivos) {
     const seg = SEG_MAP[segRaw] || (SEGMENTS.includes(segRaw) ? segRaw : null);
     if (!seg) { sinSegmento++; continue; }
 
+    // statusStats mide TODO lo que llegó (igual que el listado crudo del canal
+    // Web), cancelados incluidos: es lo que deja ver la tasa de cancelación.
     const gmv = Number(r.total) || 0;
+    const st = r.estado || 'sin-estado';
+    const e = (statusStats[st] = statusStats[st] || { orders: 0, gmv: 0 });
+    e.orders += 1; e.gmv += gmv;
+
+    if (!estadoIncluido(st)) { excluidosPorEstado++; continue; }
+
     const items = Array.isArray(r.items) ? r.items : [];
     const units = items.reduce((t, i) => t + (Number(i.qty) || 0), 0);
     const S = segments[seg];
@@ -126,10 +142,6 @@ for (const f of archivos) {
     if (r.utm_source) conUtm += 1; else sinUtm += 1;
 
     if (r.coupon) bump(S.coupons, r.coupon, gmv, units);
-
-    const st = r.estado || 'sin-estado';
-    const e = (statusStats[st] = statusStats[st] || { orders: 0, gmv: 0 });
-    e.orders += 1; e.gmv += gmv;
 
     const mail = normEmail(r.email);
     if (mail) {
@@ -283,5 +295,6 @@ const nProd = Object.values(segments).reduce((t, m) => t + Object.values(m).redu
 console.log(`products.json     · ${nProd} filas (top ${TOP_POR_MES} x segmento x mes) de ${new Set(Object.values(productos).map((v) => v.sku)).size} skus · ${kb('products.json')} KB`);
 console.log(`clientes unicos en todo el historial: ${vistos.size.toLocaleString('es-AR')}`);
 console.log(`frescura del dato: ${dataFreshAt || 'n/d'}`);
+if (excluidosPorEstado) console.log(`(${excluidosPorEstado} pedido(s) cancelados/pendientes, excluidos de las metricas de negocio — igual que el canal Web)`);
 if (sinSegmento) console.log(`(${sinSegmento} pedido(s) sin segmento reconocido, descartados)`);
 if (sinFecha) console.log(`(${sinFecha} pedido(s) sin hora parseable, no entran en el horario)`);
