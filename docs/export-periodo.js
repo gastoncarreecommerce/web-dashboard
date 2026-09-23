@@ -226,15 +226,20 @@
     const filas = [];
     for (const lista of listas) {
       for (const o of (lista || [])) {
-        const fecha = String(o.t || '').slice(0, 10);
-        if (fecha < range.from || fecha > range.to) continue;
+        // o.t es el creationDate crudo de VTEX, en UTC. Compararlo tal cual
+        // (o cortarlo con slice) corre la ventana del día ~3 horas: un pedido
+        // de las 21-23:59 AR ya cruzó medianoche en UTC y caía en el día
+        // siguiente, y uno de 00:00-02:59 AR caía en el día anterior. Mismo
+        // bug, mismo arreglo que ya usa Analítica (W.arDateOf).
+        const fecha = W.arDateOf(o.t);
+        if (!fecha || fecha < range.from || fecha > range.to) continue;
         if (segs && !segs.has(o.sg)) continue;
         const cliente = emails?.get?.(o.h) || null;
         filas.push([
           o.id,
-          // Fecha y hora como texto ISO recortado: comparable y ordenable sin
-          // depender de la configuración regional de quien lo abre.
-          String(o.t || '').replace('T', ' ').slice(0, 19),
+          // Fecha y hora en pared AR (no la hora UTC cruda de VTEX), como
+          // texto comparable y ordenable sin depender de la config regional.
+          W.arDateTimeOf(o.t),
           o.st || '',
           o.g ?? null,
           W.SEGMENT_LABEL[o.sg] || o.sg || '',
@@ -314,14 +319,23 @@
       const filas = await hojaPedidos(range, bucket, geo?.stores, emails);
       if (filas.length) {
         const E2 = W.XLSX_ESTILO;
+        // Esta hoja sale de docs/data/web/order-index — SOLO canal Web, sin
+        // importar qué canal esté elegido en pantalla. Decir "App + Web" acá
+        // (como hacen las demás hojas, que sí suman los dos) era mentira: un
+        // pedido de App nunca iba a aparecer aunque el usuario lo buscara,
+        // y no había forma de saberlo sin abrir este archivo.
+        const notaCanal = canal === 'Web'
+          ? ''
+          : ' Esta hoja es SOLO canal Web: los pedidos de App todavía no tienen detalle pedido-a-pedido exportable.';
         hojas.splice(2, 0, {
           name: 'Pedidos',
           rows: [
-            [`Pedidos, uno por fila — ${W.fmtDayLong(range.from)} a ${W.fmtDayLong(range.to)} · ${canal}`
+            [`Pedidos, uno por fila — ${W.fmtDayLong(range.from)} a ${W.fmtDayLong(range.to)} · Web`
               + ` · ${filas.length.toLocaleString('es-AR')} pedidos`],
             ['Sin UTM ni cantidad de productos: no se guardan por pedido.'
               + ' El estado viene vacío en los pedidos más viejos.'
-              + (emails ? ' Las columnas Email y DNI traen datos personales.' : '')],
+              + (emails ? ' Las columnas Email y DNI traen datos personales.' : '')
+              + notaCanal],
             [],
             ['Order ID', 'Fecha', 'Estado', 'Total', 'Segmento', 'Código de tienda',
               'Tienda', 'Cupón', 'Email', 'DNI', 'ID de cliente'],

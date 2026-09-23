@@ -203,6 +203,13 @@
     return new Date(d.getTime() - 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
   };
 
+  /** Como arDateOf pero con hora: "YYYY-MM-DD HH:MM:SS" en pared AR, para mostrar. */
+  W.arDateTimeOf = (iso) => {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return String(iso || '');
+    return new Date(d.getTime() - 3 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
+  };
+
   W.presetRange = function (preset, days, startDate) {
     if (!days || !days.length) return null;
     const last = days[days.length - 1];
