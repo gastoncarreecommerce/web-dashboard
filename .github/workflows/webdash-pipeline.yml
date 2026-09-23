@@ -111,6 +111,28 @@ jobs:
       - name: Aggregate all available days into per-segment metrics
         run: node src/aggregate.js
 
+      # Canal APP: el pipeline de AppDash (fetch-daily.yml en vtex-utm-audit)
+      # corre a la misma hora y ya deja el día anterior cerrado y completo en
+      # sus dos repos. Sin este paso, docs/data/app/ queda pisado con lo último
+      # que alguien corrió a mano — pasó de verdad: un día quedó con el conteo
+      # parcial de las 6am (34 pedidos de App) mostrado como definitivo más de
+      # 24 horas después de que AppDash ya tenía el dato completo (541).
+      - name: Traer datos frescos del canal App
+        if: always()
+        env:
+          VTEX_UTM_AUDIT_TOKEN: ${{ secrets.VTEX_UTM_AUDIT_TOKEN }}
+          PRIVATE_DATA_TOKEN: ${{ secrets.PRIVATE_DATA_TOKEN }}
+        run: |
+          if [ -z "$VTEX_UTM_AUDIT_TOKEN" ] || [ -z "$PRIVATE_DATA_TOKEN" ]; then
+            echo "::warning::Sin VTEX_UTM_AUDIT_TOKEN/PRIVATE_DATA_TOKEN: docs/data/app queda como estaba."
+            exit 0
+          fi
+          rm -rf /tmp/vtex-utm-audit /tmp/appdash-private-data
+          git clone --depth 1 "https://x-access-token:${VTEX_UTM_AUDIT_TOKEN}@github.com/gastoncarreecommerce/vtex-utm-audit.git" /tmp/vtex-utm-audit
+          git clone --depth 1 "https://x-access-token:${PRIVATE_DATA_TOKEN}@github.com/gastoncarreecommerce/appdash-private-data.git" /tmp/appdash-private-data
+          node scripts/build-app-summary.mjs --appdash /tmp/vtex-utm-audit --private /tmp/appdash-private-data
+          rm -rf /tmp/vtex-utm-audit /tmp/appdash-private-data
+
       # Los mails salen de la misma pasada que ya pidió el detalle de cada
       # pedido: no cuesta ninguna llamada extra a VTEX. Van SOLO al repo privado.
       - name: Publicar mails al repo privado
