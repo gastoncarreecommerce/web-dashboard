@@ -124,8 +124,8 @@ jobs:
           PRIVATE_DATA_TOKEN: ${{ secrets.PRIVATE_DATA_TOKEN }}
         run: |
           if [ -z "$VTEX_UTM_AUDIT_TOKEN" ] || [ -z "$PRIVATE_DATA_TOKEN" ]; then
-            echo "::warning::Sin VTEX_UTM_AUDIT_TOKEN/PRIVATE_DATA_TOKEN: docs/data/app queda como estaba."
-            exit 0
+            echo "::error::Sin VTEX_UTM_AUDIT_TOKEN/PRIVATE_DATA_TOKEN: docs/data/app quedaría desactualizado en silencio. Configurar el secret."
+            exit 1
           fi
           rm -rf /tmp/vtex-utm-audit /tmp/appdash-private-data
           git clone --depth 1 "https://x-access-token:${VTEX_UTM_AUDIT_TOKEN}@github.com/gastoncarreecommerce/vtex-utm-audit.git" /tmp/vtex-utm-audit
@@ -212,3 +212,10 @@ jobs:
             git commit -m "chore(data): volcados crudos + detalle de pedidos [skip ci]"
             for i in 1 2 3; do git push && break; sleep $((i*5)); git pull --rebase --autostash || true; done
           fi
+
+      # Corre DESPUES de publicar (un día realmente flojo igual se tiene que
+      # ver), pero si el último día cerrado quedó implausiblemente bajo en
+      # algún canal, el run queda en rojo en Actions en vez de pasar
+      # desapercibido hasta que alguien lo note mirando el dashboard.
+      - name: Chequear que el dato de ayer no haya quedado incompleto
+        run: node scripts/check-data-freshness.mjs
