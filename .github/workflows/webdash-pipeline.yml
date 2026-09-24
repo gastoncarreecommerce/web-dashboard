@@ -125,16 +125,18 @@ jobs:
         if: always()
         continue-on-error: true
         env:
-          VTEX_UTM_AUDIT_TOKEN: ${{ secrets.VTEX_UTM_AUDIT_TOKEN }}
-          PRIVATE_DATA_TOKEN: ${{ secrets.PRIVATE_DATA_TOKEN }}
+          # PAT fine-grained con "Contents: Read" sobre vtex-utm-audit Y
+          # appdash-private-data. PRIVATE_DATA_TOKEN no sirve: apunta al repo
+          # privado de los mails, que es otro.
+          APP_DATA_TOKEN: ${{ secrets.APP_DATA_TOKEN }}
         run: |
-          if [ -z "$VTEX_UTM_AUDIT_TOKEN" ] || [ -z "$PRIVATE_DATA_TOKEN" ]; then
-            echo "::error::Sin VTEX_UTM_AUDIT_TOKEN/PRIVATE_DATA_TOKEN: docs/data/app quedaría desactualizado en silencio. Configurar el secret."
+          if [ -z "$APP_DATA_TOKEN" ]; then
+            echo "::error::Falta el secret APP_DATA_TOKEN: los datos de App no se actualizan hasta configurarlo."
             exit 1
           fi
           rm -rf /tmp/vtex-utm-audit /tmp/appdash-private-data
-          git clone --depth 1 "https://x-access-token:${VTEX_UTM_AUDIT_TOKEN}@github.com/gastoncarreecommerce/vtex-utm-audit.git" /tmp/vtex-utm-audit
-          git clone --depth 1 "https://x-access-token:${PRIVATE_DATA_TOKEN}@github.com/gastoncarreecommerce/appdash-private-data.git" /tmp/appdash-private-data
+          git clone --depth 1 "https://x-access-token:${APP_DATA_TOKEN}@github.com/gastoncarreecommerce/vtex-utm-audit.git" /tmp/vtex-utm-audit
+          git clone --depth 1 "https://x-access-token:${APP_DATA_TOKEN}@github.com/gastoncarreecommerce/appdash-private-data.git" /tmp/appdash-private-data
           node scripts/build-app-summary.mjs --appdash /tmp/vtex-utm-audit --private /tmp/appdash-private-data \
             --archive-root "$GITHUB_WORKSPACE/.data-raw"
           rm -rf /tmp/vtex-utm-audit /tmp/appdash-private-data
