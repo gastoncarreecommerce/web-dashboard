@@ -30,6 +30,7 @@
 
   let metric = W.store.get('prodMetric', 'qty');   // 'qty' | 'gmv' | 'orders'
   let q = '';
+  let cat = '';   // categoría elegida ('' = todas)
   let tope = 25;
 
   const METRIC = {
@@ -108,20 +109,11 @@
       }
     }
 
-    let filas = [...porSku.values()];
-    const total = filas.reduce((t, r) => t + (r[metric] || 0), 0);
-    const totalApp = filas.reduce((t, r) => t + (r.app[metric] || 0), 0);
-    const totalWeb = filas.reduce((t, r) => t + (r.web[metric] || 0), 0);
+    const todas = [...porSku.values()];
+    const total = todas.reduce((t, r) => t + (r[metric] || 0), 0);
+    const totalApp = todas.reduce((t, r) => t + (r.app[metric] || 0), 0);
+    const totalWeb = todas.reduce((t, r) => t + (r.web[metric] || 0), 0);
     const hayCanal = totalApp > 0 && totalWeb > 0;
-
-    if (q) {
-      const needle = q.toLowerCase();
-      filas = filas.filter((r) => (r.name || '').toLowerCase().includes(needle)
-        || String(r.sku).includes(needle) || (r.dept || '').toLowerCase().includes(needle));
-    }
-    filas.sort((a, b) => (b[metric] || 0) - (a[metric] || 0));
-    const visibles = filas.slice(0, tope);
-    const max = visibles.length ? (visibles[0][metric] || 1) : 1;
 
     // El chequeo de vacio va ANTES de pedir las fotos: sin filas no hay fotos
     // que pedir, y pedirlas era trabajo al vacio en el unico caso donde la
@@ -154,17 +146,16 @@
       return;
     }
 
-    // Las fotos de los visibles, en paralelo. W.productImg cachea los fallos,
-    // asi que un EAN que VTEX no tiene no se vuelve a pedir en cada re-render.
-    //
-    // Va DESPUES del chequeo de vacio: sin filas no hay fotos que pedir. Al
-    // mover el chequeo para arriba quedo sin reponer esta linea y la vista
-    // moria con "fotos is not defined".
-    const fotos = await Promise.all(visibles.map((r) => W.productImg(r.sku)));
+    // Categorías del ranking, alfabéticas. Los productos que solo se venden
+    // por la app no traen categoría (los rows de App no la tienen), así que
+    // quedan afuera cuando se filtra por una.
+    const categorias = [...new Set(todas.map((r) => r.dept).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b, 'es'));
+    if (cat && !categorias.includes(cat)) cat = '';
 
     // ── Cabecera: totales del ranking, con su mix ──────────────────────────
-    const skusApp = filas.filter((r) => r.app[metric] > 0).length;
-    const soloApp = filas.filter((r) => r.app[metric] > 0 && r.web[metric] === 0).length;
+    const skusApp = todas.filter((r) => r.app[metric] > 0).length;
+    const soloApp = todas.filter((r) => r.app[metric] > 0 && r.web[metric] === 0).length;
 
     const resumen = `<div class="prod-sum">
       <div class="prod-sumk">
@@ -180,8 +171,7 @@
     </div>`;
 
     // ── Las filas ──────────────────────────────────────────────────────────
-    const fila = (r, i) => {
-      const foto = fotos[i];
+    const fila = (r, i, foto, max) => {
       const v = r[metric] || 0;
       const a = r.app[metric] || 0;
       const w = r.web[metric] || 0;
@@ -241,39 +231,76 @@
           <div class="prod-tools">
             ${leyenda}
             ${toggle()}
+            <select class="form-input prod-cat" id="prod-cat" aria-label="Filtrar por categoría">
+              <option value="">Todas las categorías</option>
+              ${categorias.map((c) => `<option value="${W.esc(c)}"${c === cat ? ' selected' : ''}>${W.esc(c)}</option>`).join('')}
+            </select>
             <input class="form-input prod-q" id="prod-q" placeholder="Buscar producto, SKU o categoría" value="${W.esc(q)}">
           </div>
         </div>
-        <div class="tbl-wrap">
-          <table class="tbl prod">
-            <thead><tr>
-              <th class="prod-i">#</th><th class="prod-img"></th><th>Producto</th>
-              <th>${W.esc(M.label)}${hayCanal ? ' · mix App / Web' : ''}</th>
-              <th class="num">${W.esc(M.label)}</th><th class="num">% del top</th>
-            </tr></thead>
-            <tbody>${visibles.map(fila).join('')}</tbody>
-          </table>
-        </div>
-        <div class="card-f dim">${nota}
-          ${filas.length > tope ? ` · mostrando ${tope} de ${W.fmtNum(filas.length)}` : ''}
-        </div>
-        ${filas.length > tope ? `<div class="prod-more"><button class="btn" data-prodmore>Ver ${Math.min(25, filas.length - tope)} más</button></div>` : ''}
+        <div id="prod-body"></div>
       </div>`;
+
+    // Buscar y filtrar redibujan SOLO la tabla. Antes cada tecla llamaba a
+    // W.render(), que reescribía la vista entera — incluido el <input> — y el
+    // cursor se perdía a mitad de palabra.
+    const body = document.getElementById('prod-body');
+    let pintada = 0;
+    async function pintar() {
+      const turno = ++pintada;
+      let filas = todas;
+      if (cat) filas = filas.filter((r) => r.dept === cat);
+      if (q) {
+        const needle = q.toLowerCase();
+        filas = filas.filter((r) => (r.name || '').toLowerCase().includes(needle)
+          || String(r.sku).includes(needle) || (r.dept || '').toLowerCase().includes(needle));
+      }
+      filas = filas.slice().sort((a, b) => (b[metric] || 0) - (a[metric] || 0));
+      const visibles = filas.slice(0, tope);
+      const max = visibles.length ? (visibles[0][metric] || 1) : 1;
+
+      ctx.exports.productos = {
+        filename: `productos_${range.from}_${range.to}${cat ? `_${cat.replace(/[^\w]+/g, '-')}` : ''}.csv`,
+        headers: ['#', 'SKU', 'Producto', 'Categoria', 'Unidades', 'Pedidos', 'GMV', 'Unidades App', 'Unidades Web'],
+        rows: filas.map((r, i) => [i + 1, r.sku, r.name, r.dept, r.qty, r.orders, Math.round(r.gmv), r.app.qty, r.web.qty]),
+      };
+
+      // Las fotos de los visibles, en paralelo. W.productImg cachea los fallos,
+      // asi que un EAN que VTEX no tiene no se vuelve a pedir en cada búsqueda.
+      const fotos = await Promise.all(visibles.map((r) => W.productImg(r.sku)));
+      if (turno !== pintada) return; // llegó otra búsqueda mientras bajaban las fotos
+
+      const filtro = cat || q;
+      const sinCat = cat && hayCanal ? ' · Los productos que se venden solo por la app no tienen categoría, así que no entran en este filtro.' : '';
+      body.innerHTML = visibles.length
+        ? `<div class="tbl-wrap">
+            <table class="tbl prod">
+              <thead><tr>
+                <th class="prod-i">#</th><th class="prod-img"></th><th>Producto</th>
+                <th>${W.esc(M.label)}${hayCanal ? ' · mix App / Web' : ''}</th>
+                <th class="num">${W.esc(M.label)}</th><th class="num">% del top</th>
+              </tr></thead>
+              <tbody>${visibles.map((r, i) => fila(r, i, fotos[i], max)).join('')}</tbody>
+            </table>
+          </div>
+          <div class="card-f dim">${nota}
+            ${filtro ? ` · ${W.fmtNum(filas.length)} producto${filas.length === 1 ? '' : 's'} con este filtro` : ''}
+            ${filas.length > tope ? ` · mostrando ${tope} de ${W.fmtNum(filas.length)}` : ''}${sinCat}
+          </div>
+          ${filas.length > tope ? `<div class="prod-more"><button class="btn" data-prodmore>Ver ${Math.min(25, filas.length - tope)} más</button></div>` : ''}`
+        : `<div class="empty"><p>Ningún producto coincide con ${cat ? `la categoría <b>${W.esc(cat)}</b>` : ''}${cat && q ? ' y ' : ''}${q ? `“<b>${W.esc(q)}</b>”` : ''}.</p></div>`;
+
+      const more = body.querySelector('[data-prodmore]');
+      if (more) more.addEventListener('click', () => { tope += 25; pintar(); });
+    }
 
     document.querySelectorAll('[data-prodmetric]').forEach((b) => b.addEventListener('click', () => {
       metric = b.dataset.prodmetric; W.store.set('prodMetric', metric); W.render();
     }));
     const input = document.getElementById('prod-q');
-    if (input) {
-      input.addEventListener('input', W.debounce(() => { q = input.value.trim(); tope = 25; W.render(); }, 250));
-    }
-    const more = document.querySelector('[data-prodmore]');
-    if (more) more.addEventListener('click', () => { tope += 25; W.render(); });
+    input.addEventListener('input', W.debounce(() => { q = input.value.trim(); tope = 25; pintar(); }, 250));
+    document.getElementById('prod-cat').addEventListener('change', (e) => { cat = e.target.value; tope = 25; pintar(); });
 
-    ctx.exports.productos = {
-      filename: `productos_${range.from}_${range.to}.csv`,
-      headers: ['#', 'SKU', 'Producto', 'Categoria', 'Unidades', 'Pedidos', 'GMV', 'Unidades App', 'Unidades Web'],
-      rows: filas.map((r, i) => [i + 1, r.sku, r.name, r.dept, r.qty, r.orders, Math.round(r.gmv), r.app.qty, r.web.qty]),
-    };
+    await pintar();
   };
 }());

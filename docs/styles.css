@@ -959,6 +959,7 @@ details.more[open] summary { margin-bottom: .45rem; }
 
 .prod-tools { display: flex; align-items: center; gap: .7rem; flex-wrap: wrap; }
 .prod-q { min-width: 230px; font-size: .8rem; padding: .45rem .7rem; }
+.prod-cat { max-width: 220px; font-size: .8rem; padding: .45rem .7rem; }
 
 .tbl.prod td { vertical-align: middle; }
 .tbl.prod .prod-i { width: 34px; color: var(--ink-4); font-size: .76rem; font-variant-numeric: tabular-nums; text-align: right; }
