@@ -117,8 +117,13 @@ jobs:
       # que alguien corrió a mano — pasó de verdad: un día quedó con el conteo
       # parcial de las 6am (34 pedidos de App) mostrado como definitivo más de
       # 24 horas después de que AppDash ya tenía el dato completo (541).
+      # continue-on-error: si App falla (p. ej. falta el secret), el run queda
+      # marcado con el error pero los pasos que PUBLICAN Web siguen corriendo.
+      # Sin esto, un problema de App dejaba al dashboard entero sin datos del
+      # día (pasó el 24/9: Web se calculó bien y nunca se commiteó).
       - name: Traer datos frescos del canal App
         if: always()
+        continue-on-error: true
         env:
           VTEX_UTM_AUDIT_TOKEN: ${{ secrets.VTEX_UTM_AUDIT_TOKEN }}
           PRIVATE_DATA_TOKEN: ${{ secrets.PRIVATE_DATA_TOKEN }}

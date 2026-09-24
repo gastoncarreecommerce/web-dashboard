@@ -43,6 +43,13 @@ const REPO_ROOT = path.join(__dirname, '..');
  * las apunta a los dos checkouts distintos que usa.
  */
 const DAILY_DIR = process.env.WEBDASH_DAILY_DIR || path.join(REPO_ROOT, 'data', 'daily');
+// En CI el default (data/daily de la rama deployada) nunca es el correcto: los
+// volcados viven en data-raw. Correr sin la variable armaba recent.json con
+// lo que hubiera suelto en esa carpeta (un solo día viejo) y lo publicaba.
+if (process.env.GITHUB_ACTIONS && !process.env.WEBDASH_DAILY_DIR) {
+  console.error('WEBDASH_DAILY_DIR no está definido: en CI hay que apuntarlo a .data-raw/data/daily.');
+  process.exit(1);
+}
 const OUT_ROOT = process.env.WEBDASH_OUT_ROOT || REPO_ROOT;
 const ARCHIVE_ROOT = process.env.WEBDASH_ARCHIVE_ROOT || REPO_ROOT;
 

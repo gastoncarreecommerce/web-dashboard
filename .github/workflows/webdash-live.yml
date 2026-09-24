@@ -78,8 +78,13 @@ jobs:
       # audience-index (18 MB): esos los actualiza el pipeline diario. Esto es
       # lo que mantiene "Hoy" al día sin depender de que /api/today-live tenga
       # Redis configurado.
+      # WEBDASH_DAILY_DIR es obligatorio: sin él aggregate.js leía
+      # data/daily/ de la rama deployada (donde había quedado un solo archivo
+      # suelto, 2026-09-15.json) y recent.json salía con ese único día — "Hoy"
+      # y "Ayer" quedaban vacíos y el 15/9 se pisaba con un parcial.
       - name: Agregar
         env:
+          WEBDASH_DAILY_DIR: ${{ github.workspace }}/.data-raw/data/daily
           WEBDASH_ARCHIVE_ROOT: ${{ github.workspace }}/.data-raw
         run: node src/aggregate.js
 
