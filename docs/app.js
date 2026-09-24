@@ -445,7 +445,7 @@
     if (!recent?.days?.length) return null;
     const web = await W.loadRaw('daily-summary');
     const pedidosDe = (d) => Object.values(d?.segments || {}).reduce((t, sg) => t + (sg.orders || 0), 0);
-    let entraron = 0, rechazados = 0;
+    let entraron = 0;
 
     for (const day of recent.days) {
       const idx = web.days.findIndex((d) => d.date === day.date);
@@ -458,7 +458,6 @@
       // un conteo menor significa "esta corrida vio menos", no "hubo menos".
       const nuevos = pedidosDe(day), viejos = pedidosDe(web.days[idx]);
       if (nuevos < viejos) {
-        rechazados += 1;
         console.warn(`[EcommDash] recent.json trae ${day.date} con ${nuevos} pedidos y el diario ya tiene ${viejos}: se descarta por incompleto.`);
         continue;
       }
@@ -466,7 +465,6 @@
       entraron += 1;
     }
     if (!entraron) return null;
-    if (rechazados) W.toast(`${rechazados} día(s) de recent.json venían incompletos y se descartaron.`, 'bad');
     web.days.sort((a, b) => a.date.localeCompare(b.date));
     W.invalidateMerged();
     return recent.generatedAt || null;
