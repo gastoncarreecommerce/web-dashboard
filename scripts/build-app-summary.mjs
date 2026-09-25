@@ -128,6 +128,13 @@ let sinFecha = 0, sinSegmento = 0, excluidosPorEstado = 0;
 // para las pestañas por estado y el detalle de cupones.
 const orderIndexByMonth = {}; // 'YYYY-MM' -> [{id,t,sg,h,g,st,cp}]
 
+// Productos POR DÍA, mismo formato que docs/data/web/products-daily (ver
+// src/aggregate.js): el ranking de la vista Productos suma solo los días del
+// rango elegido en vez del mes completo.
+const TOP_DIA = 250;
+const productsDailyByMonth = {}; // 'YYYY-MM' -> { skus: {sku: [name, dept]}, days: {date: {seg: [[sku,qty,gmv,orders]]}} }
+const PRODUCTS_DAILY_DIR = path.join(ARCHIVE_ROOT, 'docs', 'data', 'app', 'products-daily');
+
 for (const f of archivos) {
   const date = f.slice(0, 10);
 
@@ -148,6 +155,7 @@ for (const f of archivos) {
   const statusStats = {};
   const delDia = new Set();
   let nuevos = 0, conUtm = 0, sinUtm = 0;
+  const prodDia = {}; // seg -> sku -> {name, qty, gmv, orders}
 
   for (const r of rows) {
     const segRaw = r.segment;
@@ -201,11 +209,30 @@ for (const f of archivos) {
     for (const i of items) {
       const sku = i.sku || i.id || i.name;
       if (!sku) continue;
+      const pdSeg = (prodDia[seg] = prodDia[seg] || {});
+      const pd = (pdSeg[sku] = pdSeg[sku] || { name: i.name || String(sku), qty: 0, gmv: 0, orders: 0 });
+      pd.orders += 1;
+      pd.qty += Number(i.qty) || 0;
+      pd.gmv += (Number(i.price) || 0) * (Number(i.qty) || 0);
       const k = `${seg}|${ym}|${sku}`;
       const p = (productos[k] = productos[k] || { seg, ym, sku, name: i.name || String(sku), qty: 0, gmv: 0, orders: 0 });
       p.orders += 1;
       p.qty += Number(i.qty) || 0;
       p.gmv += (Number(i.price) || 0) * (Number(i.qty) || 0);
+    }
+  }
+
+  if (Object.keys(prodDia).length) {
+    const pm = (productsDailyByMonth[date.slice(0, 7)] = productsDailyByMonth[date.slice(0, 7)] || { skus: {}, days: {} });
+    const dd = (pm.days[date] = {});
+    for (const [seg, porSku] of Object.entries(prodDia)) {
+      dd[seg] = Object.entries(porSku)
+        .sort((a, b) => b[1].gmv - a[1].gmv)
+        .slice(0, TOP_DIA)
+        .map(([sku, v]) => {
+          if (!pm.skus[sku]) pm.skus[sku] = [v.name, ''];
+          return [sku, v.qty, Math.round(v.gmv), v.orders];
+        });
     }
   }
 
@@ -315,6 +342,14 @@ for (const [ym, list] of Object.entries(orderIndexByMonth)) {
   orderIndexBytesTotal += buf.length;
 }
 
+fs.mkdirSync(PRODUCTS_DAILY_DIR, { recursive: true });
+let productsDailyBytes = 0;
+for (const [ym, v] of Object.entries(productsDailyByMonth)) {
+  const buf = JSON.stringify({ month: ym, ...v });
+  fs.writeFileSync(path.join(PRODUCTS_DAILY_DIR, `${ym}.json`), buf);
+  productsDailyBytes += buf.length;
+}
+
 // products.json con el schema del canal web: segments[segmento][mes] = top 150.
 // El corte por mes mantiene el archivo manejable y el top evita publicar la cola
 // larga de SKUs de una sola venta. `dept` queda vacio: los rows de App no traen
@@ -351,6 +386,7 @@ console.log(`daily-summary.json · ${days.length} dias · ${tot('orders').toLoca
 const nProd = Object.values(segments).reduce((t, m) => t + Object.values(m).reduce((a, arr) => a + arr.length, 0), 0);
 console.log(`products.json     · ${nProd} filas (top ${TOP_POR_MES} x segmento x mes) de ${new Set(Object.values(productos).map((v) => v.sku)).size} skus · ${kb('products.json')} KB`);
 console.log(`order-index       · ${(orderIndexBytesTotal / 1048576).toFixed(1)}MB (${Object.keys(orderIndexByMonth).length} meses) en ${ORDER_INDEX_DIR}`);
+console.log(`products-daily    · ${(productsDailyBytes / 1048576).toFixed(1)}MB (${Object.keys(productsDailyByMonth).length} meses) en ${PRODUCTS_DAILY_DIR}`);
 console.log(`clientes unicos en todo el historial: ${vistos.size.toLocaleString('es-AR')}`);
 console.log(`frescura del dato: ${dataFreshAt || 'n/d'}`);
 if (excluidosPorEstado) console.log(`(${excluidosPorEstado} pedido(s) cancelados/pendientes, excluidos de las metricas de negocio — igual que el canal Web)`);

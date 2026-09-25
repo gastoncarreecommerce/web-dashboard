@@ -203,6 +203,11 @@ function main() {
   // Productos: por segmento y por mes. Por día sería enorme (250 skus × 4
   // segmentos × 236 días) y a nivel mes alcanza para analizar surtido.
   const productsBySegMonth = {};
+  // Productos POR DÍA, para rankear el período exacto que se elige en
+  // pantalla (products.json es por mes: con "Ayer" mostraba el mes entero).
+  // Compacto a propósito: nombre y categoría una sola vez por mes en `skus`,
+  // y cada día solo [sku, unidades, gmv, pedidos] por segmento.
+  const productsDailyByMonth = {}; // 'YYYY-MM' -> { skus: {sku: [name, dept]}, days: {date: {seg: [[sku,qty,gmv,orders]]}} }
 
   for (const date of days) {
     const day = JSON.parse(fs.readFileSync(path.join(DAILY_DIR, `${date}.json`), 'utf8'));
@@ -236,6 +241,15 @@ function main() {
         installments: daySeg.installments || {},
         hourly: daySeg.hourly || null,
       };
+
+      if ((daySeg.products || []).length) {
+        const pm = (productsDailyByMonth[month] = productsDailyByMonth[month] || { skus: {}, days: {} });
+        const pd = (pm.days[date] = pm.days[date] || {});
+        pd[seg] = daySeg.products.map((p) => {
+          if (!pm.skus[p.sku]) pm.skus[p.sku] = [p.name, p.dept || ''];
+          return [p.sku, p.qty, p.gmv, p.orders];
+        });
+      }
 
       const bucket = (productsBySegMonth[seg] = productsBySegMonth[seg] || {});
       const mk = (bucket[month] = bucket[month] || {});
@@ -450,6 +464,12 @@ function main() {
   for (const [m, list] of Object.entries(orderIndexByMonth)) {
     list.sort((a, b) => (a.t < b.t ? -1 : a.t > b.t ? 1 : 0));
     orderIndexBytesTotal += writeJson(`docs/data/web/order-index/${m}.json`, list, ARCHIVE_ROOT);
+  }
+
+  // ── products-daily/<mes>.json (ranking por día, a demanda vía /api/archive) ──
+  let productsDailyBytes = 0;
+  for (const [m, v] of Object.entries(productsDailyByMonth)) {
+    productsDailyBytes += writeJson(`docs/data/web/products-daily/${m}.json`, { month: m, ...v }, ARCHIVE_ROOT);
   }
 
   // ── products.json (por segmento y por mes) ──────────────────────────────
@@ -668,6 +688,7 @@ function main() {
   console.log(`  geo ${mb(sizeGeo)} (${geoDays.length} días, ${Object.keys(storeMeta).length} tiendas) · products ${mb(sizeProducts)}`);
   console.log(`  orders ${mb(ordersBytesTotal)} (${ordersFilesWritten} archivos, uno por tienda y mes)`);
   console.log(`  order-index ${mb(orderIndexBytesTotal)} (${Object.keys(orderIndexByMonth).length} meses)`);
+  console.log(`  products-daily ${mb(productsDailyBytes)} (${Object.keys(productsDailyByMonth).length} meses)`);
   if (sizeAudience > 25 * 1048576) {
     console.warn('  ⚠ audience-index.json supera 25MB: el navegador va a tardar en cargarlo. Considerar acotar la ventana.');
   }

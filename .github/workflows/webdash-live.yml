@@ -55,7 +55,9 @@ jobs:
         with:
           ref: data-raw
           path: .data-raw
-          sparse-checkout: data/daily
+          sparse-checkout: |
+            data/daily
+            docs/data/web/products-daily
 
       - uses: actions/setup-node@v4
         with:
@@ -108,6 +110,8 @@ jobs:
           git config user.name "webdash-bot"
           git config user.email "webdash-bot@users.noreply.github.com"
           git add -f data/daily/
+          # El ranking de productos del día (lo que ve la vista Productos con "Hoy").
+          if [ -d docs/data/web/products-daily ]; then git add -f docs/data/web/products-daily/; fi
           if git diff --staged --quiet; then
             echo "Sin cambios (nadie compró en los últimos 30 min, o ya estaba al día)."
           else

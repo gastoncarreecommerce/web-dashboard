@@ -286,7 +286,7 @@
    * /api/archive. Todo lo demás (daily-summary, catalog, geo, …) se sigue
    * sirviendo estático porque sí se necesita al abrir la página.
    */
-  const ARCHIVE = /^(?:orders|order-index|app\/order-index)\//;
+  const ARCHIVE = /^(?:orders|order-index|products-daily|app\/order-index|app\/products-daily)\//;
 
   /**
    * Datasets que dependen del canal elegido. Pedir 'daily-summary' con el filtro
@@ -346,7 +346,8 @@
       // archivos sigan deployados.
       if (res.status === 503) res = null;
     }
-    if (!res) res = await fetch(`data/${W.CHANNEL}/${name}.json`, { cache: 'no-store' });
+    // Lo de App vive bajo data/app/, no bajo el canal por defecto.
+    if (!res) res = await fetch(name.startsWith('app/') ? `data/${name}.json` : `data/${W.CHANNEL}/${name}.json`, { cache: 'no-store' });
 
     if (!res.ok) throw new Error(`No se pudo cargar ${name}.json (${res.status})`);
     cache[name] = await res.json();

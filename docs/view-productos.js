@@ -63,6 +63,58 @@
     return out;
   }
 
+  /**
+   * El ranking del PERÍODO EXACTO, sumando día por día los archivos de
+   * products-daily/<mes>.json (uno por canal, servidos desde data-raw). Si el
+   * índice diario todavía no existe (o no se puede leer), devuelve null y la
+   * vista cae al ranking mensual de products.json, con su aviso.
+   */
+  async function cargarDiario(meses) {
+    const ch = W.channel || 'total';
+    const fuentes = [];
+    if (ch !== 'app') fuentes.push({ canal: 'web', pref: 'products-daily' });
+    if (ch !== 'web') fuentes.push({ canal: 'app', pref: 'app/products-daily' });
+    const ultimo = meses[meses.length - 1];
+    const out = [];
+    for (const f of fuentes) {
+      const archivos = await Promise.all(meses.map((m) =>
+        W.loadRaw(`${f.pref}/${m}`).then((d) => ({ m, d })).catch(() => ({ m, d: null }))));
+      // El canal principal tiene que tener el mes más reciente del rango: si
+      // no lo tiene, el índice diario todavía no se generó y no hay que mostrar
+      // un ranking a medias. App solo puede faltar cuando también hay Web
+      // (su historia arranca después, un rango viejo no tiene App y está bien).
+      const principal = f.canal === 'web' || fuentes.length === 1;
+      if (principal && !archivos.find((a) => a.m === ultimo)?.d) return null;
+      for (const a of archivos) if (a.d) out.push({ canal: f.canal, data: a.d });
+    }
+    return out.length ? out : null;
+  }
+
+  function sumarDiario(archivos, range, segs) {
+    const porSku = new Map();
+    for (const { canal, data } of archivos) {
+      for (const [date, porSeg] of Object.entries(data.days || {})) {
+        if (date < range.from || date > range.to) continue;
+        for (const seg of segs) {
+          for (const [sku, qty, gmv, orders] of porSeg[seg] || []) {
+            const [name, dept] = data.skus?.[sku] || [String(sku), ''];
+            const e = porSku.get(sku) || {
+              sku, name, dept: dept || '',
+              qty: 0, gmv: 0, orders: 0,
+              app: { qty: 0, gmv: 0, orders: 0 }, web: { qty: 0, gmv: 0, orders: 0 },
+            };
+            e.qty += qty || 0; e.gmv += gmv || 0; e.orders += orders || 0;
+            e[canal].qty += qty || 0; e[canal].gmv += gmv || 0; e[canal].orders += orders || 0;
+            if ((name || '').length > (e.name || '').length) e.name = name;
+            if (!e.dept && dept) e.dept = dept;
+            porSku.set(sku, e);
+          }
+        }
+      }
+    }
+    return porSku;
+  }
+
   W.viewProductos = async function (ctx) {
     const { range, bucket, el } = ctx;
 
@@ -77,13 +129,14 @@
     const meses = mesesDe(range);
     const segs = bucket === 'all' ? W.SEGMENTS : [bucket];
 
-    // Se suma por SKU sobre los meses y segmentos elegidos. El dataset esta
-    // cortado por mes, asi que un rango de dias sueltos dentro de un mes trae
-    // el mes completo: se avisa abajo en vez de mostrar un numero que no es del
-    // rango pedido.
-    const porSku = new Map();
+    // Primero el ranking del período exacto (día por día). Si ese índice no
+    // está, el de siempre: sumado por mes, donde un rango de días sueltos trae
+    // el mes completo y se avisa abajo.
+    const diario = await cargarDiario(meses);
+    const porDia = !!diario;
+    const porSku = porDia ? sumarDiario(diario, range, segs) : new Map();
     let mesesSinDato = 0;
-    for (const seg of segs) {
+    if (!porDia) for (const seg of segs) {
       const porMes = file.segments?.[seg];
       if (!porMes) continue;
       for (const ym of meses) {
@@ -118,6 +171,11 @@
     // El chequeo de vacio va ANTES de pedir las fotos: sin filas no hay fotos
     // que pedir, y pedirlas era trabajo al vacio en el unico caso donde la
     // vista no muestra nada.
+    if (!porSku.size && porDia) {
+      el.innerHTML = `<div class="empty"><h2>Sin productos en el período</h2>
+        <p>No hay ventas de productos registradas entre <b>${W.esc(W.rangeText(range))}</b> para el canal y segmento elegidos.</p></div>`;
+      return;
+    }
     if (!porSku.size) {
       // POR QUE NO HAY NADA, no solo que no hay nada.
       //
@@ -220,7 +278,10 @@
         </div>`
       : '';
 
-    const nota = meses.length === 1 && (range.from.slice(8) !== '01' || W.addDays(range.to, 1).slice(8) !== '01')
+    const incluyeHoy = range.to >= W.arToday();
+    const nota = porDia
+      ? `Ranking de <b>${W.esc(W.rangeText(range))}</b>, sumado día por día${incluyeHoy ? ' · hoy incluye los pedidos hasta la última actualización' : ''} · ${segs.length === 1 ? W.esc(W.SEGMENT_LABEL[segs[0]]) : 'todos los segmentos'}`
+      : meses.length === 1 && (range.from.slice(8) !== '01' || W.addDays(range.to, 1).slice(8) !== '01')
       ? `Ojo: el ranking se guarda por mes completo, así que estos números son de <b>${W.esc(W.fmtMonthLong(meses[0]))}</b> entero, no solo de los días elegidos.`
       : `${W.esc(meses.map(W.fmtMonth).join(' · '))} · ${segs.length === 1 ? W.esc(W.SEGMENT_LABEL[segs[0]]) : 'todos los segmentos'}`;
 

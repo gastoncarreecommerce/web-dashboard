@@ -52,6 +52,8 @@ jobs:
             docs/data/web/orders
             docs/data/web/order-index
             docs/data/app/order-index
+            docs/data/web/products-daily
+            docs/data/app/products-daily
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -215,10 +217,12 @@ jobs:
           git config user.name "webdash-bot"
           git config user.email "webdash-bot@users.noreply.github.com"
           git add -f data/daily/ docs/data/web/orders/ docs/data/web/order-index/
+          if [ -d docs/data/web/products-daily ]; then git add -f docs/data/web/products-daily/; fi
           # Solo si el paso de App lo generó: si falló (continue-on-error), la
           # carpeta puede no existir y un pathspec inexistente hace fallar el
           # add, arrastrando el commit de los volcados de Web.
           if [ -d docs/data/app/order-index ]; then git add -f docs/data/app/order-index/; fi
+          if [ -d docs/data/app/products-daily ]; then git add -f docs/data/app/products-daily/; fi
           if git diff --staged --quiet; then
             echo "Archivo sin cambios."
           else
