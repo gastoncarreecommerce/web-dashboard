@@ -7,16 +7,9 @@
  * código sino en la env var DASHBOARD_USERS, porque este repo puede ser público
  * y una lista de nombres de empleados también es dato personal.
  */
-import { createHmac, timingSafeEqual } from 'crypto';
+import { timingSafeEqual } from 'crypto';
+import { sessionCookie } from './_session.js';
 import { normUser, parseUsers } from './_users.js';
-
-const TTL_MS = 12 * 3600 * 1000;
-
-function makeToken(username, secret) {
-  const payload = `${username}:${Date.now() + TTL_MS}`;
-  const sig = createHmac('sha256', secret).update(payload).digest('hex');
-  return Buffer.from(`${payload}:${sig}`).toString('base64url');
-}
 
 function equal(a, b) {
   const ba = Buffer.from(String(a));
@@ -49,8 +42,6 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Ese usuario no está habilitado para entrar.' });
   }
 
-  const token = makeToken(username, secret);
-  res.setHeader('Set-Cookie',
-    `webdash_session=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${TTL_MS / 1000}`);
+  res.setHeader('Set-Cookie', sessionCookie(username, secret));
   return res.status(200).json({ ok: true, username, name: users.get(username) || username });
 }

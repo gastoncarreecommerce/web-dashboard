@@ -47,7 +47,7 @@
         <p class="error" id="error" role="alert"></p>
       </form>
 
-      <p class="panel-foot">Datos de pedidos de Carrefour Argentina. El acceso queda registrado en tu sesión por 12 horas.</p>
+      <p class="panel-foot">Datos de pedidos de Carrefour Argentina. Por seguridad, la sesión se cierra sola después de 10 minutos sin uso.</p>
     </main>
   </div>
 
@@ -56,10 +56,15 @@
     const errorEl = document.getElementById('error');
     const btn = document.getElementById('submit');
     const btnTxt = btn.querySelector('.btn-txt');
+    if (new URLSearchParams(location.search).get('expired')) {
+      errorEl.textContent = 'Tu sesión se cerró por 10 minutos sin uso. Volvé a ingresar para ver los datos al día.';
+      errorEl.classList.add('info');
+    }
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       errorEl.textContent = '';
+      errorEl.classList.remove('info');
       btn.disabled = true;
       btn.classList.add('busy');
       btnTxt.textContent = 'Verificando…';

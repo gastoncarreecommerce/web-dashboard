@@ -529,18 +529,16 @@
       W.render();
     });
     // Quién está adentro, con su nombre (sale de DASHBOARD_USERS en Vercel).
-    fetch('/api/me', { cache: 'no-store' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((me) => {
-        if (!me?.username) return;
-        const name = me.name || me.username;
-        $('nav-name').textContent = name;
-        $('nav-sub').textContent = 'Carrefour · eCommerce';
-        $('nav-av').textContent = name.split(/[\s_]+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
-        $('nav-av').title = name;
-        W.user = me;
-      })
-      .catch(() => { /* sin backend en local */ });
+    W.session.ready.then((me) => {
+      if (!me?.username) return;
+      const name = me.name || me.username;
+      $('nav-name').textContent = name;
+      $('nav-sub').textContent = 'Carrefour · eCommerce';
+      $('nav-av').textContent = name.split(/[\s_]+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
+      $('nav-av').title = name;
+      W.user = me;
+      if (W.collectible) W.collectible(me);
+    });
     $('logout').addEventListener('click', async () => {
       try { await fetch('/api/logout', { method: 'POST' }); } catch { /* sin backend en local */ }
       location.href = '/login.html';

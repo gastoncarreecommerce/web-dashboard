@@ -24,7 +24,7 @@ archivo, así que protege también los JSON de `docs/data/**`. Esto importa: un 
 JavaScript escondería la pantalla pero dejaría los datos descargables escribiendo la URL directa.
 
 - `api/login.js` valida usuario + contraseña y devuelve una cookie `HttpOnly` firmada con HMAC-SHA256
-  (12hs de validez). La contraseña nunca vuelve al navegador.
+  (vence a los 10 minutos sin uso; el dashboard la renueva mientras se usa). La contraseña nunca vuelve al navegador.
 - Env vars necesarias en Vercel: **`DASHBOARD_PASSWORD`**, **`SESSION_SECRET`** (string largo y
   aleatorio) y, opcionalmente, **`DASHBOARD_USERS`**: usuarios habilitados separados por coma, cada uno
   `usuario` o `usuario=Nombre Apellido` (el nombre es el que se ve en el menú). Se valida en cada

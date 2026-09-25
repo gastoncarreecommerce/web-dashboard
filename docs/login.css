@@ -148,6 +148,8 @@ button[type="submit"].busy .spinner { display: inline-block; }
   border-radius: 8px; padding: 0; text-align: center;
 }
 .error:not(:empty) { padding: .55rem; background: var(--bad-soft); }
+.error.info { color: var(--brand); }
+.error.info:not(:empty) { background: #eeedfd; }
 
 .panel-foot { margin: 1.5rem 0 0; font-size: .72rem; color: var(--ink-3); line-height: 1.5; text-align: center; }
 
