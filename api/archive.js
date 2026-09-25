@@ -43,13 +43,14 @@ const DEFAULT_REF = 'data-raw';
  *   app/order-index/2026-09.json             (mismo índice, canal App)
  *   products-daily/2026-09.json              (ranking de productos por día)
  *   app/products-daily/2026-09.json          (ídem, canal App)
+ *   customer-activity.json                   (compras recientes por cliente, para medir campañas)
  *   orders/<código de tienda>/2026-09.json   (y el viejo 2026-H2.json)
  *
  * El código de tienda puede ser numérico ("0009") o alfanumérico ("QX",
  * "GrupoOLTradicional"), así que se permite [A-Za-z0-9_-] sin puntos ni
  * barras — eso es lo que impide escapar del directorio.
  */
-const SAFE_PATH = /^(?:(?:app\/)?(?:order-index|products-daily)\/\d{4}-\d{2}|orders\/[A-Za-z0-9_-]{1,64}\/\d{4}-(?:\d{2}|H[12]))\.json$/;
+const SAFE_PATH = /^(?:customer-activity|(?:app\/)?(?:order-index|products-daily)\/\d{4}-\d{2}|orders\/[A-Za-z0-9_-]{1,64}\/\d{4}-(?:\d{2}|H[12]))\.json$/;
 
 /** El mes que representa la ruta, para decidir cuánto puede cachear el browser. */
 function monthOf(p) {

@@ -90,7 +90,9 @@
 
     const step = Math.max(1, Math.ceil(labels.length / 8));
     const xLabels = labels
-      .map((l, i) => (i % step === 0 || i === labels.length - 1
+      // La última etiqueta siempre va; la anterior del paso se saltea si queda
+      // pegada (si no, se pisaban "día 29" y "día 30").
+      .map((l, i) => ((i % step === 0 && (labels.length - 1 - i >= step / 2 || i === 0)) || i === labels.length - 1
         ? `<text x="${x(i)}" y="${h - 9}" text-anchor="middle" fill="${AXIS}" font-size="10">${xFmt(l)}</text>` : ''))
       .join('');
 
@@ -183,7 +185,9 @@
 
     const step = Math.max(1, Math.ceil(labels.length / 8));
     const xLabels = labels
-      .map((l, i) => (i % step === 0 || i === labels.length - 1
+      // La última etiqueta siempre va; la anterior del paso se saltea si queda
+      // pegada (si no, se pisaban "día 29" y "día 30").
+      .map((l, i) => ((i % step === 0 && (labels.length - 1 - i >= step / 2 || i === 0)) || i === labels.length - 1
         ? `<text x="${x(i)}" y="${h - 9}" text-anchor="middle" fill="${AXIS}" font-size="10">${W.fmtDay(l)}</text>` : ''))
       .join('');
 

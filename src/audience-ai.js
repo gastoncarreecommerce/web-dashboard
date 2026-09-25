@@ -196,7 +196,9 @@ function mergeAppCustomers(profiles, app, dayPos) {
   const dateOf = (off) => new Date(b0 + off * 86400000).toISOString().slice(0, 10);
   let merged = 0, onlyApp = 0;
   for (let i = 0; i < app.h.length; i++) {
-    const dates = (app.d[i] || []).map(dateOf).filter((d) => dayPos.has(d));
+    const offs = app.d[i] || [];
+    const gmvs = app.dg?.[i] || [];
+    const dates = offs.map(dateOf).filter((d) => dayPos.has(d));
     if (!dates.length) continue;
     const hash = app.h[i];
     let p = profiles.get(hash);
@@ -211,6 +213,11 @@ function mergeAppCustomers(profiles, app, dayPos) {
     // Por nombre, no por posición: el orden de segmentos de App y de Web
     // no tiene por qué coincidir.
     (app.sg[i] || []).forEach((n, k) => { const sg = app.segments[k]; if (n && sg) p.segs[sg] = (p.segs[sg] || 0) + n; });
+    offs.forEach((o, k) => {
+      const di = dayPos.get(dateOf(o));
+      if (di == null || gmvs[k] == null) return;
+      (p.dg = p.dg || new Map()).set(di, (p.dg.get(di) || 0) + gmvs[k]);
+    });
     for (const d of dates) {
       p.ds.add(dayPos.get(d));
       if (d < p.first) p.first = d;

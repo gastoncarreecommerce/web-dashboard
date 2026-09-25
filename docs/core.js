@@ -286,7 +286,7 @@
    * /api/archive. Todo lo demás (daily-summary, catalog, geo, …) se sigue
    * sirviendo estático porque sí se necesita al abrir la página.
    */
-  const ARCHIVE = /^(?:orders|order-index|products-daily|app\/order-index|app\/products-daily)\//;
+  const ARCHIVE = /^(?:(?:orders|order-index|products-daily|app\/order-index|app\/products-daily)\/|customer-activity$)/;
 
   /**
    * Datasets que dependen del canal elegido. Pedir 'daily-summary' con el filtro

@@ -139,7 +139,7 @@ const PRODUCTS_DAILY_DIR = path.join(ARCHIVE_ROOT, 'docs', 'data', 'app', 'produ
 // los fusiona en audience-index.json para que el constructor de audiencias
 // incluya a quien compra por la app. Sin esto, ~21 mil clientes que compran
 // SOLO por la app no existían en Audiencias.
-const clientes = new Map(); // hash -> { o, g, cp, sg: [4], d: Set(fecha) }
+const clientes = new Map(); // hash -> { o, g, cp, sg: [4], d: Map(fecha -> gmv) }
 // Opcional y PRIVADO: hash,email de App para la base de contactos. Solo se
 // escribe si se pide (--emails-out), y a una carpeta gitignorada (private-out/).
 const EMAILS_OUT = arg('emails-out', null);
@@ -213,10 +213,10 @@ for (const f of archivos) {
     const mail = normEmail(r.email);
     const hc = customerHash(mail);
     if (hc) {
-      const c = clientes.get(hc) || { o: 0, g: 0, cp: 0, sg: [0, 0, 0, 0], d: new Set() };
+      const c = clientes.get(hc) || { o: 0, g: 0, cp: 0, sg: [0, 0, 0, 0], d: new Map() };
       c.o += 1; c.g += gmv; if (r.coupon) c.cp += 1;
       c.sg[SEGMENTS.indexOf(seg)] += 1;
-      c.d.add(date);
+      c.d.set(date, (c.d.get(date) || 0) + gmv);
       clientes.set(hc, c);
       if (EMAILS_OUT && !emailsApp.has(hc)) emailsApp.set(hc, mail);
     }
@@ -364,13 +364,16 @@ for (const [ym, list] of Object.entries(orderIndexByMonth)) {
 // customers.json: columnar y compacto. Las fechas van como días desde `base`.
 {
   let base = null;
-  for (const c of clientes.values()) for (const d of c.d) if (!base || d < base) base = d;
+  for (const c of clientes.values()) for (const d of c.d.keys()) if (!base || d < base) base = d;
   const b0 = base ? Date.parse(`${base}T00:00:00Z`) : 0;
   const off = (d) => Math.round((Date.parse(`${d}T00:00:00Z`) - b0) / 86400000);
-  const C = { h: [], o: [], g: [], cp: [], sg: [], d: [] };
+  const C = { h: [], o: [], g: [], cp: [], sg: [], d: [], dg: [] };
   for (const [h, c] of clientes) {
     C.h.push(h); C.o.push(c.o); C.g.push(Math.round(c.g)); C.cp.push(c.cp);
-    C.sg.push(c.sg); C.d.push([...c.d].sort().map(off));
+    C.sg.push(c.sg);
+    const ds = [...c.d.keys()].sort();
+    C.d.push(ds.map(off));
+    C.dg.push(ds.map((d) => Math.round(c.d.get(d))));
   }
   fs.writeFileSync(path.join(OUT_DIR, 'customers.json'), JSON.stringify({
     generatedAt: new Date().toISOString(),

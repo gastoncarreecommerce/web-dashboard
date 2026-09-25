@@ -187,6 +187,11 @@ function main() {
   /** hash -> perfil acumulado (solo en memoria del pipeline) */
   const profiles = new Map();
   const dayPos = new Map(days.map((d, i) => [d, i]));
+  // Ventana de actividad por cliente (días y GMV de compra), para medir
+  // campañas contra su grupo de control. 150 días cubre de sobra el
+  // seguimiento a 30 días de cualquier campaña reciente.
+  const ACT_WINDOW = 150;
+  const actStart = Math.max(0, days.length - ACT_WINDOW);
   /** cohorte (mes de primera compra) -> Set de meses activos por cliente */
   const cohortFirstMonth = new Map();
   const cohortActivity = new Map(); // `${cohortMonth}|${activeMonth}` -> Set(hash)
@@ -342,8 +347,19 @@ function main() {
       p.o += c.o;
       p.g += c.g;
       p.last = date;
-      p.ds.add(dayPos.get(date));
+      const di = dayPos.get(date);
+      p.ds.add(di);
       p.ch |= 1;
+      if (di >= actStart) (p.dg = p.dg || new Map()).set(di, (p.dg.get(di) || 0) + c.g);
+      // Reposición: por categoría N2, cuántos días distintos la compró, el
+      // último, y la suma de intervalos (y de sus cuadrados, para saber si
+      // compra con regularidad). O(1) por categoría y día.
+      for (const cat of Object.keys(c.c2 || {})) {
+        const rp = (p.rp = p.rp || {});
+        const r = rp[cat];
+        if (!r) rp[cat] = [1, di, 0, 0];
+        else if (r[1] !== di) { const iv = di - r[1]; r[0]++; r[2] += iv; r[3] += iv * iv; r[1] = di; }
+      }
       p.cp += c.cp || 0;
       for (const [s, n] of Object.entries(c.s || {})) p.segs[s] = (p.segs[s] || 0) + n;
       for (const [cat, n] of Object.entries(c.c || {})) p.cats[cat] = (p.cats[cat] || 0) + n;
@@ -597,7 +613,10 @@ function main() {
   // ch = canales (1 Web, 2 App, 3 ambos) · pv = prob. de volver en 30 días
   // (IA, 0-100, null sin modelo) · af = categorías N1 de afinidad (IA) ·
   // nb = próxima categoría N1 probable (IA, -1 si no hay).
-  const A = { h: [], o: [], g: [], f: [], l: [], sd: [], cd: [], cd1: [], cd2: [], cs: [], cp: [], ip: [], pd: [], std: [], sts: [], ch: [], pv: [], af: [], nb: [] };
+  // rp = reposición: hasta 3 categorías N2 que compra con regularidad, como
+  // [categoría, cada cuántos días, índice del último día que la compró].
+  const A = { h: [], o: [], g: [], f: [], l: [], sd: [], cd: [], cd1: [], cd2: [], cs: [], cp: [], ip: [], pd: [], std: [], sts: [], ch: [], pv: [], af: [], nb: [], rp: [] };
+  const activity = []; // alineado con A.h: [offset, gmv, offset, gmv, …] desde actStart
   // Los archivos diarios generados antes de que el pipeline capturara cupón,
   // medio de pago o tienda por cliente no traen esos campos. Se detecta y se
   // informa, para que la UI deshabilite esos filtros en vez de devolver 0 en
@@ -635,6 +654,20 @@ function main() {
     A.pv.push(sc.pv ?? null);
     A.af.push((sc.af || []).map((c) => catOfN1(c)));
     A.nb.push(sc.nb ? catOfN1(sc.nb) : -1);
+    A.rp.push(Object.entries(p.rp || {})
+      .filter(([, r]) => r[0] >= 3)
+      .map(([cat, r]) => {
+        const k = r[0] - 1, mean = r[2] / k;
+        const cv = mean ? Math.sqrt(Math.max(0, r[3] / k - mean * mean)) / mean : 9;
+        return { cat, n: r[0], mean, cv, last: r[1] };
+      })
+      .filter((x) => x.mean >= 5 && x.mean <= 60 && x.cv <= 0.75)
+      .sort((a, b) => b.n - a.n)
+      .slice(0, 3)
+      .map((x) => [catOfN2(x.cat), Math.round(x.mean), x.last]));
+    const act = [];
+    if (p.dg) for (const [di, gv] of [...p.dg].sort((a, b) => a[0] - b[0])) if (di >= actStart) act.push(di - actStart, Math.round(gv));
+    activity.push(act);
     if (storeEntries.length) anyStore = true;
   }
 
@@ -658,11 +691,21 @@ function main() {
     // pensar que nadie compra en ningún departamento.
     hasCategoryLevels: anyCategoryN1,
     hasChannelData: true,
+    hasReplenishment: true,
     appCustomers: appMerge,
     aiModel: ai.model ? { ...ai.model, snapshotDate: days[ai.model.snapshotIndex] } : null,
     count: A.h.length,
     ...A,
   });
+
+  // ── customer-activity.json (a demanda vía /api/archive) ─────────────────
+  // Mismo orden y mismo generatedAt que audience-index.json: el dashboard los
+  // cruza por posición para medir campañas (compras del grupo tratado vs.
+  // el de control después del envío).
+  const activityBytes = writeJson('docs/data/web/customer-activity.json', {
+    generatedAt: now.toISOString(), startIndex: actStart, startDate: days[actStart], days: days.slice(actStart), a: activity,
+  }, ARCHIVE_ROOT);
+
 
   // ── metrics.json por segmento ───────────────────────────────────────────
   for (const seg of SEGMENTS) {
@@ -716,9 +759,10 @@ function main() {
   console.log(`  geo ${mb(sizeGeo)} (${geoDays.length} días, ${Object.keys(storeMeta).length} tiendas) · products ${mb(sizeProducts)}`);
   console.log(`  orders ${mb(ordersBytesTotal)} (${ordersFilesWritten} archivos, uno por tienda y mes)`);
   console.log(`  order-index ${mb(orderIndexBytesTotal)} (${Object.keys(orderIndexByMonth).length} meses)`);
+  console.log(`  customer-activity ${mb(activityBytes)} (${ACT_WINDOW} días)`);
   console.log(`  products-daily ${mb(productsDailyBytes)} (${Object.keys(productsDailyByMonth).length} meses)`);
-  if (sizeAudience > 25 * 1048576) {
-    console.warn('  ⚠ audience-index.json supera 25MB: el navegador va a tardar en cargarlo. Considerar acotar la ventana.');
+  if (sizeAudience > 28 * 1048576) {
+    console.warn('  ⚠ audience-index.json supera 28MB: el navegador va a tardar en cargarlo. Considerar acotar la ventana.');
   }
 }
 
