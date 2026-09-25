@@ -135,6 +135,16 @@ const TOP_DIA = 250;
 const productsDailyByMonth = {}; // 'YYYY-MM' -> { skus: {sku: [name, dept]}, days: {date: {seg: [[sku,qty,gmv,orders]]}} }
 const PRODUCTS_DAILY_DIR = path.join(ARCHIVE_ROOT, 'docs', 'data', 'app', 'products-daily');
 
+// Perfiles de cliente de App, HASHEADOS (mismo hash que Web): src/aggregate.js
+// los fusiona en audience-index.json para que el constructor de audiencias
+// incluya a quien compra por la app. Sin esto, ~21 mil clientes que compran
+// SOLO por la app no existían en Audiencias.
+const clientes = new Map(); // hash -> { o, g, cp, sg: [4], d: Set(fecha) }
+// Opcional y PRIVADO: hash,email de App para la base de contactos. Solo se
+// escribe si se pide (--emails-out), y a una carpeta gitignorada (private-out/).
+const EMAILS_OUT = arg('emails-out', null);
+const emailsApp = new Map(); // hash -> email
+
 for (const f of archivos) {
   const date = f.slice(0, 10);
 
@@ -201,6 +211,15 @@ for (const f of archivos) {
     if (r.coupon) bump(S.coupons, r.coupon, gmv, units);
 
     const mail = normEmail(r.email);
+    const hc = customerHash(mail);
+    if (hc) {
+      const c = clientes.get(hc) || { o: 0, g: 0, cp: 0, sg: [0, 0, 0, 0], d: new Set() };
+      c.o += 1; c.g += gmv; if (r.coupon) c.cp += 1;
+      c.sg[SEGMENTS.indexOf(seg)] += 1;
+      c.d.add(date);
+      clientes.set(hc, c);
+      if (EMAILS_OUT && !emailsApp.has(hc)) emailsApp.set(hc, mail);
+    }
     if (mail) {
       delDia.add(mail);
       if (!vistos.has(mail)) { vistos.add(mail); nuevos += 1; }
@@ -340,6 +359,32 @@ for (const [ym, list] of Object.entries(orderIndexByMonth)) {
   const buf = JSON.stringify(list);
   fs.writeFileSync(path.join(ORDER_INDEX_DIR, `${ym}.json`), buf);
   orderIndexBytesTotal += buf.length;
+}
+
+// customers.json: columnar y compacto. Las fechas van como días desde `base`.
+{
+  let base = null;
+  for (const c of clientes.values()) for (const d of c.d) if (!base || d < base) base = d;
+  const b0 = base ? Date.parse(`${base}T00:00:00Z`) : 0;
+  const off = (d) => Math.round((Date.parse(`${d}T00:00:00Z`) - b0) / 86400000);
+  const C = { h: [], o: [], g: [], cp: [], sg: [], d: [] };
+  for (const [h, c] of clientes) {
+    C.h.push(h); C.o.push(c.o); C.g.push(Math.round(c.g)); C.cp.push(c.cp);
+    C.sg.push(c.sg); C.d.push([...c.d].sort().map(off));
+  }
+  fs.writeFileSync(path.join(OUT_DIR, 'customers.json'), JSON.stringify({
+    generatedAt: new Date().toISOString(),
+    note: 'Perfiles HASHEADOS de clientes de App (sin emails). Los fusiona src/aggregate.js en audience-index.json.',
+    segments: SEGMENTS, base, count: C.h.length, ...C,
+  }));
+  console.log(`customers.json    · ${C.h.length.toLocaleString('es-AR')} clientes de App (hasheados)`);
+}
+if (EMAILS_OUT) {
+  fs.mkdirSync(EMAILS_OUT, { recursive: true });
+  const esc = (v) => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+  const lines = ['hash,email,dni', ...[...emailsApp].map(([h, e]) => `${h},${esc(e)},`)];
+  fs.writeFileSync(path.join(EMAILS_OUT, 'app.csv'), lines.join('\n'));
+  console.log(`emails de App    · ${emailsApp.size.toLocaleString('es-AR')} en ${EMAILS_OUT}/app.csv (PRIVADO)`);
 }
 
 fs.mkdirSync(PRODUCTS_DAILY_DIR, { recursive: true });

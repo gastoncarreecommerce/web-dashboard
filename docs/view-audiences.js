@@ -55,7 +55,14 @@
     churnRatio:   { label: 'Ratio de abandono (recencia ÷ intervalo)', type: 'number', ops: ['≥', '≤'] },
     cuponPct:     { label: '% de pedidos con cupón', type: 'number', ops: ['≥', '≤'] },
     cuponPedidos: { label: 'Pedidos con cupón', type: 'number', ops: ['≥', '≤', '='] },
+    canal:        { label: 'Canal de compra', type: 'channel', ops: ['es', 'no es'] },
+    probVuelta:   { label: 'Probabilidad de volver en 30 días (%) · IA', type: 'number', ops: ['≥', '≤'], ai: true },
+    afinidad:     { label: 'Afinidad alta con la categoría · IA', type: 'categoryN1', ops: ['sí', 'no'], ai: true },
+    proximaCat:   { label: 'Próxima categoría probable · IA', type: 'categoryN1', ops: ['es', 'no es'], ai: true },
   };
+
+  // Canal: bit 1 = compró por Web, bit 2 = compró por App (3 = los dos).
+  const CHANNELS = { web: { label: 'Solo Web', v: 1 }, app: { label: 'Solo App', v: 2 }, ambos: { label: 'Web y App', v: 3 } };
 
   // ── Presets, agrupados por intención de campaña ───────────────────────────
   const PRESETS = [
@@ -72,6 +79,18 @@
       { name: 'Nunca usó cupón', icon: 'shield', rules: [{ field: 'cuponPedidos', op: '=', value: 0 }, { field: 'pedidos', op: '≥', value: 2 }] },
       { name: 'Churn recuperable con cupón', icon: 'refresh', rules: [{ field: 'ciclo', op: 'es', value: 'churn' }, { field: 'cuponPct', op: '≥', value: 40 }] },
       { name: 'Fieles a precio lleno', icon: 'heart', rules: [{ field: 'cuponPedidos', op: '=', value: 0 }, { field: 'pedidos', op: '≥', value: 5 }] },
+    ]},
+    { group: 'Predicción con IA', needs: 'ai', items: [
+      { name: 'Listos para comprar', icon: 'target', rules: [{ field: 'probVuelta', op: '≥', value: 70 }] },
+      { name: 'Valiosos que se enfrían', icon: 'money', rules: [{ field: 'gasto', op: '≥', value: 300000 }, { field: 'probVuelta', op: '≤', value: 25 }] },
+      { name: 'Churn recuperable', icon: 'refresh', rules: [{ field: 'ciclo', op: 'es', value: 'churn' }, { field: 'probVuelta', op: '≥', value: 30 }] },
+      { name: 'Nuevos con potencial', icon: 'sparkles', rules: [{ field: 'pedidos', op: '=', value: 1 }, { field: 'probVuelta', op: '≥', value: 50 }] },
+    ]},
+    { group: 'Canal', needs: 'channel', items: [
+      { name: 'Solo compran por App', icon: 'phone', rules: [{ field: 'canal', op: 'es', value: 'app' }] },
+      { name: 'Solo compran por Web', icon: 'globe', rules: [{ field: 'canal', op: 'es', value: 'web' }] },
+      { name: 'Compran por los dos', icon: 'layers', rules: [{ field: 'canal', op: 'es', value: 'ambos' }] },
+      { name: 'Web → llevar a la App', icon: 'phone', rules: [{ field: 'canal', op: 'es', value: 'web' }, { field: 'pedidos', op: '≥', value: 3 }] },
     ]},
     { group: 'Valor', items: [
       { name: 'Alto valor en fuga', icon: 'money', rules: [{ field: 'gasto', op: '≥', value: 500000 }, { field: 'churnRatio', op: '≥', value: 2 }] },
@@ -119,7 +138,7 @@
         if (f.type === 'segment') return { ...r, si: idx.segments.indexOf(r.value) };
         if (f.type === 'payment') return { ...r, pi: (idx.payments || []).indexOf(r.value) };
         if (f.type === 'store') return { ...r, sti: (idx.stores || []).indexOf(r.value) };
-        if (f.type === 'lifecycle') return { ...r };
+        if (f.type === 'lifecycle' || f.type === 'channel') return { ...r };
         return { ...r, num: Number(r.value) || 0 };
       })
       .filter(Boolean);
@@ -147,6 +166,15 @@
           case 'churnRatio': ok = cmp(D.churn[i], r.op, r.num); break;
           case 'cuponPct': ok = cmp(D.couponPct[i], r.op, r.num); break;
           case 'cuponPedidos': ok = cmp(idx.cp ? idx.cp[i] : 0, r.op, r.num); break;
+          case 'canal': {
+            const c = idx.ch ? idx.ch[i] : 1;
+            const want = CHANNELS[r.value]?.v ?? 1;
+            ok = r.op === 'es' ? c === want : c !== want;
+            break;
+          }
+          case 'probVuelta': ok = idx.pv?.[i] != null && cmp(idx.pv[i], r.op, r.num); break;
+          case 'afinidad': { const has = (idx.af?.[i] || []).includes(r.ci); ok = r.op === 'sí' ? has : !has; break; }
+          case 'proximaCat': ok = r.op === 'es' ? idx.nb?.[i] === r.ci : idx.nb?.[i] !== r.ci; break;
           default: ok = true;
         }
         if (!ok) break;
@@ -157,9 +185,15 @@
   }
 
   function summarize(m) {
-    let orders = 0, gmv = 0, rec = 0, coup = 0;
-    const bySeg = {}, byCat = {}, byLife = {};
+    let orders = 0, gmv = 0, rec = 0, coup = 0, pvSum = 0, pvN = 0, app = 0;
+    const bySeg = {}, byCat = {}, byLife = {}, byNext = {}, byCh = { 1: 0, 2: 0, 3: 0 };
     for (const i of m) {
+      if (idx.pv?.[i] != null) { pvSum += idx.pv[i]; pvN++; }
+      const ch = idx.ch ? idx.ch[i] : 1;
+      byCh[ch] = (byCh[ch] || 0) + 1;
+      if (ch & 2) app++;
+      const nb = idx.nb?.[i];
+      if (nb != null && nb >= 0) { const c = idx.categoriesN1[nb]; byNext[c] = (byNext[c] || 0) + 1; }
       orders += idx.o[i];
       gmv += idx.g[i];
       rec += D.recency[i];
@@ -171,7 +205,8 @@
       byLife[D.life[i]] = (byLife[D.life[i]] || 0) + 1;
     }
     return {
-      customers: m.length, orders, gmv, bySeg, byCat, byLife,
+      customers: m.length, orders, gmv, bySeg, byCat, byLife, byNext, byCh,
+      pvAvg: pvN ? pvSum / pvN : null, appShare: m.length ? app / m.length : 0,
       avgRecency: m.length ? rec / m.length : 0,
       couponRate: orders ? coup / orders : 0,
     };
@@ -198,6 +233,8 @@
     if (!f) return `${r.field} ${r.op} ${r.value}`;
     let val = r.value;
     if (f.type === 'lifecycle') val = W.LIFECYCLE[r.value]?.label || r.value;
+    else if (f.type === 'channel') val = CHANNELS[r.value]?.label || r.value;
+    else if (r.field === 'probVuelta') val = `${Number(r.value)}%`;
     else if (f.type === 'segment') val = W.SEGMENT_LABEL[r.value] || r.value;
     else if (f.type === 'number') val = ['gasto', 'ticket'].includes(r.field) ? W.fmtMoney(Number(r.value)) : W.fmtNum(Number(r.value));
     return `${f.label} ${r.op} ${val}`;
@@ -208,12 +245,16 @@
     const av = availability();
     const fieldOpts = Object.entries(FIELDS)
       .filter(([k]) => (av.coupon || !k.startsWith('cupon')) && (av.payment || k !== 'medioPago')
-        && (av.categoryLevels || (k !== 'catDomN1' && k !== 'catDomN2')) && (av.store || k !== 'comproEnTienda'))
+        && (av.categoryLevels || (k !== 'catDomN1' && k !== 'catDomN2')) && (av.store || k !== 'comproEnTienda')
+        && (av.ai || !FIELDS[k].ai) && (av.channel || k !== 'canal'))
       .map(([k, v]) => `<option value="${k}"${k === r.field ? ' selected' : ''}>${W.esc(v.label)}</option>`).join('');
     const opOpts = f.ops.map((o) => `<option${o === r.op ? ' selected' : ''}>${o}</option>`).join('');
 
     let val;
-    if (f.type === 'lifecycle') {
+    if (f.type === 'channel') {
+      val = `<select class="rule-v" data-i="${i}">${Object.entries(CHANNELS)
+        .map(([k, c]) => `<option value="${k}"${k === r.value ? ' selected' : ''}>${W.esc(c.label)}</option>`).join('')}</select>`;
+    } else if (f.type === 'lifecycle') {
       val = `<select class="rule-v" data-i="${i}">${W.LIFECYCLE_ORDER
         .map((k) => `<option value="${k}"${k === r.value ? ' selected' : ''}>${W.esc(W.LIFECYCLE[k].label)}</option>`).join('')}</select>`;
     } else if (f.type === 'segment') {
@@ -251,6 +292,8 @@
       payment: idx.hasPaymentData !== false && (idx.payments || []).length > 0,
       categoryLevels: idx.hasCategoryLevels === true,
       store: idx.hasStoreData === true,
+      channel: Array.isArray(idx.ch),
+      ai: Array.isArray(idx.pv) && !!idx.aiModel,
     };
   }
 
@@ -259,13 +302,26 @@
   // lista — eso es lo que hace el export) alcanza para confirmar de un
   // vistazo que las condiciones armadas traen a quien se espera.
   const CUSTOMER_PREVIEW_ROWS = 20;
+  const chLabel = (i) => ({ 1: 'Web', 2: 'App', 3: 'Web + App' })[idx.ch ? idx.ch[i] : 1];
+  const nextCat = (i) => (idx.nb && idx.nb[i] >= 0 ? idx.categoriesN1[idx.nb[i]] : '');
+  const afin = (i) => (idx.af?.[i] || []).map((c) => idx.categoriesN1[c]).join(' · ');
+  // El modelo se valida contra clientes que NO vio al entrenar: se muestra esa
+  // medida (AUC) para que se sepa cuánto confiar, no un número mágico.
+  function aiTip() {
+    const m = idx.aiModel;
+    if (!m) return '';
+    return `<strong>Predicción con IA</strong>`
+      + `<span class="tip-row">Modelo entrenado con el historial de compras: aprende de quién volvió y quién no en los ${m.horizonDays} días siguientes al ${W.fmtDayShort ? W.fmtDayShort(m.snapshotDate) : m.snapshotDate}.</span>`
+      + `<span class="tip-row">Precisión (AUC) sobre ${W.fmtNum(m.testCustomers)} clientes que no vio: <b>${Math.round(m.auc * 100)}%</b> (50% = azar).</span>`
+      + `<span class="tip-row">En promedio vuelve el ${Math.round(m.baseRate * 100)}% de los clientes en ${m.horizonDays} días.</span>`;
+  }
   function customerPreviewTable(matches, emailMap) {
     const shown = matches.slice(0, CUSTOMER_PREVIEW_ROWS);
     return `<div class="card">
       <div class="card-h"><div><h3>Vista previa de clientes</h3>
         <p>muestra de ${W.fmtNum(shown.length)} de ${W.fmtNum(matches.length)} que matchean — el export de abajo trae todos</p></div></div>
       <div class="tbl-wrap"><table class="tbl dense">
-        <thead><tr><th>Cliente</th><th>Ciclo</th><th class="num">Pedidos</th><th class="num">Gasto</th><th class="num">Ticket</th><th class="num">Días sin comprar</th><th>Segmento</th><th>Tienda</th></tr></thead>
+        <thead><tr><th>Cliente</th><th>Canal</th><th>Ciclo</th><th class="num">Pedidos</th><th class="num">Gasto</th><th class="num">Ticket</th><th class="num">Días sin comprar</th>${idx.pv ? `<th class="num" ${W.chart.tip('Probabilidad de que vuelva a comprar en los próximos 30 días, según el modelo de IA.')}>Prob. volver</th>` : ''}<th>Próxima categoría</th><th>Tienda</th></tr></thead>
         <tbody>${shown.length ? shown.map((i) => {
           const hash = idx.h[i];
           const email = emailMap?.get(hash)?.email;
@@ -273,15 +329,17 @@
           const L = W.LIFECYCLE[D.life[i]];
           return `<tr>
             <td>${email ? W.esc(email) : `<code>${W.esc(hash.slice(0, 10))}…</code>`}</td>
+            <td>${W.esc(chLabel(i))}</td>
             <td><span class="dot" style="background:${L.color}"></span>${W.esc(L.label)}</td>
             <td class="num">${W.fmtNum(idx.o[i])}</td>
             <td class="num">${W.fmtMoney(idx.g[i])}</td>
             <td class="num">${W.fmtMoney(idx.o[i] ? idx.g[i] / idx.o[i] : 0)}</td>
             <td class="num">${W.fmtNum(D.recency[i])}</td>
-            <td>${W.esc(W.SEGMENT_LABEL[idx.segments[idx.sd[i]]] || '—')}</td>
+            ${idx.pv ? `<td class="num">${idx.pv[i] != null ? `${idx.pv[i]}%` : '—'}</td>` : ''}
+            <td>${W.esc(nextCat(i) || '—')}</td>
             <td>${W.esc(storeName)}</td>
           </tr>`;
-        }).join('') : '<tr><td colspan="8" class="muted">Ninguna condición matchea clientes.</td></tr>'}</tbody>
+        }).join('') : `<tr><td colspan="${idx.pv ? 10 : 9}" class="muted">Ninguna condición matchea clientes.</td></tr>`}</tbody>
       </table></div>
     </div>`;
   }
@@ -320,7 +378,8 @@
       headers: ['hash', 'ciclo_de_vida', 'pedidos', 'gasto_total', 'ticket_promedio', 'primera_compra',
         'ultima_compra', 'dias_sin_comprar', 'intervalo_promedio_dias', 'ratio_abandono',
         'pedidos_con_cupon', 'pct_con_cupon', 'segmento_dominante',
-        'categoria_n1_dominante', 'categoria_n2_dominante', 'categoria_n3_dominante', 'medio_pago'],
+        'categoria_n1_dominante', 'categoria_n2_dominante', 'categoria_n3_dominante', 'medio_pago',
+        'canal', 'prob_volver_30d_ia', 'afinidad_ia', 'proxima_categoria_ia'],
       rows: matches.map((i) => [
         idx.h[i], W.LIFECYCLE[D.life[i]].label, idx.o[i], idx.g[i],
         Math.round(idx.o[i] ? idx.g[i] / idx.o[i] : 0),
@@ -332,6 +391,7 @@
         (idx.categoriesN2 || [])[idx.cd2?.[i]] || '',
         idx.categories[idx.cd[i]] || '',
         (idx.payments || [])[idx.pd?.[i]] || '',
+        chLabel(i), idx.pv?.[i] != null ? idx.pv[i] / 100 : '', afin(i), nextCat(i),
       ]),
     };
 
@@ -475,6 +535,17 @@
                 ${W.chart.barsH({ items: topCats.map(([c, v]) => ({ label: c, value: v })), valueFmt: W.fmtNum, color: 'var(--s3)', maxRows: 10 })}
               </div>
             </div>
+            ${avail.ai && Object.keys(sum.byNext).length ? `
+              <div class="card">
+                <div class="card-h"><div><h3>Qué les podés ofrecer <span class="ai-tag">IA</span></h3>
+                  <p>la categoría que todavía no compraron y que más compran clientes parecidos — hacé clic para quedarte con esa audiencia</p></div></div>
+                <div class="nb-list">${Object.entries(sum.byNext).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([c, n]) => `
+                  <button class="nb-chip" data-nextcat="${W.esc(c)}">
+                    <span class="nb-c">${W.esc(c)}</span>
+                    <span class="nb-bar"><i style="width:${Math.round((n / sum.customers) * 100)}%"></i></span>
+                    <span class="nb-n">${W.fmtNum(n)} · ${W.fmtPct(n / sum.customers)}</span>
+                  </button>`).join('')}</div>
+              </div>` : ''}
             ${customerPreviewTable(matches, emailMap)}
           ` : ''}
         </div>
@@ -493,6 +564,8 @@
               <div><em>Pedidos por cliente</em><b>${W.fmtDec(sum.customers ? sum.orders / sum.customers : 0, 1)}</b></div>
               <div><em>Días sin comprar</em><b>${W.fmtNum(sum.avgRecency)}</b></div>
               ${avail.coupon ? `<div><em>Pedidos con cupón</em><b>${W.fmtPct(sum.couponRate)}</b></div>` : ''}
+              ${avail.channel ? `<div><em>Compran por la App</em><b>${W.fmtPct(sum.appShare)}</b></div>` : ''}
+              ${avail.ai && sum.pvAvg != null ? `<div ${W.chart.tip(aiTip())}><em>Prob. de volver (30 días) <span class="ai-tag">IA</span></em><b>${Math.round(sum.pvAvg)}%</b></div>` : ''}
             </div>
 
             <div class="mail-box">
@@ -508,6 +581,9 @@
               </button>
               <button class="btn blk" id="exp-dni" ${emailMap && withDni ? '' : 'disabled'} ${W.chart.tip('Solo la columna DNI, sin mail — el formato que piden las plataformas de push/SMS.')}>
                 ${W.icon('download', 15)}Exportar solo DNI (para push)
+              </button>
+              <button class="btn blk gads" id="exp-gads" ${emailMap && withMail ? '' : 'disabled'} ${W.chart.tip('<strong>Para Google Ads (Customer Match)</strong><span class="tip-row">Baja los mails ya encriptados (SHA-256), en el formato que pide Google: ningún mail viaja en texto plano.</span><span class="tip-row">En Google Ads: Herramientas → Administrador de públicos → + → Lista de clientes → subir este archivo.</span><span class="tip-row">Google encuentra a esas personas en Búsqueda, YouTube, Gmail y Discover, y puede buscar gente parecida.</span>')}>
+                ${W.icon('target', 15)}Exportar para Google Ads
               </button>
               <button class="btn blk" data-export="audienceData" ${sum.customers ? '' : 'disabled'}>
                 ${W.icon('layers', 15)}Exportar datos (sin mails)
@@ -592,6 +668,9 @@
     $$('.life').forEach((b) => b.addEventListener('click', () => {
       toggleRules([{ field: 'ciclo', op: 'es', value: b.dataset.life }]);
     }));
+    $$('[data-nextcat]').forEach((b) => b.addEventListener('click', () => {
+      toggleRules([{ field: 'proximaCat', op: 'es', value: b.dataset.nextcat }]);
+    }));
     $$('.pre[data-g]').forEach((b) => b.addEventListener('click', () => {
       toggleRules(JSON.parse(JSON.stringify(PRESETS[+b.dataset.g].items[+b.dataset.p].rules)));
     }));
@@ -614,7 +693,7 @@
       const dflt = {
         lifecycle: 'churn', segment: idx.segments[0], category: idx.categories[0],
         categoryN1: (idx.categoriesN1 || [])[0], categoryN2: (idx.categoriesN2 || [])[0],
-        payment: (idx.payments || [])[0] || '', store: (idx.stores || [])[0] || '', number: 1,
+        payment: (idx.payments || [])[0] || '', store: (idx.stores || [])[0] || '', number: 1, channel: 'app',
       }[f.type];
       rules[i] = { field, op: f.ops[0], value: dflt };
       persist();
@@ -675,6 +754,40 @@
       if (!rows.length) { W.toast('Ningún cliente de la audiencia tiene DNI.', 'bad'); return; }
       W.downloadXLSX(`webdash-push-dni-${new Date().toISOString().slice(0, 10)}.xlsx`, [{ name: 'DNI', rows: [['DNI'], ...rows] }]);
       W.toast(`Exportados ${W.fmtNum(rows.length)} DNI.`, 'good');
+    });
+
+    // Google Ads Customer Match: una columna Email con el SHA-256 del mail
+    // normalizado (minúsculas, sin espacios; en gmail/googlemail sin puntos
+    // antes de la @, como pide Google) y Country. Sin BOM: Google no reconoce
+    // el encabezado si el archivo arranca con uno.
+    $('#exp-gads')?.addEventListener('click', async (e) => {
+      if (!emailMap || !window.crypto?.subtle) { W.toast('Este navegador no permite encriptar el archivo.', 'bad'); return; }
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      const norm = (m) => {
+        let v = String(m).trim().toLowerCase();
+        const at = v.lastIndexOf('@');
+        if (at > 0 && /^(gmail|googlemail)\.com$/.test(v.slice(at + 1))) v = v.slice(0, at).replace(/\./g, '') + v.slice(at);
+        return v;
+      };
+      const mails = [...new Set(matches.map((i) => emailMap.get(idx.h[i])?.email).filter(Boolean).map(norm))];
+      const enc = new TextEncoder();
+      const hex = (buf) => [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+      const out = ['Email,Country'];
+      const LOTE = 2000;
+      for (let k = 0; k < mails.length; k += LOTE) {
+        const hs = await Promise.all(mails.slice(k, k + LOTE).map((m) => crypto.subtle.digest('SHA-256', enc.encode(m))));
+        for (const h of hs) out.push(`${hex(h)},AR`);
+        btn.textContent = `Encriptando… ${Math.round(((k + LOTE) / mails.length) * 100)}%`;
+      }
+      const blob = new Blob([out.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `google-ads-customer-match-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      W.toast(`Listo: ${W.fmtNum(mails.length)} mails encriptados para Google Ads.`, 'good');
+      W.render();
     });
 
     $('#save-aud')?.addEventListener('click', () => {

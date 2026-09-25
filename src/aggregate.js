@@ -16,6 +16,7 @@
  * truncado de src/customer-key.js. El cruce hash -> email vive fuera del sitio
  * público (ver src/export-audience.js).
  */
+const { scoreCustomers, mergeAppCustomers } = require('./audience-ai');
 const fs = require('fs');
 const path = require('path');
 
@@ -185,6 +186,7 @@ function main() {
 
   /** hash -> perfil acumulado (solo en memoria del pipeline) */
   const profiles = new Map();
+  const dayPos = new Map(days.map((d, i) => [d, i]));
   /** cohorte (mes de primera compra) -> Set de meses activos por cliente */
   const cohortFirstMonth = new Map();
   const cohortActivity = new Map(); // `${cohortMonth}|${activeMonth}` -> Set(hash)
@@ -330,7 +332,9 @@ function main() {
     for (const [hash, c] of Object.entries(day.customers || {})) {
       let p = profiles.get(hash);
       if (!p) {
-        p = { o: 0, g: 0, first: date, last: date, segs: {}, cats: {}, catsN1: {}, catsN2: {}, cp: 0, pms: {}, stores: {}, days: [] };
+        // ds: días (índice) en que compró — lo usan los modelos de IA de más
+        // abajo. ch: canales en los que compró (bit 1 = Web, bit 2 = App).
+        p = { o: 0, g: 0, first: date, last: date, segs: {}, cats: {}, catsN1: {}, catsN2: {}, cp: 0, pms: {}, stores: {}, ds: new Set(), ch: 0 };
         profiles.set(hash, p);
         cohortFirstMonth.set(hash, month);
         newCustomers += 1;
@@ -338,6 +342,8 @@ function main() {
       p.o += c.o;
       p.g += c.g;
       p.last = date;
+      p.ds.add(dayPos.get(date));
+      p.ch |= 1;
       p.cp += c.cp || 0;
       for (const [s, n] of Object.entries(c.s || {})) p.segs[s] = (p.segs[s] || 0) + n;
       for (const [cat, n] of Object.entries(c.c || {})) p.cats[cat] = (p.cats[cat] || 0) + n;
@@ -549,6 +555,16 @@ function main() {
     matrix: cohortMatrix,
   });
 
+  // ── Clientes de App + puntajes de IA (ver src/audience-ai.js) ───────────
+  // App se suma ANTES de armar el índice: un cliente que compra por los dos
+  // canales queda una sola vez, con pedidos y fechas de ambos.
+  let appMerge = { merged: 0, onlyApp: 0 };
+  const appCustomersPath = path.join(OUT_ROOT, 'docs', 'data', 'app', 'customers.json');
+  if (fs.existsSync(appCustomersPath)) {
+    appMerge = mergeAppCustomers(profiles, JSON.parse(fs.readFileSync(appCustomersPath, 'utf8')), dayPos);
+  }
+  const ai = scoreCustomers(profiles, days.length - 1);
+
   // ── audience-index.json (hasheado, columnar para que pese menos) ────────
   // Factory en vez de triplicar el Map+array a mano: se usa una vez para
   // categorías N3 (de siempre), y una vez más para cada nivel nuevo (N1/N2).
@@ -578,7 +594,10 @@ function main() {
   // `ip` es lo que hace posible definir churn en serio: no es "hace X días
   // que no compra" a secas, sino "hace mucho más de lo que suele tardar
   // ESTE cliente en volver".
-  const A = { h: [], o: [], g: [], f: [], l: [], sd: [], cd: [], cd1: [], cd2: [], cs: [], cp: [], ip: [], pd: [], std: [], sts: [] };
+  // ch = canales (1 Web, 2 App, 3 ambos) · pv = prob. de volver en 30 días
+  // (IA, 0-100, null sin modelo) · af = categorías N1 de afinidad (IA) ·
+  // nb = próxima categoría N1 probable (IA, -1 si no hay).
+  const A = { h: [], o: [], g: [], f: [], l: [], sd: [], cd: [], cd1: [], cd2: [], cs: [], cp: [], ip: [], pd: [], std: [], sts: [], ch: [], pv: [], af: [], nb: [] };
   // Los archivos diarios generados antes de que el pipeline capturara cupón,
   // medio de pago o tienda por cliente no traen esos campos. Se detecta y se
   // informa, para que la UI deshabilite esos filtros en vez de devolver 0 en
@@ -611,6 +630,11 @@ function main() {
     A.pd.push(pmEntries.length ? pmOf(pmEntries[0][0]) : -1);
     A.std.push(storeEntries.length ? storeCodeIndex.get(storeEntries[0][0]) : -1);
     A.sts.push(storeEntries.slice(0, 5).map(([code]) => storeCodeIndex.get(code)));
+    const sc = ai.scores.get(hash) || {};
+    A.ch.push(p.ch || 1);
+    A.pv.push(sc.pv ?? null);
+    A.af.push((sc.af || []).map((c) => catOfN1(c)));
+    A.nb.push(sc.nb ? catOfN1(sc.nb) : -1);
     if (storeEntries.length) anyStore = true;
   }
 
@@ -633,6 +657,9 @@ function main() {
     // un backfill, N1/N2 quedan vacíos y la UI lo avisa en vez de dejar
     // pensar que nadie compra en ningún departamento.
     hasCategoryLevels: anyCategoryN1,
+    hasChannelData: true,
+    appCustomers: appMerge,
+    aiModel: ai.model ? { ...ai.model, snapshotDate: days[ai.model.snapshotIndex] } : null,
     count: A.h.length,
     ...A,
   });
@@ -684,6 +711,7 @@ function main() {
 
   const mb = (n) => `${(n / 1048576).toFixed(1)}MB`;
   console.log(`Agregado OK. Días: ${days.length}. Faltantes: ${missingDays.length}. Clientes únicos: ${profiles.size}.`);
+  console.log(`  audiencias: ${appMerge.merged} clientes de App fusionados (${appMerge.onlyApp} solo App) · modelo IA ${ai.model ? `AUC ${ai.model.auc} (tasa base ${ai.model.baseRate})` : 'sin entrenar (poco historial)'}`);
   console.log(`  daily-summary ${mb(sizeDaily)} · recent ${mb(sizeRecent)} · catalog ${mb(sizeCatalog)} · cohorts ${mb(sizeCohorts)} · audience ${mb(sizeAudience)}`);
   console.log(`  geo ${mb(sizeGeo)} (${geoDays.length} días, ${Object.keys(storeMeta).length} tiendas) · products ${mb(sizeProducts)}`);
   console.log(`  orders ${mb(ordersBytesTotal)} (${ordersFilesWritten} archivos, uno por tienda y mes)`);

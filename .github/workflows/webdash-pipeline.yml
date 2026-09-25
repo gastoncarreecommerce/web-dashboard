@@ -111,9 +111,10 @@ jobs:
           VTEX_ENVIRONMENT: ${{ secrets.VTEX_ENVIRONMENT }}
         run: node src/repair.js
 
-      - name: Aggregate all available days into per-segment metrics
-        run: node src/aggregate.js
-
+      # Va ANTES de "Aggregate": aggregate.js fusiona docs/data/app/customers.json
+      # (clientes de App, hasheados) en el índice de audiencias. Los mails de
+      # App van a private-out/emails/app.csv (gitignorado) y los toma el paso
+      # "Publicar mails" para la base de contactos privada.
       # Canal APP: el pipeline de AppDash (fetch-daily.yml en vtex-utm-audit)
       # corre a la misma hora y ya deja el día anterior cerrado y completo en
       # sus dos repos. Sin este paso, docs/data/app/ queda pisado con lo último
@@ -141,8 +142,11 @@ jobs:
           git clone --depth 1 "https://x-access-token:${APP_DATA_TOKEN}@github.com/gastoncarreecommerce/vtex-utm-audit.git" /tmp/vtex-utm-audit
           git clone --depth 1 "https://x-access-token:${APP_DATA_TOKEN}@github.com/gastoncarreecommerce/appdash-private-data.git" /tmp/appdash-private-data
           node scripts/build-app-summary.mjs --appdash /tmp/vtex-utm-audit --private /tmp/appdash-private-data \
-            --archive-root "$GITHUB_WORKSPACE/.data-raw"
+            --archive-root "$GITHUB_WORKSPACE/.data-raw" --emails-out private-out/emails
           rm -rf /tmp/vtex-utm-audit /tmp/appdash-private-data
+
+      - name: Aggregate all available days into per-segment metrics
+        run: node src/aggregate.js
 
       # Los mails salen de la misma pasada que ya pidió el detalle de cada
       # pedido: no cuesta ninguna llamada extra a VTEX. Van SOLO al repo privado.

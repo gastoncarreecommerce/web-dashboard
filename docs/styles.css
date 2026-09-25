@@ -630,6 +630,21 @@ details.more[open] summary { margin-bottom: .45rem; }
 .aud-st > div { display: flex; justify-content: space-between; align-items: baseline; font-size: .79rem; }
 .aud-st em { font-style: normal; color: var(--ink-3); }
 .aud-st b { font-variant-numeric: tabular-nums; }
+.ai-tag { display: inline-block; font-size: .6rem; font-weight: 700; letter-spacing: .04em; color: var(--brand); background: var(--brand-soft); border: 1px solid var(--brand-line); border-radius: 5px; padding: 0 .3rem; vertical-align: 2px; }
+
+/* "Qué les podés ofrecer" (IA): próxima categoría probable de la audiencia */
+.nb-list { display: flex; flex-direction: column; gap: .35rem; }
+.nb-chip { display: grid; grid-template-columns: minmax(140px, 1.2fr) 2fr auto; align-items: center; gap: .8rem;
+  padding: .5rem .7rem; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); cursor: pointer;
+  font: inherit; font-size: .8rem; text-align: left; color: var(--ink); transition: border-color .15s, background .15s; }
+.nb-chip:hover { border-color: var(--brand-line); background: var(--brand-soft); }
+.nb-c { font-weight: 600; }
+.nb-bar { height: 8px; border-radius: 4px; background: var(--surface-3); overflow: hidden; }
+.nb-bar i { display: block; height: 100%; border-radius: 4px; background: var(--brand); }
+.nb-n { color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.btn.gads { border-color: var(--brand-line); color: var(--brand); }
+.btn.gads:hover:not(:disabled) { background: var(--brand-soft); }
+@media (max-width: 640px) { .nb-chip { grid-template-columns: 1fr auto; } .nb-bar { grid-column: 1 / -1; grid-row: 2; } }
 
 .mail-box { margin-top: .9rem; padding-top: .85rem; border-top: 1px solid var(--line); }
 .mail-box h4 { font-size: .82rem; font-weight: 650; margin-bottom: .3rem; display: flex; align-items: center; gap: .35rem; }
