@@ -20,6 +20,7 @@
  */
 import { verifySession } from './_session.js';
 import { getRedis } from './_live-cache.js';
+import { parseUsers } from './_users.js';
 
 const INDEX = 'webdash:campaigns:v1';
 const memberKey = (id, g, k) => `webdash:campaign:v1:${id}:${g}:${k}`;
@@ -78,7 +79,7 @@ export default async function handler(req, res) {
       const camp = {
         id: newId, name, sendDate,
         createdAt: new Date().toISOString(),
-        createdBy: session.username || '',
+        createdBy: parseUsers().get(session.username) || session.username || '',
         channel: String(b.channel || '').slice(0, 40),
         controlPct: Math.min(50, Math.max(0, Number(b.controlPct) || 0)),
         rules: Array.isArray(b.rules) ? b.rules.slice(0, 30) : [],

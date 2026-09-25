@@ -160,7 +160,10 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
 .nav-item:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
 
 .nav-foot { padding: .8rem 1rem 1rem; border-top: 1px solid rgba(255,255,255,.07); }
-.nav-foot-org { font-size: .76rem; color: #c7c2ec; font-weight: 600; }
+.nav-user { display: flex; align-items: center; gap: .6rem; }
+.nav-user-t { min-width: 0; }
+.nav-av { flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--brand), #7c3aed); color: #fff; font-size: .72rem; font-weight: 700; display: flex; align-items: center; justify-content: center; letter-spacing: .02em; }
+.nav-foot-org { font-size: .76rem; color: #c7c2ec; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nav-foot-sub { font-size: .68rem; color: #726ba8; margin-top: 1px; }
 .nav-logout {
   display: flex; align-items: center; justify-content: center; gap: .4rem; width: 100%; margin-top: .7rem;

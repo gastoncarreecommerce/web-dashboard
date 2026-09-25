@@ -8,6 +8,7 @@
  * y una lista de nombres de empleados también es dato personal.
  */
 import { createHmac, timingSafeEqual } from 'crypto';
+import { normUser, parseUsers } from './_users.js';
 
 const TTL_MS = 12 * 3600 * 1000;
 
@@ -35,23 +36,21 @@ export default async function handler(req, res) {
 
   let body = req.body;
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
-  const username = String(body?.username || '').trim().toLowerCase();
+  // "gaston_ruiz@carrefour.com" y "gaston_ruiz" son el mismo usuario.
+  const username = normUser(body?.username);
   const given = String(body?.password || '');
 
   if (!username || !equal(given, password)) {
     return res.status(401).json({ error: 'Usuario o contraseña incorrectos.' });
   }
 
-  const allowList = (process.env.DASHBOARD_USERS || '')
-    .split(',')
-    .map((u) => u.trim().toLowerCase())
-    .filter(Boolean);
-  if (allowList.length && !allowList.includes(username)) {
+  const users = parseUsers();
+  if (users.size && !users.has(username)) {
     return res.status(401).json({ error: 'Ese usuario no está habilitado para entrar.' });
   }
 
   const token = makeToken(username, secret);
   res.setHeader('Set-Cookie',
     `webdash_session=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${TTL_MS / 1000}`);
-  return res.status(200).json({ ok: true, username });
+  return res.status(200).json({ ok: true, username, name: users.get(username) || username });
 }

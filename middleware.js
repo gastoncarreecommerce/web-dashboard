@@ -10,8 +10,11 @@
  * Env vars requeridas en Vercel:
  *   DASHBOARD_PASSWORD  contraseña compartida
  *   SESSION_SECRET      secreto para firmar el token de sesión (string largo y random)
- *   DASHBOARD_USERS     (opcional) lista de usuarios permitidos separada por comas.
+ *   DASHBOARD_USERS     (opcional) usuarios permitidos, separados por coma, cada uno
+ *                       "usuario" o "usuario=Nombre Apellido" (ver api/_users.js).
  *                       Si no está, cualquier usuario con la contraseña correcta entra.
+ *                       Se chequea en CADA pedido: sacar a alguien de la lista le corta
+ *                       el acceso al instante, sin esperar a que venza su sesión.
  */
 export const config = {
   // Se excluyen solo los recursos que la propia pantalla de login necesita.
@@ -41,6 +44,16 @@ function safeEqual(a, b) {
   return diff === 0;
 }
 
+/** Mismo parseo que api/_users.js (el edge no comparte módulo con las funciones). */
+function allowedUsers() {
+  const set = new Set();
+  for (const entry of String(process.env.DASHBOARD_USERS || '').split(/[,\n]/)) {
+    const u = entry.split('=')[0].trim().toLowerCase().replace(/@.*$/, '');
+    if (u) set.add(u);
+  }
+  return set;
+}
+
 async function isValidToken(token, secret) {
   if (!token) return false;
   let decoded;
@@ -57,7 +70,9 @@ async function isValidToken(token, secret) {
   const expiry = Number(payload.slice(payload.lastIndexOf(':') + 1));
   if (!Number.isFinite(expiry) || Date.now() > expiry) return false;
 
-  return safeEqual(sig, await hmacHex(secret, payload));
+  if (!safeEqual(sig, await hmacHex(secret, payload))) return false;
+  const allowed = allowedUsers();
+  return !allowed.size || allowed.has(payload.slice(0, payload.lastIndexOf(':')));
 }
 
 export default async function middleware(request) {

@@ -26,7 +26,9 @@ JavaScript escondería la pantalla pero dejaría los datos descargables escribie
 - `api/login.js` valida usuario + contraseña y devuelve una cookie `HttpOnly` firmada con HMAC-SHA256
   (12hs de validez). La contraseña nunca vuelve al navegador.
 - Env vars necesarias en Vercel: **`DASHBOARD_PASSWORD`**, **`SESSION_SECRET`** (string largo y
-  aleatorio) y, opcionalmente, **`DASHBOARD_USERS`** (usuarios habilitados, separados por coma).
+  aleatorio) y, opcionalmente, **`DASHBOARD_USERS`**: usuarios habilitados separados por coma, cada uno
+  `usuario` o `usuario=Nombre Apellido` (el nombre es el que se ve en el menú). Se valida en cada
+  pedido, así que sacar a alguien de la lista le corta el acceso al instante.
 - Si falta alguna de las dos primeras, el sitio devuelve 503 entero en vez de quedar abierto.
 - A diferencia de AppDash, la lista de usuarios **no va hardcodeada en el código**: una lista de
   nombres de empleados también es dato personal y este repo puede ser público.
