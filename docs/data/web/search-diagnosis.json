@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-25T14:22:00.746Z",
+  "generatedAt": "2026-09-26T13:34:14.174Z",
   "engine": "vtex-is",
   "engineLabel": "VTEX Intelligent Search",
   "enginesCompared": [
@@ -23,146 +23,146 @@
         "label": "VTEX Intelligent Search",
         "clase": "palabras",
         "cuentaComparable": true,
-        "precisionTop": 0.9397725401947569,
-        "ok": 94,
-        "sin_resultados": 93,
+        "precisionTop": 0.9437770338330271,
+        "ok": 99,
+        "sin_resultados": 92,
         "pocos_resultados": 0,
-        "resultados_dispersos": 8,
-        "top_irrelevante": 5,
-        "error_consulta": 0,
-        "busquedasMalas": 651226
+        "resultados_dispersos": 4,
+        "top_irrelevante": 4,
+        "error_consulta": 1,
+        "busquedasMalas": 626579
       },
       "vtex-legacy": {
         "label": "VTEX Search (legacy)",
         "clase": "palabras",
         "cuentaComparable": true,
-        "precisionTop": 0.964018834022458,
+        "precisionTop": 0.9645650570294154,
         "ok": 177,
         "sin_resultados": 0,
         "pocos_resultados": 0,
-        "resultados_dispersos": 19,
+        "resultados_dispersos": 18,
         "top_irrelevante": 4,
-        "error_consulta": 0,
-        "busquedasMalas": 149981,
+        "error_consulta": 1,
+        "busquedasMalas": 132576,
         "mejoresQue": {
           "gana": [
             {
               "term": "papel higienico",
-              "searchCount": 26690,
+              "searchCount": 26752,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "dulce de leche",
+              "searchCount": 25331,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "queso crema",
-              "searchCount": 24787,
+              "searchCount": 24749,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "coca cola",
-              "searchCount": 21338,
+              "searchCount": 21526,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "azucar",
-              "searchCount": 17756,
+              "searchCount": 17705,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "fideos",
-              "searchCount": 17365,
+              "searchCount": 17343,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "cafe",
-              "searchCount": 16019,
+              "searchCount": 15982,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "atun",
-              "searchCount": 15203,
+              "searchCount": 15339,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "rollo de cocina",
-              "searchCount": 14385,
-              "primario": "sin_resultados",
-              "otro": "ok"
-            },
-            {
-              "term": "harina",
-              "searchCount": 11943,
+              "searchCount": 14507,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "pan lactal",
-              "searchCount": 11429,
+              "searchCount": 11401,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "papel higiénico",
-              "searchCount": 11226,
+              "searchCount": 11256,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "mayonesa",
-              "searchCount": 10770,
+              "searchCount": 10864,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "pañales",
-              "searchCount": 10714,
+              "searchCount": 10645,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "fernet",
-              "searchCount": 10234,
+              "searchCount": 10450,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "yogurt",
-              "searchCount": 9713,
+              "searchCount": 9731,
               "primario": "top_irrelevante",
               "otro": "ok"
             },
             {
               "term": "rollo cocina",
-              "searchCount": 9700,
+              "searchCount": 9706,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "galletitas",
-              "searchCount": 9377,
+              "searchCount": 9400,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "detergente",
-              "searchCount": 9058,
+              "searchCount": 9131,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "aceite de oliva",
-              "searchCount": 9056,
+              "searchCount": 9108,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "shampoo",
-              "searchCount": 8942,
+              "searchCount": 8954,
               "primario": "sin_resultados",
               "otro": "ok"
             }
@@ -170,192 +170,210 @@
           "pierde": [
             {
               "term": "crema",
-              "searchCount": 6184,
+              "searchCount": 6258,
+              "primario": "ok",
+              "otro": "resultados_dispersos"
+            },
+            {
+              "term": "tomate",
+              "searchCount": 5911,
               "primario": "ok",
               "otro": "resultados_dispersos"
             },
             {
               "term": "agua",
-              "searchCount": 5608,
+              "searchCount": 5621,
+              "primario": "ok",
+              "otro": "resultados_dispersos"
+            },
+            {
+              "term": "cebolla",
+              "searchCount": 4980,
               "primario": "ok",
               "otro": "resultados_dispersos"
             },
             {
               "term": "sal",
-              "searchCount": 4736,
+              "searchCount": 4744,
               "primario": "ok",
               "otro": "top_irrelevante"
             },
             {
+              "term": "banana",
+              "searchCount": 4706,
+              "primario": "ok",
+              "otro": "resultados_dispersos"
+            },
+            {
               "term": "vino",
-              "searchCount": 4354,
+              "searchCount": 4406,
               "primario": "ok",
               "otro": "resultados_dispersos"
             },
             {
               "term": "huevo",
-              "searchCount": 2583,
+              "searchCount": 2605,
               "primario": "ok",
               "otro": "resultados_dispersos"
             },
             {
               "term": "ariel",
-              "searchCount": 2315,
+              "searchCount": 2289,
               "primario": "ok",
               "otro": "resultados_dispersos"
             },
             {
               "term": "milanesa",
-              "searchCount": 1985,
+              "searchCount": 2004,
               "primario": "ok",
               "otro": "resultados_dispersos"
             }
           ],
-          "terminosGanados": 90,
-          "terminosPerdidos": 7,
-          "busquedasGanadas": 529010,
-          "busquedasPerdidas": 27765
+          "terminosGanados": 88,
+          "terminosPerdidos": 10,
+          "busquedasGanadas": 537527,
+          "busquedasPerdidas": 43524
         }
       },
       "dy": {
         "label": "Dynamic Yield Experience Search",
         "clase": "semantico",
         "cuentaComparable": false,
-        "precisionTop": 0.957865062030057,
+        "precisionTop": 0.9584818416852615,
         "ok": 194,
         "sin_resultados": 0,
         "pocos_resultados": 0,
         "resultados_dispersos": 0,
         "top_irrelevante": 6,
         "error_consulta": 0,
-        "busquedasMalas": 38531,
+        "busquedasMalas": 38753,
         "mejoresQue": {
           "gana": [
             {
               "term": "papel higienico",
-              "searchCount": 26690,
+              "searchCount": 26752,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "dulce de leche",
-              "searchCount": 25232,
+              "searchCount": 25331,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "queso crema",
-              "searchCount": 24787,
+              "searchCount": 24749,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "aceite",
-              "searchCount": 24587,
+              "searchCount": 24701,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "coca cola",
-              "searchCount": 21338,
+              "searchCount": 21526,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "azucar",
-              "searchCount": 17756,
+              "searchCount": 17705,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "fideos",
-              "searchCount": 17365,
+              "searchCount": 17343,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "cafe",
-              "searchCount": 16019,
+              "searchCount": 15982,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "rollo de cocina",
-              "searchCount": 14385,
-              "primario": "sin_resultados",
-              "otro": "ok"
-            },
-            {
-              "term": "harina",
-              "searchCount": 11943,
+              "searchCount": 14507,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "pan lactal",
-              "searchCount": 11429,
+              "searchCount": 11401,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "papel higiénico",
-              "searchCount": 11226,
+              "searchCount": 11256,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "mayonesa",
-              "searchCount": 10770,
+              "searchCount": 10864,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "pañales",
-              "searchCount": 10714,
+              "searchCount": 10645,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "fernet",
-              "searchCount": 10234,
+              "searchCount": 10450,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "yogurt",
-              "searchCount": 9713,
+              "searchCount": 9731,
               "primario": "top_irrelevante",
               "otro": "ok"
             },
             {
               "term": "rollo cocina",
-              "searchCount": 9700,
+              "searchCount": 9706,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "pollo",
-              "searchCount": 9480,
+              "searchCount": 9538,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "galletitas",
-              "searchCount": 9377,
+              "searchCount": 9400,
               "primario": "sin_resultados",
               "otro": "ok"
             },
             {
               "term": "detergente",
-              "searchCount": 9058,
+              "searchCount": 9131,
+              "primario": "sin_resultados",
+              "otro": "ok"
+            },
+            {
+              "term": "aceite de oliva",
+              "searchCount": 9108,
               "primario": "sin_resultados",
               "otro": "ok"
             }
           ],
           "pierde": [],
-          "terminosGanados": 100,
+          "terminosGanados": 94,
           "terminosPerdidos": 0,
-          "busquedasGanadas": 612695,
+          "busquedasGanadas": 587826,
           "busquedasPerdidas": 0
         }
       }
@@ -376,21 +394,21 @@
     "resultadosIrrelevantes": 0,
     "motorNoIndexa": 0,
     "redirigidos": 200,
-    "redirigidosSearches": 1138454,
+    "redirigidosSearches": 1141790,
     "motorNoIndexaSearches": 0,
     "ok": 0,
-    "totalSearches": 1138454,
+    "totalSearches": 1141790,
     "lostSearches": 0
   },
   "funnel": {
-    "usuariosTotales": 2957465,
-    "usuariosBuscaron": 518924,
-    "busquedas": 3982920,
-    "busquedasPorUsuario": 7.67534359559396,
-    "usuariosVieronResultados": 55932,
-    "vistasDeResultados": 91746,
-    "compras": 111804,
-    "usuariosCompraron": 65993,
+    "usuariosTotales": 2959946,
+    "usuariosBuscaron": 520759,
+    "busquedas": 3980432,
+    "busquedasPorUsuario": 7.64352032322053,
+    "usuariosVieronResultados": 60304,
+    "vistasDeResultados": 96677,
+    "compras": 113653,
+    "usuariosCompraron": 66709,
     "ventana": "30 días",
     "_sinConversionDeBuscador": "GA4 no expone segmentos por sesión en su API de datos, así que no se puede separar la compra de quien buscó de la de quien no."
   },
@@ -400,42 +418,42 @@
   "topTerms": [
     {
       "term": "leche",
-      "searchCount": 47589,
+      "searchCount": 47358,
       "status": "redirige_a_plp"
     },
     {
       "term": "papel higienico",
-      "searchCount": 26690,
+      "searchCount": 26752,
       "status": "redirige_a_plp"
     },
     {
       "term": "dulce de leche",
-      "searchCount": 25232,
+      "searchCount": 25331,
       "status": "redirige_a_plp"
     },
     {
       "term": "queso crema",
-      "searchCount": 24787,
+      "searchCount": 24749,
       "status": "redirige_a_plp"
     },
     {
       "term": "aceite",
-      "searchCount": 24587,
+      "searchCount": 24701,
       "status": "redirige_a_plp"
     },
     {
       "term": "coca cola",
-      "searchCount": 21338,
+      "searchCount": 21526,
       "status": "redirige_a_plp"
     },
     {
       "term": "manteca",
-      "searchCount": 20944,
+      "searchCount": 21035,
       "status": "redirige_a_plp"
     },
     {
       "term": "crema de leche",
-      "searchCount": 20058,
+      "searchCount": 20301,
       "status": "redirige_a_plp"
     },
     {
@@ -445,114 +463,114 @@
     },
     {
       "term": "azucar",
-      "searchCount": 17756,
+      "searchCount": 17705,
       "status": "redirige_a_plp"
     },
     {
       "term": "fideos",
-      "searchCount": 17365,
+      "searchCount": 17343,
       "status": "redirige_a_plp"
     },
     {
       "term": "arroz",
-      "searchCount": 16164,
+      "searchCount": 16172,
       "status": "redirige_a_plp"
     },
     {
       "term": "cafe",
-      "searchCount": 16019,
+      "searchCount": 15982,
       "status": "redirige_a_plp"
     },
     {
       "term": "atun",
-      "searchCount": 15203,
+      "searchCount": 15339,
       "status": "redirige_a_plp"
     },
     {
       "term": "rollo de cocina",
-      "searchCount": 14385,
+      "searchCount": 14507,
       "status": "redirige_a_plp"
     },
     {
       "term": "queso cremoso",
-      "searchCount": 14008,
+      "searchCount": 14228,
       "status": "redirige_a_plp"
     },
     {
       "term": "cerveza",
-      "searchCount": 13364,
+      "searchCount": 13652,
       "status": "redirige_a_plp"
     },
     {
       "term": "harina",
-      "searchCount": 11943,
-      "status": "redirige_a_plp"
-    },
-    {
-      "term": "pan lactal",
-      "searchCount": 11429,
+      "searchCount": 11973,
       "status": "redirige_a_plp"
     },
     {
       "term": "queso rallado",
-      "searchCount": 11292,
+      "searchCount": 11445,
+      "status": "redirige_a_plp"
+    },
+    {
+      "term": "pan lactal",
+      "searchCount": 11401,
       "status": "redirige_a_plp"
     },
     {
       "term": "papel higiénico",
-      "searchCount": 11226,
+      "searchCount": 11256,
       "status": "redirige_a_plp"
     },
     {
       "term": "mayonesa",
-      "searchCount": 10770,
+      "searchCount": 10864,
       "status": "redirige_a_plp"
     },
     {
       "term": "pañales",
-      "searchCount": 10714,
-      "status": "redirige_a_plp"
-    },
-    {
-      "term": "carne",
-      "searchCount": 10409,
+      "searchCount": 10645,
       "status": "redirige_a_plp"
     },
     {
       "term": "fernet",
-      "searchCount": 10234,
+      "searchCount": 10450,
       "status": "redirige_a_plp"
     },
     {
-      "term": "yogurt",
-      "searchCount": 9713,
+      "term": "carne",
+      "searchCount": 10410,
       "status": "redirige_a_plp"
     },
     {
       "term": "papas fritas",
-      "searchCount": 9709,
-      "status": "redirige_a_plp"
-    },
-    {
-      "term": "rollo cocina",
-      "searchCount": 9700,
+      "searchCount": 9904,
       "status": "redirige_a_plp"
     },
     {
       "term": "leche en polvo",
-      "searchCount": 9685,
+      "searchCount": 9741,
+      "status": "redirige_a_plp"
+    },
+    {
+      "term": "yogurt",
+      "searchCount": 9731,
+      "status": "redirige_a_plp"
+    },
+    {
+      "term": "rollo cocina",
+      "searchCount": 9706,
       "status": "redirige_a_plp"
     },
     {
       "term": "pollo",
-      "searchCount": 9480,
+      "searchCount": 9538,
       "status": "redirige_a_plp"
     }
   ],
   "problems": [
     {
       "term": "leche",
-      "searchCount": 47589,
+      "searchCount": 47358,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -569,7 +587,7 @@
     },
     {
       "term": "papel higienico",
-      "searchCount": 26690,
+      "searchCount": 26752,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -586,7 +604,7 @@
     },
     {
       "term": "dulce de leche",
-      "searchCount": 25232,
+      "searchCount": 25331,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -603,7 +621,7 @@
     },
     {
       "term": "queso crema",
-      "searchCount": 24787,
+      "searchCount": 24749,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -620,7 +638,7 @@
     },
     {
       "term": "aceite",
-      "searchCount": 24587,
+      "searchCount": 24701,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -637,7 +655,7 @@
     },
     {
       "term": "coca cola",
-      "searchCount": 21338,
+      "searchCount": 21526,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -654,7 +672,7 @@
     },
     {
       "term": "manteca",
-      "searchCount": 20944,
+      "searchCount": 21035,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -671,7 +689,7 @@
     },
     {
       "term": "crema de leche",
-      "searchCount": 20058,
+      "searchCount": 20301,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -705,7 +723,7 @@
     },
     {
       "term": "azucar",
-      "searchCount": 17756,
+      "searchCount": 17705,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -722,7 +740,7 @@
     },
     {
       "term": "fideos",
-      "searchCount": 17365,
+      "searchCount": 17343,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -739,7 +757,7 @@
     },
     {
       "term": "arroz",
-      "searchCount": 16164,
+      "searchCount": 16172,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -756,7 +774,7 @@
     },
     {
       "term": "cafe",
-      "searchCount": 16019,
+      "searchCount": 15982,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -773,7 +791,7 @@
     },
     {
       "term": "atun",
-      "searchCount": 15203,
+      "searchCount": 15339,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -790,7 +808,7 @@
     },
     {
       "term": "rollo de cocina",
-      "searchCount": 14385,
+      "searchCount": 14507,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -807,7 +825,7 @@
     },
     {
       "term": "queso cremoso",
-      "searchCount": 14008,
+      "searchCount": 14228,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -824,7 +842,7 @@
     },
     {
       "term": "cerveza",
-      "searchCount": 13364,
+      "searchCount": 13652,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -841,7 +859,7 @@
     },
     {
       "term": "harina",
-      "searchCount": 11943,
+      "searchCount": 11973,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -857,25 +875,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fharina: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "pan lactal",
-      "searchCount": 11429,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fpan-lactal",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fpan-lactal: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
       "term": "queso rallado",
-      "searchCount": 11292,
+      "searchCount": 11445,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -891,8 +892,25 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fqueso-rallado: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
+      "term": "pan lactal",
+      "searchCount": 11401,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fpan-lactal",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fpan-lactal: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
       "term": "papel higiénico",
-      "searchCount": 11226,
+      "searchCount": 11256,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -909,7 +927,7 @@
     },
     {
       "term": "mayonesa",
-      "searchCount": 10770,
+      "searchCount": 10864,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -926,7 +944,7 @@
     },
     {
       "term": "pañales",
-      "searchCount": 10714,
+      "searchCount": 10645,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -942,25 +960,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fpanales: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "carne",
-      "searchCount": 10409,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fcarne",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fcarne: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
       "term": "fernet",
-      "searchCount": 10234,
+      "searchCount": 10450,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -976,8 +977,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2ffernet: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "yogurt",
-      "searchCount": 9713,
+      "term": "carne",
+      "searchCount": 10410,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -985,16 +986,16 @@
       "suggestion": null,
       "nativeCorrection": null,
       "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fyogurt",
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fcarne",
       "aiRelevance": null,
       "categoryConsistency": null,
       "dominantCategory": null,
       "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fyogurt: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fcarne: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
       "term": "papas fritas",
-      "searchCount": 9709,
+      "searchCount": 9904,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1010,25 +1011,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fpapas-fritas: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "rollo cocina",
-      "searchCount": 9700,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2frollo-cocina",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2frollo-cocina: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
       "term": "leche en polvo",
-      "searchCount": 9685,
+      "searchCount": 9741,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1044,8 +1028,42 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fleche-en-polvo: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
+      "term": "yogurt",
+      "searchCount": 9731,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fyogurt",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fyogurt: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
+      "term": "rollo cocina",
+      "searchCount": 9706,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2frollo-cocina",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2frollo-cocina: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
       "term": "pollo",
-      "searchCount": 9480,
+      "searchCount": 9538,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1062,7 +1080,7 @@
     },
     {
       "term": "galletitas",
-      "searchCount": 9377,
+      "searchCount": 9400,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1079,7 +1097,7 @@
     },
     {
       "term": "detergente",
-      "searchCount": 9058,
+      "searchCount": 9131,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1096,7 +1114,7 @@
     },
     {
       "term": "aceite de oliva",
-      "searchCount": 9056,
+      "searchCount": 9108,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1113,7 +1131,7 @@
     },
     {
       "term": "queso",
-      "searchCount": 9035,
+      "searchCount": 9060,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1130,7 +1148,7 @@
     },
     {
       "term": "shampoo",
-      "searchCount": 8942,
+      "searchCount": 8954,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1147,7 +1165,7 @@
     },
     {
       "term": "pure de tomate",
-      "searchCount": 8641,
+      "searchCount": 8651,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1164,7 +1182,7 @@
     },
     {
       "term": "coca",
-      "searchCount": 8418,
+      "searchCount": 8543,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1181,7 +1199,7 @@
     },
     {
       "term": "carne picada",
-      "searchCount": 8290,
+      "searchCount": 8295,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1198,7 +1216,7 @@
     },
     {
       "term": "jabon liquido",
-      "searchCount": 7788,
+      "searchCount": 7735,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1214,42 +1232,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fjabon-liquido: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "oreo",
-      "searchCount": 7349,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2foreo",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2foreo: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
-      "term": "yogur",
-      "searchCount": 7311,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fyogur",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fyogur: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
       "term": "lavandina",
-      "searchCount": 7274,
+      "searchCount": 7305,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1265,8 +1249,42 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2flavandina: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
+      "term": "yogur",
+      "searchCount": 7290,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fyogur",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fyogur: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
+      "term": "oreo",
+      "searchCount": 7269,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2foreo",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2foreo: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
       "term": "harina leudante",
-      "searchCount": 7070,
+      "searchCount": 7148,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1282,25 +1300,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fharina-leudante: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "skip",
-      "searchCount": 7025,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fskip",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fskip: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
       "term": "pan rallado",
-      "searchCount": 7023,
+      "searchCount": 7084,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1317,7 +1318,7 @@
     },
     {
       "term": "queso untable",
-      "searchCount": 7008,
+      "searchCount": 7015,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1333,8 +1334,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fqueso-untable: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "leche descremada",
-      "searchCount": 6229,
+      "term": "skip",
+      "searchCount": 6869,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1342,33 +1343,16 @@
       "suggestion": null,
       "nativeCorrection": null,
       "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fleche-descremada",
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fskip",
       "aiRelevance": null,
       "categoryConsistency": null,
       "dominantCategory": null,
       "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fleche-descremada: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
-      "term": "chocolinas",
-      "searchCount": 6205,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fchocolinas",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fchocolinas: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fskip: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
       "term": "crema",
-      "searchCount": 6184,
+      "searchCount": 6258,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1385,7 +1369,7 @@
     },
     {
       "term": "pasta dental",
-      "searchCount": 6130,
+      "searchCount": 6206,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1401,8 +1385,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fpasta-dental: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "dove",
-      "searchCount": 6077,
+      "term": "chocolinas",
+      "searchCount": 6159,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1410,33 +1394,16 @@
       "suggestion": null,
       "nativeCorrection": null,
       "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fdove",
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fchocolinas",
       "aiRelevance": null,
       "categoryConsistency": null,
       "dominantCategory": null,
       "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fdove: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
-      "term": "leche larga vida",
-      "searchCount": 6032,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fleche-larga-vida",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fleche-larga-vida: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fchocolinas: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
       "term": "mermelada",
-      "searchCount": 6028,
+      "searchCount": 6098,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1452,8 +1419,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fmermelada: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "tomate",
-      "searchCount": 5943,
+      "term": "leche descremada",
+      "searchCount": 6093,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1461,16 +1428,50 @@
       "suggestion": null,
       "nativeCorrection": null,
       "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2ftomate",
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fleche-descremada",
       "aiRelevance": null,
       "categoryConsistency": null,
       "dominantCategory": null,
       "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2ftomate: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fleche-descremada: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
+      "term": "leche larga vida",
+      "searchCount": 6055,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fleche-larga-vida",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fleche-larga-vida: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
+      "term": "dove",
+      "searchCount": 6048,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fdove",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fdove: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
       "term": "huevos",
-      "searchCount": 5936,
+      "searchCount": 5974,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1486,8 +1487,25 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fhuevos: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
+      "term": "tomate",
+      "searchCount": 5911,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2ftomate",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2ftomate: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
       "term": "agua",
-      "searchCount": 5608,
+      "searchCount": 5621,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1504,7 +1522,7 @@
     },
     {
       "term": "salchichas",
-      "searchCount": 5176,
+      "searchCount": 5205,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1521,7 +1539,7 @@
     },
     {
       "term": "leche entera",
-      "searchCount": 5140,
+      "searchCount": 5129,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1538,7 +1556,7 @@
     },
     {
       "term": "aceite natura",
-      "searchCount": 5128,
+      "searchCount": 5111,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1554,25 +1572,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2faceite-natura: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "jabon dove",
-      "searchCount": 5027,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fjabon-dove",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fjabon-dove: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
       "term": "casancrem",
-      "searchCount": 4994,
+      "searchCount": 5094,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1589,7 +1590,7 @@
     },
     {
       "term": "pepsi",
-      "searchCount": 4993,
+      "searchCount": 5083,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1605,8 +1606,25 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fpepsi: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
+      "term": "jabon dove",
+      "searchCount": 5037,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fjabon-dove",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fjabon-dove: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
       "term": "hamburguesas",
-      "searchCount": 4922,
+      "searchCount": 5031,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1622,8 +1640,25 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fhamburguesas: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
+      "term": "cebolla",
+      "searchCount": 4980,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fcebolla",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fcebolla: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
       "term": "harina 0000",
-      "searchCount": 4904,
+      "searchCount": 4950,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1640,7 +1675,7 @@
     },
     {
       "term": "hamburguesa",
-      "searchCount": 4839,
+      "searchCount": 4892,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1656,42 +1691,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fhamburguesa: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "cebolla",
-      "searchCount": 4784,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fcebolla",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fcebolla: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
-      "term": "banana",
-      "searchCount": 4779,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fbanana",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fbanana: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
       "term": "sal",
-      "searchCount": 4736,
+      "searchCount": 4744,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1707,25 +1708,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fsal: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "lavarropas",
-      "searchCount": 4671,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2flavarropas",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2flavarropas: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
       "term": "leche condensada",
-      "searchCount": 4655,
+      "searchCount": 4711,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1741,8 +1725,25 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fleche-condensada: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
+      "term": "banana",
+      "searchCount": 4706,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fbanana",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fbanana: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
       "term": "azúcar",
-      "searchCount": 4652,
+      "searchCount": 4672,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1758,25 +1759,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fazucar: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "heladera",
-      "searchCount": 4651,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fheladera",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fheladera: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
       "term": "harina integral",
-      "searchCount": 4620,
+      "searchCount": 4625,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1792,8 +1776,42 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fharina-integral: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
+      "term": "lavarropas",
+      "searchCount": 4620,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2flavarropas",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2flavarropas: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
+      "term": "heladera",
+      "searchCount": 4612,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fheladera",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fheladera: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
       "term": "papa",
-      "searchCount": 4615,
+      "searchCount": 4612,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1810,7 +1828,7 @@
     },
     {
       "term": "levadura",
-      "searchCount": 4607,
+      "searchCount": 4586,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1827,7 +1845,7 @@
     },
     {
       "term": "cif",
-      "searchCount": 4567,
+      "searchCount": 4544,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1843,25 +1861,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fcif: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "chocolate",
-      "searchCount": 4514,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fchocolate",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fchocolate: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
       "term": "bondiola",
-      "searchCount": 4456,
+      "searchCount": 4514,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1877,8 +1878,25 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fbondiola: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
+      "term": "chocolate",
+      "searchCount": 4497,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fchocolate",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fchocolate: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
       "term": "pasta de mani",
-      "searchCount": 4450,
+      "searchCount": 4468,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1894,8 +1912,25 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fpasta-de-mani: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
+      "term": "vino",
+      "searchCount": 4406,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fvino",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fvino: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
       "term": "te",
-      "searchCount": 4407,
+      "searchCount": 4368,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1912,7 +1947,7 @@
     },
     {
       "term": "esponja",
-      "searchCount": 4370,
+      "searchCount": 4361,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1928,59 +1963,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fesponja: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "suavizante",
-      "searchCount": 4358,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fsuavizante",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fsuavizante: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
-      "term": "vino",
-      "searchCount": 4354,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fvino",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fvino: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
-      "term": "mate cocido",
-      "searchCount": 4337,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fmate-cocido",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fmate-cocido: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
       "term": "pan",
-      "searchCount": 4278,
+      "searchCount": 4352,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -1996,8 +1980,42 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fpan: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
+      "term": "suavizante",
+      "searchCount": 4317,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fsuavizante",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fsuavizante: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
+      "term": "mate cocido",
+      "searchCount": 4291,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fmate-cocido",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fmate-cocido: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
       "term": "suprema",
-      "searchCount": 4048,
+      "searchCount": 4027,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2014,7 +2032,7 @@
     },
     {
       "term": "sin tacc",
-      "searchCount": 4031,
+      "searchCount": 4011,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2030,8 +2048,25 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fsin-tacc: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
+      "term": "avena",
+      "searchCount": 3953,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2favena",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2favena: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
       "term": "desodorante",
-      "searchCount": 3974,
+      "searchCount": 3940,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2048,7 +2083,7 @@
     },
     {
       "term": "aceite girasol",
-      "searchCount": 3963,
+      "searchCount": 3917,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2064,59 +2099,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2faceite-girasol: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "avena",
-      "searchCount": 3941,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2favena",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2favena: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
-      "term": "palta",
-      "searchCount": 3925,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fpalta",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fpalta: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
-      "term": "sal fina",
-      "searchCount": 3917,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fsal-fina",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fsal-fina: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
       "term": "vinagre",
-      "searchCount": 3894,
+      "searchCount": 3913,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2132,8 +2116,42 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fvinagre: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
+      "term": "sal fina",
+      "searchCount": 3900,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fsal-fina",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fsal-fina: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
+      "term": "palta",
+      "searchCount": 3865,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fpalta",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fpalta: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
       "term": "leche la serenisima",
-      "searchCount": 3839,
+      "searchCount": 3863,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2149,25 +2167,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fleche-la-serenisima: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "agua mineral",
-      "searchCount": 3793,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fagua-mineral",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fagua-mineral: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
       "term": "jamon",
-      "searchCount": 3769,
+      "searchCount": 3809,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2183,8 +2184,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fjamon: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "yogur griego",
-      "searchCount": 3707,
+      "term": "agua mineral",
+      "searchCount": 3805,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2192,16 +2193,16 @@
       "suggestion": null,
       "nativeCorrection": null,
       "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fyogur-griego",
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fagua-mineral",
       "aiRelevance": null,
       "categoryConsistency": null,
       "dominantCategory": null,
       "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fyogur-griego: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fagua-mineral: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
       "term": "choclo",
-      "searchCount": 3701,
+      "searchCount": 3750,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2217,25 +2218,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fchoclo: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "9 de oro",
-      "searchCount": 3685,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2f9-de-oro",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2f9-de-oro: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
       "term": "puré de tomate",
-      "searchCount": 3662,
+      "searchCount": 3738,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2251,8 +2235,25 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fpure-de-tomate: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
+      "term": "9 de oro",
+      "searchCount": 3651,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2f9-de-oro",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2f9-de-oro: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
       "term": "papas",
-      "searchCount": 3627,
+      "searchCount": 3649,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2268,8 +2269,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fpapas: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "sprite",
-      "searchCount": 3617,
+      "term": "yogur griego",
+      "searchCount": 3634,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2277,16 +2278,16 @@
       "suggestion": null,
       "nativeCorrection": null,
       "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fsprite",
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fyogur-griego",
       "aiRelevance": null,
       "categoryConsistency": null,
       "dominantCategory": null,
       "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fsprite: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fyogur-griego: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
       "term": "jabon",
-      "searchCount": 3583,
+      "searchCount": 3632,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2302,8 +2303,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fjabon: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "aceite oliva",
-      "searchCount": 3580,
+      "term": "sprite",
+      "searchCount": 3630,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2311,16 +2312,16 @@
       "suggestion": null,
       "nativeCorrection": null,
       "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2faceite-oliva",
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fsprite",
       "aiRelevance": null,
       "categoryConsistency": null,
       "dominantCategory": null,
       "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2faceite-oliva: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fsprite: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
       "term": "gaseosa",
-      "searchCount": 3549,
+      "searchCount": 3575,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2336,8 +2337,25 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fgaseosa: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
+      "term": "aceite oliva",
+      "searchCount": 3563,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2faceite-oliva",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2faceite-oliva: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
       "term": "yogurt griego",
-      "searchCount": 3497,
+      "searchCount": 3509,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2353,25 +2371,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fyogurt-griego: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "acondicionador",
-      "searchCount": 3447,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2facondicionador",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2facondicionador: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
       "term": "ravioles",
-      "searchCount": 3445,
+      "searchCount": 3476,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2387,8 +2388,42 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fravioles: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
+      "term": "aire acondicionado",
+      "searchCount": 3472,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2faire-acondicionado",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2faire-acondicionado: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
+      "term": "acondicionador",
+      "searchCount": 3444,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2facondicionador",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2facondicionador: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
       "term": "alfajor",
-      "searchCount": 3393,
+      "searchCount": 3394,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2405,7 +2440,7 @@
     },
     {
       "term": "edulcorante",
-      "searchCount": 3391,
+      "searchCount": 3367,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2421,42 +2456,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fedulcorante: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "aire acondicionado",
-      "searchCount": 3382,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2faire-acondicionado",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2faire-acondicionado: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
-      "term": "finlandia",
-      "searchCount": 3333,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2ffinlandia",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2ffinlandia: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
       "term": "asado",
-      "searchCount": 3293,
+      "searchCount": 3340,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2472,8 +2473,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fasado: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "soda",
-      "searchCount": 3284,
+      "term": "finlandia",
+      "searchCount": 3329,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2481,16 +2482,16 @@
       "suggestion": null,
       "nativeCorrection": null,
       "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fsoda",
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2ffinlandia",
       "aiRelevance": null,
       "categoryConsistency": null,
       "dominantCategory": null,
       "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fsoda: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2ffinlandia: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
       "term": "ketchup",
-      "searchCount": 3276,
+      "searchCount": 3328,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2506,8 +2507,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fketchup: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "yogur natural",
-      "searchCount": 3241,
+      "term": "soda",
+      "searchCount": 3303,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2515,33 +2516,16 @@
       "suggestion": null,
       "nativeCorrection": null,
       "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fyogur-natural",
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fsoda",
       "aiRelevance": null,
       "categoryConsistency": null,
       "dominantCategory": null,
       "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fyogur-natural: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
-      "term": "granola",
-      "searchCount": 3225,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fgranola",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fgranola: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fsoda: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
       "term": "yogurt natural",
-      "searchCount": 3219,
+      "searchCount": 3256,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2557,8 +2541,25 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fyogurt-natural: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
+      "term": "yogur natural",
+      "searchCount": 3254,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fyogur-natural",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fyogur-natural: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
       "term": "salchicha",
-      "searchCount": 3214,
+      "searchCount": 3212,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2571,11 +2572,45 @@
       "categoryConsistency": null,
       "dominantCategory": null,
       "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fsalchicha: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fsalchicha: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
+      "term": "granola",
+      "searchCount": 3207,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fgranola",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fgranola: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
+      "term": "galletas de arroz",
+      "searchCount": 3192,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fgalletas-de-arroz",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fgalletas-de-arroz: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
       "term": "integra",
-      "searchCount": 3198,
+      "searchCount": 3185,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2592,7 +2627,7 @@
     },
     {
       "term": "bon o bon",
-      "searchCount": 3156,
+      "searchCount": 3164,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2608,25 +2643,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fbon-o-bon: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "galletas de arroz",
-      "searchCount": 3140,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fgalletas-de-arroz",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fgalletas-de-arroz: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
       "term": "leche deslactosada",
-      "searchCount": 3132,
+      "searchCount": 3137,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2643,7 +2661,7 @@
     },
     {
       "term": "coca zero",
-      "searchCount": 3126,
+      "searchCount": 3113,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2659,8 +2677,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fcoca-zero: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "elvive",
-      "searchCount": 3112,
+      "term": "vino colon",
+      "searchCount": 3090,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2668,12 +2686,12 @@
       "suggestion": null,
       "nativeCorrection": null,
       "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2felvive",
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fvino-colon",
       "aiRelevance": null,
       "categoryConsistency": null,
       "dominantCategory": null,
       "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2felvive: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fvino-colon: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
       "term": "paty",
@@ -2693,8 +2711,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fpaty: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "don satur",
-      "searchCount": 3051,
+      "term": "elvive",
+      "searchCount": 3071,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2702,16 +2720,16 @@
       "suggestion": null,
       "nativeCorrection": null,
       "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fdon-satur",
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2felvive",
       "aiRelevance": null,
       "categoryConsistency": null,
       "dominantCategory": null,
       "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fdon-satur: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2felvive: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
       "term": "jabon tocador",
-      "searchCount": 3024,
+      "searchCount": 3052,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2727,59 +2745,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fjabon-tocador: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "vino colon",
-      "searchCount": 3015,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fvino-colon",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fvino-colon: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
-      "term": "microondas",
-      "searchCount": 2994,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fmicroondas",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fmicroondas: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
-      "term": "whisky",
-      "searchCount": 2990,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fwhisky",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fwhisky: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
       "term": "galletitas de agua",
-      "searchCount": 2988,
+      "searchCount": 3048,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2795,8 +2762,42 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fgalletitas-de-agua: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
+      "term": "don satur",
+      "searchCount": 2983,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fdon-satur",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fdon-satur: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
+      "term": "microondas",
+      "searchCount": 2953,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fmicroondas",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fmicroondas: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
       "term": "zanahoria",
-      "searchCount": 2973,
+      "searchCount": 2937,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2812,8 +2813,25 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fzanahoria: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
+      "term": "whisky",
+      "searchCount": 2915,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fwhisky",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fwhisky: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
       "term": "higienol",
-      "searchCount": 2887,
+      "searchCount": 2879,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2829,8 +2847,25 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fhigienol: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
+      "term": "sal gruesa",
+      "searchCount": 2876,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fsal-gruesa",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fsal-gruesa: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
       "term": "dulce de leche repostero",
-      "searchCount": 2881,
+      "searchCount": 2859,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2847,7 +2882,7 @@
     },
     {
       "term": "ricota",
-      "searchCount": 2860,
+      "searchCount": 2812,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2863,25 +2898,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fricota: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "sal gruesa",
-      "searchCount": 2857,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fsal-gruesa",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fsal-gruesa: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
       "term": "pan integral",
-      "searchCount": 2773,
+      "searchCount": 2754,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2898,7 +2916,7 @@
     },
     {
       "term": "mostaza",
-      "searchCount": 2730,
+      "searchCount": 2750,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2915,7 +2933,7 @@
     },
     {
       "term": "cerdo",
-      "searchCount": 2728,
+      "searchCount": 2749,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -2931,59 +2949,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fcerdo: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "café",
-      "searchCount": 2725,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fcafe",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fcafe: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
-      "term": "lentejas",
-      "searchCount": 2716,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2flentejas",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2flentejas: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
-      "term": "harina 000",
-      "searchCount": 2697,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fharina-000",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fharina-000: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
       "term": "vinos",
-      "searchCount": 2689,
+      "searchCount": 2727,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3000,7 +2967,7 @@
     },
     {
       "term": "desodorante dove",
-      "searchCount": 2677,
+      "searchCount": 2722,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3016,8 +2983,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fdesodorante-dove: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "cocina",
-      "searchCount": 2672,
+      "term": "lentejas",
+      "searchCount": 2714,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3025,16 +2992,33 @@
       "suggestion": null,
       "nativeCorrection": null,
       "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fcocina",
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2flentejas",
       "aiRelevance": null,
       "categoryConsistency": null,
       "dominantCategory": null,
       "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fcocina: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2flentejas: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
+      "term": "café",
+      "searchCount": 2679,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fcafe",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fcafe: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
       "term": "santa julia",
-      "searchCount": 2588,
+      "searchCount": 2667,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3050,8 +3034,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fsanta-julia: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "freidora de aire",
-      "searchCount": 2583,
+      "term": "cocina",
+      "searchCount": 2663,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3059,16 +3043,50 @@
       "suggestion": null,
       "nativeCorrection": null,
       "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2ffreidora-de-aire",
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fcocina",
       "aiRelevance": null,
       "categoryConsistency": null,
       "dominantCategory": null,
       "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2ffreidora-de-aire: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fcocina: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
+      "term": "harina 000",
+      "searchCount": 2633,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fharina-000",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fharina-000: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
+      "term": "queso fresco",
+      "searchCount": 2623,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fqueso-fresco",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fqueso-fresco: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
       "term": "huevo",
-      "searchCount": 2583,
+      "searchCount": 2605,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3085,7 +3103,7 @@
     },
     {
       "term": "pava electrica",
-      "searchCount": 2569,
+      "searchCount": 2588,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3101,8 +3119,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fpava-electrica: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "cepillo de dientes",
-      "searchCount": 2558,
+      "term": "freidora de aire",
+      "searchCount": 2579,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3110,84 +3128,16 @@
       "suggestion": null,
       "nativeCorrection": null,
       "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fcepillo-de-dientes",
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2ffreidora-de-aire",
       "aiRelevance": null,
       "categoryConsistency": null,
       "dominantCategory": null,
       "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fcepillo-de-dientes: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
-      "term": "queso fresco",
-      "searchCount": 2557,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fqueso-fresco",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fqueso-fresco: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
-      "term": "servilletas",
-      "searchCount": 2555,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fservilletas",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fservilletas: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
-      "term": "galletitas dulces",
-      "searchCount": 2508,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fgalletitas-dulces",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fgalletitas-dulces: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
-      "term": "nescafe",
-      "searchCount": 2502,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fnescafe",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fnescafe: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2ffreidora-de-aire: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
       "term": "vino blanco",
-      "searchCount": 2501,
+      "searchCount": 2578,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3203,8 +3153,25 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fvino-blanco: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
+      "term": "galletitas dulces",
+      "searchCount": 2555,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fgalletitas-dulces",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fgalletitas-dulces: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
       "term": "leche protein",
-      "searchCount": 2496,
+      "searchCount": 2553,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3220,8 +3187,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fleche-protein: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "aguila",
-      "searchCount": 2465,
+      "term": "servilletas",
+      "searchCount": 2532,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3229,16 +3196,16 @@
       "suggestion": null,
       "nativeCorrection": null,
       "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2faguila",
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fservilletas",
       "aiRelevance": null,
       "categoryConsistency": null,
       "dominantCategory": null,
       "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2faguila: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fservilletas: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "nesquik",
-      "searchCount": 2462,
+      "term": "cepillo de dientes",
+      "searchCount": 2521,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3246,16 +3213,33 @@
       "suggestion": null,
       "nativeCorrection": null,
       "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fnesquik",
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fcepillo-de-dientes",
       "aiRelevance": null,
       "categoryConsistency": null,
       "dominantCategory": null,
       "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fnesquik: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fcepillo-de-dientes: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
+      "term": "nescafe",
+      "searchCount": 2494,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fnescafe",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fnescafe: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
       "term": "leche proteina",
-      "searchCount": 2458,
+      "searchCount": 2483,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3271,8 +3255,25 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fleche-proteina: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
+      "term": "nesquik",
+      "searchCount": 2459,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fnesquik",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fnesquik: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
       "term": "alfajores",
-      "searchCount": 2448,
+      "searchCount": 2434,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3305,8 +3306,25 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2frapiditas: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
+      "term": "aguila",
+      "searchCount": 2428,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2faguila",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2faguila: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
       "term": "polenta",
-      "searchCount": 2382,
+      "searchCount": 2373,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3323,7 +3341,7 @@
     },
     {
       "term": "aceite de girasol",
-      "searchCount": 2380,
+      "searchCount": 2350,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3339,42 +3357,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2faceite-de-girasol: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "frutos rojos",
-      "searchCount": 2351,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2ffrutos-rojos",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2ffrutos-rojos: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
-      "term": "downy",
-      "searchCount": 2338,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fdowny",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fdowny: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
       "term": "yogurtera",
-      "searchCount": 2336,
+      "searchCount": 2344,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3390,59 +3374,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fyogurtera: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "esencia de vainilla",
-      "searchCount": 2320,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fesencia-de-vainilla",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fesencia-de-vainilla: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
-      "term": "ariel",
-      "searchCount": 2315,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fariel",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fariel: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
-      "term": "miel",
-      "searchCount": 2310,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fmiel",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fmiel: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
       "term": "vainillas",
-      "searchCount": 2290,
+      "searchCount": 2330,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3458,8 +3391,25 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fvainillas: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
+      "term": "frutos rojos",
+      "searchCount": 2324,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2ffrutos-rojos",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2ffrutos-rojos: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
       "term": "chocolate aguila",
-      "searchCount": 2289,
+      "searchCount": 2311,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3475,8 +3425,25 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fchocolate-aguila: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
+      "term": "miel",
+      "searchCount": 2306,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fmiel",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fmiel: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
       "term": "arvejas",
-      "searchCount": 2273,
+      "searchCount": 2289,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3492,8 +3459,76 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2farvejas: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
+      "term": "ariel",
+      "searchCount": 2289,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fariel",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fariel: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
+      "term": "vacio",
+      "searchCount": 2271,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fvacio",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fvacio: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
+      "term": "esencia de vainilla",
+      "searchCount": 2253,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fesencia-de-vainilla",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fesencia-de-vainilla: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
+      "term": "downy",
+      "searchCount": 2247,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fdowny",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fdowny: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
       "term": "vino tinto",
-      "searchCount": 2266,
+      "searchCount": 2243,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3509,8 +3544,42 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fvino-tinto: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
+      "term": "corona",
+      "searchCount": 2241,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fcorona",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fcorona: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
+      "term": "jamon cocido",
+      "searchCount": 2198,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fjamon-cocido",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fjamon-cocido: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
       "term": "magistral",
-      "searchCount": 2205,
+      "searchCount": 2196,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3527,7 +3596,7 @@
     },
     {
       "term": "agua saborizada",
-      "searchCount": 2202,
+      "searchCount": 2187,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3543,59 +3612,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fagua-saborizada: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "corona",
-      "searchCount": 2196,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fcorona",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fcorona: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
-      "term": "vacio",
-      "searchCount": 2189,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fvacio",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fvacio: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
-      "term": "playadito",
-      "searchCount": 2188,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fplayadito",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fplayadito: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
       "term": "colgate",
-      "searchCount": 2180,
+      "searchCount": 2183,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3611,8 +3629,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fcolgate: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "jamon cocido",
-      "searchCount": 2159,
+      "term": "pan hamburguesa",
+      "searchCount": 2177,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3620,33 +3638,16 @@
       "suggestion": null,
       "nativeCorrection": null,
       "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fjamon-cocido",
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fpan-hamburguesa",
       "aiRelevance": null,
       "categoryConsistency": null,
       "dominantCategory": null,
       "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fjamon-cocido: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
-      "term": "atún",
-      "searchCount": 2148,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fatun",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fatun: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fpan-hamburguesa: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
       "term": "morron",
-      "searchCount": 2140,
+      "searchCount": 2170,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3662,8 +3663,42 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fmorron: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
+      "term": "atún",
+      "searchCount": 2168,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fatun",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fatun: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
+      "term": "playadito",
+      "searchCount": 2155,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fplayadito",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fplayadito: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
       "term": "jabón líquido",
-      "searchCount": 2105,
+      "searchCount": 2123,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3677,40 +3712,6 @@
       "dominantCategory": null,
       "resultCategories": null,
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fjabon-liquido: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
-      "term": "levite",
-      "searchCount": 2091,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2flevite",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2flevite: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
-      "term": "shampoo dove",
-      "searchCount": 2078,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fshampoo-dove",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fshampoo-dove: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
       "term": "vodka",
@@ -3730,8 +3731,42 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fvodka: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
+      "term": "shampoo dove",
+      "searchCount": 2074,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fshampoo-dove",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fshampoo-dove: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
+      "term": "levite",
+      "searchCount": 2071,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2flevite",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2flevite: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
       "term": "tregar",
-      "searchCount": 2073,
+      "searchCount": 2066,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3747,25 +3782,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2ftregar: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "pascualina",
-      "searchCount": 2057,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fpascualina",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fpascualina: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
       "term": "pepitos",
-      "searchCount": 2050,
+      "searchCount": 2052,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3781,8 +3799,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fpepitos: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "pechuga",
-      "searchCount": 2029,
+      "term": "pascualina",
+      "searchCount": 2039,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3790,33 +3808,16 @@
       "suggestion": null,
       "nativeCorrection": null,
       "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fpechuga",
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fpascualina",
       "aiRelevance": null,
       "categoryConsistency": null,
       "dominantCategory": null,
       "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fpechuga: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
-      "term": "valija",
-      "searchCount": 2014,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fvalija",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fvalija: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fpascualina: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
       "term": "aceitunas",
-      "searchCount": 2006,
+      "searchCount": 2025,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3832,8 +3833,25 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2faceitunas: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
+      "term": "yogurisimo",
+      "searchCount": 2018,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fyogurisimo",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fyogurisimo: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
       "term": "cacao",
-      "searchCount": 1998,
+      "searchCount": 2015,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3849,42 +3867,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fcacao: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "fideo",
-      "searchCount": 1992,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2ffideo",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2ffideo: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Los 0 resultados del motor son lo esperado en un término redirigido, no una falla de índice. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
-      "term": "manzana",
-      "searchCount": 1989,
-      "status": "redirige_a_plp",
-      "vtexResults": null,
-      "vtexResultsCapped": false,
-      "sampleProducts": [],
-      "suggestion": null,
-      "nativeCorrection": null,
-      "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fmanzana",
-      "aiRelevance": null,
-      "categoryConsistency": null,
-      "dominantCategory": null,
-      "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fmanzana: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
-    },
-    {
       "term": "gin",
-      "searchCount": 1987,
+      "searchCount": 2007,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3901,7 +3885,7 @@
     },
     {
       "term": "milanesa",
-      "searchCount": 1985,
+      "searchCount": 2004,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3917,8 +3901,42 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fmilanesa: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
+      "term": "toallitas humedas",
+      "searchCount": 1999,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2ftoallitas-humedas",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2ftoallitas-humedas: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
+      "term": "traviata",
+      "searchCount": 1997,
+      "status": "redirige_a_plp",
+      "vtexResults": null,
+      "vtexResultsCapped": false,
+      "sampleProducts": [],
+      "suggestion": null,
+      "nativeCorrection": null,
+      "encontradoPor": null,
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2ftraviata",
+      "aiRelevance": null,
+      "categoryConsistency": null,
+      "dominantCategory": null,
+      "resultCategories": null,
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2ftraviata: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+    },
+    {
       "term": "sedal",
-      "searchCount": 1984,
+      "searchCount": 1989,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3934,8 +3952,8 @@
       "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fsedal: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     },
     {
-      "term": "traviata",
-      "searchCount": 1972,
+      "term": "valija",
+      "searchCount": 1987,
       "status": "redirige_a_plp",
       "vtexResults": null,
       "vtexResultsCapped": false,
@@ -3943,12 +3961,12 @@
       "suggestion": null,
       "nativeCorrection": null,
       "encontradoPor": null,
-      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2ftraviata",
+      "redirectUrl": "https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fvalija",
       "aiRelevance": null,
       "categoryConsistency": null,
       "dominantCategory": null,
       "resultCategories": null,
-      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2ftraviata: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
+      "recommendation": "Redirige a https://carrefourar.vtexcommercestable.com.br/Admin/Site/Login.aspx?ReturnUrl=%2fvalija: el cliente no ve una página de resultados, así que cuántos productos devuelva la API de búsqueda no lo afecta. Lo que hay que revisar es si esa categoría es el destino correcto para este término."
     }
   ]
 }
