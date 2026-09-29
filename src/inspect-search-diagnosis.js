@@ -255,7 +255,10 @@ async function detectarRedirects(terms) {
     if (!s) return;
     const ruta = await pedir(`${base}/${s}`);
     if (esRedirect(ruta)) return anotar(ruta.location, 'HTTP 301 en la ruta');
-    const busq = await pedir(`${base}/${s}?_q=${encodeURIComponent(t.term)}&map=ft`);
+    // La URL EXACTA que arma la caja de búsqueda del sitio:
+    // https://www.carrefour.com.ar/arroz%20con%20leche?_q=arroz%20con%20leche&map=ft
+    const q = encodeURIComponent(t.term);
+    const busq = await pedir(`${base}/${q}?_q=${q}&map=ft`);
     if (esRedirect(busq)) return anotar(busq.location, 'HTTP 301 en la busqueda');
     if (ruta.status === 0 && busq.status === 0) fallados += 1;
   });

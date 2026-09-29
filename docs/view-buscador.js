@@ -61,13 +61,22 @@
 
   // Estado de la vista (sobrevive a los re-render mientras no se recargue).
   const S = { tab: 'resumen', trendWin: 'semana', q: '', filt: 'todos', page: 1, sort: 'n' };
-  let D = null, I = null, byTerm = null, rows = null;
+  let D = null, I = null, byTerm = null, rows = null, invalidRun = false;
 
   // ── Modelo: un término con todo lo que se sabe de él ─────────────────────
   function buildModel() {
     byTerm = new Map();
     const diag = D?.terms || (D?.problems || []).concat((D?.topTerms || []).filter((t) => t.status === 'ok'));
-    for (const t of diag) byTerm.set(t.term, { ...t });
+    // Un "redirect" al login del admin de VTEX no es un redirect del buscador:
+    // es el error de las corridas del 22/9 al 29/9 (se consultaba el host
+    // interno). Hasta que llegue una corrida nueva, esos términos se muestran
+    // como "sin medir" en vez de con un dato falso.
+    const bogus = (u) => /\/admin\b|login\.aspx|vtexcommercestable/i.test(String(u || ''));
+    for (const t of diag) {
+      if (t.status === 'redirige_a_plp' && bogus(t.redirectUrl)) continue;
+      byTerm.set(t.term, { ...t });
+    }
+    invalidRun = diag.length > 0 && byTerm.size === 0;
     rows = [];
     if (I?.terms?.length) {
       for (const t of I.terms) {
@@ -161,6 +170,10 @@
           text: `${W.fmtNumC(q.numeric)} búsquedas son números largos (EAN o código de producto). Verificar que el EAN esté indexado en el buscador.`,
           chips: q.numericTerms.slice(0, 5).map((x) => x[0]), go: null });
       }
+    }
+    if (invalidRun) {
+      out.unshift({ sev: 'bad', icon: 'alert', impact: Infinity, title: 'El último diagnóstico del buscador no es válido',
+        text: 'La corrida consultó una dirección interna de VTEX que manda todo al login del admin, y marcó todos los términos como redirigidos. Ya está corregido: la próxima corrida diaria (6:00) trae el diagnóstico real. Mientras tanto, el estado del buscador se muestra como "sin medir".', go: null });
     }
     if (D?.redirectProbe?.sospechoso) {
       out.unshift({ sev: 'bad', icon: 'alert', impact: Infinity, title: 'La detección de redirecciones falló en la última corrida',
