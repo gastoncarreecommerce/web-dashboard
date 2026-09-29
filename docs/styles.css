@@ -129,6 +129,8 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
   color: #6b649f; padding: 0 .7rem; margin: 1.15rem 0 .45rem;
 }
 .nav-scroll > .nav-sec:first-child { margin-top: .25rem; }
+/* Módulos que no le corresponden a la persona (panel de Accesos). */
+.nav-sec[hidden], .nav-item[hidden] { display: none !important; }
 /* El ítem del nav: tranquilo. Antes el activo llevaba degradé MÁS glow y el
    hover desplazaba el ítem 2px — el menú entero saltaba al pasar el mouse, que
    es de las cosas que hacen que una interfaz se sienta amateur. Ahora el activo
@@ -1355,3 +1357,34 @@ button.au-bars-i:hover { background: var(--brand-soft); }
   .au-camp > .ico { display: none; }
   .au-chs, .au-f2 { grid-template-columns: 1fr; }
 }
+
+/* ── Accesos (panel de admin) ──────────────────────────────────────────── */
+.adm-h { display: flex; justify-content: space-between; gap: 1.2rem; flex-wrap: wrap; align-items: center; }
+.adm-h h3 { display: flex; align-items: center; gap: .4rem; font-size: 1rem; margin: 0 0 .3rem; }
+.adm-h p { margin: 0; font-size: .8rem; color: var(--ink-2); max-width: 640px; line-height: 1.5; }
+.adm-sum { display: flex; gap: 1.4rem; }
+.adm-sum div { display: flex; flex-direction: column; }
+.adm-sum b { font-size: 1.35rem; font-weight: 750; font-variant-numeric: tabular-nums; }
+.adm-sum em { font-style: normal; font-size: .72rem; color: var(--ink-3); }
+.adm-q { min-width: 240px; }
+.adm-upd { font-size: .74rem; }
+.adm-t th, .adm-t td { vertical-align: middle; }
+.adm-t .c { text-align: center; }
+.adm-t .adm-g th { font-size: .62rem; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-3); border-bottom: none; padding-bottom: .15rem; }
+.adm-m { font-size: .72rem; white-space: nowrap; }
+.adm-p { display: flex; align-items: center; gap: .55rem; min-width: 190px; }
+.adm-p b { display: block; font-size: .82rem; }
+.adm-p em { display: block; font-style: normal; font-size: .7rem; color: var(--ink-3); }
+.adm-av { width: 30px; height: 30px; font-size: .68rem; }
+.adm-cb { width: 17px; height: 17px; accent-color: var(--brand); cursor: pointer; }
+.adm-cb:disabled { cursor: default; }
+.adm-busy { opacity: .55; }
+.adm-admin td { background: var(--surface-2); }
+.adm-sw { position: relative; display: inline-block; width: 36px; height: 20px; cursor: pointer; }
+.adm-sw input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.adm-sw i { position: absolute; inset: 0; border-radius: 20px; background: var(--surface-3); border: 1px solid var(--line-2); transition: background .15s; pointer-events: none; }
+.adm-sw i::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: var(--sh-1); transition: transform .15s; }
+.adm-sw input:checked + i { background: var(--brand); border-color: var(--brand); }
+.adm-sw input:checked + i::after { transform: translateX(16px); }
+.adm-sw input:disabled + i { opacity: .6; }
+.adm-sw input:focus-visible + i { outline: 2px solid var(--brand); outline-offset: 2px; }

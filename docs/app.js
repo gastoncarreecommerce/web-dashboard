@@ -147,9 +147,37 @@
   const NAV_ICON = {
     dashboard: 'dashboard', canales: 'layers', mensual: 'calendar', productos: 'box',
     analytics: 'analytics', tiendas: 'store',
-    marketing: 'megaphone', coupons: 'tag', buscador: 'search', audiences: 'audience',
+    marketing: 'megaphone', coupons: 'tag', buscador: 'search', audiences: 'audience', admin: 'shield',
   };
-  const TITLES = { dashboard: 'Resumen', canales: 'App vs. Web', mensual: 'Resumen mensual', productos: 'Productos', analytics: 'Analítica', tiendas: 'Tiendas', coupons: 'Cupones', marketing: 'Marketing', buscador: 'Buscador', audiences: 'Audiencias' };
+  const TITLES = { dashboard: 'Resumen', canales: 'App vs. Web', mensual: 'Resumen mensual', productos: 'Productos', analytics: 'Analítica', tiendas: 'Tiendas', coupons: 'Cupones', marketing: 'Marketing', buscador: 'Buscador', audiences: 'Audiencias', admin: 'Accesos' };
+
+  // ── Accesos por módulo ─────────────────────────────────────────────────
+  // /api/me dice qué módulos ve cada persona (se configuran en "Accesos").
+  // Acá solo se esconde lo que no le toca; los datos propios de cada módulo
+  // además los niega el servidor. Sin backend (local) se ve todo.
+  let allowed = null; // null = sin restricción
+  const canSee = (v) => (v === 'admin' ? !!W.session?.me?.admin : !allowed || allowed.includes(v));
+  function firstAllowed() {
+    const v = [...document.querySelectorAll('.nav-item')].map((n) => n.dataset.view).find(canSee);
+    return v || null;
+  }
+  function applyAccess(me) {
+    if (!me) return;
+    allowed = Array.isArray(me.views) ? me.views : null;
+    document.querySelectorAll('[data-admin]').forEach((n) => { n.hidden = !me.admin; });
+    document.querySelectorAll('.nav-item').forEach((n) => { n.hidden = !canSee(n.dataset.view); });
+    // Un título de sección sin ningún módulo visible debajo, también se va.
+    document.querySelectorAll('.nav-sec').forEach((sec) => {
+      if (sec.hasAttribute('data-admin')) return;
+      let el = sec.nextElementSibling, any = false;
+      while (el && !el.classList.contains('nav-sec')) { if (el.classList.contains('nav-item') && !el.hidden) any = true; el = el.nextElementSibling; }
+      sec.hidden = !any;
+    });
+    if (!canSee(state.view)) {
+      const v = firstAllowed();
+      if (v) { state.view = v; W.store.set('view', v); W.render(); }
+    }
+  }
 
   function paintChrome() {
     document.querySelectorAll('.nav-item').forEach((n) => {
@@ -312,13 +340,21 @@
       }
     } catch { /* la vista se encarga de avisar si el dataset no carga */ }
 
+    // Una vista guardada de antes que ya no le corresponde (o escrita a mano).
+    if (!canSee(state.view)) {
+      const v = firstAllowed();
+      if (!v) { $('content').innerHTML = '<div class="empty"><h2>No tenés módulos habilitados</h2><p>Pedile a un administrador que te dé acceso.</p></div>'; return; }
+      state.view = v;
+      W.store.set('view', v);
+    }
+
     state.range = resolveRange();
     sync();
     pintarPie();
 
     // Sin rango no hay nada que calcular: se muestra el estado vacío en vez de
     // dejar que cada vista falle leyendo range.from.
-    if (!state.range && !['audiences', 'buscador', 'mensual'].includes(state.view)) {
+    if (!state.range && !['audiences', 'buscador', 'mensual', 'admin'].includes(state.view)) {
       $('content').innerHTML = `<div class="empty"><h2>Todavía no hay datos</h2>
         <p>Corré el backfill inicial para poblar el historial (ver README).</p></div>`;
       return;
@@ -333,7 +369,7 @@
     //
     // Va en el shell y no en cada vista a proposito: el problema es el mismo en
     // todas, y un numero inventado en Analitica engana igual que en el Resumen.
-    const VISTAS_CON_RANGO = !['audiences', 'buscador', 'mensual'].includes(state.view);
+    const VISTAS_CON_RANGO = !['audiences', 'buscador', 'mensual', 'admin'].includes(state.view);
     if (VISTAS_CON_RANGO && state.range) {
       let cob = null;
       try { cob = W.coberturaCanal(await W.load('daily-summary'), state.range); } catch { /* sin dataset, cada vista avisa */ }
@@ -393,6 +429,7 @@
       else if (state.view === 'coupons') await W.viewCoupons(ctx);
       else if (state.view === 'marketing') await W.viewMarketing(ctx);
       else if (state.view === 'buscador') await W.viewBuscador(ctx);
+      else if (state.view === 'admin') await W.viewAdmin(ctx);
       else await W.viewAudiences(ctx);
     } catch (e) {
       $('content').innerHTML = `<div class="empty err"><h2>Algo falló al renderizar</h2><p>${W.esc(e.message)}</p></div>`;
@@ -537,8 +574,10 @@
       $('nav-av').textContent = name.split(/[\s_]+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
       $('nav-av').title = name;
       W.user = me;
+      applyAccess(me);
       if (W.collectible) W.collectible(me);
     });
+    W.session.onChange(applyAccess);
     $('logout').addEventListener('click', async () => {
       try { await fetch('/api/logout', { method: 'POST' }); } catch { /* sin backend en local */ }
       location.href = '/login.html';
@@ -673,6 +712,9 @@
       back.addEventListener('click', (e) => { if (e.target === back) close(); });
     }
 
+    // Se espera a saber quién es (y qué módulos ve) antes del primer render:
+    // si no, alguien sin acceso llegaba a ver un instante un módulo ajeno.
+    await W.session.ready;
     W.render();
   }
 

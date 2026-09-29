@@ -15,6 +15,8 @@
  *                       Si no está, cualquier usuario con la contraseña correcta entra.
  *                       Se chequea en CADA pedido: sacar a alguien de la lista le corta
  *                       el acceso al instante, sin esperar a que venza su sesión.
+ *   DASHBOARD_ADMINS    (opcional) quiénes administran los accesos por módulo
+ *                       (por defecto gaston_ruiz). Ver api/_access.js.
  */
 export const config = {
   // Se excluyen solo los recursos que la propia pantalla de login necesita.
@@ -71,8 +73,67 @@ async function isValidToken(token, secret) {
   if (!Number.isFinite(expiry) || Date.now() > expiry) return false;
 
   if (!safeEqual(sig, await hmacHex(secret, payload))) return false;
+  const user = payload.slice(0, payload.lastIndexOf(':'));
   const allowed = allowedUsers();
-  return !allowed.size || allowed.has(payload.slice(0, payload.lastIndexOf(':')));
+  return !allowed.size || allowed.has(user) ? user : false;
+}
+
+// ── Accesos por módulo ─────────────────────────────────────────────────────
+// Los datos que usa UN solo módulo (o unos pocos) se niegan a quien no tiene
+// ese módulo habilitado desde el panel de Accesos. Lo que comparte todo el
+// dashboard (daily-summary, productos, geo, índice de pedidos) no se puede
+// cortar sin romper el resto; esos módulos igual quedan fuera del menú.
+// Espejo de api/_access.js: si se cambia allá, cambiarlo acá.
+const PROTECTED = [
+  [/^\/api\/campaigns/, ['audiences']],
+  [/^\/data\/web\/audience-index\.json/, ['audiences', 'coupons']],
+  [/^\/api\/audience-emails/, ['audiences', 'coupons', 'analytics', 'tiendas']],
+  [/^\/data\/web\/cohorts\.json/, ['analytics']],
+  [/^\/data\/web\/search-diagnosis/, ['buscador']],
+  [/^\/api\/(buscador-compara|competencia)/, ['buscador']],
+  [/^\/comparador-de-precios\.html/, ['buscador']],
+];
+function modulesFor(url) {
+  if (url.pathname === '/api/archive') {
+    const p = url.searchParams.get('path') || '';
+    if (p.startsWith('customer-activity')) return ['audiences'];
+    if (p.startsWith('orders/')) return ['tiendas'];
+    return null;
+  }
+  for (const [re, mods] of PROTECTED) if (re.test(url.pathname)) return mods;
+  return null;
+}
+
+function isAdminUser(u) {
+  const raw = process.env.DASHBOARD_ADMINS || 'gaston_ruiz';
+  return raw.split(/[,\n]/).map((x) => x.trim().toLowerCase().replace(/@.*$/, '')).includes(u);
+}
+
+// La config vive en Upstash; se cachea 30 s por instancia del edge para no
+// pegarle en cada pedido. Si Redis no responde, se usa lo último conocido.
+let accessCache = { at: 0, users: null };
+async function accessUsers() {
+  if (accessCache.users && Date.now() - accessCache.at < 30000) return accessCache.users;
+  const base = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!base || !token) return {};
+  try {
+    const r = await fetch(`${base.replace(/\/$/, '')}/get/webdash:access:v1`, { headers: { Authorization: `Bearer ${token}` } });
+    const { result } = await r.json();
+    const cfg = result ? (typeof result === 'string' ? JSON.parse(result) : result) : {};
+    accessCache = { at: Date.now(), users: cfg.users || {} };
+  } catch {
+    if (!accessCache.users) return {};
+  }
+  return accessCache.users;
+}
+
+async function canAccess(user, url) {
+  const need = modulesFor(url);
+  if (!need || isAdminUser(user)) return true;
+  const views = (await accessUsers())[user];
+  if (!Array.isArray(views)) return true; // sin configurar = ve todo
+  return need.some((m) => views.includes(m));
 }
 
 export default async function middleware(request) {
@@ -91,7 +152,15 @@ export default async function middleware(request) {
 
   const cookie = request.headers.get('cookie') || '';
   const match = cookie.match(new RegExp(`(?:^|;\\s*)${COOKIE}=([^;]+)`));
-  if (await isValidToken(match?.[1], secret)) return; // sesión válida: seguir
+  const user = await isValidToken(match?.[1], secret);
+  if (user) {
+    if (await canAccess(user, url)) return; // sesión válida y módulo habilitado: seguir
+    // 403 y no 401: la sesión sigue valiendo, solo que esto no le corresponde.
+    return new Response(JSON.stringify({ error: 'Este módulo no está habilitado para tu usuario.' }), {
+      status: 403,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
 
   // Las peticiones de datos reciben 401 (no un redirect a HTML, que rompería el fetch).
   if (url.pathname.startsWith('/data/') || url.pathname.startsWith('/api/')) {

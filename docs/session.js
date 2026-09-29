@@ -41,6 +41,10 @@
       const me = await r.json();
       enabled = true;
       expiresAt = me.expiresAt || Date.now() + IDLE_MS;
+      // Cada renovación trae también los módulos habilitados: un cambio en
+      // el panel de Accesos le llega a la persona en menos de un minuto.
+      W.session.me = me;
+      listeners.forEach((fn) => { try { fn(me); } catch { /* un listener roto no corta la sesión */ } });
       return me;
     } catch { return null; }
   }
@@ -78,6 +82,8 @@
     return res;
   };
 
-  /** Renueva ahora y devuelve { username, name } (o null sin backend). */
-  W.session = { ready: refresh(), expire };
+  /** Renueva ahora y devuelve { username, name, views, admin } (o null sin backend). */
+  const listeners = [];
+  W.session = { me: null, expire, onChange: (fn) => listeners.push(fn) };
+  W.session.ready = refresh();
 })();
