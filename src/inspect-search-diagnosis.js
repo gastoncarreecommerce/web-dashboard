@@ -52,7 +52,7 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { motoresActivos, vtexCorrection, vtexBase, vtexSearchRedirect } = require('./search-engines');
+const { motoresActivos, vtexCorrection, vtexSearchRedirect } = require('./search-engines');
 const relevanciaIA = require('./search-relevance-ai');
 
 const IN_PATH = path.join(__dirname, '..', 'config', 'search-inspect.report.json');
@@ -196,8 +196,25 @@ function cargarRedirects() {
  * mano un redirect que el sitio resuelve por JavaScript y no por HTTP.
  */
 async function detectarRedirects(terms) {
-  const base = vtexBase();
+  // Se le pregunta al sitio PÚBLICO, no al host interno de VTEX
+  // (cuenta.vtexcommercestable.com.br): ese host manda TODO lo que no es API
+  // a la pantalla de login del admin, y desde el 22/9 los 200 términos
+  // salían "redirigidos" a /Admin/Site/Login.aspx. El diagnóstico entero
+  // quedó inútil una semana por eso.
+  const base = (process.env.STORE_URL || 'https://www.carrefour.com.ar').replace(/\/+$/, '');
+  const baseHost = new URL(base).host;
   const slug = (t) => sinTildes(t).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+  // Un 30x no siempre es un redirect del buscador: puede ser un login, otro
+  // dominio, o la misma ruta con barra final / en otro caso. Esos no cuentan.
+  const destinoValido = (location, pedido) => {
+    let u;
+    try { u = new URL(location, base); } catch { return false; }
+    if (/\/admin\b|login|signin|auth/i.test(u.pathname + u.search)) return false;
+    if (u.host !== baseHost && !u.host.endsWith(baseHost.replace(/^www\./, ''))) return false;
+    const norm = (p) => decodeURIComponent(p).toLowerCase().replace(/\/+$/, '');
+    return norm(u.pathname) !== norm(new URL(pedido).pathname) || u.search !== new URL(pedido).search;
+  };
 
   const pedir = async (url) => {
     try {
@@ -205,10 +222,16 @@ async function detectarRedirects(terms) {
         redirect: 'manual',
         headers: { 'User-Agent': 'Mozilla/5.0 (compatible; WebDash-diagnostico)', Accept: 'text/html' },
       });
-      return { status: r.status, location: r.headers.get('location') || null };
-    } catch { return { status: 0, location: null }; }
+      return { status: r.status, location: r.headers.get('location') || null, url };
+    } catch { return { status: 0, location: null, url }; }
   };
-  const esRedirect = (r) => r.status >= 300 && r.status < 400 && r.location;
+  let descartados = 0;
+  const esRedirect = (r) => {
+    if (!(r.status >= 300 && r.status < 400 && r.location)) return false;
+    if (destinoValido(r.location, r.url)) return true;
+    descartados += 1;
+    return false;
+  };
 
   const hallados = new Map();
   const porVia = {};
@@ -236,7 +259,27 @@ async function detectarRedirects(terms) {
     if (esRedirect(busq)) return anotar(busq.location, 'HTTP 301 en la busqueda');
     if (ruta.status === 0 && busq.status === 0) fallados += 1;
   });
-  return { hallados, fallados, porVia };
+
+  // Freno de seguridad: si casi todos los términos "redirigen" al MISMO
+  // destino, no son redirects del buscador sino una pantalla intermedia
+  // (login, bloqueo anti-bots, mantenimiento). Se descartan los detectados
+  // por HTTP y se avisa, en vez de publicar un diagnóstico que miente.
+  const porHttp = [...hallados.entries()].filter(([, v]) => v.via.startsWith('HTTP'));
+  const destinos = new Map();
+  for (const [, v] of porHttp) {
+    let k = v.url;
+    try { k = new URL(v.url, base).pathname; } catch { /* se usa tal cual */ }
+    destinos.set(k, (destinos.get(k) || 0) + 1);
+  }
+  const masRepetido = Math.max(0, ...destinos.values());
+  let sospechoso = null;
+  if (terms.length >= 20 && masRepetido >= terms.length * 0.5) {
+    sospechoso = `${masRepetido} de ${terms.length} términos "redirigían" al mismo destino: se ignoran los redirects por HTTP de esta corrida.`;
+    console.warn(`  ! ${sospechoso}`);
+    for (const [term] of porHttp) hallados.delete(term);
+  }
+  if (descartados) console.log(`  ${descartados} respuestas 30x descartadas (login, otro dominio o la misma ruta).`);
+  return { hallados, fallados, porVia, descartados, sospechoso };
 }
 
 /**
@@ -747,6 +790,10 @@ async function main() {
     // Cuanta gente usa el buscador y cuanta llega a ver resultados.
     funnel: embudoDeUso(inputReport),
     comparison: compararMotores(terms),
+    redirectProbe: {
+      detectados: red.hallados.size, porVia: red.porVia,
+      descartados: red.descartados || 0, sospechoso: red.sospechoso || null,
+    },
     ai: {
       activa: relevanciaIA.habilitado(),
       motivo: relevanciaIA.porQueNo(),
@@ -883,8 +930,37 @@ function writeClientReport(report) {
       recommendation: t.recommendation,
     }));
 
+  // Detalle compacto de TODOS los términos medidos (no solo los rotos): el
+  // dashboard cruza esto con la demanda de GA4 para decir, de cada término que
+  // la gente busca, cómo le responde el buscador.
+  const primario = report.engine;
+  const detail = report.terms.map((t) => {
+    const p = t.engines?.[primario] || {};
+    const nombre = (x) => (typeof x === 'string' ? x : x?.name) || null;
+    return {
+      term: t.term,
+      searchCount: t.searchCount,
+      status: t.status,
+      results: t.vtexResults ?? p.results ?? null,
+      capped: !!(t.vtexResultsCapped || p.resultsCapped),
+      precision: p.precisionTop ?? null,
+      consistency: t.categoryConsistency ?? p.categoryConsistency ?? null,
+      category: t.dominantCategory || p.dominantCategory || null,
+      sample: (t.sampleProducts?.length ? t.sampleProducts : p.sampleProducts || []).slice(0, 4).map(nombre).filter(Boolean),
+      engines: Object.fromEntries(Object.entries(t.engines || {}).map(([id, e]) => [id, {
+        status: e.status, results: e.results ?? null, precision: e.precisionTop ?? null,
+      }])),
+      redirectUrl: t.redirectUrl || null,
+      suggestion: t.suggestion?.term || null,
+      nativeCorrection: t.nativeCorrection || null,
+      recommendation: t.recommendation || null,
+    };
+  });
+
   const client = {
     generatedAt: report.generatedAt,
+    redirectProbe: report.redirectProbe || null,
+    terms: detail,
     engine: report.engine,
     engineLabel: report.engineLabel,
     enginesCompared: report.enginesCompared,

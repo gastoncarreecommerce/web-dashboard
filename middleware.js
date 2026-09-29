@@ -89,7 +89,7 @@ const PROTECTED = [
   [/^\/data\/web\/audience-index\.json/, ['audiences', 'coupons']],
   [/^\/api\/audience-emails/, ['audiences', 'coupons', 'analytics', 'tiendas']],
   [/^\/data\/web\/cohorts\.json/, ['analytics']],
-  [/^\/data\/web\/search-diagnosis/, ['buscador']],
+  [/^\/data\/web\/search-(diagnosis|insights)/, ['buscador']],
   [/^\/api\/(buscador-compara|competencia)/, ['buscador']],
   [/^\/comparador-de-precios\.html/, ['buscador']],
 ];

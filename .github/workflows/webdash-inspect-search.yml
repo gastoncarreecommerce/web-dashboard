@@ -41,6 +41,16 @@ jobs:
           GA4_PROPERTY_ID: ${{ secrets.GA4_PROPERTY_ID }}
         run: npm run inspect:search
 
+      # Tendencias, variantes mal escritas, horarios, dispositivos y calidad del
+      # tracking: lo que usan los analistas de buscador y SEO en el dashboard.
+      - name: Inteligencia de búsqueda (GA4)
+        # Si esto falla, el diagnóstico de abajo igual tiene que correr.
+        continue-on-error: true
+        env:
+          GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
+          GA4_PROPERTY_ID: ${{ secrets.GA4_PROPERTY_ID }}
+        run: npm run inspect:search-insights
+
       - name: Diagnosticar top de búsquedas contra los buscadores reales
         env:
           VTEX_ACCOUNT_NAME: ${{ secrets.VTEX_ACCOUNT_NAME }}
@@ -67,5 +77,6 @@ jobs:
           [ -f config/search-diagnosis.report.json ] && git add -f config/search-diagnosis.report.json
           [ -f docs/data/web/search-diagnosis.json ] && git add -f docs/data/web/search-diagnosis.json
           [ -f docs/data/web/search-diagnosis-history.json ] && git add -f docs/data/web/search-diagnosis-history.json
+          [ -f docs/data/web/search-insights.json ] && git add -f docs/data/web/search-insights.json
           git diff --cached --quiet || git commit -m "chore(inspect): reporte de búsqueda GA4 + diagnóstico VTEX [skip ci]"
-          git push
+          for i in 1 2 3; do git push && break; sleep $((i*5)); git pull --rebase --autostash || true; done
