@@ -47,6 +47,27 @@ function vtexBase() {
   return `https://${account}.${environment}.com.br`;
 }
 
+/**
+ * Intelligent Search se consulta en el SITIO PÚBLICO primero. En el host
+ * interno (cuenta.vtexcommercestable.com.br) IS no aplica las reglas del
+ * storefront —redirecciones, sinónimos, merchandising— y devolvía 0 productos
+ * y ningún redirect para "aceite", "papel higiénico" o "queso crema": 92 de
+ * los 200 términos más buscados salían "no está en el índice" cuando en el
+ * sitio funcionan. Si el sitio no responde, se cae al host interno.
+ */
+function storeBase() {
+  return (process.env.STORE_URL || 'https://www.carrefour.com.ar').replace(/\/+$/, '');
+}
+async function isGet(pathAndQuery) {
+  try {
+    const r = await getJson(`${storeBase()}${pathAndQuery}`);
+    return { ...r, host: 'sitio' };
+  } catch (e) {
+    const r = await getJson(`${vtexBase()}${pathAndQuery}`);
+    return { ...r, host: 'interno' };
+  }
+}
+
 /** Normaliza un producto de cualquiera de las dos APIs de VTEX. Las dos traen
  *  `productName` y `categories` como rutas ("/Almacén/Lácteos/Quesos/"), pero
  *  se aceptan los alias por si un catálogo viejo usa otro nombre de campo. */
@@ -111,9 +132,8 @@ const vtexIS = {
   cuentaComparable: true,
   disponible: () => Boolean(process.env.VTEX_ACCOUNT_NAME),
   async search(term) {
-    const url = `${vtexBase()}/api/io/_v/api/intelligent-search/product_search/`
-      + `?query=${encodeURIComponent(term)}&count=${PAGE_SIZE}`;
-    const { body } = await getJson(url);
+    const { body } = await isGet('/api/io/_v/api/intelligent-search/product_search/'
+      + `?query=${encodeURIComponent(term)}&count=${PAGE_SIZE}`);
     const products = Array.isArray(body?.products) ? body.products : [];
 
     // IS sí devuelve el total exacto en `recordsFiltered`, así que acá no hay
@@ -281,12 +301,12 @@ const dynamicYield = {
  */
 async function vtexSearchRedirect(term) {
   const rutas = [
-    `${vtexBase()}/api/io/_v/api/intelligent-search/search_redirect/?query=${encodeURIComponent(term)}`,
-    `${vtexBase()}/api/io/_v/api/intelligent-search/redirect/?query=${encodeURIComponent(term)}`,
+    `/api/io/_v/api/intelligent-search/search_redirect/?query=${encodeURIComponent(term)}`,
+    `/api/io/_v/api/intelligent-search/redirect/?query=${encodeURIComponent(term)}`,
   ];
   for (const url of rutas) {
     try {
-      const { body } = await getJson(url);
+      const { body } = await isGet(url);
       // La respuesta puede ser {redirect}, {url} o una lista de reglas.
       const destino = body?.redirect || body?.url
         || (Array.isArray(body?.redirects) ? body.redirects[0]?.url : null)
@@ -322,7 +342,7 @@ function motoresActivos() {
  *  listas son en sí mismas una señal (un término que VTEX ve mucho y GA4 no,
  *  o al revés, es un problema de tracking). */
 async function vtexTopSearches() {
-  const { body } = await getJson(`${vtexBase()}/api/io/_v/api/intelligent-search/top_searches`);
+  const { body } = await isGet('/api/io/_v/api/intelligent-search/top_searches');
   const searches = Array.isArray(body?.searches) ? body.searches : [];
   return searches
     .map((s) => ({ term: String(s.term || '').trim().toLowerCase(), count: Number(s.count) || 0 }))
@@ -334,9 +354,7 @@ async function vtexTopSearches() {
  *  sirviendo como red, pero la corrección del propio motor es la que de verdad
  *  va a ver el usuario en el sitio. */
 async function vtexCorrection(term) {
-  const url = `${vtexBase()}/api/io/_v/api/intelligent-search/correction_search`
-    + `?query=${encodeURIComponent(term)}`;
-  const { body } = await getJson(url);
+  const { body } = await isGet(`/api/io/_v/api/intelligent-search/correction_search?query=${encodeURIComponent(term)}`);
   const c = body?.correction;
   if (!c) return null;
   return {
@@ -349,9 +367,7 @@ async function vtexCorrection(term) {
 /** Qué sugiere el autocomplete al tipear el término. Un término con volumen
  *  alto que no aparece en su propio autocomplete es una fricción real. */
 async function vtexAutocomplete(term) {
-  const url = `${vtexBase()}/api/io/_v/api/intelligent-search/autocomplete_suggestions`
-    + `?query=${encodeURIComponent(term)}`;
-  const { body } = await getJson(url);
+  const { body } = await isGet(`/api/io/_v/api/intelligent-search/autocomplete_suggestions?query=${encodeURIComponent(term)}`);
   const items = Array.isArray(body?.searches) ? body.searches : [];
   return items.map((s) => String(s.term || '').trim()).filter(Boolean);
 }

@@ -61,7 +61,7 @@
 
   // Estado de la vista (sobrevive a los re-render mientras no se recargue).
   const S = { tab: 'resumen', trendWin: 'semana', q: '', filt: 'todos', page: 1, sort: 'n' };
-  let D = null, I = null, byTerm = null, rows = null, invalidRun = false;
+  let D = null, I = null, byTerm = null, rows = null, invalidRun = false, suspectIndex = null;
 
   // ── Modelo: un término con todo lo que se sabe de él ─────────────────────
   function buildModel() {
@@ -77,6 +77,16 @@
       byTerm.set(t.term, { ...t });
     }
     invalidRun = diag.length > 0 && byTerm.size === 0;
+    // Freno de plausibilidad: si el motor del sitio "no tiene indexado" más
+    // del 30% del volumen de lo más buscado mientras los otros motores sí lo
+    // encuentran, lo más probable es un problema de medición y no del
+    // catálogo (pasó: se consultaba el host interno de VTEX). Esos términos se
+    // muestran como "sin medir" con un aviso, no como un hecho.
+    const vol = [...byTerm.values()].reduce((a, t) => a + (t.searchCount || 0), 0);
+    const ni = [...byTerm.values()].filter((t) => t.status === 'motor_no_indexa');
+    const niVol = ni.reduce((a, t) => a + (t.searchCount || 0), 0);
+    suspectIndex = vol && niVol / vol > 0.3 ? { n: ni.length, vol: niVol, share: niVol / vol } : null;
+    if (suspectIndex) for (const t of ni) byTerm.delete(t.term);
     rows = [];
     if (I?.terms?.length) {
       for (const t of I.terms) {
@@ -104,7 +114,7 @@
       const list = measured.filter((r) => g.st.includes(r.diag.status));
       if (!list.length) continue;
       if (g.k === 'redir') {
-        out.push({ sev: 'info', icon: 'layers', impact: sum(list), title: `${list.length} términos redirigen a una categoría`,
+        out.push({ sev: 'info', icon: 'layers', impact: sum(list), title: list.length === 1 ? '1 término redirige a una categoría' : `${list.length} términos redirigen a una categoría`,
           text: `${W.fmtNumC(sum(list))} búsquedas/mes no ven una página de resultados. ${g.fix}`,
           terms: list.slice(0, 6), go: { tab: 'calidad' } });
         continue;
@@ -128,20 +138,20 @@
       const up = rows.filter((r) => r.n7 >= minVol && r.d7 != null && r.d7 >= 0.4).sort((a, b) => (b.n7 - b.p7) - (a.n7 - a.p7));
       if (up.length) {
         out.push({ sev: 'good', icon: 'trend', impact: sum(up, (r) => r.n7 - r.p7) * 4.3,
-          title: `${up.length} búsquedas en alza esta semana`,
+          title: up.length === 1 ? '1 búsqueda en alza esta semana' : `${up.length} búsquedas en alza esta semana`,
           text: 'Demanda que está creciendo: asegurar stock y precio, destacarlas en home o banners, y crear o reforzar su landing para SEO.',
           terms: up.slice(0, 6), go: { tab: 'tendencias', trendWin: 'semana' } });
       }
       const nuevos = rows.filter((r) => r.d === Infinity && r.n >= minVol * 2);
       if (nuevos.length) {
-        out.push({ sev: 'good', icon: 'sparkles', impact: sum(nuevos), title: `${nuevos.length} búsquedas nuevas este mes`,
+        out.push({ sev: 'good', icon: 'sparkles', impact: sum(nuevos), title: nuevos.length === 1 ? '1 búsqueda nueva este mes' : `${nuevos.length} búsquedas nuevas este mes`,
           text: 'No aparecían el mes anterior. Suelen ser lanzamientos, temporada o algo que se viralizó: revisar que tengamos el producto y que el buscador lo encuentre.',
           terms: nuevos.slice(0, 6), go: { tab: 'tendencias', trendWin: 'mes' } });
       }
       const down = rows.filter((r) => r.p7 >= minVol * 2 && r.d7 != null && r.d7 <= -0.4).sort((a, b) => (a.n7 - a.p7) - (b.n7 - b.p7));
       if (down.length) {
         out.push({ sev: 'warn', icon: 'trendDown', impact: sum(down, (r) => r.p7 - r.n7) * 4.3,
-          title: `${down.length} búsquedas cayendo fuerte`,
+          title: down.length === 1 ? '1 búsqueda cayendo fuerte' : `${down.length} búsquedas cayendo fuerte`,
           text: 'Bajaron 40% o más contra la semana anterior. Si no es estacional, revisar si se quebró stock, cambió el precio o el resultado dejó de ser bueno.',
           terms: down.slice(0, 6), go: { tab: 'tendencias', trendWin: 'semana' } });
       }
@@ -150,7 +160,7 @@
       const med = repAvg[Math.floor(repAvg.length / 2)] || 0;
       const rep = rows.slice(0, 300).filter((r) => r.rep && med && r.rep >= med * 1.6 && r.n >= minVol * 4);
       if (rep.length) {
-        out.push({ sev: 'warn', icon: 'refresh', impact: sum(rep), title: `${rep.length} términos que la gente busca una y otra vez`,
+        out.push({ sev: 'warn', icon: 'refresh', impact: sum(rep), title: rep.length === 1 ? '1 término que la gente busca una y otra vez' : `${rep.length} términos que la gente busca una y otra vez`,
           text: `Se buscan ${W.fmtDec(med * 1.6, 1)} veces o más por usuario (lo normal es ${W.fmtDec(med, 1)}). Suele ser señal de que no encuentra lo que quiere a la primera: revisar el top de resultados.`,
           terms: rep.slice(0, 6), go: { tab: 'demanda', filt: 'repite' } });
       }
@@ -170,6 +180,10 @@
           text: `${W.fmtNumC(q.numeric)} búsquedas son números largos (EAN o código de producto). Verificar que el EAN esté indexado en el buscador.`,
           chips: q.numericTerms.slice(0, 5).map((x) => x[0]), go: null });
       }
+    }
+    if (suspectIndex) {
+      out.unshift({ sev: 'bad', icon: 'alert', impact: Infinity, title: `Medición en revisión: ${suspectIndex.n} términos sin resultados en ${D?.engineLabel || 'el motor del sitio'}`,
+        text: `Son el ${W.fmtPct(suspectIndex.share, 0)} del volumen de lo más buscado (ej. aceite, papel higiénico) y los otros motores sí los encuentran: casi seguro es un problema de cómo se consultaba el motor, no del catálogo. Ya está corregido y se confirma con la próxima corrida diaria. Mientras tanto figuran como "sin medir". Podés verificarlo en vivo en "Comparar motores".`, go: { tab: 'comparar' } });
     }
     if (invalidRun) {
       out.unshift({ sev: 'bad', icon: 'alert', impact: Infinity, title: 'El último diagnóstico del buscador no es válido',

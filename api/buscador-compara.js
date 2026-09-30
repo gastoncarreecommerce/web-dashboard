@@ -93,12 +93,19 @@ function productoVtex(p) {
 }
 
 async function intelligentSearch(term) {
-  const base = vtexBase();
-  if (!base) return { error: 'falta VTEX_ACCOUNT_NAME' };
+  // Primero el sitio público: el host interno de VTEX no aplica las reglas del
+  // storefront (redirecciones, sinónimos) y devuelve 0 para términos que en el
+  // sitio funcionan. Si el sitio no responde, se prueba el interno.
+  const store = (process.env.STORE_URL || 'https://www.carrefour.com.ar').replace(/\/+$/, '');
   // La barra final del path es obligatoria: el segmento de facets va vacio
   // pero tiene que estar.
-  const { json, error } = await pedir(`${base}/api/io/_v/api/intelligent-search/product_search/`
-    + `?query=${encodeURIComponent(term)}&count=${CUANTOS}`);
+  const path = `/api/io/_v/api/intelligent-search/product_search/?query=${encodeURIComponent(term)}&count=${CUANTOS}`;
+  let { json, error } = await pedir(`${store}${path}`);
+  if (error) {
+    const base = vtexBase();
+    if (!base) return { error };
+    ({ json, error } = await pedir(`${base}${path}`));
+  }
   if (error) return { error };
   const prods = Array.isArray(json?.products) ? json.products : [];
   const total = Number(json?.recordsFiltered);
