@@ -1,10 +1,11 @@
 /* global window, document, crypto, TextEncoder, Blob, URL, localStorage */
 /**
- * Objetos coleccionables: una sorpresa para usuarios puntuales.
+ * Objetos coleccionables: una sorpresa para el equipo.
  *
- * El repo es público, así que acá no hay nombres ni fotos a la vista: el
- * usuario se reconoce por un hash y la imagen viaja cifrada (AES-GCM) con una
- * clave que sale del propio usuario. Solo esa persona, logueada, la ve.
+ * El repo es público, así que acá no hay nombres ni fotos a la vista. La
+ * imagen viaja cifrada (AES-GCM) con una llave de contenido, y esa llave va
+ * "envuelta" una vez por cada usuario habilitado: cada uno la abre con una
+ * clave que sale de su propio usuario. Se reconoce a cada persona por un hash.
  *
  * La tarjeta queda en pantalla hasta que se acepta (no se cierra con Esc ni
  * clickeando afuera). Después queda una estrellita en el avatar del menú para
@@ -13,8 +14,33 @@
 (function () {
   const W = (window.W = window.W || {});
 
-  const ITEMS = {
-    '70eae642ed37c4f7': { id: 1, file: 'c/1.bin', hello: 'Hola Dai', title: 'Santa Dai', rarity: 'Legendario' },
+  const ITEM = { id: 1, file: 'c/1.bin', title: 'Santa Dai', rarity: 'Legendario' };
+  // Saludo propio para quien inspiró la tarjeta; el resto ve su nombre.
+  const HELLO = { '70eae642ed37c4f7': 'Hola Dai' };
+  // Llave de contenido envuelta por usuario (hash del usuario -> iv + llave cifrada).
+  const KEYS = {
+    '4f06eb7853b0cfb9': 'dtkTyEvsjAZ94ifQqX8xuBOlQgPLZYKGzE2nJ4fhM3nFwnqCPupuPMzUxD7apANXoL1zo0L9Jc63WB8k',
+    '70eae642ed37c4f7': 'qhSkdmET6zg8eNWR67tWsqwYfoLEeDn75wQEay16RCViPCYWu5azBllSlW1yf/CvseLs4eDYaD5u+41h',
+    '33e048eb83fb888c': 'u4mbsUrKmfNKKkSnRMbQFnO8F4L5kr7Drj2Rs0CeheALGThB+XYNwhUyVJxhPRftRsG9G9nBvHd+VozS',
+    'd0d0791f9b7bd1a9': 'ZAoT/1epNX++b6Zbt1G1NJTKuYHBjGcof9MEAe32rAWEHvfwud1DkogBWKA5pZjQQxhEgaUDvSiHfA0U',
+    '49142fdfb9ce4542': 'rme6n62oCqJ0bRxwETay6rJaaT8vMUrPPLwaVXVcfc5jLR0lVIJxjv3mHt4NJ83dTyXdTfkNCk4hwfJs',
+    '93f49132b0ad9fef': 'kKI3f7wSlco1MbxT168m3RDUpaDBBYXTV8Inx8IBCSxFRkQxDDwVOXn2Q+NVJFXnt0RjUBfy7HHNqNru',
+    '04b4648aaf85af1f': 'ASTqKSg3vVnCjRi6nDF742LM0qHGWQbABArZ4iZLIB4SlAbI+xIn+c8CVGvbZs0gBhYsh6/KKDMkPp37',
+    'c95cf9508de7bb48': 'Dfsfoqouso5IzygVNLRgPaZ/IZKnIuG26vxuqViVmdRDML6W3aKryff3gfSJHbtiI5NUq31IwQtiNG2J',
+    '37e838e1ad067f78': '389i5pIxLkR34eQsVIfGapCjgf2GSVF22w4zmc8ZBoaBBRNX2lMebLc4ZoZqHOUS2M6iQwnFT7ru8Xa9',
+    'd8a5ee60ac5bf0c0': '/23P7C7X2EO8ubtj6R5InsJX5lg8MNKHuEz/CunM4fdY+akYNA5Vb3hkHJx83Gr/D3yLJU4s6awTct2B',
+    '67f8e339b263e056': 'tEino1Ymwg0GzpmJC1REbZ0DFzxpe4IX+FlpIjeW9+e7UcQmcfLeq7QrUZlYMsMPRmYi9/ZwWw/IyLOF',
+    '73b16b5bf130c665': 'RNnoGNULfiyWLf9KDflvFIjQ50IKoBrzlSmwQEGT7dfOYWR9DpjW83WHvB1RSzMcSyfJjyBKPZL6y7dV',
+    'cc65cb18afa75aeb': '/O6g3YnvrolWgDKUCBdH5HDxnGuDbWK97D/53fAE3y2txy33Fn02sc+B8faIIiEBXvHrey8o8gyUfkat',
+    '7547699fbd589f89': '1zysuruZkayJrl5kDALDxh5QPt71g/aNxxOdX51JhV/2OAKcGZXosBD5lpdaRdfIbPfi/9EixIIca5zW',
+    '8cb04a9f7e1339aa': '0y/UtnqOxreSvTfXFwNzjVBbMhFtLPHPwcwMCdAmewUY2mAiHuSFvlmvEIIZXsPmUR5MMJYOPjaQOubT',
+    'd67f7c55fb0c79b1': 'abkzKs+xENuoOf47ATeFc3iWWzKF3j/Waen3T8Pk87PYHDQBy6cEwYc482FaqIJMNLnvL8o0OA89Zahl',
+    '2c64c57c206847a3': 'xWJAdfZo92sq2RGdoRmHxScRAOu6QYAyyLZmy6XuCU5TiJmPo8vrRSOq5WW0qEYfS8SlzTd4VMjHIjIC',
+    '5a01620f32820816': '0vqrM+1x+2i1NUQMPRiltydxIr4vAYewKJOkTB9qoTCZonW6Ppu2O9yZGZ4Cf76xzrUr/LuhF8RB6Wu4',
+    '5179b5ff390d2ef5': 'RVee89YIiv+1GyCjcd+Zjt4eRCH0uBhTNtE38at6I5uF+2Gc6fW8eLxzMZ6AvcPmH8msDebcDbdPWbiL',
+    '24a22e309d3c726b': 'QqWL/LxhdtZbxrVkkCJMJ+DphLKWDeawKUzIG3szRLBkoGGXSi1PpBuvbqYM3sd/KJDWMpf+KjURy/zi',
+    '8aa801e342b64e27': 'wJ6vVzSAJEPg3zbzw/f+n251w4rHck8CFff/weiwZVtZ3fiIzfbaNurXc1PHUNmMYWOqEpw5kconjye0',
+    'f08648e2e9694ef1': 'jzdQrXffomBVQzmBhAfzkJL/CODW7NtNgcZ/3fhtyzUFbQNN59uB3lpcYIRHpC1lHByY6MSfvM2rMeeD',
   };
 
   const enc = new TextEncoder();
@@ -26,11 +52,16 @@
     set(k, v) { try { localStorage.setItem(k, v); } catch { /* sin storage: se vuelve a mostrar */ } },
   };
 
-  async function decryptImage(file, username) {
+  const b64 = (x) => Uint8Array.from(atob(x), (ch) => ch.charCodeAt(0));
+
+  async function decryptImage(file, username, wrapped) {
     const res = await fetch(file, { cache: 'force-cache' });
     if (!res.ok) throw new Error('no file');
     const buf = new Uint8Array(await res.arrayBuffer());
-    const key = await crypto.subtle.importKey('raw', await sha(`webdash-collectible:v1:${username}`), 'AES-GCM', false, ['decrypt']);
+    const w = b64(wrapped);
+    const userKey = await crypto.subtle.importKey('raw', await sha(`webdash-collectible:v1:${username}`), 'AES-GCM', false, ['decrypt']);
+    const raw = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: w.slice(0, 12) }, userKey, w.slice(12));
+    const key = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['decrypt']);
     const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: buf.slice(0, 12) }, key, buf.slice(12));
     return URL.createObjectURL(new Blob([plain], { type: 'image/webp' }));
   }
@@ -202,9 +233,10 @@
     try {
       if (!me?.username || !window.crypto?.subtle) return;
       const h = hex(await sha(`webdash-user:${me.username}`)).slice(0, 16);
-      const item = ITEMS[h];
-      if (!item) return;
-      const img = await decryptImage(item.file, me.username);
+      if (!KEYS[h]) return;
+      const first = String(me.name || '').split(/\s+/)[0];
+      const item = { ...ITEM, hello: HELLO[h] || (first && first !== me.username ? `Hola ${first}` : 'Hola') };
+      const img = await decryptImage(item.file, me.username, KEYS[h]);
       const k = seenKey(h, item.id);
       if (store.get(k)) { addStar(item, img); return; }
       show(item, img, { onAccept: () => { store.set(k, new Date().toISOString()); addStar(item, img); } });
