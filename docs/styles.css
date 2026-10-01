@@ -137,17 +137,7 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
 .nav-scroll::-webkit-scrollbar-thumb { background: transparent; border-radius: 6px; }
 .nav-scroll:hover::-webkit-scrollbar-thumb { background: rgba(255,255,255,.18); }
 .nav-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.3); }
-/* Pantallas bajas (notebooks): el menú se compacta para entrar sin scroll. */
-@media (max-height: 820px) {
-  .nav-scroll { padding: .6rem .6rem; }
-  .nav-sec { margin: .8rem 0 .3rem; }
-  .nav-item { padding: .4rem .7rem; }
-}
-@media (max-height: 700px) {
-  .nav-sec { margin: .55rem 0 .2rem; }
-  .nav-item { padding: .3rem .7rem; }
-  .nav-brand { padding: .8rem 1.15rem .75rem; }
-}
+
 .nav-sec {
   font-size: .64rem; font-weight: 650; letter-spacing: .07em; text-transform: uppercase;
   color: #6b649f; padding: 0 .7rem; margin: 1.15rem 0 .45rem;
@@ -1530,3 +1520,15 @@ button.au-bars-i:hover { background: var(--brand-soft); }
 .ct-nf summary { cursor: pointer; color: var(--ink-2); font-weight: 600; }
 .ct-nf p { color: var(--ink-3); word-break: break-word; }
 @media (max-width: 980px) { .ct-grid { grid-template-columns: 1fr; } }
+
+/* Pantallas bajas (notebooks): el menú se compacta para entrar sin scroll. */
+@media (max-height: 820px) {
+  .nav .nav-scroll { padding: .6rem .6rem; }
+  .nav .nav-sec { margin: .8rem 0 .3rem; }
+  .nav .nav-item { padding: .4rem .7rem; }
+}
+@media (max-height: 700px) {
+  .nav .nav-sec { margin: .55rem 0 .2rem; }
+  .nav .nav-item { padding: .3rem .7rem; }
+  .nav .nav-brand { padding: .8rem 1.15rem .75rem; }
+}
