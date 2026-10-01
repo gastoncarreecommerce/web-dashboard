@@ -23,7 +23,7 @@
 (function () {
   const W = (window.W = window.W || {});
   const E = () => W.XLSX_ESTILO;
-  const MAX_ITEM_ROWS = 400000;
+  const MAX_ITEM_ROWS = 300000;
 
   const SUMMARY_SHEETS = [
     ['Resumen', 'KPIs del período y comparación con el anterior'],
@@ -51,6 +51,15 @@
   const promoNames = (o, ids) => (ids || []).map((id) => (o.pm || []).find((p) => p[0] === id)?.[1] || id);
   const promoCoupons = (o, ids) => [...new Set((ids || []).map((id) => (o.pm || []).find((p) => p[0] === id)?.[2]).filter(Boolean))];
   const pays = (o) => o.py || [];
+  // Monto que descontó la promoción k sobre el ítem. Los días nuevos traen el
+  // desglose (pd); en los viejos solo se sabe cuando el ítem tuvo UNA sola
+  // promoción. Con varias y sin desglose se devuelve null: no se reparte a ojo.
+  const promoAmount = (i, k) => (Array.isArray(i.pd) ? i.pd[k] ?? null : (i.pr || []).length === 1 ? (i.d ?? 0) : null);
+  const promoBreakdown = (o, i) => (i.pr || []).map((id, k) => {
+    const name = (o.pm || []).find((p) => p[0] === id)?.[1] || id;
+    const a = promoAmount(i, k);
+    return a == null ? name : `${name}: $${Math.round(a).toLocaleString('es-AR')}`;
+  }).join(' · ');
   const ORDER_COLS = [
     ['id', 'Order ID', (o) => o.id, 22, code, true],
     ['fecha', 'Fecha y hora', (o) => W.arDateTimeOf(o.t), 19, null, true],
@@ -61,8 +70,8 @@
     ['tiendaCod', 'Código de tienda', (o) => o.s || '', 12, null, true],
     ['tienda', 'Tienda', (o, c) => c.tiendas?.[o.s]?.name || '', 28, null, true],
     ['provincia', 'Provincia', (o) => o.pv || '', 10, null, false],
-    ['unidades', 'Unidades', (o) => (o.it ? o.it.reduce((a, i) => a + (i.q || 0), 0) : null), 10, int, true],
-    ['productos', 'Productos distintos', (o) => (o.it ? o.it.length : null), 10, int, false],
+    ['unidades', 'Unidades', (o) => o._u ?? null, 10, int, true],
+    ['productos', 'Productos distintos', (o) => o._np ?? null, 10, int, false],
     ['descuento', 'Descuento', (o) => o.ds ?? null, 12, money, true],
     ['envio', 'Envío', (o) => o.sh ?? null, 11, money, false],
     ['cupones', 'Cupones', (o) => (Array.isArray(o.cp) ? o.cp.join(' · ') : o.cp || ''), 20, null, true],
@@ -96,6 +105,8 @@
     ['descuento', 'Descuento de la línea', (o, c, i) => i.d ?? (i.lp != null ? 0 : null), 13, money, true],
     ['pctDesc', '% de descuento', (o, c, i) => (i.lp && i.q ? (i.d || 0) / (i.lp * i.q) : null), 10, pct, true],
     ['promos', 'Promociones aplicadas', (o, c, i) => promoNames(o, i.pr).join(' · '), 40, null, true],
+    ['promoMonto', 'Descuento de cada promoción', (o, c, i) => promoBreakdown(o, i), 48, null, true],
+    ['envioItem', 'Descuento de envío (prorrateado)', (o, c, i) => i.ds ?? null, 13, money, false],
     ['cuponItem', 'Cupón que aplicó', (o, c, i) => promoCoupons(o, i.pr).join(' · '), 18, null, true],
     ['cuponesPedido', 'Cupones del pedido', (o) => (Array.isArray(o.cp) ? o.cp.join(' · ') : o.cp || ''), 18, null, false],
     ['utmSource', 'UTM source', (o) => o.u?.[0] || '', 16, null, false],
@@ -214,26 +225,84 @@
         needEmails && W.loadEmailMap ? W.loadEmailMap().catch(() => null) : null,
       ]);
 
+      const inRange = (o) => { const d = W.arDateOf(o.t); return d && d >= range.from && d <= range.to; };
+      const segOk = (o) => S.bucket === 'all' || o.sg === S.bucket;
+
       // 2) Detalle por pedido/producto de Web (order-items por día).
-      const detail = new Map(); // orderId -> pedido con ítems y extras
+      // Cada día pesa ~12 MB: se procesa apenas llega y se descarta, sin
+      // guardarlo en la caché de W.loadRaw. Así un mes no junta cientos de MB
+      // en el navegador. De cada pedido queda solo la versión sin ítems (para
+      // la hoja Pedidos) y de cada ítem la fila y los acumulados.
+      const detail = new Map(); // orderId -> pedido sin ítems (+ _u unidades, _np productos, _pass filtro)
+      const itemCols = ITEM_COLS.filter((c) => S.itemCols.includes(c[0]));
+      const itemRows = [];
+      const promoAgg = new Map(), cupEan = new Map(), eanAgg = new Map();
+      const processItems = wantItems && W.channel !== 'app';
+      const consume = (o) => {
+        o._canal = 'Web';
+        const ok = inRange(o) && segOk(o);
+        const pass = ok && passes(o, f, eanSet);
+        if (processItems && pass) {
+          for (const i of o.it || []) {
+            if (!itemPasses(i, f, eanSet)) continue;
+            report.items += 1;
+            if (S.sheets.items) {
+              if (itemRows.length < MAX_ITEM_ROWS) itemRows.push(itemCols.map((c) => c[2](o, ctx, i)));
+              else report.cut = true;
+            }
+            const key = i.e || i.r || i.n;
+            const ea = eanAgg.get(key) || { e: i.e || '', r: i.r || '', n: i.n, b: i.b || '', q: 0, g: 0, d: 0, qp: 0, orders: new Set(), promos: new Map() };
+            ea.q += i.q || 0; ea.g += i.g || 0; ea.d += i.d || 0; ea.orders.add(o.id);
+            if ((i.pr || []).length) ea.qp += i.q || 0;
+            (i.pr || []).forEach((id, k) => {
+              const p = (o.pm || []).find((x) => x[0] === id) || [id, id, null];
+              const amt = promoAmount(i, k);
+              ea.promos.set(p[1], (ea.promos.get(p[1]) || 0) + (i.q || 0));
+              const pa = promoAgg.get(id) || { name: p[1], coupons: new Set(), orders: new Set(), items: 0, q: 0, d: 0, g: 0, sin: 0 };
+              if (p[2]) pa.coupons.add(p[2]);
+              pa.orders.add(o.id); pa.items += 1; pa.q += i.q || 0; pa.g += i.g || 0;
+              if (amt == null) pa.sin += 1; else pa.d += amt;
+              promoAgg.set(id, pa);
+              if (p[2]) {
+                const ck = `${p[2]}|${key}`;
+                const ce = cupEan.get(ck) || { c: p[2], e: i.e || '', r: i.r || '', n: i.n, q: 0, d: 0, g: 0, sin: 0, orders: new Set() };
+                ce.q += i.q || 0; ce.g += i.g || 0; ce.orders.add(o.id);
+                if (amt == null) ce.sin += 1; else ce.d += amt;
+                cupEan.set(ck, ce);
+              }
+            });
+            eanAgg.set(key, ea);
+          }
+        }
+        if (wantOrders && ok) {
+          const { it, ...slim } = o;
+          slim._u = (it || []).reduce((a, i) => a + (i.q || 0), 0);
+          slim._np = (it || []).length;
+          slim._pass = pass;
+          detail.set(String(o.id), slim);
+        }
+      };
+      let daysWithDetail = 0;
       if ((wantItems || wantOrders) && W.channel !== 'app') {
         let done = 0;
-        await mapLimit(days, 6, async (d) => {
-          const file = await W.loadRaw(`order-items/${d}`).catch(() => null);
+        await mapLimit(days, 2, async (d) => {
+          let file = null;
+          try {
+            const r = await fetch(`api/archive?path=${encodeURIComponent(`order-items/${d}.json`)}`, { cache: 'default' });
+            if (r.ok) file = await r.json();
+          } catch { /* día sin detalle */ }
           if (!file?.orders) report.missingDays.push(d);
-          else for (const o of file.orders) detail.set(String(o.id), { ...o, _canal: 'Web' });
+          else { daysWithDetail += 1; for (const o of file.orders) consume(o); }
+          file = null;
           done += 1;
-          step(`Leyendo el detalle por producto… ${done} de ${days.length} días`, 0.1 + 0.5 * (done / days.length));
+          step(`Leyendo el detalle por producto… ${done} de ${days.length} días`, 0.1 + 0.6 * (done / days.length));
         });
         report.missingDays.sort();
       }
 
-      const inRange = (o) => { const d = W.arDateOf(o.t); return d && d >= range.from && d <= range.to; };
-      const segOk = (o) => S.bucket === 'all' || o.sg === S.bucket;
-
       // 3) Pedidos: el índice (todos, incluso App y días viejos) + el detalle.
       if (wantOrders) {
-        step('Armando los pedidos…', 0.65);
+        step('Armando los pedidos…', 0.75);
         const fuentes = [];
         if (W.channel !== 'app') fuentes.push(['Web', 'order-index']);
         if (W.channel !== 'web') fuentes.push(['App', 'app/order-index']);
@@ -241,9 +310,9 @@
           .map((m) => W.load(`${pref}/${m}`).catch(() => []).then((l) => (l || []).map((o) => ({ ...o, _canal: c }))))));
         const byId = new Map();
         for (const o of listas.flat()) if (inRange(o) && segOk(o)) byId.set(`${o._canal}:${o.id}`, o);
-        for (const o of detail.values()) if (inRange(o) && segOk(o)) byId.set(`Web:${o.id}`, { ...(byId.get(`Web:${o.id}`) || {}), ...o });
+        for (const o of detail.values()) byId.set(`Web:${o.id}`, { ...(byId.get(`Web:${o.id}`) || {}), ...o });
         const cols = ORDER_COLS.filter((c) => S.orderCols.includes(c[0]));
-        const rows = [...byId.values()].filter((o) => passes(o, f, eanSet)).sort((a, b) => (a.t < b.t ? 1 : -1))
+        const rows = [...byId.values()].filter((o) => ('_pass' in o ? o._pass : passes(o, f, eanSet))).sort((a, b) => (a.t < b.t ? 1 : -1))
           .map((o) => cols.map((c) => c[2](o, ctx)));
         report.orders = rows.length;
         hojas.push(detailSheet('Pedidos', `Pedidos, uno por fila — ${cab} · ${rows.length.toLocaleString('es-AR')} pedidos`,
@@ -254,43 +323,11 @@
       // 4) Ítems y sus derivados.
       // Sin un solo día con detalle, las hojas por producto saldrían vacías:
       // se omiten y se explica en pantalla cómo generarlo.
-      report.noDetail = wantItems && W.channel !== 'app' && detail.size === 0;
+      report.noDetail = wantItems && W.channel !== 'app' && daysWithDetail === 0;
       if (wantItems && W.channel === 'app') report.appOnly = true;
       if (wantItems && !report.noDetail && !report.appOnly) {
-        step('Armando el detalle por producto…', 0.75);
-        const orders = [...detail.values()].filter((o) => inRange(o) && segOk(o) && passes(o, f, eanSet));
-        const cols = ITEM_COLS.filter((c) => S.itemCols.includes(c[0]));
-        const itemRows = [];
-        const promoAgg = new Map(), cupEan = new Map(), eanAgg = new Map();
-        for (const o of orders) {
-          for (const i of o.it || []) {
-            if (!itemPasses(i, f, eanSet)) continue;
-            report.items += 1;
-            if (S.sheets.items) {
-              if (itemRows.length < MAX_ITEM_ROWS) itemRows.push(cols.map((c) => c[2](o, ctx, i)));
-              else report.cut = true;
-            }
-            const key = i.e || i.r || i.n;
-            const ea = eanAgg.get(key) || { e: i.e || '', r: i.r || '', n: i.n, b: i.b || '', q: 0, g: 0, d: 0, qp: 0, orders: new Set(), promos: new Map() };
-            ea.q += i.q || 0; ea.g += i.g || 0; ea.d += i.d || 0; ea.orders.add(o.id);
-            if ((i.pr || []).length) ea.qp += i.q || 0;
-            for (const id of i.pr || []) {
-              const p = (o.pm || []).find((x) => x[0] === id) || [id, id, null];
-              ea.promos.set(p[1], (ea.promos.get(p[1]) || 0) + (i.q || 0));
-              const pa = promoAgg.get(id) || { name: p[1], coupons: new Set(), orders: new Set(), items: 0, q: 0, d: 0, g: 0 };
-              if (p[2]) pa.coupons.add(p[2]);
-              pa.orders.add(o.id); pa.items += 1; pa.q += i.q || 0; pa.d += i.d || 0; pa.g += i.g || 0;
-              promoAgg.set(id, pa);
-              if (p[2]) {
-                const ck = `${p[2]}|${key}`;
-                const ce = cupEan.get(ck) || { c: p[2], e: i.e || '', r: i.r || '', n: i.n, q: 0, d: 0, g: 0, orders: new Set() };
-                ce.q += i.q || 0; ce.d += i.d || 0; ce.g += i.g || 0; ce.orders.add(o.id);
-                cupEan.set(ck, ce);
-              }
-            }
-            eanAgg.set(key, ea);
-          }
-        }
+        step('Armando el detalle por producto…', 0.85);
+        const cols = itemCols;
         const nota = report.missingDays.length
           ? `Sin detalle por producto para ${report.missingDays.length} de ${days.length} días (${report.missingDays.slice(0, 6).join(', ')}${report.missingDays.length > 6 ? '…' : ''}): se completan con el backfill (force tildado). Solo pedidos Web.`
           : 'Solo pedidos Web (App no trae detalle por producto).';
@@ -299,15 +336,17 @@
             + (report.cut ? ` (cortado en ${MAX_ITEM_ROWS.toLocaleString('es-AR')}: usá filtros)` : ''), nota, cols, itemRows));
         }
         if (S.sheets.promos) {
-          const pc = [['p', 'Promoción', 0, 40], ['c', 'Cupón', 0, 18], ['o', 'Pedidos', 0, 10, int], ['i', 'Ítems', 0, 10, int], ['q', 'Unidades', 0, 10, int], ['d', 'Descuento', 0, 14, money], ['g', 'GMV de esos ítems', 0, 16, money], ['dp', 'Descuento promedio por unidad', 0, 14, money]];
+          const pc = [['p', 'Promoción', 0, 40], ['c', 'Cupón', 0, 18], ['o', 'Pedidos', 0, 10, int], ['i', 'Ítems', 0, 10, int], ['q', 'Unidades', 0, 10, int], ['d', 'Descuento de la promoción', 0, 15, money], ['g', 'GMV de esos ítems', 0, 16, money], ['s', 'Ítems sin desglose', 0, 11, int]];
           const rows = [...promoAgg.values()].sort((a, b) => b.d - a.d)
-            .map((p) => [p.name, [...p.coupons].join(' · '), p.orders.size, p.items, p.q, p.d, p.g, p.q ? p.d / p.q : null]);
-          hojas.push(detailSheet('Promociones', `Promociones aplicadas — ${cab}`, nota, pc, rows));
+            .map((p) => [p.name, [...p.coupons].join(' · '), p.orders.size, p.items, p.q, p.d, p.g, p.sin || null]);
+          const sinDesglose = rows.some((r) => r[7]);
+          hojas.push(detailSheet('Promociones', `Promociones aplicadas — ${cab}`, `${nota} Descuento = lo que descontó ESA promoción (sin el envío).`
+            + (sinDesglose ? ' "Ítems sin desglose": ítems de días anteriores al desglose por promoción que tuvieron varias promociones a la vez; su descuento no se reparte a ojo, así que no está sumado (se completa con el backfill).' : ''), pc, rows));
         }
         if (S.sheets.cupean) {
-          const cc = [['c', 'Cupón', 0, 18], ['e', 'EAN', 0, 16, code], ['r', 'SKU', 0, 14, code], ['n', 'Producto', 0, 44], ['o', 'Pedidos', 0, 10, int], ['q', 'Unidades', 0, 10, int], ['d', 'Descuento', 0, 14, money], ['g', 'GMV', 0, 14, money]];
+          const cc = [['c', 'Cupón', 0, 18], ['e', 'EAN', 0, 16, code], ['r', 'SKU', 0, 14, code], ['n', 'Producto', 0, 44], ['o', 'Pedidos', 0, 10, int], ['q', 'Unidades', 0, 10, int], ['d', 'Descuento del cupón', 0, 14, money], ['g', 'GMV', 0, 14, money], ['s', 'Ítems sin desglose', 0, 11, int]];
           const rows = [...cupEan.values()].sort((a, b) => a.c.localeCompare(b.c) || b.q - a.q)
-            .map((x) => [x.c, x.e, x.r, x.n, x.orders.size, x.q, x.d, x.g]);
+            .map((x) => [x.c, x.e, x.r, x.n, x.orders.size, x.q, x.d, x.g, x.sin || null]);
           hojas.push(detailSheet('Cupón × EAN', `Qué productos movió cada cupón — ${cab}`, `${nota} Solo cupones que dispararon una promoción sobre el producto.`, cc, rows));
         }
         if (S.sheets.ean) {

@@ -157,13 +157,23 @@ function itemDetail(item) {
   const q = Number(item.quantity) || 0;
   const tags = Array.isArray(item.priceTags) ? item.priceTags : [];
   let desc = 0;
-  const promos = [];
+  const promos = [];   // ids de promociones que tocaron el ítem
+  const amounts = [];  // cuánto descontó cada una (centavos), alineado con promos
+  let ship = 0;        // descuento de envío prorrateado en el ítem (no baja el precio)
   for (const t of tags) {
     const v = Number(t.value);
-    if (Number.isFinite(v) && v < 0) desc += -v;
+    // Los tags "discount@shipping-…" descuentan el ENVÍO, no el producto: se
+    // guardan aparte para no inflar el descuento de la línea.
+    const isShip = /shipping/i.test(String(t.name || ''));
+    if (Number.isFinite(v) && v < 0) { if (isShip) ship += -v; else desc += -v; }
     // El identifier es el id de la promoción; los tags sin identifier (ej.
     // impuestos) no son promociones.
-    if (t.identifier && !promos.includes(String(t.identifier))) promos.push(String(t.identifier));
+    if (t.identifier) {
+      const id = String(t.identifier);
+      let k = promos.indexOf(id);
+      if (k < 0) { k = promos.push(id) - 1; amounts.push(0); }
+      if (Number.isFinite(v) && v < 0 && !isShip) amounts[k] += -v;
+    }
   }
   const o = {};
   if (item.ean) o.e = String(item.ean);
@@ -171,11 +181,16 @@ function itemDetail(item) {
   if (item.id) o.k = String(item.id);
   const brand = item.additionalInfo?.brandName;
   if (brand) o.b = String(brand);
-  const lp = cents(item.listPrice), up = cents(item.sellingPrice ?? item.price);
+  // Productos por peso: listPrice viene por kg y sellingPrice por unidad de
+  // venta (ej. 250 g). Se lleva la lista a la misma unidad para que el % de
+  // descuento sea real.
+  const um = Number(item.unitMultiplier) > 0 ? Number(item.unitMultiplier) : 1;
+  const lp = cents(Number(item.listPrice) * um), up = cents(item.sellingPrice ?? item.price);
   if (lp != null) o.lp = lp;
   if (up != null) o.up = up;
   if (desc) o.d = Math.round(desc) / 100;
-  if (promos.length) o.pr = promos;
+  if (ship) o.ds = Math.round(ship) / 100;
+  if (promos.length) { o.pr = promos; o.pd = amounts.map((a) => Math.round(a) / 100); }
   if (!q) o.q = 0;
   return o;
 }
@@ -665,4 +680,5 @@ module.exports = {
   PRIVATE_DIR,
   DETAIL_CONCURRENCY,
   writeDayEmails,
+  itemDetail,
 };
