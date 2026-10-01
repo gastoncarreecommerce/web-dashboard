@@ -300,7 +300,15 @@ function main() {
     }
     for (const o of dayOrderList) {
       const bucket = (ordersByStoreMonth[o.s] = ordersByStoreMonth[o.s] || {});
-      (bucket[month] = bucket[month] || []).push(o);
+      // Versión liviana: el detalle por producto (EAN, precios, promociones,
+      // UTM, pago…) ya quedó en order-items/<día>.json. Acumularlo acá para
+      // todo el historial dejaba a aggregate sin memoria (4 GB) con solo 30
+      // días enriquecidos.
+      (bucket[month] = bucket[month] || []).push({
+        id: o.id, t: o.t, s: o.s, sg: o.sg, h: o.h, g: o.g,
+        ...(o.st ? { st: o.st } : {}), ...(o.cp ? { cp: o.cp } : {}),
+        it: (o.it || []).map((i) => ({ n: i.n, q: i.q, g: i.g })),
+      });
       // Índice liviano de TODOS los pedidos (sin items) por mes: lo usan el
       // detalle de "qué pedidos usaron este cupón" en Cupones y las pestañas
       // por estado del XLSX de Estados de pedido. o.st/o.cp solo existen en
