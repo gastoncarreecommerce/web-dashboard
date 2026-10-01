@@ -283,20 +283,11 @@
     return filas;
   }
 
-  /**
-   * Arma y baja el archivo. Se le pasa el contexto del dashboard tal como está
-   * en pantalla.
-   */
-  W.exportarPeriodo = async function ({ range, bucket }) {
-    const canal = W.channel === 'app' ? 'App' : W.channel === 'web' ? 'Web' : 'App + Web';
-    const daily = await W.load('daily-summary');
-    const acc = W.sumRange(daily, bucket, range);
-    const prevRange = W.previousRange ? W.previousRange(range) : null;
-    const prev = prevRange ? W.sumRange(daily, bucket, prevRange) : null;
-
+  /** El ranking de productos del rango (sale del archivo mensual). */
+  async function productosDelRango(range, bucket) {
+    let productos = null; let meses = null;
     // Los productos salen de su propio archivo, cortado por mes: se toman los
     // meses que toca el rango y se avisa en la hoja.
-    let productos = null; let meses = null;
     try {
       const file = await W.load('products');
       const ms = [];
@@ -325,6 +316,21 @@
       }
       productos = [...porSku.values()].sort((a, b) => b.qty - a.qty).slice(0, 500);
     } catch { /* sin ranking de productos, el resto del archivo sirve igual */ }
+    return { productos, meses };
+  }
+
+  /**
+   * Arma y baja el archivo. Se le pasa el contexto del dashboard tal como está
+   * en pantalla.
+   */
+  W.exportarPeriodo = async function ({ range, bucket }) {
+    const canal = W.channel === 'app' ? 'App' : W.channel === 'web' ? 'Web' : 'App + Web';
+    const daily = await W.load('daily-summary');
+    const acc = W.sumRange(daily, bucket, range);
+    const prevRange = W.previousRange ? W.previousRange(range) : null;
+    const prev = prevRange ? W.sumRange(daily, bucket, prevRange) : null;
+
+    const { productos, meses } = await productosDelRango(range, bucket);
 
     const hojas = libro({ acc, prev, range, bucket, canal, productos, meses });
 
@@ -377,4 +383,7 @@
     W.downloadXLSX(nombre, hojas);
     return hojas.length;
   };
+
+  // Piezas reusables para la herramienta Exportaciones (view-exportaciones.js).
+  W.exportParts = { libro, hojaPedidos, hoja, productosDelRango };
 })();

@@ -131,6 +131,75 @@ function paymentGroups(order) {
 }
 
 /**
+ * Promociones que VTEX aplicó al pedido, con el cupón que las disparó (si lo
+ * hubo). Vienen en ratesAndBenefitsData; cada ítem dice cuáles le tocaron en
+ * sus priceTags (identifier = id de la promoción). Con las dos cosas se puede
+ * decir, por EAN, qué promoción y qué cupón le bajaron el precio.
+ * Compacto: [[id, nombre, cupón|null], …], o null si no hubo ninguna.
+ */
+function orderPromotions(order) {
+  const list = order.ratesAndBenefitsData?.rateAndBenefitsIdentifiers || [];
+  const out = list.map((r) => {
+    const mp = r.matchedParameters || {};
+    const coupon = mp['couponCode@Marketing'] || mp.couponCode || null;
+    return [String(r.id || ''), String(r.name || r.description || r.id || ''), coupon ? String(coupon) : null];
+  }).filter((x) => x[0]);
+  return out.length ? out : null;
+}
+
+const cents = (v) => (Number.isFinite(Number(v)) ? Math.round(Number(v)) / 100 : null);
+
+/**
+ * Detalle de un ítem para el export por producto: EAN, SKU, precios unitarios
+ * (lista y venta), descuento total de la línea y qué promociones lo tocaron.
+ */
+function itemDetail(item) {
+  const q = Number(item.quantity) || 0;
+  const tags = Array.isArray(item.priceTags) ? item.priceTags : [];
+  let desc = 0;
+  const promos = [];
+  for (const t of tags) {
+    const v = Number(t.value);
+    if (Number.isFinite(v) && v < 0) desc += -v;
+    // El identifier es el id de la promoción; los tags sin identifier (ej.
+    // impuestos) no son promociones.
+    if (t.identifier && !promos.includes(String(t.identifier))) promos.push(String(t.identifier));
+  }
+  const o = {};
+  if (item.ean) o.e = String(item.ean);
+  if (item.refId) o.r = String(item.refId);
+  if (item.id) o.k = String(item.id);
+  const brand = item.additionalInfo?.brandName;
+  if (brand) o.b = String(brand);
+  const lp = cents(item.listPrice), up = cents(item.sellingPrice ?? item.price);
+  if (lp != null) o.lp = lp;
+  if (up != null) o.up = up;
+  if (desc) o.d = Math.round(desc) / 100;
+  if (promos.length) o.pr = promos;
+  if (!q) o.q = 0;
+  return o;
+}
+
+/** Campos del pedido que solo usa el export detallado. Se omiten los vacíos. */
+function orderExtras(full) {
+  const o = {};
+  const pm = orderPromotions(full);
+  if (pm) o.pm = pm;
+  const md = full.marketingData || {};
+  const utm = [md.utmSource || '', md.utmMedium || '', md.utmCampaign || ''];
+  if (utm.some(Boolean)) o.u = utm;
+  const pays = paymentDetails(full).filter((p) => p.group !== 'sin_dato');
+  if (pays.length) o.py = pays.map((p) => [p.group, p.brand, p.installments]);
+  const tot = (id) => (full.totals || []).find((t) => t.id === id)?.value;
+  const ship = tot('Shipping'), disc = tot('Discounts');
+  if (Number.isFinite(ship) && ship) o.sh = Math.round(ship) / 100;
+  if (Number.isFinite(disc) && disc) o.ds = Math.round(Math.abs(disc)) / 100;
+  const prov = provinceCode(full);
+  if (prov) o.pv = prov;
+  return o;
+}
+
+/**
  * Detalle por pago: marca (paymentSystemName, ej. "Visa", "Mastercard") y
  * cuotas. `group` da "creditCard" para toda tarjeta de crédito por igual —
  * esto es lo que permite distinguir Visa de Mastercard y contado de 12
@@ -333,10 +402,14 @@ function applyOrderToAcc(acc, full, canal = 'web') {
       // y omitir la clave en vez de guardar un array vacío ahorra bastante
       // en un archivo que se repite por cada pedido del historial.
       ...(couponList.length ? { cp: couponList } : {}),
+      // Detalle para Exportaciones (desde que se empezó a guardar): promos con
+      // su cupón, UTM, medio de pago, cuotas, envío y descuento del pedido.
+      ...orderExtras(full),
       it: view.items.map((item) => ({
         n: item.name || 'sin_nombre',
         q: Number(item.quantity) || 0,
         g: Math.round(((Number(item.sellingPrice) || 0) * (Number(item.quantity) || 0)) / 100),
+        ...itemDetail(item),
       })),
     });
   }

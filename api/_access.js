@@ -31,6 +31,7 @@ export const MODULES = [
   { k: 'audiences', label: 'Audiencias', group: 'Qué mueve la demanda' },
   // optIn: maneja datos personales (DNI → mail). No entra en "Todo": solo lo
   // ven los admins y a quien se le tilde a mano en Accesos.
+  { k: 'exportaciones', label: 'Exportaciones', group: 'Herramientas' },
   { k: 'contactos', label: 'Contactos SFMC', group: 'Herramientas', optIn: true },
 ];
 export const MODULE_KEYS = MODULES.map((m) => m.k);

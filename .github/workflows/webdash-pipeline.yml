@@ -54,6 +54,7 @@ jobs:
             docs/data/app/order-index
             docs/data/web/products-daily
             docs/data/app/products-daily
+            docs/data/web/order-items
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -223,6 +224,8 @@ jobs:
           git add -f data/daily/ docs/data/web/orders/ docs/data/web/order-index/
           if [ -d docs/data/web/products-daily ]; then git add -f docs/data/web/products-daily/; fi
           if [ -f docs/data/web/customer-activity.json ]; then git add -f docs/data/web/customer-activity.json; fi
+          # Detalle por producto de cada pedido (EAN, promos, cupones) para Exportaciones.
+          if [ -d docs/data/web/order-items ]; then git add -f docs/data/web/order-items/; fi
           # Solo si el paso de App lo generó: si falló (continue-on-error), la
           # carpeta puede no existir y un pathspec inexistente hace fallar el
           # add, arrastrando el commit de los volcados de Web.

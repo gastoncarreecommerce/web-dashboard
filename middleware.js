@@ -107,6 +107,7 @@ function modulesFor(url) {
     const p = url.searchParams.get('path') || '';
     if (p.startsWith('customer-activity')) return ['audiences'];
     if (p.startsWith('orders/')) return ['tiendas'];
+    if (p.startsWith('order-items/')) return ['exportaciones'];
     return null;
   }
   for (const [re, mods] of PROTECTED) if (re.test(url.pathname)) return mods;

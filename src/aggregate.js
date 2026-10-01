@@ -207,6 +207,7 @@ function main() {
   // baje solo un archivo chico en vez de los pedidos de las 180 tiendas.
   const ordersByStoreMonth = {};
   const orderIndexByMonth = {};
+  let orderItemsBytes = 0, orderItemsDays = 0;
   // Productos: por segmento y por mes. Por día sería enorme (250 skus × 4
   // segmentos × 236 días) y a nivel mes alcanza para analizar surtido.
   const productsBySegMonth = {};
@@ -288,7 +289,16 @@ function main() {
     // cubre pedidos con tienda resuelta (mismo alcance que el resto de esta
     // sección), así que es una cobertura parcial, no el 100% del historial.
     const dayStoresByHash = {};
-    for (const o of day.orders || []) {
+    // order-items/<día>.json: el detalle completo de cada pedido del día
+    // (EAN, precios, descuento, promociones con su cupón, UTM, pago…) para
+    // Exportaciones. Solo los días que ya traen ese detalle: los anteriores a
+    // que se empezara a guardar no tienen nada nuevo que aportar.
+    const dayOrderList = day.orders || [];
+    if (dayOrderList.some((o) => o.pm || o.u || (o.it || []).some((i) => i.e || i.lp != null))) {
+      orderItemsBytes += writeJson(`docs/data/web/order-items/${date}.json`, { date, orders: dayOrderList }, ARCHIVE_ROOT);
+      orderItemsDays += 1;
+    }
+    for (const o of dayOrderList) {
       const bucket = (ordersByStoreMonth[o.s] = ordersByStoreMonth[o.s] || {});
       (bucket[month] = bucket[month] || []).push(o);
       // Índice liviano de TODOS los pedidos (sin items) por mes: lo usan el
@@ -759,6 +769,7 @@ function main() {
   console.log(`  geo ${mb(sizeGeo)} (${geoDays.length} días, ${Object.keys(storeMeta).length} tiendas) · products ${mb(sizeProducts)}`);
   console.log(`  orders ${mb(ordersBytesTotal)} (${ordersFilesWritten} archivos, uno por tienda y mes)`);
   console.log(`  order-index ${mb(orderIndexBytesTotal)} (${Object.keys(orderIndexByMonth).length} meses)`);
+  console.log(`  order-items ${mb(orderItemsBytes)} (${orderItemsDays} días con detalle por producto)`);
   console.log(`  customer-activity ${mb(activityBytes)} (${ACT_WINDOW} días)`);
   console.log(`  products-daily ${mb(productsDailyBytes)} (${Object.keys(productsDailyByMonth).length} meses)`);
   if (sizeAudience > 28 * 1048576) {

@@ -1532,3 +1532,30 @@ button.au-bars-i:hover { background: var(--brand-soft); }
   .nav .nav-item { padding: .3rem .7rem; }
   .nav .nav-brand { padding: .8rem 1.15rem .75rem; }
 }
+
+/* ── Exportaciones ─────────────────────────────────────────────────────── */
+.ex-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 1.1rem; align-items: start; margin-top: 1.1rem; }
+.ex-grid .card { margin-bottom: 1.1rem; }
+.ex-grid .stick { position: sticky; top: 1rem; }
+.ex-h3 { margin: 0 0 .8rem; }
+.ex-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .7rem; }
+.ex-sheets { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: .5rem; }
+.ex-sheets.small { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+.ex-sheet { display: grid; grid-template-columns: auto 1fr; column-gap: .5rem; row-gap: .1rem; align-items: start; padding: .6rem .7rem; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; background: var(--surface-2); transition: border-color .15s, background .15s; }
+.ex-sheet:hover { border-color: var(--brand); }
+.ex-sheet.on { border-color: var(--brand); background: var(--brand-soft); }
+.ex-sheet input { grid-row: span 2; margin-top: .15rem; accent-color: var(--brand); }
+.ex-sheet b { font-size: .82rem; }
+.ex-sheet em { font-style: normal; font-size: .72rem; color: var(--ink-3); line-height: 1.35; }
+.ex-cols { display: flex; flex-wrap: wrap; gap: .35rem; }
+.ex-col { display: inline-flex; align-items: center; gap: .3rem; font-size: .76rem; padding: .3rem .6rem; border: 1px solid var(--line); border-radius: 999px; cursor: pointer; color: var(--ink-2); background: var(--surface-2); }
+.ex-col input { accent-color: var(--brand); margin: 0; }
+.ex-col.on { border-color: var(--brand); color: var(--brand); background: var(--brand-soft); }
+.ex-colsa { display: flex; gap: .4rem; margin-top: .7rem; }
+.ex-colsa .btn-s { font-size: .74rem; padding: .3rem .6rem; }
+.ex-chk { display: flex; align-items: center; gap: .45rem; font-size: .8rem; margin-bottom: .6rem; cursor: pointer; }
+.ex-chk input { accent-color: var(--brand); }
+.ex-ta { min-height: 80px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .78rem; }
+.ex-rep { display: flex; gap: .5rem; margin-top: .8rem; font-size: .78rem; line-height: 1.45; color: var(--ink-2); padding: .6rem .7rem; border-radius: 10px; background: var(--surface-2); }
+.ex-rep > svg { color: var(--pos); flex-shrink: 0; margin-top: .15rem; }
+@media (max-width: 1000px) { .ex-grid { grid-template-columns: 1fr; } .ex-grid .stick { position: static; } .ex-row { grid-template-columns: 1fr 1fr; } }
