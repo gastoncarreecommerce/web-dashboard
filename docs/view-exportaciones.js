@@ -17,8 +17,8 @@
  *
  * El detalle por producto sale de order-items/<día>.json (data-raw, a demanda
  * vía /api/archive) y existe desde que el pipeline empezó a guardarlo. Los
- * días anteriores se pueden completar con el workflow de backfill. App no
- * trae detalle por producto: sus pedidos van en "Pedidos" sin esas columnas.
+ * días anteriores se pueden completar con el workflow de backfill. Los de App
+ * vienen en el mismo archivo marcados c:'app' (desde fines de sept. 2026).
  */
 (function () {
   const W = (window.W = window.W || {});
@@ -89,6 +89,7 @@
   const ITEM_COLS = [
     ['id', 'Order ID', (o) => o.id, 22, code, true],
     ['fecha', 'Fecha y hora', (o) => W.arDateTimeOf(o.t), 19, null, true],
+    ['canal', 'Canal', (o) => o._canal, 8, null, true],
     ['estado', 'Estado del pedido', (o) => o.st || '', 16, null, false],
     ['tiendaCod', 'Código de tienda', (o) => o.s || '', 12, null, true],
     ['tienda', 'Tienda', (o, c) => c.tiendas?.[o.s]?.name || '', 26, null, false],
@@ -237,9 +238,11 @@
       const itemCols = ITEM_COLS.filter((c) => S.itemCols.includes(c[0]));
       const itemRows = [];
       const promoAgg = new Map(), cupEan = new Map(), eanAgg = new Map();
-      const processItems = wantItems && W.channel !== 'app';
+      const processItems = wantItems;
       const consume = (o) => {
-        o._canal = 'Web';
+        o._canal = o.c === 'app' ? 'App' : 'Web';
+        // El archivo del día trae los dos canales: se respeta el selector de arriba.
+        if ((W.channel === 'app' && o._canal !== 'App') || (W.channel === 'web' && o._canal !== 'Web')) return;
         const ok = inRange(o) && segOk(o);
         const pass = ok && passes(o, f, eanSet);
         if (processItems && pass) {
@@ -279,11 +282,11 @@
           slim._u = (it || []).reduce((a, i) => a + (i.q || 0), 0);
           slim._np = (it || []).length;
           slim._pass = pass;
-          detail.set(String(o.id), slim);
+          detail.set(`${o._canal}:${o.id}`, slim);
         }
       };
       let daysWithDetail = 0;
-      if ((wantItems || wantOrders) && W.channel !== 'app') {
+      if (wantItems || wantOrders) {
         let done = 0;
         await mapLimit(days, 2, async (d) => {
           let file = null;
@@ -310,27 +313,27 @@
           .map((m) => W.load(`${pref}/${m}`).catch(() => []).then((l) => (l || []).map((o) => ({ ...o, _canal: c }))))));
         const byId = new Map();
         for (const o of listas.flat()) if (inRange(o) && segOk(o)) byId.set(`${o._canal}:${o.id}`, o);
-        for (const o of detail.values()) byId.set(`Web:${o.id}`, { ...(byId.get(`Web:${o.id}`) || {}), ...o });
+        for (const [k, o] of detail) byId.set(k, { ...(byId.get(k) || {}), ...o });
         const cols = ORDER_COLS.filter((c) => S.orderCols.includes(c[0]));
         const rows = [...byId.values()].filter((o) => ('_pass' in o ? o._pass : passes(o, f, eanSet))).sort((a, b) => (a.t < b.t ? 1 : -1))
           .map((o) => cols.map((c) => c[2](o, ctx)));
         report.orders = rows.length;
         hojas.push(detailSheet('Pedidos', `Pedidos, uno por fila — ${cab} · ${rows.length.toLocaleString('es-AR')} pedidos`,
-          'UTM, pago, cuotas, envío, descuento y promociones existen desde que se empezó a guardar el detalle (y solo en Web).'
+          'UTM, pago, cuotas, envío, descuento y promociones existen desde que se empezó a guardar el detalle (Web desde el 1/9/2026, App desde fines de septiembre de 2026).'
           + (cols.some((c) => c[0] === 'email' || c[0] === 'dni') ? ' Email y DNI son datos personales.' : ''), cols, rows));
       }
 
       // 4) Ítems y sus derivados.
       // Sin un solo día con detalle, las hojas por producto saldrían vacías:
       // se omiten y se explica en pantalla cómo generarlo.
-      report.noDetail = wantItems && W.channel !== 'app' && daysWithDetail === 0;
-      if (wantItems && W.channel === 'app') report.appOnly = true;
-      if (wantItems && !report.noDetail && !report.appOnly) {
+      report.noDetail = wantItems && (daysWithDetail === 0 || report.items === 0 && W.channel === 'app');
+      if (wantItems && !report.noDetail) {
         step('Armando el detalle por producto…', 0.85);
         const cols = itemCols;
+        const appNote = W.channel === 'web' ? ' Solo pedidos Web.' : ' App tiene detalle por producto desde fines de septiembre de 2026 (antes, solo Web).';
         const nota = report.missingDays.length
-          ? `Sin detalle por producto para ${report.missingDays.length} de ${days.length} días (${report.missingDays.slice(0, 6).join(', ')}${report.missingDays.length > 6 ? '…' : ''}): se completan con el backfill (force tildado). Solo pedidos Web.`
-          : 'Solo pedidos Web (App no trae detalle por producto).';
+          ? `Sin detalle por producto para ${report.missingDays.length} de ${days.length} días (${report.missingDays.slice(0, 6).join(', ')}${report.missingDays.length > 6 ? '…' : ''}): se completan con el backfill (force tildado).${appNote}`
+          : appNote.trim();
         if (S.sheets.items) {
           hojas.push(detailSheet('Ítems', `Ítems de pedidos, uno por producto — ${cab} · ${itemRows.length.toLocaleString('es-AR')} filas`
             + (report.cut ? ` (cortado en ${MAX_ITEM_ROWS.toLocaleString('es-AR')}: usá filtros)` : ''), nota, cols, itemRows));
@@ -359,8 +362,8 @@
       }
 
       if (!hojas.length) {
-        lastReport = report.noDetail || report.appOnly ? { ...report, sheets: [], at: new Date() } : lastReport;
-        W.toast(report.noDetail || report.appOnly ? 'No hay detalle por producto para ese período: no se generó el archivo.' : 'Elegí al menos una hoja.', 'bad');
+        lastReport = report.noDetail ? { ...report, sheets: [], at: new Date() } : lastReport;
+        W.toast(report.noDetail ? 'No hay detalle por producto para ese período: no se generó el archivo.' : 'Elegí al menos una hoja.', 'bad');
         running = null; W.render(); return;
       }
       step('Generando el Excel…', 0.95);
@@ -437,7 +440,6 @@
             ${lastReport ? `<div class="ex-rep">${W.icon(lastReport.sheets.length ? 'check' : 'alert', 14)}<div><b>${lastReport.sheets.length ? 'Último archivo:' : 'No se generó el archivo.'}</b> ${lastReport.sheets.length ? `${lastReport.sheets.length} hojas` : ''}${lastReport.orders ? ` · ${W.fmtNum(lastReport.orders)} pedidos` : ''}${lastReport.items ? ` · ${W.fmtNum(lastReport.items)} ítems` : ''}
               ${lastReport.noDetail ? `<br><span class="au-warn"><b>Ningún día del período tiene detalle por producto todavía</b>, así que no se incluyeron Ítems, Promociones, Cupón × EAN ni EAN.
                 Se genera solo desde ahora con la corrida diaria; para días anteriores hay que correr el workflow <b>WebDash backfill</b> en GitHub Actions con <b>force</b> tildado.</span>`
-    : lastReport.appOnly ? '<br><span class="au-warn">App no trae detalle por producto: elegí Web o App + Web arriba.</span>'
       : lastReport.missingDays.length ? `<br><span class="au-warn">Sin detalle por producto: ${lastReport.missingDays.length} día(s). Se completan con el backfill (con force tildado).</span>` : ''}${lastReport.cut ? '<br><span class="au-warn">Los ítems se cortaron: usá filtros o un período más corto.</span>' : ''}</div></div>` : ''}
 
             <div class="saved">

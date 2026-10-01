@@ -254,6 +254,7 @@ function newDayAcc() {
     // VTEX. No lleva email (eso es privado); el cruce hash->email se hace
     // en el navegador igual que en Audiencias.
     orders: [],
+    appOrders: [], // pedidos de App con detalle, solo para Exportaciones
     customers: {},
     // hash -> email real. Se escribe a private-out/ (gitignored) y de ahí al
     // repositorio PRIVADO; nunca al archivo diario público.
@@ -272,6 +273,51 @@ function newDayAcc() {
 
 /** Suma UN pedido completo al acumulador. Es todo lo que hay que hacer por pedido,
  *  así que sirve igual para el fetch inicial y para reparar los que fallaron. */
+/**
+ * Registro de un pedido para el historial por tienda y para Exportaciones.
+ * Claves cortas a propósito: esto se repite por cada pedido de cada día del
+ * historial, así que el ahorro por campo se nota multiplicado por cientos de
+ * miles de filas.
+ */
+function detailRecord(full, view, store, hash, couponList, gmv) {
+  return {
+    id: full.orderId,
+    t: full.creationDate,
+    s: store?.code || null,
+    sg: view.bucket,
+    h: hash || null,
+    g: Math.round(gmv),
+    st: full.status || null,
+    // Solo si tiene cupón: la gran mayoría de los pedidos no lleva ninguno,
+    // y omitir la clave en vez de guardar un array vacío ahorra bastante
+    // en un archivo que se repite por cada pedido del historial.
+    ...(couponList.length ? { cp: couponList } : {}),
+    // Detalle para Exportaciones (desde que se empezó a guardar): promos con
+    // su cupón, UTM, medio de pago, cuotas, envío y descuento del pedido.
+    ...orderExtras(full),
+    it: view.items.map((item) => ({
+      n: item.name || 'sin_nombre',
+      q: Number(item.quantity) || 0,
+      g: Math.round(((Number(item.sellingPrice) || 0) * (Number(item.quantity) || 0)) / 100),
+      ...itemDetail(item),
+    })),
+  };
+}
+
+/**
+ * Pedido de App, solo para el export detallado. Las MÉTRICAS de App siguen
+ * saliendo de AppDash (no se suman acá, así nada se duplica), pero el detalle
+ * completo del pedido ya se pidió a VTEX para saber su canal: guardarlo no
+ * cuesta ninguna llamada extra y es lo único que trae tienda, promociones por
+ * EAN, pago y cuotas de los pedidos de App (AppDash no los guarda).
+ */
+function appDetailRecord(full) {
+  const view = classifyOrder(full, segmentMap);
+  const couponRaw = full.marketingData?.coupon;
+  const couponList = couponRaw ? couponRaw.split(',').map((c) => c.trim()).filter(Boolean) : [];
+  return { ...detailRecord(full, view, orderStore(full), customerHash(full), couponList, view.gmv), c: 'app' };
+}
+
 function applyOrderToAcc(acc, full, canal = 'web') {
   acc.processedIds.add(String(full.orderId));
   // `canal` existe para que el vivo (api/today-live) pueda acumular TAMBIEN
@@ -281,7 +327,11 @@ function applyOrderToAcc(acc, full, canal = 'web') {
   // AppDash tuviera 288. El default 'web' deja el pipeline por lotes igual
   // que siempre (el historico committeado de este repo es solo web; los dias
   // cerrados de app vienen del repo de AppDash, asi que nada se duplica).
-  if (orderChannel(full, channelMap) !== canal) return false;
+  const ch = orderChannel(full, channelMap);
+  if (ch !== canal) {
+    if (canal === 'web' && ch === 'app' && acc.appOrders) acc.appOrders.push(appDetailRecord(full));
+    return false;
+  }
 
   const view = classifyOrder(full, segmentMap);
   const gmv = view.gmv;
@@ -404,30 +454,7 @@ function applyOrderToAcc(acc, full, canal = 'web') {
   // Claves cortas a propósito: esto se repite por cada pedido de cada día del
   // historial, así que el ahorro por campo se nota multiplicado por cientos
   // de miles de filas.
-  if (store) {
-    acc.orders.push({
-      id: full.orderId,
-      t: full.creationDate,
-      s: store.code,
-      sg: view.bucket,
-      h: hash || null,
-      g: Math.round(gmv),
-      st: full.status || null,
-      // Solo si tiene cupón: la gran mayoría de los pedidos no lleva ninguno,
-      // y omitir la clave en vez de guardar un array vacío ahorra bastante
-      // en un archivo que se repite por cada pedido del historial.
-      ...(couponList.length ? { cp: couponList } : {}),
-      // Detalle para Exportaciones (desde que se empezó a guardar): promos con
-      // su cupón, UTM, medio de pago, cuotas, envío y descuento del pedido.
-      ...orderExtras(full),
-      it: view.items.map((item) => ({
-        n: item.name || 'sin_nombre',
-        q: Number(item.quantity) || 0,
-        g: Math.round(((Number(item.sellingPrice) || 0) * (Number(item.quantity) || 0)) / 100),
-        ...itemDetail(item),
-      })),
-    });
-  }
+  if (store) acc.orders.push(detailRecord(full, view, store, hash, couponList, gmv));
   return true;
 }
 
@@ -456,6 +483,7 @@ function accFromDayFile(day) {
   acc.provinces = JSON.parse(JSON.stringify(day.provinces || {}));
   acc.stores = JSON.parse(JSON.stringify(day.stores || {}));
   acc.orders = JSON.parse(JSON.stringify(day.orders || []));
+  acc.appOrders = JSON.parse(JSON.stringify(day.appOrders || []));
   acc.customers = { ...(day.customers || {}) };
   // acc.emails queda vacío a propósito: el archivo público no los tiene. Al
   // reparar un día solo se recuperan los de los pedidos reprocesados.
@@ -516,6 +544,7 @@ function finalizeDay(acc, meta) {
     provinces: acc.provinces,
     stores: acc.stores,
     orders: acc.orders,
+    ...(acc.appOrders?.length ? { appOrders: acc.appOrders } : {}),
     distinctSkus,
     productRowsSeen: acc.productRowsSeen,
     customers: acc.customers,

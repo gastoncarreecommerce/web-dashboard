@@ -293,9 +293,12 @@ function main() {
     // (EAN, precios, descuento, promociones con su cupón, UTM, pago…) para
     // Exportaciones. Solo los días que ya traen ese detalle: los anteriores a
     // que se empezara a guardar no tienen nada nuevo que aportar.
+    // Los de App (appOrders, marcados c:'app') van SOLO acá: sus métricas e
+    // índice salen de AppDash, así que no se suman a nada más.
     const dayOrderList = day.orders || [];
-    if (dayOrderList.some((o) => o.pm || o.u || (o.it || []).some((i) => i.e || i.lp != null))) {
-      orderItemsBytes += writeJson(`docs/data/web/order-items/${date}.json`, { date, orders: dayOrderList }, ARCHIVE_ROOT);
+    const dayAppOrders = day.appOrders || [];
+    if (dayAppOrders.length || dayOrderList.some((o) => o.pm || o.u || (o.it || []).some((i) => i.e || i.lp != null))) {
+      orderItemsBytes += writeJson(`docs/data/web/order-items/${date}.json`, { date, orders: dayOrderList.concat(dayAppOrders) }, ARCHIVE_ROOT);
       orderItemsDays += 1;
     }
     for (const o of dayOrderList) {
