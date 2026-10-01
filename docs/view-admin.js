@@ -71,6 +71,10 @@
     }
 
     const M = data.modules;
+    // "Todo" = los módulos comunes. Los opcionales (datos personales) nunca
+    // entran por "Todo": se tildan a mano.
+    const BASE = M.filter((m) => !m.optIn).map((m) => m.k);
+    const sees = (u, m) => (u.admin ? true : Array.isArray(u.views) ? u.views.includes(m.k) : !m.optIn);
     const groups = [];
     for (const m of M) {
       const g = groups.find((x) => x.name === m.group);
@@ -79,7 +83,7 @@
     const users = data.users.filter((u) => !q || `${u.name} ${u.username}`.toLowerCase().includes(q.toLowerCase()));
     const restricted = data.users.filter((u) => !u.admin && Array.isArray(u.views)).length;
     const full = data.users.length - restricted;
-    const perModule = Object.fromEntries(M.map((m) => [m.k, data.users.filter((u) => !Array.isArray(u.views) || u.views.includes(m.k)).length]));
+    const perModule = Object.fromEntries(M.map((m) => [m.k, data.users.filter((u) => sees(u, m)).length]));
 
     el.innerHTML = `
       <div class="card adm-h">
@@ -106,7 +110,7 @@
             <tr>${M.map((m) => `<th class="c adm-m" ${W.chart.tip(`${W.fmtNum(perModule[m.k])} personas lo ven`)}>${W.esc(m.label)}</th>`).join('')}</tr>
           </thead>
           <tbody>${users.length ? users.map((u) => {
-            const all = !Array.isArray(u.views);
+            const all = !Array.isArray(u.views) || BASE.every((k) => u.views.includes(k));
             const busy = saving.has(u.username);
             return `<tr class="${busy ? 'adm-busy' : ''}${u.admin ? ' adm-admin' : ''}">
               <td><div class="adm-p"><span class="nav-av adm-av">${W.esc(initials(u.name))}</span>
@@ -114,7 +118,7 @@
               <td class="c"><label class="adm-sw" title="${u.admin ? 'Los administradores ven todo siempre' : 'Ve todo el dashboard'}">
                 <input type="checkbox" data-all="${W.esc(u.username)}" ${all ? 'checked' : ''} ${u.admin || busy ? 'disabled' : ''}/><i></i></label></td>
               ${M.map((m) => {
-                const on = all || u.views.includes(m.k);
+                const on = sees(u, m);
                 return `<td class="c"><input class="adm-cb" type="checkbox" data-u="${W.esc(u.username)}" data-m="${m.k}" ${on ? 'checked' : ''} ${u.admin || busy ? 'disabled' : ''} aria-label="${W.esc(`${u.name}: ${m.label}`)}"/></td>`;
               }).join('')}
             </tr>`;
@@ -135,15 +139,20 @@
     document.querySelectorAll('[data-all]').forEach((cb) => cb.addEventListener('change', () => {
       const u = find(cb.dataset.all);
       // Apagar "Todo" arranca desde todo lo que veía, para ir sacando.
-      save(u, cb.checked ? null : M.map((m) => m.k));
+      // Prender "Todo" conserva los opcionales que ya tenía; apagarlo arranca
+      // desde todo lo que veía, para ir sacando.
+      const extra = Array.isArray(u.views) ? u.views.filter((k) => !BASE.includes(k)) : [];
+      save(u, cb.checked ? (extra.length ? [...BASE, ...extra] : null) : (Array.isArray(u.views) ? u.views.filter((k) => BASE.includes(k) || extra.includes(k)) : BASE.slice()));
     }));
     document.querySelectorAll('.adm-cb').forEach((cb) => cb.addEventListener('change', () => {
       const u = find(cb.dataset.u);
-      const cur = Array.isArray(u.views) ? u.views.slice() : M.map((m) => m.k);
+      const cur = Array.isArray(u.views) ? u.views.slice() : BASE.slice();
       const next = cb.checked ? [...new Set([...cur, cb.dataset.m])] : cur.filter((x) => x !== cb.dataset.m);
       if (!next.length) W.toast(`${u.name} se queda sin ningún módulo: no va a ver nada al entrar.`, 'bad');
       // Si terminó con todos tildados, vuelve a "Todo" (así recibe los módulos nuevos).
-      save(u, next.length === M.length ? null : next);
+      // Solo vuelve a "Todo" si tiene exactamente los comunes y ningún opcional.
+      const isBase = next.length === BASE.length && BASE.every((k) => next.includes(k));
+      save(u, isBase ? null : next);
     }));
   };
 })();

@@ -29,8 +29,12 @@ export const MODULES = [
   { k: 'coupons', label: 'Cupones', group: 'Qué mueve la demanda' },
   { k: 'buscador', label: 'Buscador', group: 'Qué mueve la demanda' },
   { k: 'audiences', label: 'Audiencias', group: 'Qué mueve la demanda' },
+  // optIn: maneja datos personales (DNI → mail). No entra en "Todo": solo lo
+  // ven los admins y a quien se le tilde a mano en Accesos.
+  { k: 'contactos', label: 'Contactos SFMC', group: 'Herramientas', optIn: true },
 ];
 export const MODULE_KEYS = MODULES.map((m) => m.k);
+const DEFAULT_KEYS = MODULES.filter((m) => !m.optIn).map((m) => m.k);
 
 // Si nadie configuró admins, el dueño del dashboard lo es por defecto.
 export function admins() {
@@ -62,9 +66,9 @@ export async function writeAccess(users, by) {
   return cfg;
 }
 
-/** Módulos que ve un usuario: todos si es admin o si no tiene configuración. */
+/** Módulos que ve un usuario: todos si es admin; sin configuración, todos menos los opcionales. */
 export function viewsFor(username, cfg) {
   if (isAdmin(username)) return MODULE_KEYS.slice();
   const v = cfg?.users?.[normUser(username)];
-  return Array.isArray(v) ? v.filter((x) => MODULE_KEYS.includes(x)) : MODULE_KEYS.slice();
+  return Array.isArray(v) ? v.filter((x) => MODULE_KEYS.includes(x)) : DEFAULT_KEYS.slice();
 }

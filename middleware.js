@@ -92,7 +92,10 @@ const PROTECTED = [
   [/^\/data\/web\/search-(diagnosis|insights)/, ['buscador']],
   [/^\/api\/(buscador-compara|competencia)/, ['buscador']],
   [/^\/comparador-de-precios\.html/, ['buscador']],
+  [/^\/api\/sfmc-contacts/, ['contactos']],
 ];
+// Módulos opcionales (datos personales): sin configuración NO se ven.
+const OPT_IN = new Set(['contactos']);
 function modulesFor(url) {
   if (url.pathname === '/api/archive') {
     const p = url.searchParams.get('path') || '';
@@ -132,7 +135,7 @@ async function canAccess(user, url) {
   const need = modulesFor(url);
   if (!need || isAdminUser(user)) return true;
   const views = (await accessUsers())[user];
-  if (!Array.isArray(views)) return true; // sin configurar = ve todo
+  if (!Array.isArray(views)) return need.some((m) => !OPT_IN.has(m)); // sin configurar = todo menos lo opcional
   return need.some((m) => views.includes(m));
 }
 

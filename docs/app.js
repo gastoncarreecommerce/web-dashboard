@@ -147,9 +147,9 @@
   const NAV_ICON = {
     dashboard: 'dashboard', canales: 'layers', mensual: 'calendar', productos: 'box',
     analytics: 'analytics', tiendas: 'store',
-    marketing: 'megaphone', coupons: 'tag', buscador: 'search', audiences: 'audience', admin: 'shield',
+    marketing: 'megaphone', coupons: 'tag', buscador: 'search', audiences: 'audience', contactos: 'mail', admin: 'shield',
   };
-  const TITLES = { dashboard: 'Resumen', canales: 'App vs. Web', mensual: 'Resumen mensual', productos: 'Productos', analytics: 'Analítica', tiendas: 'Tiendas', coupons: 'Cupones', marketing: 'Marketing', buscador: 'Buscador', audiences: 'Audiencias', admin: 'Accesos' };
+  const TITLES = { dashboard: 'Resumen', canales: 'App vs. Web', mensual: 'Resumen mensual', productos: 'Productos', analytics: 'Analítica', tiendas: 'Tiendas', coupons: 'Cupones', marketing: 'Marketing', buscador: 'Buscador', audiences: 'Audiencias', contactos: 'Contactos SFMC', admin: 'Accesos' };
 
   // ── Accesos por módulo ─────────────────────────────────────────────────
   // /api/me dice qué módulos ve cada persona (se configuran en "Accesos").
@@ -354,7 +354,7 @@
 
     // Sin rango no hay nada que calcular: se muestra el estado vacío en vez de
     // dejar que cada vista falle leyendo range.from.
-    if (!state.range && !['audiences', 'buscador', 'mensual', 'admin'].includes(state.view)) {
+    if (!state.range && !['audiences', 'buscador', 'mensual', 'admin', 'contactos'].includes(state.view)) {
       $('content').innerHTML = `<div class="empty"><h2>Todavía no hay datos</h2>
         <p>Corré el backfill inicial para poblar el historial (ver README).</p></div>`;
       return;
@@ -369,7 +369,7 @@
     //
     // Va en el shell y no en cada vista a proposito: el problema es el mismo en
     // todas, y un numero inventado en Analitica engana igual que en el Resumen.
-    const VISTAS_CON_RANGO = !['audiences', 'buscador', 'mensual', 'admin'].includes(state.view);
+    const VISTAS_CON_RANGO = !['audiences', 'buscador', 'mensual', 'admin', 'contactos'].includes(state.view);
     if (VISTAS_CON_RANGO && state.range) {
       let cob = null;
       try { cob = W.coberturaCanal(await W.load('daily-summary'), state.range); } catch { /* sin dataset, cada vista avisa */ }
@@ -430,6 +430,7 @@
       else if (state.view === 'marketing') await W.viewMarketing(ctx);
       else if (state.view === 'buscador') await W.viewBuscador(ctx);
       else if (state.view === 'admin') await W.viewAdmin(ctx);
+      else if (state.view === 'contactos') await W.viewContactos(ctx);
       else await W.viewAudiences(ctx);
     } catch (e) {
       $('content').innerHTML = `<div class="empty err"><h2>Algo falló al renderizar</h2><p>${W.esc(e.message)}</p></div>`;

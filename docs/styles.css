@@ -1486,3 +1486,23 @@ button.au-bars-i:hover { background: var(--brand-soft); }
   .sx-kv { grid-template-columns: 1fr; }
   .sx-heat { grid-template-columns: 26px repeat(24, 1fr); gap: 1px; }
 }
+
+/* ── Contactos SFMC (DNI → mail) ───────────────────────────────────────── */
+.ct-intro { display: flex; gap: .9rem; align-items: flex-start; }
+.ct-intro h3 { margin: 0 0 .25rem; }
+.ct-intro p { margin: 0; font-size: .82rem; color: var(--ink-2); line-height: 1.5; max-width: 820px; }
+.ct-ic { width: 40px; height: 40px; border-radius: 12px; background: var(--brand-soft); color: var(--brand); display: grid; place-items: center; flex-shrink: 0; }
+.ct-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 1.1rem; align-items: start; }
+.ct-grid > .card { margin-bottom: 0; }
+.ct-ta { width: 100%; box-sizing: border-box; min-height: 260px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .82rem; resize: vertical; }
+.ct-file { cursor: pointer; }
+.ct-pre { font-size: .78rem; margin: .5rem 0 .7rem; color: var(--ink-2); }
+.ct-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+.ct-progress { margin-top: .9rem; }
+.ct-progress .au-share { max-width: none; margin: 0 0 .4rem; height: 7px; }
+.ct-progress p { font-size: .76rem; margin: 0; }
+.ct-res { max-height: 460px; overflow-y: auto; }
+.ct-nf { margin-top: .8rem; font-size: .78rem; }
+.ct-nf summary { cursor: pointer; color: var(--ink-2); font-weight: 600; }
+.ct-nf p { color: var(--ink-3); word-break: break-word; }
+@media (max-width: 980px) { .ct-grid { grid-template-columns: 1fr; } }
