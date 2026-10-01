@@ -7,5 +7,23 @@
       "respaldo/*": false,
       "main": false
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/api/me",
+      "destination": "/api/tools?fn=me"
+    },
+    {
+      "source": "/api/access",
+      "destination": "/api/tools?fn=access"
+    },
+    {
+      "source": "/api/logout",
+      "destination": "/api/tools?fn=logout"
+    },
+    {
+      "source": "/api/sfmc-contacts",
+      "destination": "/api/tools?fn=sfmc-contacts"
+    }
+  ]
 }

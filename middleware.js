@@ -97,6 +97,12 @@ const PROTECTED = [
 // Módulos opcionales (datos personales): sin configuración NO se ven.
 const OPT_IN = new Set(['contactos']);
 function modulesFor(url) {
+  // /api/tools agrupa varios endpoints (ver api/tools.js): se juzga por el
+  // endpoint real, por si alguien la llama directo en vez de por su URL.
+  if (url.pathname === '/api/tools') {
+    const fn = url.searchParams.get('fn') || '';
+    return modulesFor(new URL(`/api/${fn}`, url));
+  }
   if (url.pathname === '/api/archive') {
     const p = url.searchParams.get('path') || '';
     if (p.startsWith('customer-activity')) return ['audiences'];
