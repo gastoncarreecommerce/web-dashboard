@@ -52,7 +52,7 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { motoresActivos, vtexCorrection, vtexSearchRedirect } = require('./search-engines');
+const { motoresActivos, vtexCorrection, vtexSearchRedirect, isHostStats } = require('./search-engines');
 const relevanciaIA = require('./search-relevance-ai');
 
 const IN_PATH = path.join(__dirname, '..', 'config', 'search-inspect.report.json');
@@ -797,6 +797,9 @@ async function main() {
       detectados: red.hallados.size, porVia: red.porVia,
       descartados: red.descartados || 0, sospechoso: red.sospechoso || null,
     },
+    // Desde dónde respondió Intelligent Search: el sitio público (con las
+    // reglas del storefront) o el host interno (sin ellas, de respaldo).
+    isHost: isHostStats(),
     ai: {
       activa: relevanciaIA.habilitado(),
       motivo: relevanciaIA.porQueNo(),
@@ -806,6 +809,9 @@ async function main() {
     },
     terms,
   };
+  const hs = report.isHost;
+  console.log(`\nIntelligent Search respondió: ${hs.sitio} desde el sitio público, ${hs.interno} desde el host interno.`);
+  for (const e of hs.errores) console.log(`  ✗ sitio público → ${e}`);
   fs.mkdirSync(path.dirname(OUT_PATH), { recursive: true });
   fs.writeFileSync(OUT_PATH, JSON.stringify(report, null, 2));
   console.log(`\nReporte guardado en ${path.relative(process.cwd(), OUT_PATH)}`);
@@ -963,6 +969,7 @@ function writeClientReport(report) {
   const client = {
     generatedAt: report.generatedAt,
     redirectProbe: report.redirectProbe || null,
+    isHost: report.isHost || null,
     terms: detail,
     engine: report.engine,
     engineLabel: report.engineLabel,

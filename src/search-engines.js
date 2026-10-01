@@ -58,14 +58,29 @@ function vtexBase() {
 function storeBase() {
   return (process.env.STORE_URL || 'https://www.carrefour.com.ar').replace(/\/+$/, '');
 }
+// Qué host respondió cada consulta de IS. El fallback al interno era
+// silencioso: si el sitio le devolvía al runner una página del WAF (HTML con
+// 200) o un 403, todo seguía "andando" contra el host interno, que no aplica
+// las reglas del storefront, y nadie se enteraba. Ahora queda en el reporte.
+const isHosts = { sitio: 0, interno: 0, errores: [] };
+const BROWSER_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36',
+  'Accept-Language': 'es-AR,es;q=0.9',
+};
 async function isGet(pathAndQuery) {
   try {
-    const r = await getJson(`${storeBase()}${pathAndQuery}`);
+    const r = await getJson(`${storeBase()}${pathAndQuery}`, { headers: BROWSER_HEADERS });
+    isHosts.sitio += 1;
     return { ...r, host: 'sitio' };
   } catch (e) {
+    if (isHosts.errores.length < 5) isHosts.errores.push(`${pathAndQuery.split('?')[0].split('/').filter(Boolean).pop()}: ${String(e.message).slice(0, 160)}`);
     const r = await getJson(`${vtexBase()}${pathAndQuery}`);
+    isHosts.interno += 1;
     return { ...r, host: 'interno' };
   }
+}
+function isHostStats() {
+  return { ...isHosts, errores: [...isHosts.errores] };
 }
 
 /** Normaliza un producto de cualquiera de las dos APIs de VTEX. Las dos traen
@@ -374,6 +389,7 @@ async function vtexAutocomplete(term) {
 
 module.exports = {
   ENGINES,
+  isHostStats,
   vtexBase,
   vtexSearchRedirect,
   motoresActivos,
