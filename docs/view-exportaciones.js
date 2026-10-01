@@ -313,7 +313,14 @@
           .map((m) => W.load(`${pref}/${m}`).catch(() => []).then((l) => (l || []).map((o) => ({ ...o, _canal: c }))))));
         const byId = new Map();
         for (const o of listas.flat()) if (inRange(o) && segOk(o)) byId.set(`${o._canal}:${o.id}`, o);
-        for (const [k, o] of detail) byId.set(k, { ...(byId.get(k) || {}), ...o });
+        // El índice de siempre manda en lo que ya se mostraba (total, estado,
+        // fecha, segmento, cliente; para App sale de AppDash): el detalle solo
+        // completa columnas nuevas, así ningún número cambia respecto del
+        // export de antes.
+        for (const [k, o] of detail) {
+          const base = byId.get(k);
+          byId.set(k, base ? { ...o, id: base.id, t: base.t, sg: base.sg, h: base.h ?? o.h, g: base.g, st: base.st ?? o.st, s: base.s ?? o.s } : o);
+        }
         const cols = ORDER_COLS.filter((c) => S.orderCols.includes(c[0]));
         const rows = [...byId.values()].filter((o) => ('_pass' in o ? o._pass : passes(o, f, eanSet))).sort((a, b) => (a.t < b.t ? 1 : -1))
           .map((o) => cols.map((c) => c[2](o, ctx)));
