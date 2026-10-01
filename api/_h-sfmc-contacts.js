@@ -29,23 +29,46 @@ const AUDIT_KEY = 'webdash:audit:sfmc-contacts';
 let token = null, tokenExp = 0;
 
 function cfg() {
-  const { SFMC_CLIENT_ID, SFMC_CLIENT_SECRET, SFMC_SUBDOMAIN, SFMC_PARENT_ACCOUNT_ID } = process.env;
-  const faltan = ['SFMC_CLIENT_ID', 'SFMC_CLIENT_SECRET', 'SFMC_SUBDOMAIN'].filter((k) => !process.env[k]);
-  return { id: SFMC_CLIENT_ID, secret: SFMC_CLIENT_SECRET, sub: SFMC_SUBDOMAIN, mid: SFMC_PARENT_ACCOUNT_ID, faltan };
+  // Se limpian espacios y saltos de línea (pasa al pegar en Vercel), y si el
+  // subdominio vino como URL completa se le saca lo que sobra.
+  const v = (k) => String(process.env[k] || '').trim();
+  const sub = v('SFMC_SUBDOMAIN').replace(/^https?:\/\//, '').replace(/\.(auth|rest|soap)\.marketingcloudapis\.com.*$/, '').replace(/\/+$/, '');
+  const faltan = ['SFMC_CLIENT_ID', 'SFMC_CLIENT_SECRET', 'SFMC_SUBDOMAIN'].filter((k) => !v(k));
+  return { id: v('SFMC_CLIENT_ID'), secret: v('SFMC_CLIENT_SECRET'), sub, mid: v('SFMC_PARENT_ACCOUNT_ID'), faltan };
 }
 
-async function getToken(c) {
-  if (token && Date.now() < tokenExp - 60000) return token;
+async function requestToken(c, withMid) {
   const body = { grant_type: 'client_credentials', client_id: c.id, client_secret: c.secret };
-  if (c.mid) body.account_id = c.mid;
+  if (withMid && c.mid) body.account_id = c.mid;
   const r = await fetch(`https://${c.sub}.auth.marketingcloudapis.com/v2/token`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
   });
   const t = await r.text();
-  if (!r.ok) throw new Error(`autenticación con Marketing Cloud falló (${r.status})`);
-  const j = JSON.parse(t);
-  token = j.access_token;
-  tokenExp = Date.now() + (j.expires_in || 1200) * 1000;
+  let j = {};
+  try { j = JSON.parse(t); } catch { /* no era JSON */ }
+  return { ok: r.ok, status: r.status, j };
+}
+
+async function getToken(c) {
+  if (token && Date.now() < tokenExp - 60000) return token;
+  let r = await requestToken(c, true);
+  // Si falla con el MID, se prueba sin él: el paquete puede no tener acceso a
+  // esa unidad (o el MID estar mal) y aun así ser válido para su unidad propia.
+  let sinMid = false;
+  if (!r.ok && c.mid) {
+    const r2 = await requestToken(c, false);
+    if (r2.ok) { r = r2; sinMid = true; }
+  }
+  if (!r.ok) {
+    const motivo = [r.j.error, r.j.error_description].filter(Boolean).join(': ');
+    const pista = r.j.error === 'invalid_client' ? ' — revisá SFMC_CLIENT_ID y SFMC_CLIENT_SECRET (que sean del mismo Installed Package, sin espacios)'
+      : r.j.error === 'unauthorized_client' || /account/i.test(motivo) ? ' — el paquete no tiene acceso al MID de SFMC_PARENT_ACCOUNT_ID'
+      : r.status === 404 ? ' — revisá SFMC_SUBDOMAIN' : '';
+    throw new Error(`autenticación con Marketing Cloud falló (${r.status}${motivo ? `, ${motivo}` : ''})${pista}`);
+  }
+  if (sinMid) console.warn('sfmc-contacts: el token con SFMC_PARENT_ACCOUNT_ID falló; se usó el token sin MID');
+  token = r.j.access_token;
+  tokenExp = Date.now() + (r.j.expires_in || 1200) * 1000;
   return token;
 }
 
