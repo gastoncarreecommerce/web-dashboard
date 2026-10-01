@@ -252,7 +252,11 @@
       }
 
       // 4) Ítems y sus derivados.
-      if (wantItems) {
+      // Sin un solo día con detalle, las hojas por producto saldrían vacías:
+      // se omiten y se explica en pantalla cómo generarlo.
+      report.noDetail = wantItems && W.channel !== 'app' && detail.size === 0;
+      if (wantItems && W.channel === 'app') report.appOnly = true;
+      if (wantItems && !report.noDetail && !report.appOnly) {
         step('Armando el detalle por producto…', 0.75);
         const orders = [...detail.values()].filter((o) => inRange(o) && segOk(o) && passes(o, f, eanSet));
         const cols = ITEM_COLS.filter((c) => S.itemCols.includes(c[0]));
@@ -288,7 +292,7 @@
           }
         }
         const nota = report.missingDays.length
-          ? `Sin detalle por producto para ${report.missingDays.length} de ${days.length} días (${report.missingDays.slice(0, 6).join(', ')}${report.missingDays.length > 6 ? '…' : ''}): se completan con el backfill. Solo pedidos Web.`
+          ? `Sin detalle por producto para ${report.missingDays.length} de ${days.length} días (${report.missingDays.slice(0, 6).join(', ')}${report.missingDays.length > 6 ? '…' : ''}): se completan con el backfill (force tildado). Solo pedidos Web.`
           : 'Solo pedidos Web (App no trae detalle por producto).';
         if (S.sheets.items) {
           hojas.push(detailSheet('Ítems', `Ítems de pedidos, uno por producto — ${cab} · ${itemRows.length.toLocaleString('es-AR')} filas`
@@ -315,7 +319,11 @@
         }
       }
 
-      if (!hojas.length) { W.toast('Elegí al menos una hoja.', 'bad'); running = null; W.render(); return; }
+      if (!hojas.length) {
+        lastReport = report.noDetail || report.appOnly ? { ...report, sheets: [], at: new Date() } : lastReport;
+        W.toast(report.noDetail || report.appOnly ? 'No hay detalle por producto para ese período: no se generó el archivo.' : 'Elegí al menos una hoja.', 'bad');
+        running = null; W.render(); return;
+      }
       step('Generando el Excel…', 0.95);
       await new Promise((r) => setTimeout(r, 30));
       await W.downloadXLSX(`webdash-export-${range.from}_a_${range.to}.xlsx`, hojas);
@@ -387,8 +395,11 @@
 
             <button class="btn-p blk au-cta" id="ex-go" ${running ? 'disabled' : ''}>${W.icon('download', 15)}Generar Excel</button>
             ${running ? `<div class="ct-progress"><span class="au-share"><i id="ex-bar" style="width:${Math.round(running.pct * 100)}%"></i></span><p id="ex-msg" class="muted">${W.esc(running.msg)}</p></div>` : ''}
-            ${lastReport ? `<div class="ex-rep">${W.icon('check', 14)}<div><b>Último archivo:</b> ${lastReport.sheets.length} hojas${lastReport.orders ? ` · ${W.fmtNum(lastReport.orders)} pedidos` : ''}${lastReport.items ? ` · ${W.fmtNum(lastReport.items)} ítems` : ''}
-              ${lastReport.missingDays.length ? `<br><span class="au-warn">Sin detalle por producto: ${lastReport.missingDays.length} día(s). Se completan con el backfill.</span>` : ''}${lastReport.cut ? '<br><span class="au-warn">Los ítems se cortaron: usá filtros o un período más corto.</span>' : ''}</div></div>` : ''}
+            ${lastReport ? `<div class="ex-rep">${W.icon(lastReport.sheets.length ? 'check' : 'alert', 14)}<div><b>${lastReport.sheets.length ? 'Último archivo:' : 'No se generó el archivo.'}</b> ${lastReport.sheets.length ? `${lastReport.sheets.length} hojas` : ''}${lastReport.orders ? ` · ${W.fmtNum(lastReport.orders)} pedidos` : ''}${lastReport.items ? ` · ${W.fmtNum(lastReport.items)} ítems` : ''}
+              ${lastReport.noDetail ? `<br><span class="au-warn"><b>Ningún día del período tiene detalle por producto todavía</b>, así que no se incluyeron Ítems, Promociones, Cupón × EAN ni EAN.
+                Se genera solo desde ahora con la corrida diaria; para días anteriores hay que correr el workflow <b>WebDash backfill</b> en GitHub Actions con <b>force</b> tildado.</span>`
+    : lastReport.appOnly ? '<br><span class="au-warn">App no trae detalle por producto: elegí Web o App + Web arriba.</span>'
+      : lastReport.missingDays.length ? `<br><span class="au-warn">Sin detalle por producto: ${lastReport.missingDays.length} día(s). Se completan con el backfill (con force tildado).</span>` : ''}${lastReport.cut ? '<br><span class="au-warn">Los ítems se cortaron: usá filtros o un período más corto.</span>' : ''}</div></div>` : ''}
 
             <div class="saved">
               <h4>Plantillas</h4>
