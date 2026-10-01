@@ -123,7 +123,31 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .
 .nav-brand-txt strong { display: block; color: #fff; font-size: .95rem; font-weight: 700; letter-spacing: -.01em; }
 .nav-brand-txt em { display: block; font-style: normal; font-size: .68rem; color: #8b85c4; margin-top: 1px; }
 
-.nav-scroll { flex: 1; overflow-y: auto; padding: .9rem .7rem; }
+.nav-scroll {
+  flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: .9rem .7rem;
+  overscroll-behavior: contain;
+  /* Barra fina y oscura, del color del menú; solo se nota al pasar el mouse.
+     La gris por defecto del navegador, con flechas, rompía todo el menú. */
+  scrollbar-width: thin; scrollbar-color: transparent transparent; scrollbar-gutter: stable;
+}
+.nav-scroll:hover { scrollbar-color: rgba(255,255,255,.18) transparent; }
+.nav-scroll::-webkit-scrollbar { width: 6px; }
+.nav-scroll::-webkit-scrollbar-track { background: transparent; }
+.nav-scroll::-webkit-scrollbar-button { display: none; height: 0; }
+.nav-scroll::-webkit-scrollbar-thumb { background: transparent; border-radius: 6px; }
+.nav-scroll:hover::-webkit-scrollbar-thumb { background: rgba(255,255,255,.18); }
+.nav-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.3); }
+/* Pantallas bajas (notebooks): el menú se compacta para entrar sin scroll. */
+@media (max-height: 820px) {
+  .nav-scroll { padding: .6rem .6rem; }
+  .nav-sec { margin: .8rem 0 .3rem; }
+  .nav-item { padding: .4rem .7rem; }
+}
+@media (max-height: 700px) {
+  .nav-sec { margin: .55rem 0 .2rem; }
+  .nav-item { padding: .3rem .7rem; }
+  .nav-brand { padding: .8rem 1.15rem .75rem; }
+}
 .nav-sec {
   font-size: .64rem; font-weight: 650; letter-spacing: .07em; text-transform: uppercase;
   color: #6b649f; padding: 0 .7rem; margin: 1.15rem 0 .45rem;
