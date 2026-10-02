@@ -539,6 +539,12 @@ function finalizeDay(acc, meta) {
     failedOrderIds: meta.failedOrderIds,
     unknownStatuses: meta.unknownStatuses,
     statusStats: meta.statusStats || {},
+    // IDs cancelados según el LISTADO (todos los canales; el listado no dice
+    // de qué canal es cada uno). Lo usa scripts/build-app-summary.mjs: AppDash
+    // guarda el estado del pedido cuando lo baja y nunca lo actualiza, así
+    // que un pedido de App cancelado después seguía contando (~109 de más en
+    // septiembre contra VTEX). Con esto, App se cuenta con el estado actual.
+    ...(meta.canceledIds?.length ? { canceledIds: meta.canceledIds } : {}),
     schema: 2, // v2 = catálogo por segmento + provincia + tienda
     segments,
     provinces: acc.provinces,
@@ -612,6 +618,7 @@ async function fetchDay(dateStr, { incremental = false } = {}) {
   // status acá, que sí viene en el resumen, para no pedir detalles de más.
   const idsToFetch = [];
   const statusStats = {};
+  const canceledIds = [];
   for await (const summary of iterateAllOrders({ fromISO, toISO })) {
     scanned += 1;
     // Cantidad Y monto por estado, tomados del LISTADO: el listado ya trae
@@ -624,6 +631,7 @@ async function fetchDay(dateStr, { incremental = false } = {}) {
     if (!statusFilter.includeStatuses.includes(st) && !statusFilter.excludeStatuses.includes(st)) {
       unknownStatuses.add(st);
     }
+    if (statusFilter.cancelledStatuses.includes(st)) canceledIds.push(String(summary.orderId));
     if (!isIncludedStatus(summary, statusFilter)) continue;
     if (knownIds.has(String(summary.orderId))) continue; // ya sumado en una pasada anterior de hoy
     idsToFetch.push(summary.orderId);
@@ -655,6 +663,7 @@ async function fetchDay(dateStr, { incremental = false } = {}) {
     failedOrderIds,
     unknownStatuses: [...unknownStatuses],
     statusStats,
+    canceledIds,
   });
 }
 

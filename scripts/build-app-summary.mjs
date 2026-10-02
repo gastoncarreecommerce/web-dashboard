@@ -47,6 +47,30 @@ const ROWS = path.join(PRIVADO, 'daily');
 const OUT_DIR = path.join('docs', 'data', 'app');
 const ORDER_INDEX_DIR = path.join(ARCHIVE_ROOT, 'docs', 'data', 'app', 'order-index');
 
+// Estado ACTUAL de cancelación, según el listado de VTEX que baja el pipeline
+// de Web (data/daily/<día>.json > canceledIds, todos los canales). AppDash
+// guarda el estado del pedido cuando lo baja y no lo vuelve a mirar: un pedido
+// de App cancelado después seguía contando (en septiembre, ~109 pedidos de más
+// contra VTEX). Si el pipeline de Web ya lo vio cancelado, acá se lo trata
+// como cancelado: sale de las métricas y figura así en el índice de pedidos.
+const DAILY_DIR = arg('daily-dir', process.env.WEBDASH_DAILY_DIR || path.join(ARCHIVE_ROOT, 'data', 'daily'));
+const canceladosVtex = new Set();
+if (fs.existsSync(DAILY_DIR)) {
+  for (const f of fs.readdirSync(DAILY_DIR)) {
+    if (!/^\d{4}-\d{2}-\d{2}\.json$/.test(f)) continue;
+    try {
+      const txt = fs.readFileSync(path.join(DAILY_DIR, f), 'utf8');
+      // Solo hace falta canceledIds: se evita parsear el archivo entero (~10 MB)
+      // si la clave no está.
+      const i = txt.indexOf('"canceledIds":');
+      if (i < 0) continue;
+      const ids = JSON.parse(txt.slice(i + 14, txt.indexOf(']', i) + 1));
+      for (const id of ids) canceladosVtex.add(String(id));
+    } catch { /* día ilegible: se sigue con el resto */ }
+  }
+}
+let corregidosACancelado = 0;
+
 for (const [d, q] of [[AGG, 'agregados de AppDash'], [ROWS, 'rows del repo privado']]) {
   if (!fs.existsSync(d)) {
     console.error(`No encuentro los ${q} en ${d}`);
@@ -176,7 +200,11 @@ for (const f of archivos) {
     // statusStats mide TODO lo que llegó (igual que el listado crudo del canal
     // Web), cancelados incluidos: es lo que deja ver la tasa de cancelación.
     const gmv = Number(r.total) || 0;
-    const st = r.estado || 'sin-estado';
+    let st = r.estado || 'sin-estado';
+    if (canceladosVtex.has(String(r.order_id)) && !statusFilter.cancelledStatuses.includes(st)) {
+      st = 'canceled';
+      corregidosACancelado++;
+    }
     const e = (statusStats[st] = statusStats[st] || { orders: 0, gmv: 0 });
     e.orders += 1; e.gmv += gmv;
 
@@ -438,5 +466,6 @@ console.log(`products-daily    · ${(productsDailyBytes / 1048576).toFixed(1)}MB
 console.log(`clientes unicos en todo el historial: ${vistos.size.toLocaleString('es-AR')}`);
 console.log(`frescura del dato: ${dataFreshAt || 'n/d'}`);
 if (excluidosPorEstado) console.log(`(${excluidosPorEstado} pedido(s) cancelados/pendientes, excluidos de las metricas de negocio — igual que el canal Web)`);
+if (corregidosACancelado) console.log(`(${corregidosACancelado} pedido(s) de App que AppDash tenía vivos y VTEX hoy marca cancelados: se cuentan como cancelados)`);
 if (sinSegmento) console.log(`(${sinSegmento} pedido(s) sin segmento reconocido, descartados)`);
 if (sinFecha) console.log(`(${sinFecha} pedido(s) sin hora parseable, no entran en el horario)`);

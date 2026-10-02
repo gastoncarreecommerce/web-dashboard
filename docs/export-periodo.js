@@ -88,12 +88,16 @@
         widths: [26, 18, 20, 14], ultimaCol: 'D',
         estilo: (i, c) => {
           if (c === 0) return null;
-          const esPlata = [0, 1, 2, 3, 7].includes(i);
           if (c === 3) {
             const v = kpis[i][3];
             return v == null ? E().delta : v < 0 ? E().deltaMala : E().deltaBuena;
           }
-          return esPlata ? E().moneda : E().entero;
+          // Solo GMV, ticket y descuentos son plata. Pedidos, unidades y
+          // clientes son cantidades (antes salían con "$").
+          const nombre = kpis[i][0];
+          if (['GMV', 'Ticket promedio', 'Descuentos'].includes(nombre)) return E().moneda;
+          if (nombre === 'Unidades por pedido') return E().decimal;
+          return E().entero;
         },
       }));
 
