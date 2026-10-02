@@ -812,6 +812,7 @@ async function main() {
   const hs = report.isHost;
   console.log(`\nIntelligent Search respondió: ${hs.sitio} desde el sitio público, ${hs.interno} desde el host interno.`);
   for (const e of hs.errores) console.log(`  ✗ sitio público → ${e}`);
+  for (const z of hs.ceros) console.log(`  0 resultados "${z.term}": claves=${z.claves.join(',')} variantes=${JSON.stringify(z.variantes)}${z.usada ? ` → se usa ${z.usada}` : ''}`);
   fs.mkdirSync(path.dirname(OUT_PATH), { recursive: true });
   fs.writeFileSync(OUT_PATH, JSON.stringify(report, null, 2));
   console.log(`\nReporte guardado en ${path.relative(process.cwd(), OUT_PATH)}`);

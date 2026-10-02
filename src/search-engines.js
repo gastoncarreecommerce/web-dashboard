@@ -62,7 +62,7 @@ function storeBase() {
 // silencioso: si el sitio le devolvía al runner una página del WAF (HTML con
 // 200) o un 403, todo seguía "andando" contra el host interno, que no aplica
 // las reglas del storefront, y nadie se enteraba. Ahora queda en el reporte.
-const isHosts = { sitio: 0, interno: 0, errores: [] };
+const isHosts = { sitio: 0, interno: 0, errores: [], ceros: [] };
 const BROWSER_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36',
   'Accept-Language': 'es-AR,es;q=0.9',
@@ -80,7 +80,7 @@ async function isGet(pathAndQuery) {
   }
 }
 function isHostStats() {
-  return { ...isHosts, errores: [...isHosts.errores] };
+  return { ...isHosts, errores: [...isHosts.errores], ceros: [...isHosts.ceros] };
 }
 
 /** Normaliza un producto de cualquiera de las dos APIs de VTEX. Las dos traen
@@ -149,11 +149,38 @@ const vtexIS = {
   async search(term) {
     const { body } = await isGet('/api/io/_v/api/intelligent-search/product_search/'
       + `?query=${encodeURIComponent(term)}&count=${PAGE_SIZE}`);
-    const products = Array.isArray(body?.products) ? body.products : [];
+    let products = Array.isArray(body?.products) ? body.products : [];
 
     // IS sí devuelve el total exacto en `recordsFiltered`, así que acá no hay
     // que estimar nada: nunca queda `capped`.
-    const total = Number(body?.recordsFiltered);
+    let total = Number(body?.recordsFiltered);
+
+    // 0 resultados en términos genéricos que en el sitio sí andan ("fideos",
+    // "queso crema"): se guarda qué devolvió IS (claves de la respuesta, sin
+    // productos) y se prueban variantes de la consulta para encontrar cuál
+    // usa el storefront. Si una variante trae productos, esa es la medición.
+    if (!products.length && !(typeof body?.redirect === 'string' && body.redirect)) {
+      const snap = { term, claves: Object.keys(body || {}), recordsFiltered: body?.recordsFiltered ?? null,
+        correction: body?.correction ?? null, operator: body?.operator ?? null, fuzzy: body?.fuzzy ?? null,
+        translated: body?.translated ?? null, variantes: {} };
+      const q = encodeURIComponent(term);
+      const variantes = {
+        locale: `?query=${q}&count=${PAGE_SIZE}&locale=es-AR`,
+        fuzzyOr: `?query=${q}&count=${PAGE_SIZE}&locale=es-AR&fuzzy=auto&operator=or`,
+        ft: `ft/${q}?query=${q}&count=${PAGE_SIZE}&locale=es-AR`,
+      };
+      for (const [nombre, sufijo] of Object.entries(variantes)) {
+        try {
+          const { body: b2 } = await isGet(`/api/io/_v/api/intelligent-search/product_search/${sufijo}`);
+          const n = Number(b2?.recordsFiltered);
+          snap.variantes[nombre] = Number.isFinite(n) ? n : (Array.isArray(b2?.products) ? b2.products.length : null);
+          if (!products.length && Array.isArray(b2?.products) && b2.products.length) {
+            products = b2.products; total = n; snap.usada = nombre;
+          }
+        } catch (e) { snap.variantes[nombre] = `error: ${String(e.message).slice(0, 80)}`; }
+      }
+      if (isHosts.ceros.length < 15) isHosts.ceros.push(snap);
+    }
 
     return {
       total: Number.isFinite(total) ? total : products.length,
