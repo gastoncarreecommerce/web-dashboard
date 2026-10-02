@@ -194,7 +194,7 @@ jobs:
             ok=0
             for i in 1 2 3 4; do
               git push && { ok=1; break; }
-              echo "push falló, reintento $i..."; sleep $((i*5)); git pull --rebase --autostash || true
+              echo "push falló, reintento $i..."; sleep $((i*5)); git pull --rebase -X theirs --autostash || true
             done
             [ "$ok" = "1" ] || { echo "::error::No se pudo publicar los mails en $PRIVATE_DATA_REPO tras varios intentos."; exit 1; }
           fi
@@ -211,7 +211,7 @@ jobs:
             echo "Agregados sin cambios."
           else
             git commit -m "chore(data): agregados del dashboard [skip ci]"
-            for i in 1 2 3; do git push && break; sleep $((i*5)); git pull --rebase --autostash || true; done
+            for i in 1 2 3; do git push && break; sleep $((i*5)); git pull --rebase -X theirs --autostash || true; done
           fi
 
       # El histórico pesado, que no se deploya: volcados crudos y el detalle
@@ -235,7 +235,7 @@ jobs:
             echo "Archivo sin cambios."
           else
             git commit -m "chore(data): volcados crudos + detalle de pedidos [skip ci]"
-            for i in 1 2 3; do git push && break; sleep $((i*5)); git pull --rebase --autostash || true; done
+            for i in 1 2 3; do git push && break; sleep $((i*5)); git pull --rebase -X theirs --autostash || true; done
           fi
 
       # Corre DESPUES de publicar (un día realmente flojo igual se tiene que

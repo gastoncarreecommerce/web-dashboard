@@ -58,6 +58,8 @@ jobs:
           sparse-checkout: |
             data/daily
             docs/data/web/products-daily
+            docs/data/app/order-index
+            docs/data/app/products-daily
 
       - uses: actions/setup-node@v4
         with:
@@ -74,6 +76,26 @@ jobs:
           TODAY=$(TZ=America/Argentina/Buenos_Aires date +%Y-%m-%d)
           echo "Hoy (AR): $TODAY"
           node src/fetch-day.js "$TODAY" --incremental
+
+      # Canal APP: sus días cerrados vienen de AppDash (vtex-utm-audit), no de
+      # VTEX directo. Antes solo los traía el pipeline diario, que GitHub larga
+      # recién ~9:30 AR: hasta esa hora "Ayer" de App mostraba el conteo
+      # parcial de la mañana anterior (pasó el 2/10: 60 pedidos el 1/10). Acá
+      # se trae cada 30 min, así App se completa apenas AppDash cierra el día.
+      # Es el mismo script del pipeline; continue-on-error para que un
+      # problema de App nunca frene lo de Web.
+      - name: Traer datos frescos del canal App
+        continue-on-error: true
+        env:
+          APP_DATA_TOKEN: ${{ secrets.APP_DATA_TOKEN }}
+        run: |
+          if [ -z "$APP_DATA_TOKEN" ]; then echo "::warning::Sin APP_DATA_TOKEN: App no se refresca acá."; exit 0; fi
+          rm -rf /tmp/vtex-utm-audit /tmp/appdash-private-data
+          git clone -q --depth 1 "https://x-access-token:${APP_DATA_TOKEN}@github.com/gastoncarreecommerce/vtex-utm-audit.git" /tmp/vtex-utm-audit
+          git clone -q --depth 1 "https://x-access-token:${APP_DATA_TOKEN}@github.com/gastoncarreecommerce/appdash-private-data.git" /tmp/appdash-private-data
+          node scripts/build-app-summary.mjs --appdash /tmp/vtex-utm-audit --private /tmp/appdash-private-data \
+            --archive-root "$GITHUB_WORKSPACE/.data-raw"
+          rm -rf /tmp/vtex-utm-audit /tmp/appdash-private-data
 
       # Recalcula los agregados para obtener recent.json (~120 KB) con los
       # últimos dos días. No se commitea daily-summary (20 MB) ni
@@ -97,11 +119,14 @@ jobs:
           git config user.name "webdash-bot"
           git config user.email "webdash-bot@users.noreply.github.com"
           git add docs/data/web/recent.json docs/data/web/_meta/run-info.json
+          # App: el resumen diario (~0,7 MB) y el ranking mensual. customers.json
+          # (3 MB) lo sigue publicando el pipeline diario.
+          git add docs/data/app/daily-summary.json docs/data/app/products.json 2>/dev/null || true
           if git diff --staged --quiet; then
-            echo "Sin cambios en recent.json."
+            echo "Sin cambios en recent.json ni en App."
           else
             git commit -m "chore(data): hoy al dia [skip ci]"
-            for i in 1 2 3; do git push && break; sleep $((i*5)); git pull --rebase --autostash || true; done
+            for i in 1 2 3; do git push && break; sleep $((i*5)); git pull --rebase -X theirs --autostash || true; done
           fi
 
       - name: Commitear el volcado crudo en data-raw
@@ -112,9 +137,11 @@ jobs:
           git add -f data/daily/
           # El ranking de productos del día (lo que ve la vista Productos con "Hoy").
           if [ -d docs/data/web/products-daily ]; then git add -f docs/data/web/products-daily/; fi
+          if [ -d docs/data/app/order-index ]; then git add -f docs/data/app/order-index/; fi
+          if [ -d docs/data/app/products-daily ]; then git add -f docs/data/app/products-daily/; fi
           if git diff --staged --quiet; then
             echo "Sin cambios (nadie compró en los últimos 30 min, o ya estaba al día)."
           else
             git commit -m "chore(data): volcado crudo de hoy [skip ci]"
-            for i in 1 2 3; do git push && break; sleep $((i*5)); git pull --rebase --autostash || true; done
+            for i in 1 2 3; do git push && break; sleep $((i*5)); git pull --rebase -X theirs --autostash || true; done
           fi
