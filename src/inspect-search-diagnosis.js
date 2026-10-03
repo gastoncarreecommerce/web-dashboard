@@ -372,6 +372,11 @@ async function buscarEn(motor, term) {
     capped: r.capped,
     sample: r.products.map((p) => p.name).filter(Boolean).slice(0, 3),
     dispersion: categoryDispersion(r.products),
+    // El destino que IS manda en la MISMA respuesta cuando el término tiene un
+    // redirect configurado (0 productos + redirect). Se descartaba acá, así
+    // que "fideos", "queso crema" y otros ~88 términos que en el sitio llevan
+    // a una landing quedaban como "el motor no los indexa".
+    redirect: r.redirect || null,
   };
 }
 
