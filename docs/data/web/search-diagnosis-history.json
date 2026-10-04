@@ -263,5 +263,20 @@
     "ok": 104,
     "totalSearches": 1133482,
     "lostSearches": 572916
+  },
+  {
+    "date": "2026-10-04",
+    "termsAnalyzed": 200,
+    "sinResultados": 0,
+    "pocosResultados": 0,
+    "resultadosDispersos": 6,
+    "resultadosIrrelevantes": 0,
+    "motorNoIndexa": 0,
+    "redirigidos": 90,
+    "redirigidosSearches": 547762,
+    "motorNoIndexaSearches": 0,
+    "ok": 104,
+    "totalSearches": 1114983,
+    "lostSearches": 21713
   }
 ]
